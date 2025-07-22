@@ -18,7 +18,6 @@ func NewActivationHandler(router fiber.Router) {
 	api.Get("/:id", HandleGetActivationById)
 	api.Post("/", HandleCreateActivation)
 	api.Get("/coupon/:couponId", HandleGetActivationsByCoupon)
-	api.Get("/user/:userId", HandleGetActivationsByUser)
 	api.Get("/stats/daily", HandleGetDailyActivationStats)
 	api.Get("/stats/weekly", HandleGetWeeklyActivationStats)
 	api.Get("/stats/monthly", HandleGetMonthlyActivationStats)
@@ -42,11 +41,6 @@ func HandleCreateActivation(c *fiber.Ctx) error {
 
 // GET /activations/coupon/:couponId
 func HandleGetActivationsByCoupon(c *fiber.Ctx) error {
-	return nil
-}
-
-// GET /activations/user/:userId
-func HandleGetActivationsByUser(c *fiber.Ctx) error {
 	return nil
 }
 
