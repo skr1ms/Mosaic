@@ -14,52 +14,52 @@ func NewActivationHandler(router fiber.Router) {
 	}
 
 	api := handler.Group("/activations")
-	api.Get("/", HandleGetAllActivations)
-	api.Get("/:id", HandleGetActivationById)
-	api.Post("/", HandleCreateActivation)
-	api.Get("/coupon/:couponId", HandleGetActivationsByCoupon)
-	api.Get("/stats/daily", HandleGetDailyActivationStats)
-	api.Get("/stats/weekly", HandleGetWeeklyActivationStats)
-	api.Get("/stats/monthly", HandleGetMonthlyActivationStats)
-	api.Post("/verify", HandleVerifyActivation)
+	api.Get("/", GetAllActivations)
+	api.Get("/:id", GetActivationById)
+	api.Post("/", CreateActivation)
+	api.Get("/coupon/:couponId", GetActivationsByCoupon)
+	api.Get("/stats/daily", GetDailyActivationStats)
+	api.Get("/stats/weekly", GetWeeklyActivationStats)
+	api.Get("/stats/monthly", GetMonthlyActivationStats)
+	api.Post("/verify", VerifyActivation)
 }
 
 // GET /activations/
-func HandleGetAllActivations(c *fiber.Ctx) error {
+func GetAllActivations(c *fiber.Ctx) error {
 	return nil
 }
 
 // GET /activations/:id
-func HandleGetActivationById(c *fiber.Ctx) error {
+func GetActivationById(c *fiber.Ctx) error {
 	return nil
 }
 
 // POST /activations/
-func HandleCreateActivation(c *fiber.Ctx) error {
+func CreateActivation(c *fiber.Ctx) error {
 	return nil
 }
 
 // GET /activations/coupon/:couponId
-func HandleGetActivationsByCoupon(c *fiber.Ctx) error {
+func GetActivationsByCoupon(c *fiber.Ctx) error {
 	return nil
 }
 
 // GET /activations/stats/daily
-func HandleGetDailyActivationStats(c *fiber.Ctx) error {
+func GetDailyActivationStats(c *fiber.Ctx) error {
 	return nil
 }
 
 // GET /activations/stats/weekly
-func HandleGetWeeklyActivationStats(c *fiber.Ctx) error {
+func GetWeeklyActivationStats(c *fiber.Ctx) error {
 	return nil
 }
 
 // GET /activations/stats/monthly
-func HandleGetMonthlyActivationStats(c *fiber.Ctx) error {
+func GetMonthlyActivationStats(c *fiber.Ctx) error {
 	return nil
 }
 
 // POST /activations/verify
-func HandleVerifyActivation(c *fiber.Ctx) error {
+func VerifyActivation(c *fiber.Ctx) error {
 	return nil
 }
