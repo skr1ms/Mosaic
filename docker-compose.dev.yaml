@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: mosaic_postgres_dev
+    environment:
+      POSTGRES_DB: mosaic
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 53849462s 
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: mosaic_redis_dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+
+  minio:
+    image: minio/minio:latest
+    container_name: mosaic_minio_dev
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_dev_data:/data
+    command: server /data --console-address ":9001"
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:
+  minio_dev_data: 
