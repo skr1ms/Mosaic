@@ -1,6 +1,8 @@
 package migrations
 
 import (
+	"os/user"
+
 	"github.com/skr1ms/mosaic/config"
 	"github.com/skr1ms/mosaic/internal/activation"
 	"github.com/skr1ms/mosaic/internal/coupon"
@@ -10,7 +12,7 @@ import (
 
 func Init(cfg *config.Config) {
 	database := db.NewDB(cfg)
-	err := database.AutoMigrate(&partner.Partner{}, &coupon.Coupon{}, &activation.Activation{})
+	err := database.AutoMigrate(&user.User{}, &partner.Partner{}, &coupon.Coupon{}, &activation.Activation{})
 	if err != nil {
 		panic("Failed to migrate database: " + err.Error())
 	}
