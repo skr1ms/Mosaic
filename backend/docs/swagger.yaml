@@ -1,0 +1,1441 @@
+basePath: /api
+definitions:
+  admin.CreateAdminRequest:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    type: object
+  admin.LoginRequest:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    type: object
+  admin.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    type: object
+  coupon.CreateCouponsRequest:
+    properties:
+      count:
+        type: integer
+      partner_id:
+        type: string
+      size:
+        type: string
+      style:
+        type: string
+    type: object
+  image_processing.AddToQueueRequest:
+    properties:
+      coupon_id:
+        type: string
+      original_image_path:
+        type: string
+      priority:
+        type: integer
+      processing_params:
+        $ref: '#/definitions/image_processing.ProcessingParams'
+      user_email:
+        type: string
+    type: object
+  image_processing.FailProcessingRequest:
+    properties:
+      error_message:
+        type: string
+    type: object
+  image_processing.ProcessingParams:
+    properties:
+      settings:
+        additionalProperties: true
+        type: object
+      style:
+        type: string
+    type: object
+  partner.LoginRequest:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    type: object
+  partner.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    type: object
+host: localhost:3000
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: API для системы мозаичных купонов
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Mosaic API
+  version: "1.0"
+paths:
+  /admin/admins:
+    get:
+      description: Возвращает список всех администраторов
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список администраторов
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Список администраторов
+      tags:
+      - admin-management
+    post:
+      consumes:
+      - application/json
+      description: Создает нового администратора (только для существующих администраторов)
+      parameters:
+      - description: Данные нового администратора
+        in: body
+        name: admin
+        required: true
+        schema:
+          $ref: '#/definitions/admin.CreateAdminRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Администратор создан
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Ошибка в запросе
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Создание администратора
+      tags:
+      - admin-management
+  /admin/coupons:
+    get:
+      description: Возвращает список всех купонов
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список купонов
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Список купонов
+      tags:
+      - admin-coupons
+    post:
+      consumes:
+      - application/json
+      description: Создает новые купоны
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Купоны созданы
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Создание купонов
+      tags:
+      - admin-coupons
+  /admin/coupons/{id}:
+    delete:
+      description: Удаляет купон по ID
+      parameters:
+      - description: ID купона
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Купон удален
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Удаление купона
+      tags:
+      - admin-coupons
+    put:
+      consumes:
+      - application/json
+      description: Обновляет данные купона
+      parameters:
+      - description: ID купона
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Купон обновлен
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Обновление купона
+      tags:
+      - admin-coupons
+  /admin/dashboard:
+    get:
+      description: Возвращает данные для главной страницы администратора
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Данные дашборда
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Дашборд администратора
+      tags:
+      - admin-dashboard
+  /admin/login:
+    post:
+      consumes:
+      - application/json
+      description: Авторизация администратора по логину и паролю
+      parameters:
+      - description: Учетные данные для входа
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/admin.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная авторизация
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Ошибка в запросе
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Неверные учетные данные
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Авторизация администратора
+      tags:
+      - admin-auth
+  /admin/partners:
+    get:
+      description: Возвращает список всех партнеров
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список партнеров
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Список партнеров
+      tags:
+      - admin-partners
+    post:
+      consumes:
+      - application/json
+      description: Создает нового партнера
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Партнер создан
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Создание партнера
+      tags:
+      - admin-partners
+  /admin/partners/{id}:
+    delete:
+      description: Удаляет партнера по ID
+      parameters:
+      - description: ID партнера
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Партнер удален
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Удаление партнера
+      tags:
+      - admin-partners
+    put:
+      consumes:
+      - application/json
+      description: Обновляет данные партнера
+      parameters:
+      - description: ID партнера
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Партнер обновлен
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Обновление партнера
+      tags:
+      - admin-partners
+  /admin/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Обновляет access и refresh токены используя refresh токен
+      parameters:
+      - description: Refresh токен
+        in: body
+        name: refresh
+        required: true
+        schema:
+          $ref: '#/definitions/admin.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Новые токены
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Ошибка в запросе
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Неверный или истекший refresh токен
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Обновление токенов
+      tags:
+      - admin-auth
+  /admin/statistics:
+    get:
+      description: Возвращает общую статистику по системе
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Статистика
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Общая статистика
+      tags:
+      - admin-statistics
+  /coupons:
+    get:
+      description: Возвращает список купонов с возможностью фильтрации по коду, статусу,
+        размеру, стилю и партнеру
+      parameters:
+      - description: Код купона для поиска
+        in: query
+        name: code
+        type: string
+      - description: Статус купона (new, used)
+        in: query
+        name: status
+        type: string
+      - description: Размер купона
+        in: query
+        name: size
+        type: string
+      - description: Стиль купона
+        in: query
+        name: style
+        type: string
+      - description: ID партнера
+        in: query
+        name: partner_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список купонов
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Список купонов с фильтрацией
+      tags:
+      - coupons
+    post:
+      consumes:
+      - application/json
+      description: Создает указанное количество новых купонов для партнера
+      parameters:
+      - description: Параметры для создания купонов
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/coupon.CreateCouponsRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Купоны созданы успешно
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Ошибка в запросе
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Создание купонов
+      tags:
+      - coupons
+  /coupons/{id}:
+    delete:
+      description: Удаляет купон по ID
+      parameters:
+      - description: ID купона
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Купон удален
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверный ID купона
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Удаление купона
+      tags:
+      - coupons
+    get:
+      description: Возвращает детальную информацию о купоне по его ID
+      parameters:
+      - description: ID купона
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Информация о купоне
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверный ID купона
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Купон не найден
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Получение купона по ID
+      tags:
+      - coupons
+  /coupons/{id}/activate:
+    put:
+      consumes:
+      - application/json
+      description: Активирует купон, изменяя его статус на 'used' и добавляя ссылки
+        на изображения
+      parameters:
+      - description: ID купона
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Ссылки на изображения
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Купон активирован
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверный ID купона
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Активация купона
+      tags:
+      - coupons
+  /coupons/{id}/purchase:
+    put:
+      consumes:
+      - application/json
+      description: Помечает купон как купленный онлайн с указанием email покупателя
+      parameters:
+      - description: ID купона
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Email покупателя
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Купон помечен как купленный
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверный ID купона
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Пометка купона как купленного
+      tags:
+      - coupons
+  /coupons/{id}/reset:
+    put:
+      description: Сбрасывает купон в исходное состояние (статус 'new')
+      parameters:
+      - description: ID купона
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Купон сброшен
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверный ID купона
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Сброс купона
+      tags:
+      - coupons
+  /coupons/{id}/send-schema:
+    put:
+      consumes:
+      - application/json
+      description: Отправляет схему купона на указанный email адрес
+      parameters:
+      - description: ID купона
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Email для отправки
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Схема отправлена
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверный ID купона
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Отправка схемы на email
+      tags:
+      - coupons
+  /coupons/code/{code}:
+    get:
+      description: Возвращает детальную информацию о купоне по его коду
+      parameters:
+      - description: Код купона
+        in: path
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Информация о купоне
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Купон не найден
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Получение купона по коду
+      tags:
+      - coupons
+  /coupons/statistics:
+    get:
+      description: Возвращает статистику по купонам с возможностью фильтрации по партнеру
+      parameters:
+      - description: ID партнера для фильтрации
+        in: query
+        name: partner_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Статистика по купонам
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Статистика по купонам
+      tags:
+      - coupons
+  /image-processing/next:
+    get:
+      description: Возвращает следующую задачу в очереди для обработки (приоритетный
+        порядок)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Следующая задача для обработки
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Нет задач в очереди
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Получение следующей задачи
+      tags:
+      - image-processing
+  /image-processing/queue:
+    get:
+      description: Возвращает все задачи в очереди обработки изображений с возможностью
+        фильтрации по статусу
+      parameters:
+      - description: Статус задачи (queued, processing, completed, failed)
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список задач в очереди
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Список задач в очереди
+      tags:
+      - image-processing
+    post:
+      consumes:
+      - application/json
+      description: Добавляет новую задачу обработки изображения в очередь
+      parameters:
+      - description: Параметры задачи обработки
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/image_processing.AddToQueueRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Задача добавлена в очередь
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Ошибка в запросе
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Добавление задачи в очередь
+      tags:
+      - image-processing
+  /image-processing/queue/{id}:
+    delete:
+      description: Удаляет задачу из очереди обработки изображений
+      parameters:
+      - description: ID задачи
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Задача удалена
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверный ID задачи
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Удаление задачи
+      tags:
+      - image-processing
+    get:
+      description: Возвращает детальную информацию о задаче обработки изображения
+        по ID
+      parameters:
+      - description: ID задачи
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Информация о задаче
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверный ID задачи
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Задача не найдена
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Получение задачи по ID
+      tags:
+      - image-processing
+  /image-processing/queue/{id}/complete:
+    put:
+      description: Помечает задачу как успешно завершенную
+      parameters:
+      - description: ID задачи
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Обработка завершена
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверный ID задачи
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Завершить обработку задачи
+      tags:
+      - image-processing
+  /image-processing/queue/{id}/fail:
+    put:
+      consumes:
+      - application/json
+      description: Помечает задачу как неудачную с указанием причины ошибки
+      parameters:
+      - description: ID задачи
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Сообщение об ошибке
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/image_processing.FailProcessingRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Задача помечена как неудачная
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверный ID задачи
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Пометить задачу как неудачную
+      tags:
+      - image-processing
+  /image-processing/queue/{id}/retry:
+    put:
+      description: Возвращает неудачную задачу обратно в очередь для повторной обработки
+      parameters:
+      - description: ID задачи
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Задача поставлена на повтор
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверный ID задачи
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Повторить неудачную задачу
+      tags:
+      - image-processing
+  /image-processing/queue/{id}/start:
+    put:
+      description: Помечает задачу как находящуюся в процессе обработки
+      parameters:
+      - description: ID задачи
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Обработка началась
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверный ID задачи
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Начать обработку задачи
+      tags:
+      - image-processing
+  /image-processing/statistics:
+    get:
+      description: Возвращает статистику по задачам обработки изображений
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Статистика обработки
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Статистика обработки изображений
+      tags:
+      - image-processing
+  /partner/coupons:
+    get:
+      description: Возвращает список купонов текущего партнера
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список купонов партнера
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Купоны партнера
+      tags:
+      - partner-coupons
+  /partner/coupons/{id}:
+    get:
+      description: Возвращает подробную информацию о купоне
+      parameters:
+      - description: ID купона
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Детали купона
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Детали купона
+      tags:
+      - partner-coupons
+  /partner/dashboard:
+    get:
+      description: Возвращает данные для главной страницы партнера
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Данные дашборда
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Дашборд партнера
+      tags:
+      - partner-dashboard
+  /partner/login:
+    post:
+      consumes:
+      - application/json
+      description: Авторизация партнера по логину и паролю
+      parameters:
+      - description: Учетные данные для входа
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/partner.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная авторизация
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Ошибка в запросе
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Неверные учетные данные
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Аккаунт заблокирован
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Авторизация партнера
+      tags:
+      - partner-auth
+  /partner/profile:
+    get:
+      description: Возвращает информацию о профиле текущего партнера
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Профиль партнера
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Партнер не найден
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Профиль партнера
+      tags:
+      - partner-profile
+    put:
+      consumes:
+      - application/json
+      description: Попытка обновления профиля партнера (доступно только администратору)
+      produces:
+      - application/json
+      responses:
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Обновление профиля партнера
+      tags:
+      - partner-profile
+  /partner/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Обновляет access и refresh токены используя refresh токен
+      parameters:
+      - description: Refresh токен
+        in: body
+        name: refresh
+        required: true
+        schema:
+          $ref: '#/definitions/partner.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Новые токены
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Ошибка в запросе
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Неверный или истекший refresh токен
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Обновление токенов партнера
+      tags:
+      - partner-auth
+  /partner/statistics:
+    get:
+      description: Возвращает общую статистику текущего партнера
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Статистика партнера
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Статистика партнера
+      tags:
+      - partner-statistics
+  /partner/statistics/sales:
+    get:
+      description: Возвращает статистику продаж текущего партнера
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Статистика продаж
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Статистика продаж
+      tags:
+      - partner-statistics
+  /partner/statistics/usage:
+    get:
+      description: Возвращает статистику использования купонов партнера
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Статистика использования
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Статистика использования купонов
+      tags:
+      - partner-statistics
+schemes:
+- http
+- https
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

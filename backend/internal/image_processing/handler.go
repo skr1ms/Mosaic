@@ -31,6 +31,14 @@ func NewImageProcessingHandler(router fiber.Router, db *gorm.DB) {
 }
 
 // GetQueue возвращает все задачи в очереди
+// @Summary Список задач в очереди
+// @Description Возвращает все задачи в очереди обработки изображений с возможностью фильтрации по статусу
+// @Tags image-processing
+// @Produce json
+// @Param status query string false "Статус задачи (queued, processing, completed, failed)"
+// @Success 200 {array} map[string]interface{} "Список задач в очереди"
+// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
+// @Router /image-processing/queue [get]
 func (h *Handler) GetQueue(c *fiber.Ctx) error {
 	status := c.Query("status")
 	
@@ -51,6 +59,15 @@ func (h *Handler) GetQueue(c *fiber.Ctx) error {
 }
 
 // GetTaskByID возвращает задачу по ID
+// @Summary Получение задачи по ID
+// @Description Возвращает детальную информацию о задаче обработки изображения по ID
+// @Tags image-processing
+// @Produce json
+// @Param id path string true "ID задачи"
+// @Success 200 {object} map[string]interface{} "Информация о задаче"
+// @Failure 400 {object} map[string]interface{} "Неверный ID задачи"
+// @Failure 404 {object} map[string]interface{} "Задача не найдена"
+// @Router /image-processing/queue/{id} [get]
 func (h *Handler) GetTaskByID(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
@@ -67,6 +84,16 @@ func (h *Handler) GetTaskByID(c *fiber.Ctx) error {
 }
 
 // AddToQueue добавляет новую задачу в очередь обработки
+// @Summary Добавление задачи в очередь
+// @Description Добавляет новую задачу обработки изображения в очередь
+// @Tags image-processing
+// @Accept json
+// @Produce json
+// @Param request body AddToQueueRequest true "Параметры задачи обработки"
+// @Success 201 {object} map[string]interface{} "Задача добавлена в очередь"
+// @Failure 400 {object} map[string]interface{} "Ошибка в запросе"
+// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
+// @Router /image-processing/queue [post]
 func (h *Handler) AddToQueue(c *fiber.Ctx) error {
 	var req AddToQueueRequest
 
@@ -93,6 +120,14 @@ func (h *Handler) AddToQueue(c *fiber.Ctx) error {
 }
 
 // GetNextTask возвращает следующую задачу для обработки
+// @Summary Получение следующей задачи
+// @Description Возвращает следующую задачу в очереди для обработки (приоритетный порядок)
+// @Tags image-processing
+// @Produce json
+// @Success 200 {object} map[string]interface{} "Следующая задача для обработки"
+// @Failure 404 {object} map[string]interface{} "Нет задач в очереди"
+// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
+// @Router /image-processing/next [get]
 func (h *Handler) GetNextTask(c *fiber.Ctx) error {
 	task, err := h.repo.GetNextInQueue()
 	if err != nil {
@@ -106,6 +141,15 @@ func (h *Handler) GetNextTask(c *fiber.Ctx) error {
 }
 
 // StartProcessing помечает задачу как обрабатываемую
+// @Summary Начать обработку задачи
+// @Description Помечает задачу как находящуюся в процессе обработки
+// @Tags image-processing
+// @Produce json
+// @Param id path string true "ID задачи"
+// @Success 200 {object} map[string]interface{} "Обработка началась"
+// @Failure 400 {object} map[string]interface{} "Неверный ID задачи"
+// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
+// @Router /image-processing/queue/{id}/start [put]
 func (h *Handler) StartProcessing(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
@@ -121,6 +165,15 @@ func (h *Handler) StartProcessing(c *fiber.Ctx) error {
 }
 
 // CompleteProcessing помечает задачу как завершенную
+// @Summary Завершить обработку задачи
+// @Description Помечает задачу как успешно завершенную
+// @Tags image-processing
+// @Produce json
+// @Param id path string true "ID задачи"
+// @Success 200 {object} map[string]interface{} "Обработка завершена"
+// @Failure 400 {object} map[string]interface{} "Неверный ID задачи"
+// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
+// @Router /image-processing/queue/{id}/complete [put]
 func (h *Handler) CompleteProcessing(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
@@ -136,6 +189,17 @@ func (h *Handler) CompleteProcessing(c *fiber.Ctx) error {
 }
 
 // FailProcessing помечает задачу как неудачную
+// @Summary Пометить задачу как неудачную
+// @Description Помечает задачу как неудачную с указанием причины ошибки
+// @Tags image-processing
+// @Accept json
+// @Produce json
+// @Param id path string true "ID задачи"
+// @Param request body FailProcessingRequest true "Сообщение об ошибке"
+// @Success 200 {object} map[string]interface{} "Задача помечена как неудачная"
+// @Failure 400 {object} map[string]interface{} "Неверный ID задачи"
+// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
+// @Router /image-processing/queue/{id}/fail [put]
 func (h *Handler) FailProcessing(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
@@ -157,6 +221,15 @@ func (h *Handler) FailProcessing(c *fiber.Ctx) error {
 }
 
 // RetryTask повторяет неудачную задачу
+// @Summary Повторить неудачную задачу
+// @Description Возвращает неудачную задачу обратно в очередь для повторной обработки
+// @Tags image-processing
+// @Produce json
+// @Param id path string true "ID задачи"
+// @Success 200 {object} map[string]interface{} "Задача поставлена на повтор"
+// @Failure 400 {object} map[string]interface{} "Неверный ID задачи"
+// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
+// @Router /image-processing/queue/{id}/retry [put]
 func (h *Handler) RetryTask(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
@@ -172,6 +245,15 @@ func (h *Handler) RetryTask(c *fiber.Ctx) error {
 }
 
 // DeleteTask удаляет задачу из очереди
+// @Summary Удаление задачи
+// @Description Удаляет задачу из очереди обработки изображений
+// @Tags image-processing
+// @Produce json
+// @Param id path string true "ID задачи"
+// @Success 200 {object} map[string]interface{} "Задача удалена"
+// @Failure 400 {object} map[string]interface{} "Неверный ID задачи"
+// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
+// @Router /image-processing/queue/{id} [delete]
 func (h *Handler) DeleteTask(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
@@ -187,6 +269,13 @@ func (h *Handler) DeleteTask(c *fiber.Ctx) error {
 }
 
 // GetStatistics возвращает статистику по обработке изображений
+// @Summary Статистика обработки изображений
+// @Description Возвращает статистику по задачам обработки изображений
+// @Tags image-processing
+// @Produce json
+// @Success 200 {object} map[string]interface{} "Статистика обработки"
+// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
+// @Router /image-processing/statistics [get]
 func (h *Handler) GetStatistics(c *fiber.Ctx) error {
 	stats, err := h.repo.GetStatistics()
 	if err != nil {
