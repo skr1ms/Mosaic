@@ -2,94 +2,186 @@ package partner
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/skr1ms/mosaic/pkg/middleware"
+	"github.com/skr1ms/mosaic/pkg/utils"
+	"gorm.io/gorm"
 )
 
 type PartnerHandler struct {
 	fiber.Router
+	repo       *PartnerRepository
+	jwtService *utils.JWT
 }
 
-func NewPartnerHandler(router fiber.Router) {
+func NewPartnerHandler(router fiber.Router, db *gorm.DB, jwtService *utils.JWT) {
 	handler := &PartnerHandler{
-		Router: router,
+		Router:     router,
+		repo:       NewRepository(db),
+		jwtService: jwtService,
 	}
 
 	api := handler.Group("/partner")
-	api.Get("/dashboard", GetDashboard)
-	api.Get("/profile", GetProfile)
-	api.Put("/profile", UpdateProfile)
-	api.Get("/coupons", GetMyCoupons)
-	api.Post("/coupons/generate", GenerateCoupons)
-	api.Get("/coupons/:id", GetCouponDetails)
-	api.Put("/coupons/:id", UpdateCoupon)
-	api.Delete("/coupons/:id", DeleteCoupon)
-	api.Get("/statistics", GetMyStatistics)
-	api.Get("/statistics/sales", GetSalesStatistics)
-	api.Get("/statistics/usage", GetUsageStatistics)
-	api.Post("/white-label/config", UpdateWhiteLabelConfig)
-	api.Get("/white-label/config", GetWhiteLabelConfig)
+
+	// Публичные endpoints (без JWT)
+	api.Post("/login", handler.Login)
+	api.Post("/refresh", handler.RefreshToken)
+
+	// Защищенные endpoints (требуют JWT + partner роль)
+	protected := api.Use(middleware.JWTMiddleware(jwtService), middleware.PartnerOnly())
+	protected.Get("/dashboard", handler.GetDashboard)
+	protected.Get("/profile", handler.GetProfile)
+	protected.Put("/profile", handler.UpdateProfile)
+	protected.Get("/coupons", handler.GetMyCoupons)
+	protected.Get("/coupons/:id", handler.GetCouponDetails)
+	protected.Get("/statistics", handler.GetMyStatistics)
+	protected.Get("/statistics/sales", handler.GetSalesStatistics)
+	protected.Get("/statistics/usage", handler.GetUsageStatistics)
 }
 
-// GET /partner/dashboard
-func GetDashboard(c *fiber.Ctx) error {
-	return nil
+// Login обрабатывает авторизацию партнера и генерирует JWT токены
+func (h *PartnerHandler) Login(c *fiber.Ctx) error {
+	var req LoginRequest
+
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	partner, err := h.repo.GetByLogin(req.Login)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid credentials"})
+	}
+
+	if !utils.CheckPassword(req.Password, partner.Password) {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid credentials"})
+	}
+
+	if partner.Status == "blocked" {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Account is blocked"})
+	}
+
+	tokenPair, err := h.jwtService.CreateTokenPair(partner.ID, partner.Login, "partner")
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to generate tokens"})
+	}
+
+	if err := h.repo.UpdateLastLogin(partner.ID); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to update login time"})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Login successful",
+		"partner": fiber.Map{
+			"id":           partner.ID,
+			"login":        partner.Login,
+			"partner_code": partner.PartnerCode,
+			"brand_name":   partner.BrandName,
+			"role":         "partner",
+		},
+		"access_token":  tokenPair.AccessToken,
+		"refresh_token": tokenPair.RefreshToken,
+		"expires_in":    tokenPair.ExpiresIn,
+	})
 }
 
-// GET /partner/profile
-func GetProfile(c *fiber.Ctx) error {
-	return nil
+// RefreshToken обновляет токены используя refresh токен
+func (h *PartnerHandler) RefreshToken(c *fiber.Ctx) error {
+	var req RefreshTokenRequest
+
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	tokenPair, err := h.jwtService.RefreshTokens(req.RefreshToken)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid or expired refresh token"})
+	}
+
+	return c.JSON(fiber.Map{
+		"access_token":  tokenPair.AccessToken,
+		"refresh_token": tokenPair.RefreshToken,
+		"expires_in":    tokenPair.ExpiresIn,
+	})
 }
 
-// PUT /partner/profile
-func UpdateProfile(c *fiber.Ctx) error {
-	return nil
+// GetDashboard возвращает данные для дашборда партнера
+func (h *PartnerHandler) GetDashboard(c *fiber.Ctx) error {
+	return c.JSON(fiber.Map{"message": "Partner dashboard"})
 }
 
-// GET /partner/coupons
-func GetMyCoupons(c *fiber.Ctx) error {
-	return nil
+// GetProfile возвращает профиль партнера
+func (h *PartnerHandler) GetProfile(c *fiber.Ctx) error {
+	claims, err := utils.GetClaimsFromFiberContext(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	partner, err := h.repo.GetByID(claims.UserID)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Partner not found"})
+	}
+
+	return c.JSON(fiber.Map{
+		"id":           partner.ID,
+		"login":        partner.Login,
+		"partner_code": partner.PartnerCode,
+		"brand_name":   partner.BrandName,
+		"domain":       partner.Domain,
+		"email":        partner.Email,
+		"address":      partner.Address,
+		"phone":        partner.Phone,
+		"telegram":     partner.Telegram,
+		"whatsapp":     partner.Whatsapp,
+		"allow_sales":  partner.AllowSales,
+		"status":       partner.Status,
+		"created_at":   partner.CreatedAt,
+		"updated_at":   partner.UpdatedAt,
+	})
 }
 
-// POST /partner/coupons/generate
-func GenerateCoupons(c *fiber.Ctx) error {
-	return nil
+// UpdateProfile обновляет профиль партнера (только для чтения в партнерской панели)
+func (h *PartnerHandler) UpdateProfile(c *fiber.Ctx) error {
+	return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+		"error": "Partner profile can only be updated by administrator",
+	})
 }
 
-// GET /partner/coupons/:id
-func GetCouponDetails(c *fiber.Ctx) error {
-	return nil
+// GetMyCoupons возвращает купоны партнера
+func (h *PartnerHandler) GetMyCoupons(c *fiber.Ctx) error {
+	claims, err := utils.GetClaimsFromFiberContext(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	return c.JSON(fiber.Map{
+		"message":    "Partner coupons",
+		"partner_id": claims.UserID,
+	})
 }
 
-// PUT /partner/coupons/:id
-func UpdateCoupon(c *fiber.Ctx) error {
-	return nil
+// GetCouponDetails возвращает детали купона
+func (h *PartnerHandler) GetCouponDetails(c *fiber.Ctx) error {
+	return c.JSON(fiber.Map{"message": "Coupon details"})
 }
 
-// DELETE /partner/coupons/:id
-func DeleteCoupon(c *fiber.Ctx) error {
-	return nil
+// GetMyStatistics возвращает статистику партнера
+func (h *PartnerHandler) GetMyStatistics(c *fiber.Ctx) error {
+	claims, err := utils.GetClaimsFromFiberContext(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	return c.JSON(fiber.Map{
+		"message":    "Partner statistics",
+		"partner_id": claims.UserID,
+	})
 }
 
-// GET /partner/statistics
-func GetMyStatistics(c *fiber.Ctx) error {
-	return nil
+// GetSalesStatistics возвращает статистику продаж партнера
+func (h *PartnerHandler) GetSalesStatistics(c *fiber.Ctx) error {
+	return c.JSON(fiber.Map{"message": "Sales statistics"})
 }
 
-// GET /partner/statistics/sales
-func GetSalesStatistics(c *fiber.Ctx) error {
-	return nil
-}
-
-// GET /partner/statistics/usage
-func GetUsageStatistics(c *fiber.Ctx) error {
-	return nil
-}
-
-// POST /partner/white-label/config
-func UpdateWhiteLabelConfig(c *fiber.Ctx) error {
-	return nil
-}
-
-// GET /partner/white-label/config
-func GetWhiteLabelConfig(c *fiber.Ctx) error {
-	return nil
+// GetUsageStatistics возвращает статистику использования купонов
+func (h *PartnerHandler) GetUsageStatistics(c *fiber.Ctx) error {
+	return c.JSON(fiber.Map{"message": "Usage statistics"})
 }
