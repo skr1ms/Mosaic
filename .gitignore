@@ -1,0 +1,8 @@
+*.env
+*.txt
+*.odt
+*.pdf
+dist/
+node_modules/
+*.log
+.env
