@@ -3,11 +3,11 @@ package middleware
 import (
 	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
-	"github.com/skr1ms/mosaic/pkg/utils"
+	"github.com/skr1ms/mosaic/pkg/jwt"
 )
 
 // JWTMiddleware создает JWT middleware для проверки access токенов
-func JWTMiddleware(jwtService *utils.JWT) fiber.Handler {
+func JWTMiddleware(jwtService *jwt.JWT) fiber.Handler {
 	return jwtware.New(jwtware.Config{
 		SigningKey: jwtware.SigningKey{Key: jwtService.GetSecretKey()},
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
@@ -37,7 +37,7 @@ func AdminOnly() fiber.Handler {
 			})
 		}
 
-		claims, err := utils.GetClaimsFromFiberContext(c)
+		claims, err := jwt.GetClaimsFromFiberContext(c)
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Unauthorized: Invalid token claims",
@@ -64,7 +64,7 @@ func PartnerOnly() fiber.Handler {
 			})
 		}
 
-		claims, err := utils.GetClaimsFromFiberContext(c)
+		claims, err := jwt.GetClaimsFromFiberContext(c)
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Unauthorized: Invalid token claims",
@@ -91,7 +91,7 @@ func AdminOrPartner() fiber.Handler {
 			})
 		}
 
-		claims, err := utils.GetClaimsFromFiberContext(c)
+		claims, err := jwt.GetClaimsFromFiberContext(c)
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Unauthorized: Invalid token claims",

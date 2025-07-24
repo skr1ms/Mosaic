@@ -7,7 +7,7 @@ import (
 	"github.com/skr1ms/mosaic/internal/image_processing"
 	"github.com/skr1ms/mosaic/internal/partner"
 	"github.com/skr1ms/mosaic/pkg/db"
-	"github.com/skr1ms/mosaic/pkg/utils"
+	password "github.com/skr1ms/mosaic/pkg/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -96,7 +96,7 @@ func createDefaultAdmin(db *gorm.DB) error {
 
 	// Создаем дефолтного админа
 	defaultPassword := "admin123"
-	hashedPassword, err := utils.HashPassword(defaultPassword)
+	hashedPassword, err := password.HashPassword(defaultPassword)
 	if err != nil {
 		return err
 	}

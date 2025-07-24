@@ -11,7 +11,7 @@ type PartnerRepository struct {
 	db *gorm.DB
 }
 
-func NewRepository(db *gorm.DB) *PartnerRepository {
+func NewPartnerRepository(db *gorm.DB) *PartnerRepository {
 	return &PartnerRepository{db: db}
 }
 
@@ -97,16 +97,18 @@ func (r *PartnerRepository) Delete(id uuid.UUID) error {
 
 // Search выполняет поиск партнеров по различным критериям
 func (r *PartnerRepository) Search(query string, status string) ([]*Partner, error) {
+	db := r.db
+
 	if query != "" {
-		r.db = r.db.Where("brand_name ILIKE ? OR domain ILIKE ? OR email ILIKE ?",
+		db = db.Where("brand_name ILIKE ? OR domain ILIKE ? OR email ILIKE ?",
 			"%"+query+"%", "%"+query+"%", "%"+query+"%")
 	}
 
 	if status != "" {
-		r.db = r.db.Where("status = ?", status)
+		db = db.Where("status = ?", status)
 	}
 
 	var partners []*Partner
-	err := r.db.Find(&partners).Error
+	err := db.Find(&partners).Error
 	return partners, err
 }

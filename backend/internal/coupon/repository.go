@@ -11,7 +11,7 @@ type CouponRepository struct {
 	db *gorm.DB
 }
 
-func NewRepository(db *gorm.DB) *CouponRepository {
+func NewCouponRepository(db *gorm.DB) *CouponRepository {
 	return &CouponRepository{db: db}
 }
 
@@ -62,6 +62,11 @@ func (r *CouponRepository) GetAll() ([]*Coupon, error) {
 // Update обновляет купон
 func (r *CouponRepository) Update(coupon *Coupon) error {
 	return r.db.Save(coupon).Error
+}
+
+// UpdateStatusByPartnerID обновляет статус купонов партнера
+func (r *CouponRepository) UpdateStatusByPartnerID(partnerID uuid.UUID, status bool) error {
+	return r.db.Model(&Coupon{}).Where("partner_id = ?", partnerID).Update("is_blocked", status).Error
 }
 
 // ActivateCoupon активирует купон (меняет статус на 'used')
@@ -172,10 +177,76 @@ func (r *CouponRepository) ResetCoupon(id uuid.UUID) error {
 	return r.db.Model(&Coupon{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"status":             "new",
 		"used_at":            nil,
+		"is_blocked":         false,
+		"is_purchased":       false,
+		"purchase_email":     nil,
+		"purchased_at":       nil,
 		"original_image_url": nil,
 		"preview_url":        nil,
 		"schema_url":         nil,
 		"schema_sent_email":  nil,
 		"schema_sent_at":     nil,
 	}).Error
+}
+
+// Reset - алиас для ResetCoupon (для совместимости с handler)
+func (r *CouponRepository) Reset(id uuid.UUID) error {
+	return r.ResetCoupon(id)
+}
+
+// CountByPartnerID возвращает количество купонов партнера
+func (r *CouponRepository) CountByPartnerID(partnerID uuid.UUID) (int64, error) {
+	var count int64
+	err := r.db.Model(&Coupon{}).Where("partner_id = ?", partnerID).Count(&count).Error
+	return count, err
+}
+
+// CountActivatedByPartnerID возвращает количество активированных купонов партнера
+func (r *CouponRepository) CountActivatedByPartnerID(partnerID uuid.UUID) (int64, error) {
+	var count int64
+	err := r.db.Model(&Coupon{}).Where("partner_id = ? AND status = ?", partnerID, "used").Count(&count).Error
+	return count, err
+}
+
+// CountPurchasedByPartnerID возвращает количество купленных онлайн купонов партнера
+func (r *CouponRepository) CountPurchasedByPartnerID(partnerID uuid.UUID) (int64, error) {
+	var count int64
+	err := r.db.Model(&Coupon{}).Where("partner_id = ? AND is_purchased = ?", partnerID, true).Count(&count).Error
+	return count, err
+}
+
+// GetFiltered возвращает купоны с применением фильтров
+func (r *CouponRepository) GetFiltered(filters map[string]interface{}) ([]*Coupon, error) {
+	query := r.db.Model(&Coupon{})
+
+	for key, value := range filters {
+		switch key {
+		case "partner_id":
+			query = query.Where("partner_id = ?", value)
+		case "status":
+			query = query.Where("status = ?", value)
+		case "size":
+			query = query.Where("size = ?", value)
+		case "style":
+			query = query.Where("style = ?", value)
+		case "is_purchased":
+			query = query.Where("is_purchased = ?", value)
+		case "code_search":
+			query = query.Where("code ILIKE ?", "%"+value.(string)+"%")
+		}
+	}
+
+	var coupons []*Coupon
+	err := query.Order("created_at DESC").Find(&coupons).Error
+	return coupons, err
+}
+
+// GetRecentActivated возвращает последние активированные купоны с сортировкой по дате активации и лимитом
+func (r *CouponRepository) GetRecentActivated(limit int) ([]*Coupon, error) {
+	var coupons []*Coupon
+	err := r.db.Where("status = ? AND used_at IS NOT NULL", "used").
+		Order("used_at DESC").
+		Limit(limit).
+		Find(&coupons).Error
+	return coupons, err
 }

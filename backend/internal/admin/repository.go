@@ -11,7 +11,7 @@ type AdminRepository struct {
 	db *gorm.DB
 }
 
-func NewRepository(db *gorm.DB) *AdminRepository {
+func NewAdminRepository(db *gorm.DB) *AdminRepository {
 	return &AdminRepository{db: db}
 }
 
@@ -61,3 +61,4 @@ func (r *AdminRepository) Delete(id uuid.UUID) error {
 func (r *AdminRepository) UpdatePassword(id uuid.UUID, hashedPassword string) error {
 	return r.db.Model(&Admin{}).Where("id = ?", id).Update("password", hashedPassword).Error
 }
+

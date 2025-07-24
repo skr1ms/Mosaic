@@ -37,7 +37,7 @@ import (
 	"github.com/skr1ms/mosaic/internal/partner"
 	"github.com/skr1ms/mosaic/migrations"
 	"github.com/skr1ms/mosaic/pkg/db"
-	"github.com/skr1ms/mosaic/pkg/utils"
+	"github.com/skr1ms/mosaic/pkg/jwt"
 )
 
 func main() {
@@ -47,7 +47,7 @@ func main() {
 	}
 
 	// Создаем JWT сервис
-	jwtService := utils.NewJWT(cfg.Auth.SecretKey, cfg.Auth.RefreshSecretKey)
+	jwtService := jwt.NewJWT(cfg.Auth.SecretKey, cfg.Auth.RefreshSecretKey)
 
 	migrations.Init(cfg)
 	database := db.NewDB(cfg)

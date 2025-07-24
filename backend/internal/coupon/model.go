@@ -4,25 +4,28 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/skr1ms/mosaic/internal/partner"
 )
 
 type Coupon struct {
-	ID               uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	Code             string     `gorm:"unique;not null;size:12;index" json:"code"` // 12-значный код купона в формате XXXX-XXXX-XXXX
-	PartnerID        uuid.UUID  `gorm:"type:uuid;not null;index:idx_coupons_partner_status,priority:1;index:idx_coupons_partner_id" json:"partner_id"`
-	Size             string     `gorm:"type:coupon_size;not null;index:idx_coupons_filters,priority:1" json:"size"`
-	Style            string     `gorm:"type:coupon_style;not null;index:idx_coupons_filters,priority:2" json:"style"`
-	Status           string     `gorm:"type:coupon_status;default:'new';index:idx_coupons_status;index:idx_coupons_partner_status,priority:2;index:idx_coupons_filters,priority:3" json:"status"`
-	IsPurchased      bool       `gorm:"default:false;index:idx_coupons_purchased" json:"is_purchased"`
-	PurchaseEmail    *string    `gorm:"size:255" json:"purchase_email"`
-	PurchasedAt      *time.Time `gorm:"index:idx_coupons_purchased_at" json:"purchased_at"`
-	UsedAt           *time.Time `gorm:"index:idx_coupons_used_at" json:"used_at"`
-	OriginalImageURL *string    `gorm:"size:255" json:"original_image_url"`
-	PreviewURL       *string    `gorm:"size:255" json:"preview_url"`
-	SchemaURL        *string    `gorm:"size:255" json:"schema_url"`
-	SchemaSentEmail  *string    `gorm:"size:255" json:"schema_sent_email"`
-	SchemaSentAt     *time.Time `json:"schema_sent_at"`
-	CreatedAt        time.Time  `gorm:"index:idx_coupons_created_at" json:"created_at"`
+	ID               uuid.UUID       `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	PartnerID        uuid.UUID       `gorm:"type:uuid;not null" json:"partner_id"`
+	Partner          partner.Partner `gorm:"constraint:OnDelete:CASCADE;"`
+	IsBlocked        bool            `gorm:"default:false;index:idx_coupons_blocked" json:"is_blocked"`
+	Code             string          `gorm:"unique;not null;size:12;index" json:"code"` // 12-значный код купона в формате XXXX-XXXX-XXXX
+	Size             string          `gorm:"type:coupon_size;not null;index:idx_coupons_filters,priority:1" json:"size"`
+	Style            string          `gorm:"type:coupon_style;not null;index:idx_coupons_filters,priority:2" json:"style"`
+	Status           string          `gorm:"type:coupon_status;default:'new';index:idx_coupons_status;index:idx_coupons_partner_status,priority:2;index:idx_coupons_filters,priority:3" json:"status"`
+	IsPurchased      bool            `gorm:"default:false;index:idx_coupons_purchased" json:"is_purchased"`
+	PurchaseEmail    *string         `gorm:"size:255" json:"purchase_email"`
+	PurchasedAt      *time.Time      `gorm:"index:idx_coupons_purchased_at" json:"purchased_at"`
+	UsedAt           *time.Time      `gorm:"index:idx_coupons_used_at" json:"used_at"`
+	OriginalImageURL *string         `gorm:"size:255" json:"original_image_url"`
+	PreviewURL       *string         `gorm:"size:255" json:"preview_url"`
+	SchemaURL        *string         `gorm:"size:255" json:"schema_url"`
+	SchemaSentEmail  *string         `gorm:"size:255" json:"schema_sent_email"`
+	SchemaSentAt     *time.Time      `json:"schema_sent_at"`
+	CreatedAt        time.Time       `gorm:"index:idx_coupons_created_at" json:"created_at"`
 }
 
 // - idx_coupons_partner_id: быстрый поиск купонов по партнеру

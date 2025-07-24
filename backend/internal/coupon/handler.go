@@ -8,18 +8,27 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/skr1ms/mosaic/internal/partner"
 	"gorm.io/gorm"
 )
 
-type Handler struct {
+type CouponHendlerDeps struct {
+	couponRepository  *CouponRepository
+	partnerRepository *partner.PartnerRepository
+}
+
+type CouponHandler struct {
 	fiber.Router
-	repo *CouponRepository
+	deps *CouponHendlerDeps
 }
 
 func NewCouponHandler(router fiber.Router, db *gorm.DB) {
-	handler := &Handler{
+	handler := &CouponHandler{
 		Router: router,
-		repo:   NewRepository(db),
+		deps: &CouponHendlerDeps{
+			couponRepository:  NewCouponRepository(db),
+			partnerRepository: partner.NewPartnerRepository(db),
+		},
 	}
 
 	api := handler.Group("/coupons")
@@ -48,7 +57,7 @@ func NewCouponHandler(router fiber.Router, db *gorm.DB) {
 // @Success 200 {array} map[string]interface{} "Список купонов"
 // @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
 // @Router /coupons [get]
-func (h *Handler) GetCoupons(c *fiber.Ctx) error {
+func (handler *CouponHandler) GetCoupons(c *fiber.Ctx) error {
 	code := c.Query("code")
 	status := c.Query("status")
 	size := c.Query("size")
@@ -62,7 +71,7 @@ func (h *Handler) GetCoupons(c *fiber.Ctx) error {
 		}
 	}
 
-	coupons, err := h.repo.Search(code, status, size, style, partnerID)
+	coupons, err := handler.deps.couponRepository.Search(code, status, size, style, partnerID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to fetch coupons"})
 	}
@@ -80,14 +89,14 @@ func (h *Handler) GetCoupons(c *fiber.Ctx) error {
 // @Failure 400 {object} map[string]interface{} "Неверный ID купона"
 // @Failure 404 {object} map[string]interface{} "Купон не найден"
 // @Router /coupons/{id} [get]
-func (h *Handler) GetCouponByID(c *fiber.Ctx) error {
+func (handler *CouponHandler) GetCouponByID(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid coupon ID"})
 	}
 
-	coupon, err := h.repo.GetByID(id)
+	coupon, err := handler.deps.couponRepository.GetByID(id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Coupon not found"})
 	}
@@ -104,10 +113,10 @@ func (h *Handler) GetCouponByID(c *fiber.Ctx) error {
 // @Success 200 {object} map[string]interface{} "Информация о купоне"
 // @Failure 404 {object} map[string]interface{} "Купон не найден"
 // @Router /coupons/code/{code} [get]
-func (h *Handler) GetCouponByCode(c *fiber.Ctx) error {
+func (handler *CouponHandler) GetCouponByCode(c *fiber.Ctx) error {
 	code := c.Params("code")
 
-	coupon, err := h.repo.GetByCode(code)
+	coupon, err := handler.deps.couponRepository.GetByCode(code)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Coupon not found"})
 	}
@@ -126,25 +135,19 @@ func (h *Handler) GetCouponByCode(c *fiber.Ctx) error {
 // @Failure 400 {object} map[string]interface{} "Ошибка в запросе"
 // @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
 // @Router /coupons [post]
-func (h *Handler) CreateCoupons(c *fiber.Ctx) error {
-	var req CreateCouponsRequest
+func (handler *CouponHandler) CreateCoupons(c *fiber.Ctx) error {
+	var req CreateCouponRequest
 
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	if req.Count <= 0 || req.Count > 10000 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Count must be between 1 and 10000"})
-	}
-
-	// Генерируем купоны
-	coupons, err := h.generateCoupons(req.Count, req.PartnerID, req.Size, req.Style)
+	coupons, err := handler.generateCoupons(req.Count, req.PartnerID, string(req.Size), string(req.Style))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to generate coupons"})
 	}
 
-	// Сохраняем купоны в базу данных
-	if err := h.repo.CreateBatch(coupons); err != nil {
+	if err := handler.deps.couponRepository.CreateBatch(coupons); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to save coupons"})
 	}
 
@@ -167,7 +170,7 @@ func (h *Handler) CreateCoupons(c *fiber.Ctx) error {
 // @Failure 400 {object} map[string]interface{} "Неверный ID купона"
 // @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
 // @Router /coupons/{id}/activate [put]
-func (h *Handler) ActivateCoupon(c *fiber.Ctx) error {
+func (handler *CouponHandler) ActivateCoupon(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -184,7 +187,7 @@ func (h *Handler) ActivateCoupon(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	if err := h.repo.ActivateCoupon(id, req.OriginalImageURL, req.PreviewURL, req.SchemaURL); err != nil {
+	if err := handler.deps.couponRepository.ActivateCoupon(id, req.OriginalImageURL, req.PreviewURL, req.SchemaURL); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to activate coupon"})
 	}
 
@@ -201,14 +204,14 @@ func (h *Handler) ActivateCoupon(c *fiber.Ctx) error {
 // @Failure 400 {object} map[string]interface{} "Неверный ID купона"
 // @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
 // @Router /coupons/{id}/reset [put]
-func (h *Handler) ResetCoupon(c *fiber.Ctx) error {
+func (handler *CouponHandler) ResetCoupon(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid coupon ID"})
 	}
 
-	if err := h.repo.ResetCoupon(id); err != nil {
+	if err := handler.deps.couponRepository.ResetCoupon(id); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to reset coupon"})
 	}
 
@@ -227,7 +230,7 @@ func (h *Handler) ResetCoupon(c *fiber.Ctx) error {
 // @Failure 400 {object} map[string]interface{} "Неверный ID купона"
 // @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
 // @Router /coupons/{id}/send-schema [put]
-func (h *Handler) SendSchema(c *fiber.Ctx) error {
+func (handler *CouponHandler) SendSchema(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -242,7 +245,7 @@ func (h *Handler) SendSchema(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	if err := h.repo.SendSchema(id, req.Email); err != nil {
+	if err := handler.deps.couponRepository.SendSchema(id, req.Email); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to send schema"})
 	}
 
@@ -261,7 +264,7 @@ func (h *Handler) SendSchema(c *fiber.Ctx) error {
 // @Failure 400 {object} map[string]interface{} "Неверный ID купона"
 // @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
 // @Router /coupons/{id}/purchase [put]
-func (h *Handler) MarkAsPurchased(c *fiber.Ctx) error {
+func (handler *CouponHandler) MarkAsPurchased(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -276,7 +279,7 @@ func (h *Handler) MarkAsPurchased(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	if err := h.repo.MarkAsPurchased(id, req.PurchaseEmail); err != nil {
+	if err := handler.deps.couponRepository.MarkAsPurchased(id, req.PurchaseEmail); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to mark as purchased"})
 	}
 
@@ -293,14 +296,14 @@ func (h *Handler) MarkAsPurchased(c *fiber.Ctx) error {
 // @Failure 400 {object} map[string]interface{} "Неверный ID купона"
 // @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
 // @Router /coupons/{id} [delete]
-func (h *Handler) DeleteCoupon(c *fiber.Ctx) error {
+func (handler *CouponHandler) DeleteCoupon(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid coupon ID"})
 	}
 
-	if err := h.repo.Delete(id); err != nil {
+	if err := handler.deps.couponRepository.Delete(id); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to delete coupon"})
 	}
 
@@ -316,7 +319,7 @@ func (h *Handler) DeleteCoupon(c *fiber.Ctx) error {
 // @Success 200 {object} map[string]interface{} "Статистика по купонам"
 // @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
 // @Router /coupons/statistics [get]
-func (h *Handler) GetStatistics(c *fiber.Ctx) error {
+func (handler *CouponHandler) GetStatistics(c *fiber.Ctx) error {
 	partnerIDStr := c.Query("partner_id")
 
 	var partnerID *uuid.UUID
@@ -326,7 +329,7 @@ func (h *Handler) GetStatistics(c *fiber.Ctx) error {
 		}
 	}
 
-	stats, err := h.repo.GetStatistics(partnerID)
+	stats, err := handler.deps.couponRepository.GetStatistics(partnerID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get statistics"})
 	}
@@ -335,22 +338,26 @@ func (h *Handler) GetStatistics(c *fiber.Ctx) error {
 }
 
 // generateCoupons генерирует указанное количество купонов
-func (h *Handler) generateCoupons(count int, partnerID uuid.UUID, size, style string) ([]*Coupon, error) {
+func (handler *CouponHandler) generateCoupons(count int, partnerID uuid.UUID, size, style string) ([]*Coupon, error) {
 	// Получаем код партнера (первые 4 цифры)
-	partnerCode := "0000"
+	partner, err := handler.deps.partnerRepository.GetByID(partnerID)
+	if err != nil {
+		return nil, err
+	}
+	partnerCode := partner.PartnerCode
 
 	coupons := make([]*Coupon, 0, count)
 
 	for i := 0; i < count; i++ {
 		// Генерируем последние 8 цифр
-		randomPart, err := h.generateRandomCode(8)
+		randomPart, err := handler.generateRandomCode(8)
 		if err != nil {
 			return nil, err
 		}
 
 		// Формируем полный код: XXXX-XXXX-XXXX
 		code := fmt.Sprintf("%s-%s-%s",
-			partnerCode,
+			strconv.Itoa(int(partnerCode)),
 			randomPart[:4],
 			randomPart[4:8])
 
@@ -369,7 +376,7 @@ func (h *Handler) generateCoupons(count int, partnerID uuid.UUID, size, style st
 }
 
 // generateRandomCode генерирует случайный числовой код указанной длины
-func (h *Handler) generateRandomCode(length int) (string, error) {
+func (handler *CouponHandler) generateRandomCode(length int) (string, error) {
 	code := ""
 	for i := 0; i < length; i++ {
 		n, err := rand.Int(rand.Reader, big.NewInt(10))

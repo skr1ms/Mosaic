@@ -2,21 +2,22 @@ package partner
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/skr1ms/mosaic/pkg/bcrypt"
+	"github.com/skr1ms/mosaic/pkg/jwt"
 	"github.com/skr1ms/mosaic/pkg/middleware"
-	"github.com/skr1ms/mosaic/pkg/utils"
 	"gorm.io/gorm"
 )
 
 type PartnerHandler struct {
 	fiber.Router
 	repo       *PartnerRepository
-	jwtService *utils.JWT
+	jwtService *jwt.JWT
 }
 
-func NewPartnerHandler(router fiber.Router, db *gorm.DB, jwtService *utils.JWT) {
+func NewPartnerHandler(router fiber.Router, db *gorm.DB, jwtService *jwt.JWT) {
 	handler := &PartnerHandler{
 		Router:     router,
-		repo:       NewRepository(db),
+		repo:       NewPartnerRepository(db),
 		jwtService: jwtService,
 	}
 
@@ -51,19 +52,26 @@ func NewPartnerHandler(router fiber.Router, db *gorm.DB, jwtService *utils.JWT) 
 // @Failure 403 {object} map[string]interface{} "Аккаунт заблокирован"
 // @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
 // @Router /partner/login [post]
-func (h *PartnerHandler) Login(c *fiber.Ctx) error {
+func (handler *PartnerHandler) Login(c *fiber.Ctx) error {
 	var req LoginRequest
 
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	partner, err := h.repo.GetByLogin(req.Login)
+	if err := middleware.ValidateStruct(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   "Validation failed",
+			"details": err.Error(),
+		})
+	}
+
+	partner, err := handler.repo.GetByLogin(req.Login)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid credentials"})
 	}
 
-	if !utils.CheckPassword(req.Password, partner.Password) {
+	if !bcrypt.CheckPassword(req.Password, partner.Password) {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid credentials"})
 	}
 
@@ -71,12 +79,12 @@ func (h *PartnerHandler) Login(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Account is blocked"})
 	}
 
-	tokenPair, err := h.jwtService.CreateTokenPair(partner.ID, partner.Login, "partner")
+	tokenPair, err := handler.jwtService.CreateTokenPair(partner.ID, partner.Login, "partner")
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to generate tokens"})
 	}
 
-	if err := h.repo.UpdateLastLogin(partner.ID); err != nil {
+	if err := handler.repo.UpdateLastLogin(partner.ID); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to update login time"})
 	}
 
@@ -106,14 +114,14 @@ func (h *PartnerHandler) Login(c *fiber.Ctx) error {
 // @Failure 400 {object} map[string]interface{} "Ошибка в запросе"
 // @Failure 401 {object} map[string]interface{} "Неверный или истекший refresh токен"
 // @Router /partner/refresh [post]
-func (h *PartnerHandler) RefreshToken(c *fiber.Ctx) error {
+func (handler *PartnerHandler) RefreshToken(c *fiber.Ctx) error {
 	var req RefreshTokenRequest
 
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	tokenPair, err := h.jwtService.RefreshTokens(req.RefreshToken)
+	tokenPair, err := handler.jwtService.RefreshTokens(req.RefreshToken)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid or expired refresh token"})
 	}
@@ -135,7 +143,7 @@ func (h *PartnerHandler) RefreshToken(c *fiber.Ctx) error {
 // @Failure 401 {object} map[string]interface{} "Не авторизован"
 // @Failure 403 {object} map[string]interface{} "Нет прав доступа"
 // @Router /partner/dashboard [get]
-func (h *PartnerHandler) GetDashboard(c *fiber.Ctx) error {
+func (handler *PartnerHandler) GetDashboard(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "Partner dashboard"})
 }
 
@@ -150,13 +158,13 @@ func (h *PartnerHandler) GetDashboard(c *fiber.Ctx) error {
 // @Failure 403 {object} map[string]interface{} "Нет прав доступа"
 // @Failure 404 {object} map[string]interface{} "Партнер не найден"
 // @Router /partner/profile [get]
-func (h *PartnerHandler) GetProfile(c *fiber.Ctx) error {
-	claims, err := utils.GetClaimsFromFiberContext(c)
+func (handler *PartnerHandler) GetProfile(c *fiber.Ctx) error {
+	claims, err := jwt.GetClaimsFromFiberContext(c)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
-	partner, err := h.repo.GetByID(claims.UserID)
+	partner, err := handler.repo.GetByID(claims.UserID)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Partner not found"})
 	}
@@ -188,7 +196,7 @@ func (h *PartnerHandler) GetProfile(c *fiber.Ctx) error {
 // @Security BearerAuth
 // @Failure 403 {object} map[string]interface{} "Нет прав доступа"
 // @Router /partner/profile [put]
-func (h *PartnerHandler) UpdateProfile(c *fiber.Ctx) error {
+func (handler *PartnerHandler) UpdateProfile(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 		"error": "Partner profile can only be updated by administrator",
 	})
@@ -204,8 +212,8 @@ func (h *PartnerHandler) UpdateProfile(c *fiber.Ctx) error {
 // @Failure 401 {object} map[string]interface{} "Не авторизован"
 // @Failure 403 {object} map[string]interface{} "Нет прав доступа"
 // @Router /partner/coupons [get]
-func (h *PartnerHandler) GetMyCoupons(c *fiber.Ctx) error {
-	claims, err := utils.GetClaimsFromFiberContext(c)
+func (handler *PartnerHandler) GetMyCoupons(c *fiber.Ctx) error {
+	claims, err := jwt.GetClaimsFromFiberContext(c)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
 	}
@@ -227,7 +235,7 @@ func (h *PartnerHandler) GetMyCoupons(c *fiber.Ctx) error {
 // @Failure 401 {object} map[string]interface{} "Не авторизован"
 // @Failure 403 {object} map[string]interface{} "Нет прав доступа"
 // @Router /partner/coupons/{id} [get]
-func (h *PartnerHandler) GetCouponDetails(c *fiber.Ctx) error {
+func (handler *PartnerHandler) GetCouponDetails(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "Coupon details"})
 }
 
@@ -241,8 +249,8 @@ func (h *PartnerHandler) GetCouponDetails(c *fiber.Ctx) error {
 // @Failure 401 {object} map[string]interface{} "Не авторизован"
 // @Failure 403 {object} map[string]interface{} "Нет прав доступа"
 // @Router /partner/statistics [get]
-func (h *PartnerHandler) GetMyStatistics(c *fiber.Ctx) error {
-	claims, err := utils.GetClaimsFromFiberContext(c)
+func (handler *PartnerHandler) GetMyStatistics(c *fiber.Ctx) error {
+	claims, err := jwt.GetClaimsFromFiberContext(c)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
 	}
@@ -263,7 +271,7 @@ func (h *PartnerHandler) GetMyStatistics(c *fiber.Ctx) error {
 // @Failure 401 {object} map[string]interface{} "Не авторизован"
 // @Failure 403 {object} map[string]interface{} "Нет прав доступа"
 // @Router /partner/statistics/sales [get]
-func (h *PartnerHandler) GetSalesStatistics(c *fiber.Ctx) error {
+func (handler *PartnerHandler) GetSalesStatistics(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "Sales statistics"})
 }
 
@@ -277,6 +285,6 @@ func (h *PartnerHandler) GetSalesStatistics(c *fiber.Ctx) error {
 // @Failure 401 {object} map[string]interface{} "Не авторизован"
 // @Failure 403 {object} map[string]interface{} "Нет прав доступа"
 // @Router /partner/statistics/usage [get]
-func (h *PartnerHandler) GetUsageStatistics(c *fiber.Ctx) error {
+func (handler *PartnerHandler) GetUsageStatistics(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "Usage statistics"})
 }

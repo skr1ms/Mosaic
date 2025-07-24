@@ -11,8 +11,8 @@ import (
 
 // ProcessingParams содержит параметры обработки изображения
 type ProcessingParams struct {
-	Style    string                 `json:"style"`
-	Settings map[string]interface{} `json:"settings"`
+	Style    string                 `json:"style" validate:"required,oneof=grayscale skin_tones pop_art max_colors"`
+	Settings map[string]interface{} `json:"settings" validate:"required"`
 }
 
 // Value реализует интерфейс driver.Valuer для хранения JSON в БД
