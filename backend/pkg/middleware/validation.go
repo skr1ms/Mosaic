@@ -3,7 +3,7 @@ package middleware
 import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"github.com/skr1ms/mosaic/pkg/validatePartnerData"
+	validatepartnerdata "github.com/skr1ms/mosaic/pkg/validatePartnerData"
 )
 
 var validate *validator.Validate
@@ -72,8 +72,8 @@ func getErrorMessage(err validator.FieldError) string {
 		return "Пароль должен содержать минимум 8 символов, заглавную букву, цифру и специальный символ"
 	case "secure_login":
 		return "Логин должен содержать минимум 5 символов и не содержать специальных символов"
-	case "russian_phone":
-		return "Неверный формат российского номера телефона"
+	case "international_phone":
+		return "Неверный формат номера телефона"
 	case "telegram_link":
 		return "Неверный формат ссылки на Telegram"
 	case "whatsapp_link":

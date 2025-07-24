@@ -20,7 +20,7 @@ type CreatePartnerRequest struct {
 	WildberriesLink string `json:"wildberries_link" validate:"omitempty,url"`
 	Email           string `json:"email" validate:"omitempty,email"`
 	Address         string `json:"address" validate:"omitempty"`
-	Phone           string `json:"phone" validate:"required,russian_phone"`
+	Phone           string `json:"phone" validate:"required,international_phone"`
 	Telegram        string `json:"telegram" validate:"omitempty,telegram_link"`
 	Whatsapp        string `json:"whatsapp" validate:"omitempty,whatsapp_link"`
 	AllowSales      bool   `json:"allow_sales"`
@@ -38,7 +38,7 @@ type UpdatePartnerRequest struct {
 	WildberriesLink *string `json:"wildberries_link" validate:"omitempty,url"`
 	Email           *string `json:"email" validate:"omitempty,email"`
 	Address         *string `json:"address" validate:"omitempty"`
-	Phone           *string `json:"phone" validate:"omitempty,russian_phone"`
+	Phone           *string `json:"phone" validate:"omitempty,international_phone"`
 	Telegram        *string `json:"telegram" validate:"omitempty,telegram_link"`
 	Whatsapp        *string `json:"whatsapp" validate:"omitempty,whatsapp_link"`
 	AllowSales      *bool   `json:"allow_sales"`
