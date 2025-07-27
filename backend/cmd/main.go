@@ -76,23 +76,23 @@ func main() {
 
 	// API
 	api := app.Group("/api")
+
 	// repository
 	adminRepo := admin.NewAdminRepository(database.DB)
 	couponRepo := coupon.NewCouponRepository(database.DB)
-	imageRepo := image.NewRepository(database.DB)
 	partnerRepo := partner.NewPartnerRepository(database.DB)
-	imageRepo = image.NewRepository(database.DB)
+	imageRepo := image.NewRepository(database.DB)
 
 	// service
 	mailSender := email.NewMailer(cfg, &logger)
 	recaptchService := recaptcha.NewVerifier(cfg.RecaptchaConfig.SecretKey, 0.5)
 	jwtService := jwt.NewJWT(cfg.AuthConfig.AccessTokenSecret, cfg.AuthConfig.RefreshTokenSecret)
-	authService := auth.NewAuthService(
-		partner.NewPartnerRepository(database.DB),
-		admin.NewAdminRepository(database.DB),
-		jwtService,
-		&logger,
-	)
+	authService := auth.NewAuthService(&auth.AuthServiceDeps{
+		PartnerRepository: partnerRepo,
+		AdminRepository:   adminRepo,
+		JwtService:        jwtService,
+		Logger:            &logger,
+	})
 
 	adminService := admin.NewAdminService(&admin.AdminServiceDeps{
 		AdminRepository:   adminRepo,
@@ -102,25 +102,39 @@ func main() {
 		Logger:            &logger,
 	})
 
-	partnerService := partner.NewPartnerService(
-		partnerRepo,
-		recaptchService,
-		jwtService,
-		mailSender,
-		cfg,
-		&logger,
-	)
+	partnerService := partner.NewPartnerService(&partner.PartnerServiceDeps{
+		PartnerRepository: partnerRepo,
+		Recaptcha:         recaptchService,
+		JwtService:        jwtService,
+		MailSender:        mailSender,
+		Config:            cfg,
+		Logger:            &logger,
+	})
 
-	imageService := image.NewImageService(
-		imageRepo,
-		couponRepo,
-		&logger,
-	)
+	couponService := coupon.NewCouponService(&coupon.CouponServiceDeps{
+		CouponRepository: couponRepo,
+		Logger:           &logger,
+	})
+
+	imageService := image.NewImageService(&image.ImageServiceDeps{
+		ImageRepository:  imageRepo,
+		CouponRepository: couponRepo,
+		Logger:           &logger,
+	})
+
+	publicService := public.NewPublicService(&public.PublicServiceDeps{
+		CouponRepository:  couponRepo,
+		ImageRepository:   imageRepo,
+		PartnerRepository: partnerRepo,
+		ImageService:      imageService,
+		Logger:            &logger,
+	})
 
 	// handlers
 	admin.NewAdminHandler(api, &admin.AdminHandlerDeps{
-		AdminService:      adminService,
-		JwtService:        jwtService,
+		AdminService: adminService,
+		JwtService:   jwtService,
+		Logger:       &logger,
 	})
 
 	auth.NewAuthHandler(api, &auth.AuthHandlerDeps{
@@ -138,20 +152,19 @@ func main() {
 	})
 
 	coupon.NewCouponHandler(api, &coupon.CouponHandlerDeps{
-		CouponRepository: couponRepo,
+		CouponService: couponService,
+		Logger:        &logger,
 	})
 
 	image.NewImageProcessingHandler(api, &image.ImageHandlerDeps{
 		ImageRepository:  imageRepo,
 		CouponRepository: couponRepo,
+		Logger:           &logger,
 	})
 
-	public.NewPublicHandler(app, &public.PublicService{
-		CouponRepository:  couponRepo,
-		ImageRepository:   imageRepo,
-		PartnerRepository: partnerRepo,
-		ImageService:      imageService,
-		Logger:            &logger,
+	public.NewPublicHandler(app, &public.PublicHandlerDeps{
+		PublicService: publicService,
+		Logger:        &logger,
 	})
 
 	log.Info().Msg("Server is running on port 3000")

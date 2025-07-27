@@ -11,7 +11,7 @@ import (
 
 type Verifier struct {
 	secret     string
-	minScore   float64 
+	minScore   float64
 	httpClient *http.Client
 }
 
@@ -19,7 +19,7 @@ func NewVerifier(secret string, minScore float64) *Verifier {
 	return &Verifier{
 		secret:     secret,
 		minScore:   minScore,
-		httpClient: &http.Client{Timeout: 5 * time.Second}, 
+		httpClient: &http.Client{Timeout: 5 * time.Second},
 	}
 }
 

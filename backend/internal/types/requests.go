@@ -14,13 +14,13 @@ type EditImageRequest struct {
 
 // ProcessImageRequest - запрос обработки изображения
 type ProcessImageRequest struct {
-	Style       string                 `json:"style" validate:"required,oneof=grayscale skin_tones pop_art max_colors"`
-	UseAI       bool                   `json:"use_ai"`       // Использовать AI обработку
-	Lighting    string                 `json:"lighting"`     // sun, moon, venus
-	Contrast    string                 `json:"contrast"`     // low, high
-	Brightness  float64                `json:"brightness"`   // -100 до 100
-	Saturation  float64                `json:"saturation"`   // -100 до 100
-	Settings    map[string]interface{} `json:"settings"`     // Дополнительные настройки
+	Style      string                 `json:"style" validate:"required,oneof=grayscale skin_tones pop_art max_colors"`
+	UseAI      bool                   `json:"use_ai"`     // Использовать AI обработку
+	Lighting   string                 `json:"lighting"`   // sun, moon, venus
+	Contrast   string                 `json:"contrast"`   // low, high
+	Brightness float64                `json:"brightness"` // -100 до 100
+	Saturation float64                `json:"saturation"` // -100 до 100
+	Settings   map[string]interface{} `json:"settings"`   // Дополнительные настройки
 }
 
 // GenerateSchemaRequest - запрос создания схемы

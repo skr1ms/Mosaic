@@ -182,6 +182,116 @@ var (
 		Message:    "Failed to export coupons",
 		HTTPStatus: http.StatusInternalServerError,
 	}
+	ErrFailedToFindAllAdmins = APIError{
+		Code:       "ADMINS_FETCH_FAILED",
+		Message:    "Failed to get admins list",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToFindAdminByLogin = APIError{
+		Code:       "ADMIN_FETCH_FAILED",
+		Message:    "Failed to get admin by login",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToFindAdminByID = APIError{
+		Code:       "ADMIN_FETCH_FAILED",
+		Message:    "Failed to get admin by ID",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToFindAllPartners = APIError{
+		Code:       "PARTNERS_FETCH_FAILED",
+		Message:    "Failed to get partners list",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToFindPartnerByLogin = APIError{
+		Code:       "PARTNER_FETCH_FAILED",
+		Message:    "Failed to get partner by login",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToFindPartnerByID = APIError{
+		Code:       "PARTNER_FETCH_FAILED",
+		Message:    "Failed to get partner by ID",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToFindAllCoupons = APIError{
+		Code:       "COUPONS_FETCH_FAILED",
+		Message:    "Failed to get coupons list",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToFindCouponByID = APIError{
+		Code:       "COUPON_FETCH_FAILED",
+		Message:    "Failed to get coupon by ID",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToFindAllImages = APIError{
+		Code:       "IMAGES_FETCH_FAILED",
+		Message:    "Failed to get images list",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToFindImageByID = APIError{
+		Code:       "IMAGE_FETCH_FAILED",
+		Message:    "Failed to get image by ID",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToFindImageByTaskID = APIError{
+		Code:       "IMAGE_FETCH_FAILED",
+		Message:    "Failed to get image by task ID",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToFindImageByCouponID = APIError{
+		Code:       "IMAGE_FETCH_FAILED",
+		Message:    "Failed to get image by coupon ID",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToUpdateImage = APIError{
+		Code:       "IMAGE_UPDATE_FAILED",
+		Message:    "Failed to update image",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrImageNotFound = APIError{
+		Code:       "IMAGE_NOT_FOUND",
+		Message:    "Image not found",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToDeleteImage = APIError{
+		Code:       "IMAGE_DELETE_FAILED",
+		Message:    "Failed to delete image",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToUnblockCoupons = APIError{
+		Code:       "COUPONS_UNBLOCK_FAILED",
+		Message:    "Failed to unblock coupons",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToResetCoupons = APIError{
+		Code:       "COUPONS_RESET_FAILED",
+		Message:    "Failed to reset coupons",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToDeleteCoupons = APIError{
+		Code:       "COUPONS_DELETE_FAILED",
+		Message:    "Failed to delete coupons",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrPartnerAlreadyExists = APIError{
+		Code:       "PARTNER_ALREADY_EXISTS",
+		Message:    "Partner with this login already exists",
+		HTTPStatus: http.StatusConflict,
+	}
+	ErrFailedToGeneratePartnerCode = APIError{
+		Code:       "PARTNER_CODE_GENERATION_FAILED",
+		Message:    "Failed to generate partner code",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrMaxPartnerCodeReached = APIError{
+		Code:       "PARTNER_CODE_MAX_REACHED",
+		Message:    "Max partner code reached",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToBlockCoupons = APIError{
+		Code:       "COUPONS_BLOCK_FAILED",
+		Message:    "Failed to block coupons",
+		HTTPStatus: http.StatusInternalServerError,
+	}
 )
 
 // IsAPIError проверяет, является ли ошибка типом APIError

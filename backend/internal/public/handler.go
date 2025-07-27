@@ -2,18 +2,24 @@ package public
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/rs/zerolog"
 	"github.com/skr1ms/mosaic/internal/types"
 )
 
-type PublicHandler struct {
-	fiber.Router
-	service *PublicService
+type PublicHandlerDeps struct {
+	PublicService *PublicService
+	Logger        *zerolog.Logger
 }
 
-func NewPublicHandler(router fiber.Router, service *PublicService) {
+type PublicHandler struct {
+	fiber.Router
+	deps *PublicHandlerDeps
+}
+
+func NewPublicHandler(router fiber.Router, deps *PublicHandlerDeps) {
 	handler := &PublicHandler{
-		Router:  router,
-		service: service,
+		Router: router,
+		deps:   deps,
 	}
 
 	// Публичные эндпоинты (без авторизации)
@@ -51,18 +57,20 @@ func NewPublicHandler(router fiber.Router, service *PublicService) {
 // @Success 200 {object} map[string]interface{} "Информация о партнере"
 // @Failure 404 {object} map[string]interface{} "Партнер не найден"
 // @Router /api/partners/{domain}/info [get]
-func (h *PublicHandler) GetPartnerByDomain(c *fiber.Ctx) error {
+func (handler *PublicHandler) GetPartnerByDomain(c *fiber.Ctx) error {
 	domain := c.Params("domain")
 
-	result, err := h.service.GetPartnerByDomain(domain)
+	result, err := handler.deps.PublicService.deps.PartnerRepository.GetByDomain(domain)
 	if err != nil {
 		if apiErr, ok := IsAPIError(err); ok {
+			handler.deps.Logger.Error().Err(err).Msg(apiErr.Message)
 			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{
-				"error": apiErr.Message,
+				"error": apiErr.Error(),
 			})
 		}
+		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Внутренняя ошибка сервера",
+			"error": ErrInternalServerError.Error(),
 		})
 	}
 
@@ -79,18 +87,20 @@ func (h *PublicHandler) GetPartnerByDomain(c *fiber.Ctx) error {
 // @Failure 400 {object} map[string]interface{} "Неверный формат кода"
 // @Failure 404 {object} map[string]interface{} "Купон не найден"
 // @Router /api/coupons/{code} [get]
-func (h *PublicHandler) GetCouponByCode(c *fiber.Ctx) error {
+func (handler *PublicHandler) GetCouponByCode(c *fiber.Ctx) error {
 	code := c.Params("code")
 
-	result, err := h.service.GetCouponByCode(code)
+	result, err := handler.deps.PublicService.GetCouponByCode(code)
 	if err != nil {
 		if apiErr, ok := IsAPIError(err); ok {
+			handler.deps.Logger.Error().Err(err).Msg(apiErr.Message)
 			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{
-				"error": apiErr.Message,
+				"error": apiErr.Error(),
 			})
 		}
+		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Внутренняя ошибка сервера",
+			"error": ErrInternalServerError.Error(),
 		})
 	}
 
@@ -110,25 +120,27 @@ func (h *PublicHandler) GetCouponByCode(c *fiber.Ctx) error {
 // @Failure 404 {object} map[string]interface{} "Купон не найден"
 // @Failure 409 {object} map[string]interface{} "Купон уже использован"
 // @Router /api/coupons/{code}/activate [post]
-func (h *PublicHandler) ActivateCoupon(c *fiber.Ctx) error {
+func (handler *PublicHandler) ActivateCoupon(c *fiber.Ctx) error {
 	code := c.Params("code")
 
 	var req ActivateCouponRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Ошибка в запросе",
+			"error": ErrBadRequest.Error(),
 		})
 	}
 
-	result, err := h.service.ActivateCoupon(code, req)
+	result, err := handler.deps.PublicService.ActivateCoupon(code, req)
 	if err != nil {
 		if apiErr, ok := IsAPIError(err); ok {
+			handler.deps.Logger.Error().Err(err).Msg(apiErr.Message)
 			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{
-				"error": apiErr.Message,
+				"error": apiErr.Error(),
 			})
 		}
+		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Внутренняя ошибка сервера",
+			"error": ErrInternalServerError.Error(),
 		})
 	}
 
@@ -147,11 +159,11 @@ func (h *PublicHandler) ActivateCoupon(c *fiber.Ctx) error {
 // @Failure 400 {object} map[string]interface{} "Ошибка в запросе"
 // @Failure 413 {object} map[string]interface{} "Файл слишком большой"
 // @Router /api/images/upload [post]
-func (h *PublicHandler) UploadImage(c *fiber.Ctx) error {
+func (handler *PublicHandler) UploadImage(c *fiber.Ctx) error {
 	couponID := c.FormValue("coupon_id")
 	if couponID == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "ID купона обязателен",
+			"error": ErrCouponIDRequired.Error(),
 		})
 	}
 
@@ -159,19 +171,21 @@ func (h *PublicHandler) UploadImage(c *fiber.Ctx) error {
 	file, err := c.FormFile("image")
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Файл изображения обязателен",
+			"error": ErrImageFileRequired.Error(),
 		})
 	}
 
-	result, err := h.service.UploadImage(couponID, file)
+	result, err := handler.deps.PublicService.UploadImage(couponID, file)
 	if err != nil {
 		if apiErr, ok := IsAPIError(err); ok {
+			handler.deps.Logger.Error().Err(err).Msg(apiErr.Message)
 			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{
-				"error": apiErr.Message,
+				"error": apiErr.Error(),
 			})
 		}
+		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Внутренняя ошибка сервера",
+			"error": ErrInternalServerError.Error(),
 		})
 	}
 
@@ -190,25 +204,27 @@ func (h *PublicHandler) UploadImage(c *fiber.Ctx) error {
 // @Failure 400 {object} map[string]interface{} "Ошибка в запросе"
 // @Failure 404 {object} map[string]interface{} "Изображение не найдено"
 // @Router /api/images/{id}/edit [post]
-func (h *PublicHandler) EditImage(c *fiber.Ctx) error {
+func (handler *PublicHandler) EditImage(c *fiber.Ctx) error {
 	imageID := c.Params("id")
 
 	var req types.EditImageRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Ошибка в запросе",
+			"error": ErrBadRequest.Error(),
 		})
 	}
 
-	result, err := h.service.EditImage(imageID, req)
+	result, err := handler.deps.PublicService.EditImage(imageID, req)
 	if err != nil {
 		if apiErr, ok := IsAPIError(err); ok {
+			handler.deps.Logger.Error().Err(err).Msg(apiErr.Message)
 			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{
-				"error": apiErr.Message,
+				"error": apiErr.Error(),
 			})
 		}
+		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Внутренняя ошибка сервера",
+			"error": ErrInternalServerError.Error(),
 		})
 	}
 
@@ -227,7 +243,7 @@ func (h *PublicHandler) EditImage(c *fiber.Ctx) error {
 // @Failure 400 {object} map[string]interface{} "Ошибка в запросе"
 // @Failure 404 {object} map[string]interface{} "Изображение не найдено"
 // @Router /api/images/{id}/process [post]
-func (h *PublicHandler) ProcessImage(c *fiber.Ctx) error {
+func (handler *PublicHandler) ProcessImage(c *fiber.Ctx) error {
 	imageID := c.Params("id")
 
 	var req types.ProcessImageRequest
@@ -237,15 +253,17 @@ func (h *PublicHandler) ProcessImage(c *fiber.Ctx) error {
 		})
 	}
 
-	result, err := h.service.ProcessImage(imageID, req)
+	result, err := handler.deps.PublicService.ProcessImage(imageID, req)
 	if err != nil {
 		if apiErr, ok := IsAPIError(err); ok {
+			handler.deps.Logger.Error().Err(err).Msg(apiErr.Message)
 			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{
-				"error": apiErr.Message,
+				"error": apiErr.Error(),
 			})
 		}
+		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Внутренняя ошибка сервера",
+			"error": ErrInternalServerError.Error(),
 		})
 	}
 
@@ -264,25 +282,27 @@ func (h *PublicHandler) ProcessImage(c *fiber.Ctx) error {
 // @Failure 400 {object} map[string]interface{} "Ошибка в запросе"
 // @Failure 404 {object} map[string]interface{} "Изображение не найдено"
 // @Router /api/images/{id}/generate-schema [post]
-func (h *PublicHandler) GenerateSchema(c *fiber.Ctx) error {
+func (handler *PublicHandler) GenerateSchema(c *fiber.Ctx) error {
 	imageID := c.Params("id")
 
 	var req types.GenerateSchemaRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Ошибка в запросе",
+			"error": ErrBadRequest.Error(),
 		})
 	}
 
-	result, err := h.service.GenerateSchema(imageID, req)
+	result, err := handler.deps.PublicService.GenerateSchema(imageID, req)
 	if err != nil {
 		if apiErr, ok := IsAPIError(err); ok {
+			handler.deps.Logger.Error().Err(err).Msg(apiErr.Message)
 			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{
-				"error": apiErr.Message,
+				"error": apiErr.Error(),
 			})
 		}
+		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Внутренняя ошибка сервера",
+			"error": ErrInternalServerError.Error(),
 		})
 	}
 
@@ -298,18 +318,20 @@ func (h *PublicHandler) GenerateSchema(c *fiber.Ctx) error {
 // @Success 200 {file} file "Файл схемы"
 // @Failure 404 {object} map[string]interface{} "Схема не найдена"
 // @Router /api/images/{id}/download [get]
-func (h *PublicHandler) DownloadSchema(c *fiber.Ctx) error {
+func (handler *PublicHandler) DownloadSchema(c *fiber.Ctx) error {
 	imageID := c.Params("id")
 
-	task, err := h.service.GetImageForDownload(imageID)
+	task, err := handler.deps.PublicService.GetImageForDownload(imageID)
 	if err != nil {
 		if apiErr, ok := IsAPIError(err); ok {
+			handler.deps.Logger.Error().Err(err).Msg(apiErr.Message)
 			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{
-				"error": apiErr.Message,
+				"error": apiErr.Error(),
 			})
 		}
+		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Внутренняя ошибка сервера",
+			"error": ErrInternalServerError.Error(),
 		})
 	}
 
@@ -329,7 +351,7 @@ func (h *PublicHandler) DownloadSchema(c *fiber.Ctx) error {
 // @Failure 400 {object} map[string]interface{} "Ошибка в запросе"
 // @Failure 404 {object} map[string]interface{} "Схема не найдена"
 // @Router /api/images/{id}/send-email [post]
-func (h *PublicHandler) SendSchemaToEmail(c *fiber.Ctx) error {
+func (handler *PublicHandler) SendSchemaToEmail(c *fiber.Ctx) error {
 	imageID := c.Params("id")
 
 	var req SendEmailRequest
@@ -339,13 +361,15 @@ func (h *PublicHandler) SendSchemaToEmail(c *fiber.Ctx) error {
 		})
 	}
 
-	result, err := h.service.SendSchemaToEmail(imageID, req)
+	result, err := handler.deps.PublicService.SendSchemaToEmail(imageID, req)
 	if err != nil {
 		if apiErr, ok := IsAPIError(err); ok {
+			handler.deps.Logger.Error().Err(err).Msg(apiErr.Message)
 			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{
 				"error": apiErr.Message,
 			})
 		}
+		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Внутренняя ошибка сервера",
 		})
@@ -363,18 +387,20 @@ func (h *PublicHandler) SendSchemaToEmail(c *fiber.Ctx) error {
 // @Success 200 {object} map[string]interface{} "Превью изображения"
 // @Failure 404 {object} map[string]interface{} "Изображение не найдено"
 // @Router /api/images/{id}/preview [get]
-func (h *PublicHandler) GetImagePreview(c *fiber.Ctx) error {
+func (handler *PublicHandler) GetImagePreview(c *fiber.Ctx) error {
 	imageID := c.Params("id")
 
-	result, err := h.service.GetImagePreview(imageID)
+	result, err := handler.deps.PublicService.GetImagePreview(imageID)
 	if err != nil {
 		if apiErr, ok := IsAPIError(err); ok {
+			handler.deps.Logger.Error().Err(err).Msg(apiErr.Message)
 			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{
-				"error": apiErr.Message,
+				"error": apiErr.Error(),
 			})
 		}
+		handler.deps.Logger.Error().Err(err).Msg("Внутренняя ошибка сервера")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Внутренняя ошибка сервера",
+			"error": ErrInternalServerError.Error(),
 		})
 	}
 
@@ -390,18 +416,20 @@ func (h *PublicHandler) GetImagePreview(c *fiber.Ctx) error {
 // @Success 200 {object} map[string]interface{} "Статус обработки"
 // @Failure 404 {object} map[string]interface{} "Изображение не найдено"
 // @Router /api/images/{id}/status [get]
-func (h *PublicHandler) GetProcessingStatus(c *fiber.Ctx) error {
+func (handler *PublicHandler) GetProcessingStatus(c *fiber.Ctx) error {
 	imageID := c.Params("id")
 
-	result, err := h.service.GetProcessingStatus(imageID)
+	result, err := handler.deps.PublicService.GetProcessingStatus(imageID)
 	if err != nil {
 		if apiErr, ok := IsAPIError(err); ok {
+			handler.deps.Logger.Error().Err(err).Msg(apiErr.Message)
 			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{
-				"error": apiErr.Message,
+				"error": apiErr.Error(),
 			})
 		}
+		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Внутренняя ошибка сервера",
+			"error": ErrInternalServerError.Error(),
 		})
 	}
 
@@ -418,23 +446,25 @@ func (h *PublicHandler) GetProcessingStatus(c *fiber.Ctx) error {
 // @Success 201 {object} map[string]interface{} "Купон куплен"
 // @Failure 400 {object} map[string]interface{} "Ошибка в запросе"
 // @Router /api/coupons/purchase [post]
-func (h *PublicHandler) PurchaseCoupon(c *fiber.Ctx) error {
+func (handler *PublicHandler) PurchaseCoupon(c *fiber.Ctx) error {
 	var req PurchaseCouponRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Ошибка в запросе",
+			"error": ErrBadRequest.Error(),
 		})
 	}
 
-	result, err := h.service.PurchaseCoupon(req)
+	result, err := handler.deps.PublicService.PurchaseCoupon(req)
 	if err != nil {
 		if apiErr, ok := IsAPIError(err); ok {
+			handler.deps.Logger.Error().Err(err).Msg(apiErr.Message)
 			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{
-				"error": apiErr.Message,
+				"error": apiErr.Error(),
 			})
 		}
+		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Внутренняя ошибка сервера",
+			"error": ErrInternalServerError.Error(),
 		})
 	}
 
@@ -448,8 +478,8 @@ func (h *PublicHandler) PurchaseCoupon(c *fiber.Ctx) error {
 // @Produce json
 // @Success 200 {array} map[string]interface{} "Доступные размеры"
 // @Router /api/sizes [get]
-func (h *PublicHandler) GetAvailableSizes(c *fiber.Ctx) error {
-	sizes := h.service.GetAvailableSizes()
+func (handler *PublicHandler) GetAvailableSizes(c *fiber.Ctx) error {
+	sizes := handler.deps.PublicService.GetAvailableSizes()
 	return c.JSON(sizes)
 }
 
@@ -460,7 +490,7 @@ func (h *PublicHandler) GetAvailableSizes(c *fiber.Ctx) error {
 // @Produce json
 // @Success 200 {array} map[string]interface{} "Доступные стили"
 // @Router /api/styles [get]
-func (h *PublicHandler) GetAvailableStyles(c *fiber.Ctx) error {
-	styles := h.service.GetAvailableStyles()
+func (handler *PublicHandler) GetAvailableStyles(c *fiber.Ctx) error {
+	styles := handler.deps.PublicService.GetAvailableStyles()
 	return c.JSON(styles)
 }

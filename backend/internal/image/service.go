@@ -10,32 +10,35 @@ import (
 	"github.com/skr1ms/mosaic/internal/types"
 )
 
-type ImageService struct {
+type ImageServiceDeps struct {
 	ImageRepository  *ImageRepository
 	CouponRepository *coupon.CouponRepository
 	Logger           *zerolog.Logger
 }
 
-func NewImageService(repo *ImageRepository, couponRepo *coupon.CouponRepository, logger *zerolog.Logger) *ImageService {
+type ImageService struct {
+	deps *ImageServiceDeps
+}
+
+func NewImageService(deps *ImageServiceDeps) *ImageService {
 	return &ImageService{
-		ImageRepository:  repo,
-		CouponRepository: couponRepo,
-		Logger:           logger,
+		deps: deps,
 	}
 }
+
 
 func (s *ImageService) GetQueue(status string) ([]*Image, error) {
 	var tasks []*Image
 	var err error
 
 	if status != "" {
-		tasks, err = s.ImageRepository.GetByStatus(status)
+		tasks, err = s.deps.ImageRepository.GetByStatus(status)
 	} else {
-		tasks, err = s.ImageRepository.GetAll()
+		tasks, err = s.deps.ImageRepository.GetAll()
 	}
 
 	if err != nil {
-		s.Logger.Error().Err(err).Msg(ErrFailedToFetchQueue.Error())
+		s.deps.Logger.Error().Err(err).Msg(ErrFailedToFetchQueue.Error())
 		return nil, ErrFailedToFetchQueue
 	}
 
@@ -44,22 +47,22 @@ func (s *ImageService) GetQueue(status string) ([]*Image, error) {
 
 func (s *ImageService) AddToQueue(couponID uuid.UUID) error {
 	// Получаем купон
-	coupon, err := s.CouponRepository.GetByID(couponID)
+	coupon, err := s.deps.CouponRepository.GetByID(couponID)
 	if err != nil {
-		s.Logger.Error().Err(err).Msg(ErrCouponNotFound.Error())
+		s.deps.Logger.Error().Err(err).Msg(ErrCouponNotFound.Error())
 		return ErrCouponNotFound
 	}
 
 	// Если купон уже в очереди, то не добавляем в очередь
-	existingTask, err := s.ImageRepository.GetByCouponID(couponID)
+	existingTask, err := s.deps.ImageRepository.GetByCouponID(couponID)
 	if err == nil && existingTask != nil {
-		s.Logger.Error().Err(err).Msg(ErrCouponAlreadyInQueue.Error())
+		s.deps.Logger.Error().Err(err).Msg(ErrCouponAlreadyInQueue.Error())
 		return ErrCouponAlreadyInQueue
 	}
 
 	// Если купон уже использован, то не добавляем в очередь
 	if coupon.Status == "used" && coupon.PreviewURL != nil && *coupon.PreviewURL != "" {
-		s.Logger.Error().Err(err).Msg(ErrCouponAlreadyProcessed.Error())
+		s.deps.Logger.Error().Err(err).Msg(ErrCouponAlreadyProcessed.Error())
 		return ErrCouponAlreadyProcessed
 	}
 
@@ -68,7 +71,7 @@ func (s *ImageService) AddToQueue(couponID uuid.UUID) error {
 
 // ApplyEditing применяет редактирование к изображению
 func (s *ImageService) ApplyEditing(task *Image, req types.EditImageRequest) error {
-	s.Logger.Info().
+	s.deps.Logger.Info().
 		Str("task_id", task.ID.String()).
 		Interface("edit_params", req).
 		Msg("Applying image editing")
@@ -85,12 +88,12 @@ func (s *ImageService) ApplyEditing(task *Image, req types.EditImageRequest) err
 	task.EditedImagePath = &editedPath
 
 	// Обновляем задачу в базе данных
-	if err := s.ImageRepository.Update(task); err != nil {
-		s.Logger.Error().Err(err).Msg("Failed to update task with edited image path")
-		return err
+	if err := s.deps.ImageRepository.Update(task); err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrFailedToUpdateTaskWithEditedImagePath.Message)
+		return ErrFailedToUpdateTaskWithEditedImagePath
 	}
 
-	s.Logger.Info().
+	s.deps.Logger.Info().
 		Str("task_id", task.ID.String()).
 		Str("edited_path", editedPath).
 		Msg("Image editing completed")
@@ -100,7 +103,7 @@ func (s *ImageService) ApplyEditing(task *Image, req types.EditImageRequest) err
 
 // ApplyProcessing применяет стиль обработки к изображению
 func (s *ImageService) ApplyProcessing(task *Image, req types.ProcessImageRequest) error {
-	s.Logger.Info().
+	s.deps.Logger.Info().
 		Str("task_id", task.ID.String()).
 		Interface("processing_params", req).
 		Msg("Applying image processing")
@@ -135,12 +138,12 @@ func (s *ImageService) ApplyProcessing(task *Image, req types.ProcessImageReques
 	task.StartedAt = &now
 
 	// Обновляем задачу в базе данных
-	if err := s.ImageRepository.Update(task); err != nil {
-		s.Logger.Error().Err(err).Msg("Failed to update task with processing params")
-		return err
+	if err := s.deps.ImageRepository.Update(task); err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrFailedToUpdateTaskWithProcessingParams.Message)
+		return ErrFailedToUpdateTaskWithProcessingParams
 	}
 
-	s.Logger.Info().
+	s.deps.Logger.Info().
 		Str("task_id", task.ID.String()).
 		Str("preview_path", previewPath).
 		Msg("Image processing started")
@@ -150,7 +153,7 @@ func (s *ImageService) ApplyProcessing(task *Image, req types.ProcessImageReques
 
 // GenerateSchema создает финальную схему мозаики
 func (s *ImageService) GenerateSchema(task *Image, req types.GenerateSchemaRequest) (string, error) {
-	s.Logger.Info().
+	s.deps.Logger.Info().
 		Str("task_id", task.ID.String()).
 		Bool("confirmed", req.Confirmed).
 		Msg("Generating mosaic schema")
@@ -176,12 +179,12 @@ func (s *ImageService) GenerateSchema(task *Image, req types.GenerateSchemaReque
 	task.CompletedAt = &now
 
 	// Обновляем задачу в базе данных
-	if err := s.ImageRepository.Update(task); err != nil {
-		s.Logger.Error().Err(err).Msg("Failed to update task with schema path")
-		return "", err
+	if err := s.deps.ImageRepository.Update(task); err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrFailedToUpdateTaskWithSchemaPath.Message)
+		return "", ErrFailedToUpdateTaskWithSchemaPath
 	}
 
-	s.Logger.Info().
+	s.deps.Logger.Info().
 		Str("task_id", task.ID.String()).
 		Str("schema_path", schemaPath).
 		Msg("Schema generation completed")
@@ -200,7 +203,7 @@ func (s *ImageService) SaveUploadedFile(filename string, couponID uuid.UUID, fil
 	// 2. Сохранение файла
 	// 3. Проверка целостности
 
-	s.Logger.Info().
+	s.deps.Logger.Info().
 		Str("coupon_id", couponID.String()).
 		Str("upload_path", uploadPath).
 		Msg("File uploaded successfully")

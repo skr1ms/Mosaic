@@ -132,19 +132,20 @@ var (
 		Message:    "Ошибка при отправке email",
 		HTTPStatus: http.StatusInternalServerError,
 	}
-
-	// Ошибки валидации
-	ErrInvalidRequest = APIError{
-		Code:       "INVALID_REQUEST",
-		Message:    "Ошибка в запросе",
-		HTTPStatus: http.StatusBadRequest,
-	}
-
-	// Общие ошибки
 	ErrInternalServerError = APIError{
 		Code:       "INTERNAL_SERVER_ERROR",
 		Message:    "Внутренняя ошибка сервера",
 		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrBadRequest = APIError{
+		Code:       "BAD_REQUEST",
+		Message:    "Ошибка в запросе",
+		HTTPStatus: http.StatusBadRequest,
+	}
+	ErrInvalidRequest = APIError{
+		Code:       "INVALID_REQUEST",
+		Message:    "Ошибка в запросе",
+		HTTPStatus: http.StatusBadRequest,
 	}
 )
 

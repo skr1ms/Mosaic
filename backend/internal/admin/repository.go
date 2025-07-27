@@ -24,7 +24,7 @@ func (r *AdminRepository) GetByLogin(login string) (*Admin, error) {
 	var admin Admin
 	err := r.db.Where("login = ?", login).First(&admin).Error
 	if err != nil {
-		return nil, err
+		return nil, ErrFailedToFindAdminByLogin
 	}
 	return &admin, nil
 }
@@ -34,7 +34,7 @@ func (r *AdminRepository) GetByID(id uuid.UUID) (*Admin, error) {
 	var admin Admin
 	err := r.db.Where("id = ?", id).First(&admin).Error
 	if err != nil {
-		return nil, err
+		return nil, ErrFailedToFindAdminByID
 	}
 	return &admin, nil
 }
@@ -43,7 +43,10 @@ func (r *AdminRepository) GetByID(id uuid.UUID) (*Admin, error) {
 func (r *AdminRepository) GetAll() ([]*Admin, error) {
 	var admins []*Admin
 	err := r.db.Find(&admins).Error
-	return admins, err
+	if err != nil {
+		return nil, ErrFailedToFindAllAdmins
+	}
+	return admins, nil
 }
 
 // UpdateLastLogin обновляет время последнего входа
@@ -61,4 +64,3 @@ func (r *AdminRepository) Delete(id uuid.UUID) error {
 func (r *AdminRepository) UpdatePassword(id uuid.UUID, hashedPassword string) error {
 	return r.db.Model(&Admin{}).Where("id = ?", id).Update("password", hashedPassword).Error
 }
-

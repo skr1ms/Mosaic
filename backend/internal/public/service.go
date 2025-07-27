@@ -15,7 +15,7 @@ import (
 	"github.com/skr1ms/mosaic/pkg/randomCouponCode"
 )
 
-type PublicService struct {
+type PublicServiceDeps struct {
 	CouponRepository  *coupon.CouponRepository
 	ImageRepository   *image.ImageRepository
 	PartnerRepository *partner.PartnerRepository
@@ -23,20 +23,21 @@ type PublicService struct {
 	Logger            *zerolog.Logger
 }
 
-func NewPublicService(couponRepo *coupon.CouponRepository, imageRepo *image.ImageRepository, partnerRepo *partner.PartnerRepository, imageService *image.ImageService, logger *zerolog.Logger) *PublicService {
+type PublicService struct {
+	deps *PublicServiceDeps
+}
+
+func NewPublicService(deps *PublicServiceDeps) *PublicService {
 	return &PublicService{
-		CouponRepository:  couponRepo,
-		ImageRepository:   imageRepo,
-		PartnerRepository: partnerRepo,
-		ImageService:      imageService,
-		Logger:            logger,
+		deps: deps,
 	}
 }
 
 // GetPartnerByDomain возвращает публичную информацию о партнере по домену
 func (s *PublicService) GetPartnerByDomain(domain string) (map[string]interface{}, error) {
-	partner, err := s.PartnerRepository.GetByDomain(domain)
+	partner, err := s.deps.PartnerRepository.GetByDomain(domain)
 	if err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrPartnerNotFound.Error())
 		return nil, ErrPartnerNotFound
 	}
 
@@ -63,8 +64,9 @@ func (s *PublicService) GetCouponByCode(code string) (map[string]interface{}, er
 		return nil, ErrInvalidCouponCode
 	}
 
-	coupon, err := s.CouponRepository.GetByCode(code)
+	coupon, err := s.deps.CouponRepository.GetByCode(code)
 	if err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrCouponNotFound.Error())
 		return nil, ErrCouponNotFound
 	}
 
@@ -80,12 +82,14 @@ func (s *PublicService) GetCouponByCode(code string) (map[string]interface{}, er
 
 // ActivateCoupon активирует купон для последующей обработки
 func (s *PublicService) ActivateCoupon(code string, req ActivateCouponRequest) (map[string]interface{}, error) {
-	coupon, err := s.CouponRepository.GetByCode(code)
+	coupon, err := s.deps.CouponRepository.GetByCode(code)
 	if err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrCouponNotFound.Error())
 		return nil, ErrCouponNotFound
 	}
 
 	if coupon.Status != "new" {
+		s.deps.Logger.Error().Msg(ErrCouponAlreadyUsed.Error())
 		return nil, ErrCouponAlreadyUsed
 	}
 
@@ -95,7 +99,8 @@ func (s *PublicService) ActivateCoupon(code string, req ActivateCouponRequest) (
 	now := time.Now()
 	coupon.ActivatedAt = &now
 
-	if err := s.CouponRepository.Update(coupon); err != nil {
+	if err := s.deps.CouponRepository.Update(coupon); err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrFailedToActivateCoupon.Error())
 		return nil, ErrFailedToActivateCoupon
 	}
 
@@ -110,32 +115,38 @@ func (s *PublicService) ActivateCoupon(code string, req ActivateCouponRequest) (
 func (s *PublicService) UploadImage(couponID string, file *multipart.FileHeader) (map[string]interface{}, error) {
 	couponUUID, err := uuid.Parse(couponID)
 	if err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrInvalidCouponID.Error())
 		return nil, ErrInvalidCouponID
 	}
 
 	// Проверяем купон
-	coupon, err := s.CouponRepository.GetByID(couponUUID)
+	coupon, err := s.deps.CouponRepository.GetByID(couponUUID)
 	if err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrCouponNotFound.Error())
 		return nil, ErrCouponNotFound
 	}
 
 	if coupon.Status != "activated" {
+		s.deps.Logger.Error().Msg(ErrCouponNotActivated.Error())
 		return nil, ErrCouponNotActivated
 	}
 
 	// Проверяем тип файла
 	if !isValidImageType(file) {
+		s.deps.Logger.Error().Msg(ErrInvalidImageType.Error())
 		return nil, ErrInvalidImageType
 	}
 
 	// Проверяем размер файла (макс. 10MB)
 	if file.Size > 10<<20 {
+		s.deps.Logger.Error().Msg(ErrFileTooLarge.Error())
 		return nil, ErrFileTooLarge
 	}
 
 	// Сохраняем файл и создаем задачу на обработку
 	imagePath, err := s.saveUploadedFile(file, couponUUID)
 	if err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrFailedToSaveFile.Error())
 		return nil, ErrFailedToSaveFile
 	}
 
@@ -148,7 +159,8 @@ func (s *PublicService) UploadImage(couponID string, file *multipart.FileHeader)
 		Priority:          1, // Высокий приоритет для пользовательских задач
 	}
 
-	if err := s.ImageRepository.Create(task); err != nil {
+	if err := s.deps.ImageRepository.Create(task); err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrFailedToCreateImageTask.Error())
 		return nil, ErrFailedToCreateImageTask
 	}
 
@@ -163,17 +175,20 @@ func (s *PublicService) UploadImage(couponID string, file *multipart.FileHeader)
 func (s *PublicService) EditImage(imageID string, req types.EditImageRequest) (map[string]interface{}, error) {
 	imageUUID, err := uuid.Parse(imageID)
 	if err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrInvalidImageID.Error())
 		return nil, ErrInvalidImageID
 	}
 
 	// Получаем задачу
-	task, err := s.ImageRepository.GetByID(imageUUID)
+	task, err := s.deps.ImageRepository.GetByID(imageUUID)
 	if err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrImageNotFound.Error())
 		return nil, ErrImageNotFound
 	}
 
 	// Применяем редактирование через сервис
-	if err := s.ImageService.ApplyEditing(task, req); err != nil {
+	if err := s.deps.ImageService.ApplyEditing(task, req); err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrFailedToEditImage.Error())
 		return nil, ErrFailedToEditImage
 	}
 
@@ -187,17 +202,20 @@ func (s *PublicService) EditImage(imageID string, req types.EditImageRequest) (m
 func (s *PublicService) ProcessImage(imageID string, req types.ProcessImageRequest) (map[string]interface{}, error) {
 	imageUUID, err := uuid.Parse(imageID)
 	if err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrInvalidImageID.Error())
 		return nil, ErrInvalidImageID
 	}
 
 	// Получаем задачу
-	task, err := s.ImageRepository.GetByID(imageUUID)
+	task, err := s.deps.ImageRepository.GetByID(imageUUID)
 	if err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrImageNotFound.Error())
 		return nil, ErrImageNotFound
 	}
 
 	// Применяем обработку через сервис
-	if err := s.ImageService.ApplyProcessing(task, req); err != nil {
+	if err := s.deps.ImageService.ApplyProcessing(task, req); err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrFailedToProcessImage.Error())
 		return nil, ErrFailedToProcessImage
 	}
 
@@ -211,28 +229,31 @@ func (s *PublicService) ProcessImage(imageID string, req types.ProcessImageReque
 func (s *PublicService) GenerateSchema(imageID string, req types.GenerateSchemaRequest) (map[string]interface{}, error) {
 	imageUUID, err := uuid.Parse(imageID)
 	if err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrInvalidImageID.Error())
 		return nil, ErrInvalidImageID
 	}
 
 	// Получаем задачу
-	task, err := s.ImageRepository.GetByID(imageUUID)
+	task, err := s.deps.ImageRepository.GetByID(imageUUID)
 	if err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrImageNotFound.Error())
 		return nil, ErrImageNotFound
 	}
 
 	// Генерируем схему через сервис
-	schemaPath, err := s.ImageService.GenerateSchema(task, req)
+	schemaPath, err := s.deps.ImageService.GenerateSchema(task, req)
 	if err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrFailedToGenerateSchema.Error())
 		return nil, ErrFailedToGenerateSchema
 	}
 
 	// Обновляем купон как использованный
-	coupon, _ := s.CouponRepository.GetByID(task.CouponID)
+	coupon, _ := s.deps.CouponRepository.GetByID(task.CouponID)
 	coupon.Status = "used"
 	coupon.SchemaURL = &schemaPath
 	completedAt := time.Now()
 	coupon.CompletedAt = &completedAt
-	s.CouponRepository.Update(coupon)
+	s.deps.CouponRepository.Update(coupon)
 
 	return map[string]interface{}{
 		"message":    "Схема успешно создана",
@@ -245,12 +266,14 @@ func (s *PublicService) GenerateSchema(imageID string, req types.GenerateSchemaR
 func (s *PublicService) GetImagePreview(imageID string) (map[string]interface{}, error) {
 	imageUUID, err := uuid.Parse(imageID)
 	if err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrInvalidImageID.Error())
 		return nil, ErrInvalidImageID
 	}
 
 	// Получаем задачу
-	task, err := s.ImageRepository.GetByID(imageUUID)
+	task, err := s.deps.ImageRepository.GetByID(imageUUID)
 	if err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrImageNotFound.Error())
 		return nil, ErrImageNotFound
 	}
 
@@ -271,12 +294,14 @@ func (s *PublicService) GetImagePreview(imageID string) (map[string]interface{},
 func (s *PublicService) GetProcessingStatus(imageID string) (map[string]interface{}, error) {
 	imageUUID, err := uuid.Parse(imageID)
 	if err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrInvalidImageID.Error())
 		return nil, ErrInvalidImageID
 	}
 
 	// Получаем задачу
-	task, err := s.ImageRepository.GetByID(imageUUID)
+	task, err := s.deps.ImageRepository.GetByID(imageUUID)
 	if err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrImageNotFound.Error())
 		return nil, ErrImageNotFound
 	}
 
@@ -306,11 +331,12 @@ func (s *PublicService) GetProcessingStatus(imageID string) (map[string]interfac
 func (s *PublicService) GetImageForDownload(imageID string) (*image.Image, error) {
 	imageUUID, err := uuid.Parse(imageID)
 	if err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrInvalidImageID.Error())
 		return nil, ErrInvalidImageID
 	}
 
 	// Получаем задачу
-	task, err := s.ImageRepository.GetByID(imageUUID)
+	task, err := s.deps.ImageRepository.GetByID(imageUUID)
 	if err != nil {
 		return nil, ErrImageNotFound
 	}
@@ -331,12 +357,14 @@ func (s *PublicService) GetImageForDownload(imageID string) (*image.Image, error
 func (s *PublicService) SendSchemaToEmail(imageID string, req SendEmailRequest) (map[string]interface{}, error) {
 	imageUUID, err := uuid.Parse(imageID)
 	if err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrInvalidImageID.Error())
 		return nil, ErrInvalidImageID
 	}
 
 	// Получаем задачу
-	task, err := s.ImageRepository.GetByID(imageUUID)
+	task, err := s.deps.ImageRepository.GetByID(imageUUID)
 	if err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrImageNotFound.Error())
 		return nil, ErrImageNotFound
 	}
 
@@ -365,14 +393,15 @@ func (s *PublicService) PurchaseCoupon(req PurchaseCouponRequest) (map[string]in
 	}
 
 	// Генерируем код купона для собственных купонов (код партнера 0000)
-	code, err := randomCouponCode.GenerateUniqueCouponCode("0000", s.CouponRepository)
+	code, err := randomCouponCode.GenerateUniqueCouponCode("0000", s.deps.CouponRepository)
 	if err != nil {
-		s.Logger.Error().Err(err).Msg("Failed to generate unique coupon code")
+		s.deps.Logger.Error().Err(err).Msg(ErrFailedToGenerateCouponCode.Error())
 		return nil, ErrFailedToGenerateCouponCode
 	}
 	newCoupon.Code = code
 
-	if err := s.CouponRepository.Create(newCoupon); err != nil {
+	if err := s.deps.CouponRepository.Create(newCoupon); err != nil {
+		s.deps.Logger.Error().Err(err).Msg(ErrFailedToCreateCoupon.Error())
 		return nil, ErrFailedToCreateCoupon
 	}
 

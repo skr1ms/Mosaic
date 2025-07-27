@@ -127,6 +127,62 @@ var (
 		Message:    "Failed to generate schema",
 		HTTPStatus: http.StatusInternalServerError,
 	}
+	ErrFailedToUpdateTaskWithEditedImagePath = APIError{
+		Code:       "FAILED_TO_UPDATE_TASK_WITH_EDITED_IMAGE_PATH",
+		Message:    "Failed to update task with edited image path",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToUpdateTaskWithProcessingParams = APIError{
+		Code:       "FAILED_TO_UPDATE_TASK_WITH_PROCESSING_PARAMS",
+		Message:    "Failed to update task with processing params",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToUpdateTaskWithSchemaPath = APIError{
+		Code:       "FAILED_TO_UPDATE_TASK_WITH_SCHEMA_PATH",
+		Message:    "Failed to update task with schema path",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToFindTaskByID = APIError{
+		Code:       "FAILED_TO_FIND_TASK_BY_ID",
+		Message:    "Failed to find task by ID",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToFindNextInQueue = APIError{
+		Code:       "FAILED_TO_FIND_NEXT_IN_QUEUE",
+		Message:    "Failed to find next in queue",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToFindQueuedTasks = APIError{
+		Code:       "FAILED_TO_FIND_QUEUED_TASKS",
+		Message:    "Failed to find queued tasks",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToFindProcessingTasks = APIError{
+		Code:       "FAILED_TO_FIND_PROCESSING_TASKS",
+		Message:    "Failed to find processing tasks",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToFindAllTasks = APIError{
+		Code:       "FAILED_TO_FIND_ALL_TASKS",
+		Message:    "Failed to find all tasks",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToFindTasksByStatus = APIError{
+		Code:       "FAILED_TO_FIND_TASKS_BY_STATUS",
+		Message:    "Failed to find tasks by status",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToFindFailedTasksForRetry = APIError{
+		Code:       "FAILED_TO_FIND_FAILED_TASKS_FOR_RETRY",
+		Message:    "Failed to find failed tasks for retry",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToFindCouponByID = APIError{
+		Code:       "FAILED_TO_FIND_COUPON_BY_ID",
+		Message:    "Failed to find coupon by ID",
+		HTTPStatus: http.StatusNotFound,
+	}
+	
 )
 
 // IsAPIError проверяет, является ли ошибка типом APIError

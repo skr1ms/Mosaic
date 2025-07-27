@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
+	"strconv"
 )
 
 // CouponRepository интерфейс для проверки существования купонов
@@ -27,7 +28,7 @@ func GenerateUniqueCouponCode(partnerCode string, repo CouponRepository) (string
 	}
 
 	// Если число, форматируем как 4-значную строку
-	if _, err := fmt.Sscanf(partnerCode, "%d", &code); err != nil {
+	if _, err := strconv.Atoi(partnerCode); err != nil {
 		code = 0 // Для собственных купонов
 	}
 	prefix := fmt.Sprintf("%04d", code)
@@ -55,7 +56,7 @@ func GenerateCouponCodeWithPartner(partnerCode string) string {
 		return prefix + suffix
 	}
 
-	if _, err := fmt.Sscanf(partnerCode, "%d", &code); err != nil {
+	if _, err := strconv.Atoi(partnerCode); err != nil {
 		code = 0
 	}
 	prefix := fmt.Sprintf("%04d", code)
@@ -94,3 +95,4 @@ func generateRandomDigits(length int) string {
 	}
 	return result
 }
+

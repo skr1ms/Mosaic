@@ -1,14 +1,7 @@
 package coupon
 
 import (
-	"archive/zip"
-	"bytes"
-	"errors"
 	"fmt"
-	"io"
-	"net/http"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -17,8 +10,8 @@ import (
 )
 
 type CouponHandlerDeps struct {
-	CouponRepository *CouponRepository
-	Logger           *zerolog.Logger
+	CouponService *CouponService
+	Logger        *zerolog.Logger
 }
 
 type CouponHandler struct {
@@ -33,38 +26,19 @@ func NewCouponHandler(router fiber.Router, deps *CouponHandlerDeps) {
 	}
 
 	api := handler.Group("/coupons")
-	api.Get("/", handler.GetCoupons)                             // Получение списка купонов с фильтрацией ✔
-	api.Get("/:id", handler.GetCouponDetails)                    // Получение деталей купона ✔
-	api.Get("/paginated", handler.GetCouponsPaginated)           // Пагинация списка купонов ✔
-	api.Get("/:id", handler.GetCouponByID)                       // Получение купона по ID ✔
-	api.Get("/code/:code", handler.GetCouponByCode)              // Получение купона по коду ✔
-	api.Post("/code/:code/validate", handler.ValidateCoupon)     // Валидация купона по коду ✔
-	api.Put("/:id/activate", handler.ActivateCoupon)             // Активация купона ✔
-	api.Put("/:id/reset", handler.ResetCoupon)                   // Сброс купона в исходное состояние ✔
+	api.Get("/", handler.GetCoupons)                             // Получение списка купонов с фильтрацией
+	api.Get("/:id", handler.GetCouponDetails)                    // Получение деталей купона
+	api.Get("/paginated", handler.GetCouponsPaginated)           // Пагинация списка купонов
+	api.Get("/:id", handler.GetCouponByID)                       // Получение купона по ID
+	api.Get("/code/:code", handler.GetCouponByCode)              // Получение купона по коду
+	api.Post("/code/:code/validate", handler.ValidateCoupon)     // Валидация купона по коду
+	api.Put("/:id/activate", handler.ActivateCoupon)             // Активация купона
+	api.Put("/:id/reset", handler.ResetCoupon)                   // Сброс купона в исходное состояние
 	api.Put("/:id/send-schema", handler.SendSchema)              // Отправка схемы купона на email
-	api.Put("/:id/purchase", handler.MarkAsPurchased)            // Пометка купона как купленного ✔
+	api.Put("/:id/purchase", handler.MarkAsPurchased)            // Пометка купона как купленного
 	api.Get("/export", handler.ExportCoupons)                    // Экспорт купонов в zip файл
-	api.Get("/statistics", handler.GetStatistics)                // Получение статистики по купонам  ✔
-	api.Get("/partner/:partner_id", handler.GetCouponsByPartner) // Получение купонов по ID партнера ✔
-}
-
-// handleError централизованно обрабатывает ошибки и возвращает соответствующий HTTP ответ
-func (handler *CouponHandler) handleError(c *fiber.Ctx, err error) error {
-	var apiErr APIError
-	if errors.As(err, &apiErr) {
-		handler.deps.Logger.Error().Err(err).Msg(apiErr.Error())
-		return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{
-			"error": apiErr.Message,
-			"code":  apiErr.Code,
-		})
-	}
-
-	// Для неизвестных ошибок
-	handler.deps.Logger.Error().Err(err).Msg("Internal server error")
-	return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-		"error": "Internal server error",
-		"code":  "INTERNAL_ERROR",
-	})
+	api.Get("/statistics", handler.GetStatistics)                // Получение статистики по купонам
+	api.Get("/partner/:partner_id", handler.GetCouponsByPartner) // Получение купонов по ID партнера
 }
 
 // GetCoupons возвращает список купонов с фильтрацией
@@ -97,10 +71,12 @@ func (handler *CouponHandler) GetCoupons(c *fiber.Ctx) error {
 	}
 
 	// Получаем купоны
-	coupons, err := handler.deps.CouponRepository.Search(code, status, size, style, partnerID)
+	coupons, err := handler.deps.CouponService.SearchCoupons(code, status, size, style, partnerID)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(ErrFailedToFindCoupons.Error())
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": ErrFailedToFindCoupons.Error()})
+		if apiErr, ok := GetAPIError(err); ok {
+			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{"error": apiErr.Error()})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
 	}
 
 	return c.JSON(coupons)
@@ -118,8 +94,8 @@ func (handler *CouponHandler) GetCoupons(c *fiber.Ctx) error {
 // @Failure 403 {object} map[string]interface{} "Нет прав доступа"
 // @Router /coupons/{id} [get]
 func (handler *CouponHandler) GetCouponDetails(c *fiber.Ctx) error {
-	handler.deps.Logger.Error().Msg("Coupon details")
-	return c.JSON(fiber.Map{"message": "Coupon details"})
+	handler.deps.Logger.Error().Msg(ErrCouponNotFound.Message)
+	return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": ErrCouponNotFound.Error()})
 }
 
 // GetCouponByID возвращает купон по ID
@@ -137,15 +113,17 @@ func (handler *CouponHandler) GetCouponByID(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg("Invalid coupon ID")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid coupon ID"})
+		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidCouponID.Message)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": ErrInvalidCouponID.Error()})
 	}
 
 	// Получаем купон
-	coupon, err := handler.deps.CouponRepository.GetByID(id)
+	coupon, err := handler.deps.CouponService.GetCouponByID(id)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg("Coupon not found")
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Coupon not found"})
+		if apiErr, ok := GetAPIError(err); ok {
+			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{"error": apiErr.Error()})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
 	}
 
 	return c.JSON(coupon)
@@ -165,10 +143,12 @@ func (handler *CouponHandler) GetCouponByCode(c *fiber.Ctx) error {
 	code := c.Params("code")
 
 	// Получаем купон
-	coupon, err := handler.deps.CouponRepository.GetByCode(code)
+	coupon, err := handler.deps.CouponService.GetCouponByCode(code)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg("Coupon not found")
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Coupon not found"})
+		if apiErr, ok := GetAPIError(err); ok {
+			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{"error": apiErr.Error()})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
 	}
 
 	return c.JSON(coupon)
@@ -199,14 +179,16 @@ func (handler *CouponHandler) ActivateCoupon(c *fiber.Ctx) error {
 
 	// Парсим запрос
 	if err := c.BodyParser(&req); err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(err.Error())
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidRequestBody.Message)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": ErrInvalidRequestBody.Error()})
 	}
 
 	// Активируем купон
-	if err := handler.deps.CouponRepository.ActivateCoupon(id, *req.OriginalImageURL, *req.PreviewURL, *req.SchemaURL); err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(err.Error())
-		return handler.handleError(c, err)
+	if err := handler.deps.CouponService.ActivateCoupon(id, *req.OriginalImageURL, *req.PreviewURL, *req.SchemaURL); err != nil {
+		if apiErr, ok := GetAPIError(err); ok {
+			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{"error": apiErr.Error()})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
 	}
 
 	return c.JSON(fiber.Map{"message": "Coupon activated successfully"})
@@ -227,14 +209,16 @@ func (handler *CouponHandler) ResetCoupon(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg("Invalid coupon ID")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid coupon ID"})
+		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidCouponID.Message)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": ErrInvalidCouponID.Error()})
 	}
 
 	// Сбрасываем купон
-	if err := handler.deps.CouponRepository.ResetCoupon(id); err != nil {
-		handler.deps.Logger.Error().Err(err).Msg("Failed to reset coupon")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to reset coupon"})
+	if err := handler.deps.CouponService.ResetCoupon(id); err != nil {
+		if apiErr, ok := GetAPIError(err); ok {
+			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{"error": apiErr.Error()})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
 	}
 
 	return c.JSON(fiber.Map{"message": "Coupon reset successfully"})
@@ -257,22 +241,24 @@ func (handler *CouponHandler) SendSchema(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg("Invalid coupon ID")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid coupon ID"})
+		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidCouponID.Message)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": ErrInvalidCouponID.Error()})
 	}
 
 	var req SendSchemaRequest
 
 	// Парсим запрос
 	if err := c.BodyParser(&req); err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(err.Error())
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidRequestBody.Message)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": ErrInvalidRequestBody.Error()})
 	}
 
 	// Отправляем схему
-	if err := handler.deps.CouponRepository.SendSchema(id, req.Email); err != nil {
-		handler.deps.Logger.Error().Err(err).Msg("Failed to send schema")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to send schema"})
+	if err := handler.deps.CouponService.SendSchema(id, req.Email); err != nil {
+		if apiErr, ok := GetAPIError(err); ok {
+			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{"error": apiErr.Error()})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
 	}
 
 	return c.JSON(fiber.Map{"message": "Schema sent successfully"})
@@ -295,22 +281,24 @@ func (handler *CouponHandler) MarkAsPurchased(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg("Invalid coupon ID")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid coupon ID"})
+		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidCouponID.Message)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": ErrInvalidCouponID.Error()})
 	}
 
 	var req MarkAsPurchasedRequest
 
 	// Парсим запрос
 	if err := c.BodyParser(&req); err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(err.Error())
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidRequestBody.Message)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": ErrInvalidRequestBody.Error()})
 	}
 
 	// Помечаем купон как купленный
-	if err := handler.deps.CouponRepository.MarkAsPurchased(id, req.PurchaseEmail); err != nil {
-		handler.deps.Logger.Error().Err(err).Msg("Failed to mark as purchased")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to mark as purchased"})
+	if err := handler.deps.CouponService.MarkAsPurchased(id, req.PurchaseEmail); err != nil {
+		if apiErr, ok := GetAPIError(err); ok {
+			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{"error": apiErr.Error()})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
 	}
 
 	return c.JSON(fiber.Map{"message": "Coupon marked as purchased"})
@@ -338,10 +326,12 @@ func (handler *CouponHandler) GetStatistics(c *fiber.Ctx) error {
 	}
 
 	// Получаем статистику
-	stats, err := handler.deps.CouponRepository.GetStatistics(partnerID)
+	stats, err := handler.deps.CouponService.GetStatistics(partnerID)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg("Failed to get statistics")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get statistics"})
+		if apiErr, ok := GetAPIError(err); ok {
+			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{"error": apiErr.Error()})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
 	}
 
 	return c.JSON(stats)
@@ -360,36 +350,20 @@ func (handler *CouponHandler) ValidateCoupon(c *fiber.Ctx) error {
 	// Получаем код купона
 	code := c.Params("code")
 
-	// Получаем купон
-	coupon, err := handler.deps.CouponRepository.GetByCode(code)
+	// Валидируем купон
+	validationResult, err := handler.deps.CouponService.ValidateCoupon(code)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg("Coupon not found")
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"valid":   false,
-			"message": "Coupon not found",
-		})
+		if apiErr, ok := GetAPIError(err); ok {
+			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{"error": apiErr.Error()})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
 	}
 
-	// Проверяем статус купона
-	if coupon.Status == "used" {
-		handler.deps.Logger.Error().Msg("Coupon already used")
-		return c.JSON(fiber.Map{
-			"valid":   false,
-			"message": "Coupon already used",
-			"used_at": coupon.UsedAt,
-			"size":    coupon.Size,
-			"style":   coupon.Style,
-		})
+	if !validationResult.Valid {
+		return c.Status(fiber.StatusNotFound).JSON(validationResult)
 	}
 
-	// Возвращаем результат
-	handler.deps.Logger.Error().Msg("Coupon is valid and ready to use")
-	return c.JSON(fiber.Map{
-		"valid":   true,
-		"message": "Coupon is valid and ready to use",
-		"size":    coupon.Size,
-		"style":   coupon.Style,
-	})
+	return c.JSON(validationResult)
 }
 
 // ExportCoupons экспортирует список купонов в текстовый файл
@@ -417,51 +391,21 @@ func (handler *CouponHandler) ExportCoupons(c *fiber.Ctx) error {
 		}
 	}
 
-	// Получаем купоны
-	coupons, err := handler.deps.CouponRepository.Search("", status, "", "", partnerID)
+	// Экспортируем купоны
+	content, err := handler.deps.CouponService.ExportCoupons(partnerID, status, format)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg("Failed to fetch coupons for export")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to fetch coupons for export",
-		})
-	}
-
-	// Создаем строитль для формирования вывода
-	var content strings.Builder
-
-	// Если формат "full", то выводим полную информацию о купонах
-	if format == "full" {
-		// Полная информация о купонах
-		content.WriteString("Code\tPartner ID\tSize\tStyle\tStatus\tCreated At\tUsed At\n")
-		for _, coupon := range coupons {
-			usedAt := ""
-			if coupon.UsedAt != nil {
-				usedAt = coupon.UsedAt.Format(time.RFC3339)
-			}
-			content.WriteString(fmt.Sprintf("%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-				coupon.Code,
-				coupon.PartnerID.String(),
-				coupon.Size,
-				coupon.Style,
-				coupon.Status,
-				coupon.CreatedAt.Format(time.RFC3339),
-				usedAt,
-			))
+		if apiErr, ok := GetAPIError(err); ok {
+			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{"error": apiErr.Error()})
 		}
-	} else {
-		// Только коды купонов
-		for _, coupon := range coupons {
-			content.WriteString(coupon.Code + "\n")
-		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
 	}
 
 	// Устанавливаем заголовки для скачивания файла
-	// Формируем имя файла
 	filename := fmt.Sprintf("coupons_export_%s.txt", time.Now().Format("20060102_150405"))
 	c.Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
 	c.Set("Content-Type", "text/plain")
 
-	return c.SendString(content.String())
+	return c.SendString(content)
 }
 
 // DownloadMaterials скачивает материалы погашенного купона
@@ -480,117 +424,24 @@ func (handler *CouponHandler) DownloadMaterials(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg("Invalid coupon ID")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid coupon ID"})
+		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidCouponID.Message)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": ErrInvalidCouponID.Error()})
 	}
 
-	// Получаем купон
-	coupon, err := handler.deps.CouponRepository.GetByID(id)
+	// Скачиваем материалы
+	archiveData, filename, err := handler.deps.CouponService.DownloadMaterials(id)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg("Coupon not found")
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Coupon not found"})
-	}
-
-	// Проверяем статус купона
-	if coupon.Status != "used" {
-		handler.deps.Logger.Error().Msg("Coupon must be used to download materials")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Coupon must be used to download materials",
-		})
-	}
-
-	// Создаем ZIP архив в памяти
-	// Создаем буфер для хранения архива
-	var buf bytes.Buffer
-	zipWriter := zip.NewWriter(&buf)
-
-	// Функция для добавления файла по URL в архив
-	addFileToZip := func(fileURL, filename string) error {
-		if fileURL == "" {
-			return nil // Пропускаем пустые URL
+		if apiErr, ok := GetAPIError(err); ok {
+			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{"error": apiErr.Error()})
 		}
-
-		resp, err := http.Get(fileURL)
-		if err != nil {
-			handler.deps.Logger.Error().Err(err).Msg("Failed to download file from " + fileURL)
-			return ErrFailedToDownloadFile
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			handler.deps.Logger.Error().Msg("Failed to download file from " + fileURL + ": status " + strconv.Itoa(resp.StatusCode))
-			return ErrFailedToDownloadFile
-		}
-
-		fileWriter, err := zipWriter.Create(filename)
-		if err != nil {
-			handler.deps.Logger.Error().Err(err).Msg("Failed to create file writer")
-			return ErrFailedToCreateFileWriter
-		}
-
-		_, err = io.Copy(fileWriter, resp.Body)
-		if err != nil {
-			handler.deps.Logger.Error().Err(err).Msg("Failed to copy file to zip")
-			return ErrFailedToCopyFileToZip
-		}
-
-		return nil
-	}
-
-	// Добавляем файлы в архив
-	if coupon.OriginalImageURL != nil && *coupon.OriginalImageURL != "" {
-		if err := addFileToZip(*coupon.OriginalImageURL, "original_image.jpg"); err != nil {
-			// Логируем ошибку, но продолжаем
-			fmt.Printf("Error adding original image to zip: %v\n", err)
-		}
-	}
-
-	if coupon.PreviewURL != nil && *coupon.PreviewURL != "" {
-		if err := addFileToZip(*coupon.PreviewURL, "preview.jpg"); err != nil {
-			fmt.Printf("Error adding preview to zip: %v\n", err)
-		}
-	}
-
-	if coupon.SchemaURL != nil && *coupon.SchemaURL != "" {
-		if err := addFileToZip(*coupon.SchemaURL, "schema.pdf"); err != nil {
-			fmt.Printf("Error adding schema to zip: %v\n", err)
-		}
-	}
-
-	// Добавляем информационный файл
-	infoWriter, err := zipWriter.Create("coupon_info.txt")
-	if err == nil {
-		infoContent := fmt.Sprintf(`Coupon Information
-Code: %s
-Size: %s
-Style: %s
-Created: %s
-Used: %s
-`,
-			coupon.Code,
-			coupon.Size,
-			coupon.Style,
-			coupon.CreatedAt.Format(time.RFC3339),
-			coupon.UsedAt.Format(time.RFC3339),
-		)
-		infoWriter.Write([]byte(infoContent))
-	}
-
-	// Закрываем архив
-	err = zipWriter.Close()
-	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg("Failed to create archive")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to create archive",
-		})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
 	}
 
 	// Устанавливаем заголовки для скачивания
-	filename := fmt.Sprintf("coupon_%s_materials.zip", coupon.Code)
 	c.Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
 	c.Set("Content-Type", "application/zip")
 
-	return c.Send(buf.Bytes())
+	return c.Send(archiveData)
 }
 
 // GetCouponsPaginated возвращает купоны с пагинацией
@@ -637,14 +488,14 @@ func (handler *CouponHandler) GetCouponsPaginated(c *fiber.Ctx) error {
 	}
 
 	// Получаем купоны с пагинацией
-	coupons, total, err := handler.deps.CouponRepository.SearchWithPagination(
+	coupons, total, err := handler.deps.CouponService.SearchCouponsWithPagination(
 		code, status, size, style, partnerID, page, limit,
 	)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg("Failed to fetch coupons")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to fetch coupons",
-		})
+		if apiErr, ok := GetAPIError(err); ok {
+			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{"error": apiErr.Error()})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
 	}
 
 	// Вычисляем данные пагинации
@@ -682,9 +533,9 @@ func (handler *CouponHandler) GetCouponsByPartner(c *fiber.Ctx) error {
 	partnerIDStr := c.Params("partner_id")
 	partnerID, err := uuid.Parse(partnerIDStr)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg("Invalid partner ID")
+		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidPartnerID.Message)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid partner ID",
+			"error": ErrInvalidPartnerID.Message,
 		})
 	}
 
@@ -694,12 +545,12 @@ func (handler *CouponHandler) GetCouponsByPartner(c *fiber.Ctx) error {
 	style := c.Query("style")
 
 	// Получаем купоны
-	coupons, err := handler.deps.CouponRepository.Search("", status, size, style, &partnerID)
+	coupons, err := handler.deps.CouponService.SearchCouponsByPartner(partnerID, status, size, style)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg("Failed to fetch partner coupons")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to fetch partner coupons",
-		})
+		if apiErr, ok := GetAPIError(err); ok {
+			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{"error": apiErr.Error()})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
 	}
 
 	return c.JSON(fiber.Map{

@@ -26,7 +26,7 @@ func (r *PartnerRepository) GetByLogin(login string) (*Partner, error) {
 	var partner Partner
 	err := r.db.Where("login = ?", login).First(&partner).Error
 	if err != nil {
-		return nil, err
+		return nil, ErrFailedToFindPartnerByLogin
 	}
 	return &partner, nil
 }
@@ -36,7 +36,7 @@ func (r *PartnerRepository) GetByPartnerCode(code string) (*Partner, error) {
 	var partner Partner
 	err := r.db.Where("partner_code = ?", code).First(&partner).Error
 	if err != nil {
-		return nil, err
+		return nil, ErrFailedToFindPartnerByPartnerCode
 	}
 	return &partner, nil
 }
@@ -46,7 +46,7 @@ func (r *PartnerRepository) GetByDomain(domain string) (*Partner, error) {
 	var partner Partner
 	err := r.db.Where("domain = ?", domain).First(&partner).Error
 	if err != nil {
-		return nil, err
+		return nil, ErrFailedToFindPartnerByDomain
 	}
 	return &partner, nil
 }
@@ -56,7 +56,7 @@ func (r *PartnerRepository) GetByID(id uuid.UUID) (*Partner, error) {
 	var partner Partner
 	err := r.db.Where("id = ?", id).First(&partner).Error
 	if err != nil {
-		return nil, err
+		return nil, ErrFailedToFindPartnerByID
 	}
 	return &partner, nil
 }
@@ -66,7 +66,7 @@ func (r *PartnerRepository) GetByEmail(email string) (*Partner, error) {
 	var partner Partner
 	err := r.db.Where("email = ?", email).First(&partner).Error
 	if err != nil {
-		return nil, err
+		return nil, ErrFailedToFindPartnerByEmail
 	}
 	return &partner, nil
 }
@@ -75,14 +75,20 @@ func (r *PartnerRepository) GetByEmail(email string) (*Partner, error) {
 func (r *PartnerRepository) GetAll() ([]*Partner, error) {
 	var partners []*Partner
 	err := r.db.Find(&partners).Error
-	return partners, err
+	if err != nil {
+		return nil, ErrFailedToFindAllPartners
+	}
+	return partners, nil
 }
 
 // GetActivePartners возвращает только активных партнеров
 func (r *PartnerRepository) GetActivePartners() ([]*Partner, error) {
 	var partners []*Partner
 	err := r.db.Where("status = ?", "active").Find(&partners).Error
-	return partners, err
+	if err != nil {
+		return nil, ErrFailedToFindActivePartners
+	}
+	return partners, nil
 }
 
 // Update обновляет данные партнера
@@ -109,15 +115,14 @@ func (r *PartnerRepository) Delete(id uuid.UUID) error {
 // DeleteWithCoupons удаляет партнера и все его купоны в транзакции
 func (r *PartnerRepository) DeleteWithCoupons(id uuid.UUID) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
-		// Получаем партнера для активации хука BeforeDelete
-		var partner Partner
-		if err := tx.First(&partner, id).Error; err != nil {
-			return err
+		// Удаляем все купоны партнера
+		if err := tx.Exec("DELETE FROM coupons WHERE partner_id = ?", id).Error; err != nil {
+			return ErrFailedToDeleteCoupons
 		}
 
-		// Удаляем партнера (хук BeforeDelete автоматически удалит купоны)
-		if err := tx.Delete(&partner).Error; err != nil {
-			return err
+		// Удаляем партнера
+		if err := tx.Delete(&Partner{}, id).Error; err != nil {
+			return ErrFailedToDeletePartner
 		}
 
 		return nil
@@ -139,7 +144,10 @@ func (r *PartnerRepository) Search(query string, status string) ([]*Partner, err
 
 	var partners []*Partner
 	err := db.Find(&partners).Error
-	return partners, err
+	if err != nil {
+		return nil, ErrFailedToFindPartners
+	}
+	return partners, nil
 }
 
 // GetPartnerCouponsForExport возвращает купоны партнера с данными для экспорта
@@ -173,7 +181,10 @@ func (r *PartnerRepository) GetPartnerCouponsForExport(partnerID uuid.UUID, stat
 	query += " ORDER BY c.created_at DESC"
 
 	err := r.db.Raw(query, args...).Scan(&coupons).Error
-	return coupons, err
+	if err != nil {
+		return nil, ErrFailedToFindPartnerCouponsForExport
+	}
+	return coupons, nil
 }
 
 // GetAllCouponsForExport возвращает все купоны с данными партнеров для экспорта админом

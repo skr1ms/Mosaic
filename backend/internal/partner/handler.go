@@ -85,7 +85,7 @@ func (handler *PartnerHandler) GetProfile(c *fiber.Ctx) error {
 	}
 
 	// Получаем партнера
-	partner, err := handler.deps.PartnerService.PartnerRepository.GetByID(claims.UserID)
+	partner, err := handler.deps.PartnerService.deps.PartnerRepository.GetByID(claims.UserID)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": ErrPartnerNotFound.Error()})
 	}
@@ -163,7 +163,7 @@ func (handler *PartnerHandler) UpdatePassword(c *fiber.Ctx) error {
 	err = handler.deps.PartnerService.UpdatePassword(claims.UserID, req.CurrentPassword, req.NewPassword)
 	if err != nil {
 		handler.deps.Logger.Error().Err(err).Str("user_id", claims.UserID.String()).Msg(ErrFailedToUpdatePassword.Error())
-		return c.Status(ErrFailedToUpdatePassword.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToUpdatePassword.Error()})	
+		return c.Status(ErrFailedToUpdatePassword.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToUpdatePassword.Error()})
 	}
 
 	return c.JSON(fiber.Map{"message": "Password updated successfully"})
@@ -323,8 +323,8 @@ func (handler *PartnerHandler) ForgotPassword(c *fiber.Ctx) error {
 
 	err := handler.deps.PartnerService.ForgotPassword(reqPayload.Email /*captcha*/)
 	if err != nil {
-		// Для безопасности всегда возвращаем одинаковый ответ
-		handler.deps.Logger.Error().Err(err).Str("email", reqPayload.Email).Msg("Forgot password error")
+		handler.deps.Logger.Error().Err(err).Str("email", reqPayload.Email).Msg(ErrFailedToSendForgotPasswordEmail.Error())
+		return c.Status(ErrFailedToSendForgotPasswordEmail.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToSendForgotPasswordEmail.Error()})
 	}
 
 	return c.JSON(fiber.Map{
@@ -349,12 +349,14 @@ func (handler *PartnerHandler) ResetPassword(c *fiber.Ctx) error {
 	var req ResetPasswordRequest
 
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		handler.deps.Logger.Error().Err(err).Msg(ErrBadRequest.Error())
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": ErrBadRequest.Error()})
 	}
 
 	if err := middleware.ValidateStruct(&req); err != nil {
+		handler.deps.Logger.Error().Err(err).Msg(ErrValidationFailed.Error())
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   "Validation failed",
+			"error":   ErrValidationFailed.Error(),
 			"details": err.Error(),
 		})
 	}

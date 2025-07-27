@@ -25,7 +25,7 @@ func (r *ImageRepository) GetByID(id uuid.UUID) (*Image, error) {
 	var task Image
 	err := r.db.Where("id = ?", id).First(&task).Error
 	if err != nil {
-		return nil, err
+		return nil, ErrFailedToFindTaskByID
 	}
 	return &task, nil
 }
@@ -35,7 +35,7 @@ func (r *ImageRepository) GetByCouponID(couponID uuid.UUID) (*Image, error) {
 	var task Image
 	err := r.db.Where("coupon_id = ?", couponID).First(&task).Error
 	if err != nil {
-		return nil, err
+		return nil, ErrFailedToFindCouponByID
 	}
 	return &task, nil
 }
@@ -47,7 +47,7 @@ func (r *ImageRepository) GetNextInQueue() (*Image, error) {
 		Order("priority DESC, created_at ASC").
 		First(&task).Error
 	if err != nil {
-		return nil, err
+		return nil, ErrFailedToFindNextInQueue
 	}
 	return &task, nil
 }
@@ -58,14 +58,20 @@ func (r *ImageRepository) GetQueuedTasks() ([]*Image, error) {
 	err := r.db.Where("status = ?", "queued").
 		Order("priority DESC, created_at ASC").
 		Find(&tasks).Error
-	return tasks, err
+	if err != nil {
+		return nil, ErrFailedToFindQueuedTasks
+	}
+	return tasks, nil
 }
 
 // GetProcessingTasks возвращает все задачи в процессе обработки
 func (r *ImageRepository) GetProcessingTasks() ([]*Image, error) {
 	var tasks []*Image
 	err := r.db.Where("status = ?", "processing").Find(&tasks).Error
-	return tasks, err
+	if err != nil {
+		return nil, ErrFailedToFindProcessingTasks
+	}
+	return tasks, nil
 }
 
 // StartProcessing помечает задачу как обрабатываемую
@@ -120,21 +126,30 @@ func (r *ImageRepository) Delete(id uuid.UUID) error {
 func (r *ImageRepository) GetAll() ([]*Image, error) {
 	var tasks []*Image
 	err := r.db.Find(&tasks).Error
-	return tasks, err
+	if err != nil {
+		return nil, ErrFailedToFindAllTasks
+	}
+	return tasks, nil
 }
 
 // GetByStatus возвращает задачи по статусу
 func (r *ImageRepository) GetByStatus(status string) ([]*Image, error) {
 	var tasks []*Image
 	err := r.db.Where("status = ?", status).Find(&tasks).Error
-	return tasks, err
+	if err != nil {
+		return nil, ErrFailedToFindTasksByStatus
+	}
+	return tasks, nil
 }
 
 // GetFailedTasksForRetry возвращает неудачные задачи, которые можно повторить
 func (r *ImageRepository) GetFailedTasksForRetry() ([]*Image, error) {
 	var tasks []*Image
 	err := r.db.Where("status = ? AND retry_count < max_retries", "failed").Find(&tasks).Error
-	return tasks, err
+	if err != nil {
+		return nil, ErrFailedToFindFailedTasksForRetry
+	}
+	return tasks, nil
 }
 
 // GetStatistics возвращает статистику по обработке изображений

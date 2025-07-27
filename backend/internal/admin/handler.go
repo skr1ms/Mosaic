@@ -39,47 +39,47 @@ func NewAdminHandler(router fiber.Router, deps *AdminHandlerDeps) {
 	protected := adminRoutes.Use(middleware.JWTMiddleware(deps.JwtService), middleware.AdminOnly())
 
 	// Управление администраторами
-	protected.Post("/admins", handler.CreateAdmin)    // создание ✔
-	protected.Get("/admins", handler.GetAdmins)       // получение списка администраторов ✔
+	protected.Post("/admins", handler.CreateAdmin)    // создание 
+	protected.Get("/admins", handler.GetAdmins)       // получение списка администраторов 
 	protected.Get("/dashboard", handler.GetDashboard) // получение дашборда администратора
 
 	// Управление партнерами
-	protected.Get("/partners", handler.GetPartners)                         // получение списка партнеров ✔
-	protected.Post("/partners", handler.CreatePartner)                      // создание партнера ✔
-	protected.Get("/partners/:id", handler.GetPartner)                      // получение информации о партнере ✔
-	protected.Put("/partners/:id", handler.UpdatePartner)                   // обновление информации о партнере ✔
-	protected.Patch("/partners/:id/block", handler.BlockPartner)            // блокировка партнера ✔
-	protected.Patch("/partners/:id/unblock", handler.UnblockPartner)        // разблокировка партнера ✔
-	protected.Delete("/partners/:id", handler.DeletePartner)                // удаление партнера ✔
-	protected.Get("/partners/:id/statistics", handler.GetPartnerStatistics) // получение статистики партнера ✔
+	protected.Get("/partners", handler.GetPartners)                         // получение списка партнеров 
+	protected.Post("/partners", handler.CreatePartner)                      // создание партнера 
+	protected.Get("/partners/:id", handler.GetPartner)                      // получение информации о партнере 
+	protected.Put("/partners/:id", handler.UpdatePartner)                   // обновление информации о партнере 
+	protected.Patch("/partners/:id/block", handler.BlockPartner)            // блокировка партнера 
+	protected.Patch("/partners/:id/unblock", handler.UnblockPartner)        // разблокировка партнера 
+	protected.Delete("/partners/:id", handler.DeletePartner)                // удаление партнера 
+	protected.Get("/partners/:id/statistics", handler.GetPartnerStatistics) // получение статистики партнера 
 
 	// Управление купонами
-	protected.Get("/coupons", handler.GetCoupons)                              // получение списка купонов ✔
-	protected.Get("/coupons/paginated", handler.GetCouponsPaginated)           // получение купонов с пагинацией ✔
-	protected.Post("/coupons", handler.CreateCoupons)                          // создание купонов ✔
-	protected.Get("/coupons/export", handler.ExportCoupons)                    // экспорт купонов ✔
-	protected.Get("/coupons/export/partner/:id", handler.ExportPartnerCoupons) // экспорт купонов партнера ✔
-	protected.Post("/coupons/batch-delete", handler.BatchDeleteCoupons)        // массовое удаление купонов ✔
-	protected.Get("/coupons/:id", handler.GetCoupon)                           // получение информации о купоне ✔
-	protected.Patch("/coupons/:id/reset", handler.ResetCoupon)                 // сброс купона ✔
-	protected.Delete("/coupons/:id", handler.DeleteCoupon)                     // удаление купона ✔
-	protected.Post("/batch-delete", handler.BatchDeleteCoupons)                // Пакетное удаление купонов ✔
+	protected.Get("/coupons", handler.GetCoupons)                              // получение списка купонов 
+	protected.Get("/coupons/paginated", handler.GetCouponsPaginated)           // получение купонов с пагинацией 
+	protected.Post("/coupons", handler.CreateCoupons)                          // создание купонов 
+	protected.Get("/coupons/export", handler.ExportCoupons)                    // экспорт купонов 
+	protected.Get("/coupons/export/partner/:id", handler.ExportPartnerCoupons) // экспорт купонов партнера 
+	protected.Post("/coupons/batch-delete", handler.BatchDeleteCoupons)        // массовое удаление купонов 
+	protected.Get("/coupons/:id", handler.GetCoupon)                           // получение информации о купоне 
+	protected.Patch("/coupons/:id/reset", handler.ResetCoupon)                 // сброс купона 
+	protected.Delete("/coupons/:id", handler.DeleteCoupon)                     // удаление купона 
+	protected.Post("/batch-delete", handler.BatchDeleteCoupons)                // Пакетное удаление купонов 
 
 	// Статистика и аналитика
-	protected.Get("/statistics", handler.GetStatistics)                    // получение общей статистики ✔
-	protected.Get("/statistics/partners", handler.GetPartnersStatistics)   // получение статистики партнеров ✔
-	protected.Get("/statistics/system", handler.GetSystemStatistics)       // получение системной статистики ✔
-	protected.Get("/statistics/analytics", handler.GetAnalytics)           // получение аналитики ✔
-	protected.Get("/statistics/dashboard", handler.GetDashboardStatistics) // получение статистики для дашборда ✔
+	protected.Get("/statistics", handler.GetStatistics)                    // получение общей статистики 
+	protected.Get("/statistics/partners", handler.GetPartnersStatistics)   // получение статистики партнеров 
+	protected.Get("/statistics/system", handler.GetSystemStatistics)       // получение системной статистики 
+	protected.Get("/statistics/analytics", handler.GetAnalytics)           // получение аналитики 
+	protected.Get("/statistics/dashboard", handler.GetDashboardStatistics) // получение статистики для дашборда 
 
 	// Управление задачами обработки изображений
-	protected.Get("/images", handler.GetAllImages)              // получение всех задач обработки изображений ✔
-	protected.Get("/images/:id", handler.GetImageDetails)       // получение деталей задачи обработки ✔
-	protected.Delete("/images/:id", handler.DeleteImageTask)    // удаление задачи обработки ✔
-	protected.Post("/images/:id/retry", handler.RetryImageTask) // повторная обработка изображения ✔
+	protected.Get("/images", handler.GetAllImages)              // получение всех задач обработки изображений 
+	protected.Get("/images/:id", handler.GetImageDetails)       // получение деталей задачи обработки 
+	protected.Delete("/images/:id", handler.DeleteImageTask)    // удаление задачи обработки 
+	protected.Post("/images/:id/retry", handler.RetryImageTask) // повторная обработка изображения 
 
 	// Профиль администратора
-	protected.Put("/profile/password", handler.ChangePassword) // изменение пароля администратора ✔
+	protected.Put("/profile/password", handler.ChangePassword) // изменение пароля администратора 
 }
 
 // CreateAdmin создает нового администратора

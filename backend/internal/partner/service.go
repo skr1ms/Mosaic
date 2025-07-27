@@ -12,10 +12,9 @@ import (
 	"github.com/skr1ms/mosaic/pkg/email"
 	"github.com/skr1ms/mosaic/pkg/jwt"
 	"github.com/skr1ms/mosaic/pkg/recaptcha"
-	"gorm.io/gorm"
 )
 
-type PartnerService struct {
+type PartnerServiceDeps struct {
 	PartnerRepository *PartnerRepository
 	Recaptcha         *recaptcha.Verifier
 	JwtService        *jwt.JWT
@@ -24,20 +23,19 @@ type PartnerService struct {
 	Logger            *zerolog.Logger
 }
 
-func NewPartnerService(userRepository *PartnerRepository, recaptcha *recaptcha.Verifier, jwt *jwt.JWT, mailSender *email.Mailer, config *config.Config, logger *zerolog.Logger) *PartnerService {
+type PartnerService struct {
+	deps *PartnerServiceDeps
+}
+
+func NewPartnerService(deps *PartnerServiceDeps) *PartnerService {
 	return &PartnerService{
-		PartnerRepository: userRepository,
-		Recaptcha:         recaptcha,
-		JwtService:        jwt,
-		MailSender:        mailSender,
-		Config:            config,
-		Logger:            logger,
+		deps: deps,
 	}
 }
 
 func (s *PartnerService) ExportCoupons(partnerID uuid.UUID, status, format string) (string, string, error) {
 	// Получаем купоны партнера со статусом "new"
-	coupons, err := s.PartnerRepository.GetPartnerCouponsForExport(partnerID, "new")
+	coupons, err := s.deps.PartnerRepository.GetPartnerCouponsForExport(partnerID, "new")
 	if err != nil {
 		return "", "", ErrFailedToFetchCoupons
 	}
@@ -84,7 +82,7 @@ func (s *PartnerService) ExportCoupons(partnerID uuid.UUID, status, format strin
 
 func (s *PartnerService) UpdatePassword(partnerID uuid.UUID, currentPassword, newPassword string) error {
 	// Получаем текущего партнера
-	partner, err := s.PartnerRepository.GetByID(partnerID)
+	partner, err := s.deps.PartnerRepository.GetByID(partnerID)
 	if err != nil {
 		return ErrFailedToFindPartnerByID
 	}
@@ -101,7 +99,7 @@ func (s *PartnerService) UpdatePassword(partnerID uuid.UUID, currentPassword, ne
 	}
 
 	// Обновляем пароль
-	if err := s.PartnerRepository.UpdatePassword(partnerID, hashedPassword); err != nil {
+	if err := s.deps.PartnerRepository.UpdatePassword(partnerID, hashedPassword); err != nil {
 		return ErrFailedToUpdatePassword
 	}
 
@@ -110,7 +108,7 @@ func (s *PartnerService) UpdatePassword(partnerID uuid.UUID, currentPassword, ne
 
 func (s *PartnerService) ForgotPassword(email string /*captcha string*/) error {
 	// Находим партнера по email
-	partner, err := s.PartnerRepository.GetByEmail(email)
+	partner, err := s.deps.PartnerRepository.GetByEmail(email)
 	if err != nil {
 		return ErrPartnerNotFound
 	}
@@ -121,8 +119,8 @@ func (s *PartnerService) ForgotPassword(email string /*captcha string*/) error {
 	}
 
 	// Проверяем капчу
-	if s.Config.RecaptchaConfig.Environment == "development" {
-		s.Logger.Warn().Msg("reCAPTCHA verification is disabled in development mode")
+	if s.deps.Config.RecaptchaConfig.Environment == "development" {
+		s.deps.Logger.Warn().Msg("reCAPTCHA verification is disabled in development mode")
 	} else {
 		//valid, err := s.Recaptcha.Verify(captcha, "forgot_password")
 		//if err != nil || !valid {
@@ -131,19 +129,19 @@ func (s *PartnerService) ForgotPassword(email string /*captcha string*/) error {
 	}
 
 	// Проверяем статус партнера
-	resetToken, err := s.JwtService.CreatePasswordResetToken(partner.ID, partner.Email)
+	resetToken, err := s.deps.JwtService.CreatePasswordResetToken(partner.ID, partner.Email)
 	if err != nil {
 		return ErrFailedToCreateToken
 	}
 
 	// Формируем ссылку для сброса пароля
 	resetLink := fmt.Sprintf("%s/reset?token=%s",
-		s.Config.ServerConfig.FrontendURL,
+		s.deps.Config.ServerConfig.FrontendURL,
 		resetToken,
 	)
 
 	// Отправляем письмо с ссылкой для сброса пароля
-	if err := s.MailSender.SendResetPasswordEmail(partner.Email, resetLink); err != nil {
+	if err := s.deps.MailSender.SendResetPasswordEmail(partner.Email, resetLink); err != nil {
 		return ErrFailedToSendEmail
 	}
 
@@ -152,13 +150,13 @@ func (s *PartnerService) ForgotPassword(email string /*captcha string*/) error {
 
 func (s *PartnerService) ResetPassword(token, newPassword string) error {
 	// Валидируем токен сброса пароля
-	claims, err := s.JwtService.ValidatePasswordResetToken(token)
+	claims, err := s.deps.JwtService.ValidatePasswordResetToken(token)
 	if err != nil {
 		return ErrInvalidToken
 	}
 
 	// Находим партнера
-	partner, err := s.PartnerRepository.GetByEmail(claims.Login) // login == email
+	partner, err := s.deps.PartnerRepository.GetByEmail(claims.Login) // login == email
 	if err != nil {
 		return ErrFailedToFindPartnerByEmail
 	}
@@ -175,7 +173,7 @@ func (s *PartnerService) ResetPassword(token, newPassword string) error {
 	}
 
 	// Обновляем пароль
-	if err := s.PartnerRepository.UpdatePassword(claims.UserID, hashedPassword); err != nil {
+	if err := s.deps.PartnerRepository.UpdatePassword(claims.UserID, hashedPassword); err != nil {
 		return ErrFailedToUpdatePassword
 	}
 
@@ -185,17 +183,10 @@ func (s *PartnerService) ResetPassword(token, newPassword string) error {
 // DeletePartnerWithCoupons удаляет партнера и все его купоны
 func (s *PartnerService) DeletePartnerWithCoupons(partnerID uuid.UUID) error {
 	// Начинаем транзакцию
-	return s.PartnerRepository.db.Transaction(func(tx *gorm.DB) error {
-		// Удаляем все купоны партнера
-		if err := tx.Exec("DELETE FROM coupons WHERE partner_id = ?", partnerID).Error; err != nil {
-			return err
-		}
+	err := s.deps.PartnerRepository.DeleteWithCoupons(partnerID)
+	if err != nil {
+		return ErrFailedToDeletePartner
+	}
 
-		// Удаляем самого партнера
-		if err := tx.Delete(&Partner{}, partnerID).Error; err != nil {
-			return err
-		}
-
-		return nil
-	})
+	return nil
 }

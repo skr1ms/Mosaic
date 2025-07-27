@@ -113,9 +113,59 @@ var (
 		HTTPStatus: http.StatusInternalServerError,
 	}
 	ErrFailedToResetPassword = APIError{
-		Code:       "PASSWORD_RESET_FAILED",	
+		Code:       "PASSWORD_RESET_FAILED",
 		Message:    "Failed to reset password",
 		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToSendForgotPasswordEmail = APIError{
+		Code:       "FORGOT_PASSWORD_EMAIL_FAILED",
+		Message:    "Failed to send forgot password email",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToDeleteCoupons = APIError{
+		Code:       "FAILED_TO_DELETE_COUPONS",
+		Message:    "Failed to delete coupons",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToDeletePartner = APIError{
+		Code:       "FAILED_TO_DELETE_PARTNER",
+		Message:    "Failed to delete partner",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToFindPartnerByPartnerCode = APIError{
+		Code:       "FAILED_TO_FIND_PARTNER_BY_PARTNER_CODE",
+		Message:    "Failed to find partner by partner code",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToFindPartnerByLogin = APIError{
+		Code:       "FAILED_TO_FIND_PARTNER_BY_LOGIN",
+		Message:    "Failed to find partner by login",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToFindPartnerByDomain = APIError{
+		Code:       "FAILED_TO_FIND_PARTNER_BY_DOMAIN",
+		Message:    "Failed to find partner by domain",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToFindAllPartners = APIError{
+		Code:       "FAILED_TO_FIND_ALL_PARTNERS",
+		Message:    "Failed to find all partners",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToFindActivePartners = APIError{
+		Code:       "FAILED_TO_FIND_ACTIVE_PARTNERS",
+		Message:    "Failed to find active partners",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToFindPartners = APIError{
+		Code:       "FAILED_TO_FIND_PARTNERS",
+		Message:    "Failed to find partners",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToFindPartnerCouponsForExport = APIError{
+		Code:       "FAILED_TO_FIND_PARTNER_COUPONS_FOR_EXPORT",
+		Message:    "Failed to find partner coupons for export",
+		HTTPStatus: http.StatusNotFound,
 	}
 )
 

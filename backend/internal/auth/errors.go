@@ -62,6 +62,36 @@ var (
 		Message:    "Partner account is blocked",
 		HTTPStatus: http.StatusForbidden,
 	}
+	ErrInvalidRequestBody = APIError{
+		Code:       "INVALID_REQUEST_BODY",
+		Message:    "Invalid request body",
+		HTTPStatus: http.StatusBadRequest,
+	}
+	ErrAdminLoginFailed = APIError{
+		Code:       "ADMIN_LOGIN_FAILED",
+		Message:    "Admin login failed",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrAdminTokenRefreshFailed = APIError{
+		Code:       "ADMIN_TOKEN_REFRESH_FAILED",
+		Message:    "Admin token refresh failed",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrValidationFailed = APIError{
+		Code:       "VALIDATION_FAILED",
+		Message:    "Validation failed",
+		HTTPStatus: http.StatusBadRequest,
+	}
+	ErrPartnerLoginFailed = APIError{
+		Code:       "PARTNER_LOGIN_FAILED",
+		Message:    "Partner login failed",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrPartnerTokenRefreshFailed = APIError{
+		Code:       "PARTNER_TOKEN_REFRESH_FAILED",
+		Message:    "Partner token refresh failed",
+		HTTPStatus: http.StatusInternalServerError,
+	}
 )
 
 // IsAPIError проверяет, является ли ошибка типом APIError

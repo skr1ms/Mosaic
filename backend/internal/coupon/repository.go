@@ -49,14 +49,20 @@ func (r *CouponRepository) GetByID(id uuid.UUID) (*Coupon, error) {
 func (r *CouponRepository) GetByPartnerID(partnerID uuid.UUID) ([]*Coupon, error) {
 	var coupons []*Coupon
 	err := r.db.Where("partner_id = ?", partnerID).Find(&coupons).Error
-	return coupons, err
+	if err != nil {
+		return nil, ErrFailedToFindCouponsByPartnerID
+	}
+	return coupons, nil
 }
 
 // GetAll возвращает все купоны
 func (r *CouponRepository) GetAll() ([]*Coupon, error) {
 	var coupons []*Coupon
 	err := r.db.Find(&coupons).Error
-	return coupons, err
+	if err != nil {
+		return nil, ErrFailedToFindAllCoupons
+	}
+	return coupons, nil
 }
 
 // Update обновляет купон
@@ -137,7 +143,10 @@ func (r *CouponRepository) Search(code, status, size, style string, partnerID *u
 
 	var coupons []*Coupon
 	err := query.Order("created_at DESC").Find(&coupons).Error
-	return coupons, err
+	if err != nil {
+		return nil, ErrFailedToFindCoupons
+	}
+	return coupons, nil
 }
 
 // SearchWithPagination выполняет поиск купонов с пагинацией
@@ -175,7 +184,10 @@ func (r *CouponRepository) SearchWithPagination(code, status, size, style string
 	var coupons []*Coupon
 	err := query.Order("created_at DESC").Offset(offset).Limit(limit).Find(&coupons).Error
 
-	return coupons, total, err
+	if err != nil {
+		return nil, 0, ErrFailedToFindCoupons
+	}
+	return coupons, total, nil
 }
 
 // GetStatistics возвращает статистику по купонам
@@ -296,12 +308,18 @@ func (r *CouponRepository) GetRecentActivated(limit int) ([]*Coupon, error) {
 		Order("used_at DESC").
 		Limit(limit).
 		Find(&coupons).Error
-	return coupons, err
+	if err != nil {
+		return nil, ErrFailedToFindRecentActivatedCoupons
+	}
+	return coupons, nil
 }
 
 // CodeExists проверяет, существует ли купон с данным кодом
 func (r *CouponRepository) CodeExists(code string) (bool, error) {
 	var count int64
 	err := r.db.Model(&Coupon{}).Where("code = ?", code).Count(&count).Error
-	return count > 0, err
+	if err != nil {
+		return false, ErrFailedToCheckCodeExists
+	}
+	return count > 0, nil
 }

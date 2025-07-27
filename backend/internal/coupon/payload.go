@@ -28,10 +28,10 @@ const (
 )
 
 type CreateCouponRequest struct {
-	Count        int         `json:"count" validate:"required,min=1,max=1000"`
-	PartnerID    uuid.UUID   `json:"partner_id" validate:"required"`
-	Size         CouponSize  `json:"size" validate:"required,oneof=21x30 30x40 40x40 40x50 40x60 50x70"`
-	Style        CouponStyle `json:"style" validate:"required,oneof=grayscale skin_tones pop_art max_colors"`
+	Count     int         `json:"count" validate:"required,min=1,max=1000"`
+	PartnerID uuid.UUID   `json:"partner_id" validate:"required"`
+	Size      CouponSize  `json:"size" validate:"required,oneof=21x30 30x40 40x40 40x50 40x60 50x70"`
+	Style     CouponStyle `json:"style" validate:"required,oneof=grayscale skin_tones pop_art max_colors"`
 }
 
 type UpdateCouponRequest struct {
