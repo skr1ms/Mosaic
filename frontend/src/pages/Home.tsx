@@ -30,13 +30,16 @@ const Home: React.FC = () => {
           </Link>
 
           {/* Панель партнера */}
-          <div className="bg-white rounded-lg shadow-md p-6 opacity-50">
+          <Link
+            to="/partner/login"
+            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+          >
             <div className="text-4xl mb-4">🤝</div>
             <h2 className="text-xl font-semibold mb-2">Панель партнера</h2>
             <p className="text-gray-600">
-              Генерация купонов, статистика продаж (в разработке)
+              Генерация купонов, статистика продаж
             </p>
-          </div>
+          </Link>
 
           {/* Активация купонов */}
           <div className="bg-white rounded-lg shadow-md p-6 opacity-50">

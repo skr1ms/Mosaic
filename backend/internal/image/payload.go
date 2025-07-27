@@ -1,4 +1,4 @@
-package image_processing
+package image
 
 import "github.com/google/uuid"
 

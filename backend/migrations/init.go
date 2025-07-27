@@ -4,10 +4,10 @@ import (
 	"github.com/skr1ms/mosaic/config"
 	"github.com/skr1ms/mosaic/internal/admin"
 	"github.com/skr1ms/mosaic/internal/coupon"
-	"github.com/skr1ms/mosaic/internal/image_processing"
+	"github.com/skr1ms/mosaic/internal/image"
 	"github.com/skr1ms/mosaic/internal/partner"
+	"github.com/skr1ms/mosaic/pkg/bcrypt"
 	"github.com/skr1ms/mosaic/pkg/db"
-	password "github.com/skr1ms/mosaic/pkg/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -22,10 +22,15 @@ func Init(cfg *config.Config) {
 		&partner.Partner{},
 		&admin.Admin{},
 		&coupon.Coupon{},
-		&image_processing.ImageProcessingQueue{},
+		&image.Image{},
 	)
 	if err != nil {
 		panic("Failed to migrate database: " + err.Error())
+	}
+
+	// Миграция кодов партнеров в строковый формат
+	if err := migratePartnerCodes(database.DB); err != nil {
+		panic("Failed to migrate partner codes: " + err.Error())
 	}
 
 	// Создаем дефолтного администратора, если администраторов нет
@@ -96,7 +101,7 @@ func createDefaultAdmin(db *gorm.DB) error {
 
 	// Создаем дефолтного админа
 	defaultPassword := "admin123"
-	hashedPassword, err := password.HashPassword(defaultPassword)
+	hashedPassword, err := bcrypt.HashPassword(defaultPassword)
 	if err != nil {
 		return err
 	}
@@ -111,4 +116,61 @@ func createDefaultAdmin(db *gorm.DB) error {
 	}
 
 	return nil
+}
+
+// migratePartnerCodes мигрирует коды партнеров из int16 в строковый формат с ведущими нулями
+func migratePartnerCodes(db *gorm.DB) error {
+	// Проверяем, есть ли уже колонка partner_code как строка
+	var columnType string
+	err := db.Raw(`
+		SELECT data_type 
+		FROM information_schema.columns 
+		WHERE table_name = 'partners' AND column_name = 'partner_code'
+	`).Scan(&columnType).Error
+
+	if err != nil {
+		return err
+	}
+
+	// Если колонка уже строка, миграция не нужна
+	if columnType == "character varying" {
+		return nil
+	}
+
+	// Выполняем миграцию
+	return db.Transaction(func(tx *gorm.DB) error {
+		// Создаем временную колонку
+		if err := tx.Exec("ALTER TABLE partners ADD COLUMN partner_code_new VARCHAR(4)").Error; err != nil {
+			return err
+		}
+
+		// Копируем данные с форматированием
+		if err := tx.Exec(`
+			UPDATE partners 
+			SET partner_code_new = LPAD(CAST(partner_code AS TEXT), 4, '0')
+		`).Error; err != nil {
+			return err
+		}
+
+		// Удаляем старую колонку
+		if err := tx.Exec("ALTER TABLE partners DROP COLUMN partner_code").Error; err != nil {
+			return err
+		}
+
+		// Переименовываем новую колонку
+		if err := tx.Exec("ALTER TABLE partners RENAME COLUMN partner_code_new TO partner_code").Error; err != nil {
+			return err
+		}
+
+		// Добавляем ограничения
+		if err := tx.Exec("ALTER TABLE partners ALTER COLUMN partner_code SET NOT NULL").Error; err != nil {
+			return err
+		}
+
+		if err := tx.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_partners_partner_code ON partners(partner_code)").Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
 }

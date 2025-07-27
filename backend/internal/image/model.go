@@ -1,4 +1,4 @@
-package image_processing
+package image
 
 import (
 	"database/sql/driver"
@@ -34,11 +34,14 @@ func (p *ProcessingParams) Scan(value interface{}) error {
 	return json.Unmarshal(bytes, p)
 }
 
-type ImageProcessingQueue struct {
+type Image struct {
 	ID                uuid.UUID        `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	CouponID          uuid.UUID        `gorm:"type:uuid;not null;index:idx_image_coupon_id" json:"coupon_id"`
 	OriginalImagePath string           `gorm:"not null;size:255" json:"original_image_path"`
-	ProcessingParams  ProcessingParams `gorm:"type:json;not null" json:"processing_params"`
+	EditedImagePath   *string          `gorm:"size:255" json:"edited_image_path"`  // Путь к отредактированному изображению
+	PreviewPath       *string          `gorm:"size:255" json:"preview_path"`       // Путь к превью изображения
+	ResultPath        *string          `gorm:"size:255" json:"result_path"`        // Путь к готовой схеме
+	ProcessingParams  ProcessingParams `gorm:"type:json" json:"processing_params"` // Параметры обработки
 	UserEmail         string           `gorm:"not null;size:255;index:idx_image_user_email" json:"user_email"`
 	Status            string           `gorm:"type:processing_status;default:'queued';index:idx_image_status;index:idx_image_queue_order,priority:1;index:idx_image_retry,priority:1" json:"status"`
 	Priority          int              `gorm:"default:0;index:idx_image_queue_order,priority:2" json:"priority"`

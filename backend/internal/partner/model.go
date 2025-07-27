@@ -4,11 +4,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type Partner struct {
 	ID              uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	PartnerCode     int16      `gorm:"unique;not null;index" json:"partner_code"` // 4-значный код партнера (0000-9999)
+	PartnerCode     string     `gorm:"unique;not null;size:4;index" json:"partner_code"` // 4-значный код партнера (0000-9999). 0000 зарезервирован для собственных купонов, 0001+ для партнеров
 	Login           string     `gorm:"unique;not null;size:255;index" json:"login"`
 	Password        string     `gorm:"not null;size:255" json:"password"` // Хешированный пароль
 	LastLogin       *time.Time `gorm:"index:idx_partners_last_login" json:"last_login"`
@@ -22,10 +23,22 @@ type Partner struct {
 	Phone           string     `gorm:"size:50" json:"phone"`
 	Telegram        string     `gorm:"size:255" json:"telegram"`
 	Whatsapp        string     `gorm:"size:255" json:"whatsapp"`
+	TelegramLink    string     `gorm:"size:255" json:"telegram_link"` // Полная ссылка на Telegram
+	WhatsappLink    string     `gorm:"size:255" json:"whatsapp_link"` // Полная ссылка на WhatsApp
 	AllowSales      bool       `gorm:"default:true;index:idx_partners_allow_sales" json:"allow_sales"`
+	AllowPurchases  bool       `gorm:"default:true" json:"allow_purchases"` // Разрешить покупки через брендированную версию
 	Status          string     `gorm:"type:partner_status;default:'active';index:idx_partners_status" json:"status"`
 	CreatedAt       time.Time  `gorm:"index:idx_partners_created_at" json:"created_at"`
 	UpdatedAt       time.Time  `gorm:"index:idx_partners_updated_at" json:"updated_at"`
+}
+
+// BeforeDelete хук для каскадного удаления купонов при удалении партнера
+func (p *Partner) BeforeDelete(tx *gorm.DB) error {
+	// Удаляем все купоны партнера
+	if err := tx.Exec("DELETE FROM coupons WHERE partner_id = ?", p.ID).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 // - idx_partners_status: фильтрация по статусу (active/blocked)

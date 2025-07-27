@@ -28,10 +28,10 @@ const (
 )
 
 type CreateCouponRequest struct {
-	Count     int         `json:"count" validate:"required,min=1,max=1000"`
-	PartnerID uuid.UUID   `json:"partner_id" validate:"required"`
-	Size      CouponSize  `json:"size" validate:"required,oneof=21x30 30x40 40x40 40x50 40x60 50x70"`
-	Style     CouponStyle `json:"style" validate:"required,oneof=grayscale skin_tones pop_art max_colors"`
+	Count        int         `json:"count" validate:"required,min=1,max=1000"`
+	PartnerID    uuid.UUID   `json:"partner_id" validate:"required"`
+	Size         CouponSize  `json:"size" validate:"required,oneof=21x30 30x40 40x40 40x50 40x60 50x70"`
+	Style        CouponStyle `json:"style" validate:"required,oneof=grayscale skin_tones pop_art max_colors"`
 }
 
 type UpdateCouponRequest struct {
@@ -64,4 +64,51 @@ type CouponResponse struct {
 	SchemaSentEmail  *string      `json:"schema_sent_email,omitempty"`
 	SchemaSentAt     *time.Time   `json:"schema_sent_at,omitempty"`
 	CreatedAt        time.Time    `json:"created_at"`
+}
+
+type BatchDeleteRequest struct {
+	CouponIDs []string `json:"coupon_ids" validate:"required,min=1"`
+}
+
+type CouponValidationResponse struct {
+	Valid   bool       `json:"valid"`
+	Message string     `json:"message"`
+	Size    *string    `json:"size,omitempty"`
+	Style   *string    `json:"style,omitempty"`
+	UsedAt  *time.Time `json:"used_at,omitempty"`
+}
+
+type CouponStatistics struct {
+	Total     int64 `json:"total"`
+	New       int64 `json:"new"`
+	Used      int64 `json:"used"`
+	Purchased int64 `json:"purchased"`
+}
+
+type PaginationInfo struct {
+	CurrentPage int   `json:"current_page"`
+	PerPage     int   `json:"per_page"`
+	Total       int64 `json:"total"`
+	TotalPages  int64 `json:"total_pages"`
+	HasNext     bool  `json:"has_next"`
+	HasPrevious bool  `json:"has_previous"`
+}
+
+type PaginatedCouponsResponse struct {
+	Coupons    []*Coupon      `json:"coupons"`
+	Pagination PaginationInfo `json:"pagination"`
+}
+
+type ActivateCouponRequest struct {
+	OriginalImageURL *string `json:"original_image_url,omitempty" validate:"omitempty,url"`
+	PreviewURL       *string `json:"preview_url,omitempty" validate:"omitempty,url"`
+	SchemaURL        *string `json:"schema_url,omitempty" validate:"omitempty,url"`
+}
+
+type SendSchemaRequest struct {
+	Email string `json:"email" validate:"required,email"`
+}
+
+type MarkAsPurchasedRequest struct {
+	PurchaseEmail string `json:"purchase_email" validate:"required,email"`
 }

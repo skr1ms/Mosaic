@@ -1,5 +1,11 @@
 package partner
 
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
+
 type LoginRequest struct {
 	Login    string `json:"login" validate:"required,secure_login"`
 	Password string `json:"password" validate:"required"`
@@ -12,7 +18,6 @@ type RefreshTokenRequest struct {
 type CreatePartnerRequest struct {
 	Login           string `json:"login" validate:"required,secure_login"`
 	Password        string `json:"password" validate:"required,secure_password"`
-	PartnerCode     int16  `json:"partner_code" validate:"required"`
 	Domain          string `json:"domain" validate:"required,url"`
 	BrandName       string `json:"brand_name" validate:"required"`
 	LogoURL         string `json:"logo_url" validate:"omitempty,url"`
@@ -30,7 +35,6 @@ type CreatePartnerRequest struct {
 type UpdatePartnerRequest struct {
 	Login           *string `json:"login" validate:"omitempty,secure_login"`
 	Password        *string `json:"password" validate:"omitempty,secure_password"`
-	PartnerCode     *int16  `json:"partner_code" validate:"omitempty"`
 	Domain          *string `json:"domain" validate:"omitempty,url"`
 	BrandName       *string `json:"brand_name" validate:"omitempty"`
 	LogoURL         *string `json:"logo_url" validate:"omitempty,url"`
@@ -43,4 +47,32 @@ type UpdatePartnerRequest struct {
 	Whatsapp        *string `json:"whatsapp" validate:"omitempty,whatsapp_link"`
 	AllowSales      *bool   `json:"allow_sales"`
 	Status          *string `json:"status" validate:"omitempty,oneof=active inactive pending"`
+}
+
+type UpdatePasswordRequest struct {
+	CurrentPassword string `json:"current_password" validate:"required"`
+	NewPassword     string `json:"new_password" validate:"required,secure_password"`
+}
+
+type ForgotPasswordRequest struct {
+	Email string `json:"email" validate:"required,email"`
+	//Captcha string `json:"captcha" validate:"required"`
+}
+
+type ResetPasswordRequest struct {
+	Token       string `json:"token" validate:"required"`
+	NewPassword string `json:"new_password" validate:"required,secure_password"`
+}
+
+type ExportCouponRequest struct {
+	CouponCode    string     `json:"coupon_code"`
+	PartnerID     uuid.UUID  `json:"partner_id"`
+	PartnerStatus string     `json:"partner_status"`
+	CouponStatus  string     `json:"coupon_status"`
+	Size          string     `json:"size"`
+	Style         string     `json:"style"`
+	BrandName     string     `json:"brand_name"`
+	Email         string     `json:"email"`
+	CreatedAt     time.Time  `json:"created_at"`
+	UsedAt        *time.Time `json:"used_at,omitempty"`
 }

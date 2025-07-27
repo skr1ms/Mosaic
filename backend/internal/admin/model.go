@@ -7,9 +7,9 @@ import (
 )
 
 type Admin struct {
-	ID        uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	Login     string     `gorm:"unique;not null;size:255;index" json:"login"`
-	Password  string     `gorm:"not null;size:255" json:"password"`
+	ID        uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id" validate:"required"`
+	Login     string     `gorm:"unique;not null;size:255;index" json:"login" validate:"required,secure_login"`
+	Password  string     `gorm:"not null;size:255" json:"password" validate:"required,secure_password"`
 	LastLogin *time.Time `gorm:"index:idx_admins_last_login" json:"last_login"`
 	CreatedAt time.Time  `gorm:"index:idx_admins_created_at" json:"created_at"`
 }

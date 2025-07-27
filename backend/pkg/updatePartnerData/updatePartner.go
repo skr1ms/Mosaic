@@ -1,4 +1,4 @@
-package utils
+package updatePartnerData
 
 import "github.com/skr1ms/mosaic/internal/partner"
 
@@ -9,9 +9,6 @@ func UpdatePartnerData(partner *partner.Partner, req *partner.UpdatePartnerReque
 	}
 	if req.Password != nil && *req.Password != "" {
 		partner.Password = *req.Password
-	}
-	if req.PartnerCode != nil && *req.PartnerCode != 0 {
-		partner.PartnerCode = *req.PartnerCode
 	}
 	if req.Domain != nil && *req.Domain != "" {
 		partner.Domain = *req.Domain

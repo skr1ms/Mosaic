@@ -46,6 +46,8 @@ const (
 
 	PartnerAccessTokenDuration  = time.Minute * 30   // 30 минут для партнеров
 	PartnerRefreshTokenDuration = time.Hour * 24 * 3 // 3 дня для партнеров
+
+	PasswordResetTokenDuration = time.Minute * 15 // 15 минут для сброса пароля
 )
 
 // CreateAccessToken создает access токен
@@ -232,4 +234,46 @@ func GetClaimsFromFiberContext(c *fiber.Ctx) (*Claims, error) {
 		Role:      role,
 		TokenType: tokenType,
 	}, nil
+}
+
+// CreatePasswordResetToken создает токен для сброса пароля
+func (j *JWT) CreatePasswordResetToken(userID uuid.UUID, email string) (string, error) {
+    now := time.Now()
+    claims := &Claims{
+        UserID:    userID,
+        Login:     email,
+        TokenType: "password_reset", 
+        RegisteredClaims: jwt.RegisteredClaims{
+            ExpiresAt: jwt.NewNumericDate(now.Add(1 * time.Hour)), // TTL 1 час
+            IssuedAt:  jwt.NewNumericDate(now),
+            NotBefore: jwt.NewNumericDate(now),
+            Subject:   userID.String(),
+        },
+    }
+
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    return token.SignedString([]byte(j.SecretKey)) // Используем основной секрет
+}
+
+// ValidatePasswordResetToken проверяет токен для сброса пароля
+func (j *JWT) ValidatePasswordResetToken(tokenString string) (*Claims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return []byte(j.SecretKey), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+		if claims.TokenType != "password_reset" {
+			return nil, errors.New("invalid token type")
+		}
+		return claims, nil
+	}
+
+	return nil, errors.New("invalid token")
 }

@@ -105,68 +105,116 @@ func (r *CouponRepository) Delete(id uuid.UUID) error {
 	return r.db.Delete(&Coupon{}, id).Error
 }
 
+// BatchDelete массово удаляет купоны по списку ID
+func (r *CouponRepository) BatchDelete(ids []uuid.UUID) (int64, error) {
+	result := r.db.Where("id IN ?", ids).Delete(&Coupon{})
+	return result.RowsAffected, result.Error
+}
+
 // Search выполняет поиск купонов по различным критериям
 func (r *CouponRepository) Search(code, status, size, style string, partnerID *uuid.UUID) ([]*Coupon, error) {
+	query := r.db.Model(&Coupon{})
+
 	if code != "" {
-		r.db = r.db.Where("code ILIKE ?", "%"+code+"%")
+		query = query.Where("code ILIKE ?", "%"+code+"%")
 	}
 
 	if status != "" {
-		r.db = r.db.Where("status = ?", status)
+		query = query.Where("status = ?", status)
 	}
 
 	if size != "" {
-		r.db = r.db.Where("size = ?", size)
+		query = query.Where("size = ?", size)
 	}
 
 	if style != "" {
-		r.db = r.db.Where("style = ?", style)
+		query = query.Where("style = ?", style)
 	}
 
 	if partnerID != nil {
-		r.db = r.db.Where("partner_id = ?", *partnerID)
+		query = query.Where("partner_id = ?", *partnerID)
 	}
 
 	var coupons []*Coupon
-	err := r.db.Find(&coupons).Error
+	err := query.Order("created_at DESC").Find(&coupons).Error
 	return coupons, err
+}
+
+// SearchWithPagination выполняет поиск купонов с пагинацией
+func (r *CouponRepository) SearchWithPagination(code, status, size, style string, partnerID *uuid.UUID, page, limit int) ([]*Coupon, int64, error) {
+	query := r.db.Model(&Coupon{})
+
+	if code != "" {
+		query = query.Where("code ILIKE ?", "%"+code+"%")
+	}
+
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+
+	if size != "" {
+		query = query.Where("size = ?", size)
+	}
+
+	if style != "" {
+		query = query.Where("style = ?", style)
+	}
+
+	if partnerID != nil {
+		query = query.Where("partner_id = ?", *partnerID)
+	}
+
+	// Подсчитываем общее количество
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Применяем пагинацию
+	offset := (page - 1) * limit
+	var coupons []*Coupon
+	err := query.Order("created_at DESC").Offset(offset).Limit(limit).Find(&coupons).Error
+
+	return coupons, total, err
 }
 
 // GetStatistics возвращает статистику по купонам
 func (r *CouponRepository) GetStatistics(partnerID *uuid.UUID) (map[string]int64, error) {
 	stats := make(map[string]int64)
 
-	r.db.Model(&Coupon{})
+	baseQuery := r.db.Model(&Coupon{})
 	if partnerID != nil {
-		r.db = r.db.Where("partner_id = ?", *partnerID)
+		baseQuery = baseQuery.Where("partner_id = ?", *partnerID)
 	}
 
 	var total, used, new, purchased int64
 
 	// Общее количество купонов
-	r.db.Count(&total)
+	baseQuery.Count(&total)
 	stats["total"] = total
 
 	// Активированные купоны
-	r.db.Model(&Coupon{}).Where("status = ?", "used").Count(&used)
+	usedQuery := r.db.Model(&Coupon{}).Where("status = ?", "used")
 	if partnerID != nil {
-		r.db.Model(&Coupon{}).Where("partner_id = ? AND status = ?", *partnerID, "used").Count(&used)
+		usedQuery = usedQuery.Where("partner_id = ?", *partnerID)
 	}
+	usedQuery.Count(&used)
 	stats["used"] = used
 
 	// Новые купоны
-	r.db.Model(&Coupon{}).Where("status = ?", "new").Count(&new)
+	newQuery := r.db.Model(&Coupon{}).Where("status = ?", "new")
 	if partnerID != nil {
-		r.db.Model(&Coupon{}).Where("partner_id = ? AND status = ?", *partnerID, "new").Count(&new)
+		newQuery = newQuery.Where("partner_id = ?", *partnerID)
 	}
+	newQuery.Count(&new)
 	stats["new"] = new
 
 	// Купленные онлайн
+	purchasedQuery := r.db.Model(&Coupon{}).Where("is_purchased = ?", true)
 	if partnerID != nil {
-		r.db.Model(&Coupon{}).Where("partner_id = ? AND is_purchased = ?", *partnerID, true).Count(&purchased)
-	} else {
-		r.db.Model(&Coupon{}).Where("is_purchased = ?", true).Count(&purchased)
+		purchasedQuery = purchasedQuery.Where("partner_id = ?", *partnerID)
 	}
+	purchasedQuery.Count(&purchased)
 	stats["purchased"] = purchased
 
 	return stats, nil
@@ -249,4 +297,11 @@ func (r *CouponRepository) GetRecentActivated(limit int) ([]*Coupon, error) {
 		Limit(limit).
 		Find(&coupons).Error
 	return coupons, err
+}
+
+// CodeExists проверяет, существует ли купон с данным кодом
+func (r *CouponRepository) CodeExists(code string) (bool, error) {
+	var count int64
+	err := r.db.Model(&Coupon{}).Where("code = ?", code).Count(&count).Error
+	return count > 0, err
 }
