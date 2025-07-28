@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"context"
+
 	"github.com/rs/zerolog"
 	"github.com/skr1ms/mosaic/internal/admin"
 	"github.com/skr1ms/mosaic/internal/partner"
@@ -59,7 +61,7 @@ func (s *AuthService) AdminLogin(login, password string) (*admin.Admin, *jwt.Tok
 // PartnerLogin обрабатывает авторизацию партнера и генерирует JWT токены
 func (s *AuthService) PartnerLogin(login, password string) (*partner.Partner, *jwt.TokenPair, error) {
 	// Находим партнера по логину
-	partner, err := s.deps.PartnerRepository.GetByLogin(login)
+	partner, err := s.deps.PartnerRepository.GetByLogin(context.Background(), login)
 	if err != nil && partner == nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrPartnerNotFound.Error())
 		return nil, nil, ErrPartnerNotFound
@@ -85,7 +87,7 @@ func (s *AuthService) PartnerLogin(login, password string) (*partner.Partner, *j
 	}
 
 	// Обновляем время последнего входа
-	if err := s.deps.PartnerRepository.UpdateLastLogin(partner.ID); err != nil {
+	if err := s.deps.PartnerRepository.UpdateLastLogin(context.Background(), partner.ID); err != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrUpdateLastLogin.Error())
 		return nil, nil, ErrUpdateLastLogin
 	}

@@ -1,127 +1,150 @@
 package partner
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
+	"github.com/uptrace/bun"
 )
 
 type PartnerRepository struct {
-	db *gorm.DB
+	db *bun.DB
 }
 
-func NewPartnerRepository(db *gorm.DB) *PartnerRepository {
+func NewPartnerRepository(db *bun.DB) *PartnerRepository {
 	return &PartnerRepository{db: db}
 }
 
-// Create создает нового партнера
-func (r *PartnerRepository) Create(partner *Partner) error {
-	return r.db.Create(partner).Error
+// Create создаёт нового партнёра
+func (r *PartnerRepository) Create(ctx context.Context, partner *Partner) error {
+	_, err := r.db.NewInsert().Model(partner).Exec(ctx)
+	if err != nil {
+		return ErrFailedToCreatePartner
+	}
+	return nil
 }
 
-// GetByLogin находит партнера по логину
-func (r *PartnerRepository) GetByLogin(login string) (*Partner, error) {
-	var partner Partner
-	err := r.db.Where("login = ?", login).First(&partner).Error
+// GetByLogin находит партнёра по логину
+func (r *PartnerRepository) GetByLogin(ctx context.Context, login string) (*Partner, error) {
+	partner := new(Partner)
+	err := r.db.NewSelect().Model(partner).Where("login = ?", login).Scan(ctx)
 	if err != nil {
 		return nil, ErrFailedToFindPartnerByLogin
 	}
-	return &partner, nil
+	return partner, nil
 }
 
-// GetByPartnerCode находит партнера по коду
-func (r *PartnerRepository) GetByPartnerCode(code string) (*Partner, error) {
-	var partner Partner
-	err := r.db.Where("partner_code = ?", code).First(&partner).Error
+// GetByPartnerCode находит партнёра по коду
+func (r *PartnerRepository) GetByPartnerCode(ctx context.Context, code string) (*Partner, error) {
+	partner := new(Partner)
+	err := r.db.NewSelect().Model(partner).Where("partner_code = ?", code).Scan(ctx)
 	if err != nil {
 		return nil, ErrFailedToFindPartnerByPartnerCode
 	}
-	return &partner, nil
+	return partner, nil
 }
 
-// GetByDomain находит партнера по домену
-func (r *PartnerRepository) GetByDomain(domain string) (*Partner, error) {
-	var partner Partner
-	err := r.db.Where("domain = ?", domain).First(&partner).Error
+// GetByDomain находит партнёра по домену
+func (r *PartnerRepository) GetByDomain(ctx context.Context, domain string) (*Partner, error) {
+	partner := new(Partner)
+	err := r.db.NewSelect().Model(partner).Where("domain = ?", domain).Scan(ctx)
 	if err != nil {
 		return nil, ErrFailedToFindPartnerByDomain
 	}
-	return &partner, nil
+	return partner, nil
 }
 
-// GetByID находит партнера по ID
-func (r *PartnerRepository) GetByID(id uuid.UUID) (*Partner, error) {
-	var partner Partner
-	err := r.db.Where("id = ?", id).First(&partner).Error
+// GetByID находит партнёра по ID
+func (r *PartnerRepository) GetByID(ctx context.Context, id uuid.UUID) (*Partner, error) {
+	partner := new(Partner)
+	err := r.db.NewSelect().Model(partner).Where("id = ?", id).Scan(ctx)
 	if err != nil {
 		return nil, ErrFailedToFindPartnerByID
 	}
-	return &partner, nil
+	return partner, nil
 }
 
-// GetByEmail находит партнера по email
-func (r *PartnerRepository) GetByEmail(email string) (*Partner, error) {
-	var partner Partner
-	err := r.db.Where("email = ?", email).First(&partner).Error
+// GetByEmail находит партнёра по email
+func (r *PartnerRepository) GetByEmail(ctx context.Context, email string) (*Partner, error) {
+	partner := new(Partner)
+	err := r.db.NewSelect().Model(partner).Where("email = ?", email).Scan(ctx)
 	if err != nil {
 		return nil, ErrFailedToFindPartnerByEmail
 	}
-	return &partner, nil
+	return partner, nil
 }
 
-// GetAll возвращает всех партнеров
-func (r *PartnerRepository) GetAll() ([]*Partner, error) {
+// GetAll возвращает всех партнёров
+func (r *PartnerRepository) GetAll(ctx context.Context) ([]*Partner, error) {
 	var partners []*Partner
-	err := r.db.Find(&partners).Error
+	err := r.db.NewSelect().Model(&partners).Scan(ctx)
 	if err != nil {
 		return nil, ErrFailedToFindAllPartners
 	}
 	return partners, nil
 }
 
-// GetActivePartners возвращает только активных партнеров
-func (r *PartnerRepository) GetActivePartners() ([]*Partner, error) {
+// GetActivePartners возвращает только активных партнёров
+func (r *PartnerRepository) GetActivePartners(ctx context.Context) ([]*Partner, error) {
 	var partners []*Partner
-	err := r.db.Where("status = ?", "active").Find(&partners).Error
+	err := r.db.NewSelect().Model(&partners).Where("status = ?", "active").Scan(ctx)
 	if err != nil {
 		return nil, ErrFailedToFindActivePartners
 	}
 	return partners, nil
 }
 
-// Update обновляет данные партнера
-func (r *PartnerRepository) Update(partner *Partner) error {
-	return r.db.Save(partner).Error
+// Update обновляет данные партнёра
+func (r *PartnerRepository) Update(ctx context.Context, partner *Partner) error {
+	_, err := r.db.NewUpdate().Model(partner).WherePK().Exec(ctx)
+	if err != nil {
+		return ErrFailedToUpdatePartner
+	}
+	return nil
 }
 
 // UpdateLastLogin обновляет время последнего входа
-func (r *PartnerRepository) UpdateLastLogin(id uuid.UUID) error {
+func (r *PartnerRepository) UpdateLastLogin(ctx context.Context, id uuid.UUID) error {
 	now := time.Now()
-	return r.db.Model(&Partner{}).Where("id = ?", id).Update("last_login", &now).Error
+	_, err := r.db.NewUpdate().Model((*Partner)(nil)).Set("last_login = ?", &now).Where("id = ?", id).Exec(ctx)
+	if err != nil {
+		return ErrFailedToUpdatePartnerLastLogin
+	}
+	return nil
 }
 
-// UpdateStatus обновляет статус партнера
-func (r *PartnerRepository) UpdateStatus(id uuid.UUID, status string) error {
-	return r.db.Model(&Partner{}).Where("id = ?", id).Update("status", status).Error
+// UpdateStatus обновляет статус партнёра
+func (r *PartnerRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status string) error {
+	_, err := r.db.NewUpdate().Model((*Partner)(nil)).Set("status = ?", status).Where("id = ?", id).Exec(ctx)
+	if err != nil {
+		return ErrFailedToUpdatePartnerStatus
+	}
+	return nil
 }
 
-// Delete удаляет партнера
-func (r *PartnerRepository) Delete(id uuid.UUID) error {
-	return r.db.Delete(&Partner{}, id).Error
+// Delete удаляет партнёра
+func (r *PartnerRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.NewDelete().Model((*Partner)(nil)).Where("id = ?", id).Exec(ctx)
+	if err != nil {
+		return ErrFailedToDeletePartner
+	}
+	return nil
 }
 
-// DeleteWithCoupons удаляет партнера и все его купоны в транзакции
-func (r *PartnerRepository) DeleteWithCoupons(id uuid.UUID) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
-		// Удаляем все купоны партнера
-		if err := tx.Exec("DELETE FROM coupons WHERE partner_id = ?", id).Error; err != nil {
-			return ErrFailedToDeleteCoupons
+// DeleteWithCoupons удаляет партнёра и все его купоны в транзакции
+func (r *PartnerRepository) DeleteWithCoupons(ctx context.Context, id uuid.UUID) error {
+	return r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+		// Проверяем, сколько купонов у партнера для логирования
+		_, err := tx.NewSelect().Table("coupons").Where("partner_id = ?", id).Count(ctx)
+		if err != nil {
+			return ErrFailedToDeletePartner
 		}
 
-		// Удаляем партнера
-		if err := tx.Delete(&Partner{}, id).Error; err != nil {
+		// Удаляем партнера - купоны и изображения удалятся автоматически благодаря CASCADE
+		_, err = tx.NewDelete().Model((*Partner)(nil)).Where("id = ?", id).Exec(ctx)
+		if err != nil {
 			return ErrFailedToDeletePartner
 		}
 
@@ -129,31 +152,28 @@ func (r *PartnerRepository) DeleteWithCoupons(id uuid.UUID) error {
 	})
 }
 
-// Search выполняет поиск партнеров по различным критериям
-func (r *PartnerRepository) Search(query string, status string) ([]*Partner, error) {
-	db := r.db
+// Search выполняет поиск партнёров по различным критериям
+func (r *PartnerRepository) Search(ctx context.Context, queryStr string, status string) ([]*Partner, error) {
+	query := r.db.NewSelect().Model((*Partner)(nil))
 
-	if query != "" {
-		db = db.Where("brand_name ILIKE ? OR domain ILIKE ? OR email ILIKE ?",
-			"%"+query+"%", "%"+query+"%", "%"+query+"%")
+	if queryStr != "" {
+		query = query.Where("brand_name ILIKE ? OR domain ILIKE ? OR email ILIKE ?", "%"+queryStr+"%", "%"+queryStr+"%", "%"+queryStr+"%")
 	}
-
 	if status != "" {
-		db = db.Where("status = ?", status)
+		query = query.Where("status = ?", status)
 	}
 
 	var partners []*Partner
-	err := db.Find(&partners).Error
+	err := query.Scan(ctx, &partners)
 	if err != nil {
 		return nil, ErrFailedToFindPartners
 	}
 	return partners, nil
 }
 
-// GetPartnerCouponsForExport возвращает купоны партнера с данными для экспорта
-func (r *PartnerRepository) GetPartnerCouponsForExport(partnerID uuid.UUID, status string) ([]*ExportCouponRequest, error) {
+// GetPartnerCouponsForExport возвращает купоны партнёра с данными для экспорта
+func (r *PartnerRepository) GetPartnerCouponsForExport(ctx context.Context, partnerID uuid.UUID, status string) ([]*ExportCouponRequest, error) {
 	var coupons []*ExportCouponRequest
-
 	query := `
 		SELECT 
 			c.code as coupon_code,
@@ -168,29 +188,23 @@ func (r *PartnerRepository) GetPartnerCouponsForExport(partnerID uuid.UUID, stat
 			c.used_at
 		FROM coupons c
 		JOIN partners p ON c.partner_id = p.id
-		WHERE c.partner_id = ?
-	`
-
+		WHERE c.partner_id = ?`
 	args := []interface{}{partnerID}
-
 	if status != "" {
 		query += " AND c.status = ?"
 		args = append(args, status)
 	}
-
 	query += " ORDER BY c.created_at DESC"
-
-	err := r.db.Raw(query, args...).Scan(&coupons).Error
+	err := r.db.NewRaw(query, args...).Scan(ctx, &coupons)
 	if err != nil {
 		return nil, ErrFailedToFindPartnerCouponsForExport
 	}
 	return coupons, nil
 }
 
-// GetAllCouponsForExport возвращает все купоны с данными партнеров для экспорта админом
-func (r *PartnerRepository) GetAllCouponsForExport() ([]*ExportCouponRequest, error) {
+// GetAllCouponsForExport возвращает все купоны с данными партнёров для экспорта админом
+func (r *PartnerRepository) GetAllCouponsForExport(ctx context.Context) ([]*ExportCouponRequest, error) {
 	var coupons []*ExportCouponRequest
-
 	query := `
 		SELECT 
 			c.code as coupon_code,
@@ -205,79 +219,72 @@ func (r *PartnerRepository) GetAllCouponsForExport() ([]*ExportCouponRequest, er
 			c.used_at
 		FROM coupons c
 		JOIN partners p ON c.partner_id = p.id
-		ORDER BY p.id, c.created_at DESC
-	`
-
-	err := r.db.Raw(query).Scan(&coupons).Error
-	return coupons, err
+		ORDER BY p.id, c.created_at DESC`
+	err := r.db.NewRaw(query).Scan(ctx, &coupons)
+	if err != nil {
+		return nil, ErrFailedToGetAllCouponsForExport
+	}
+	return coupons, nil
 }
 
-// GetCouponsStatistics возвращает статистику купонов партнера
-func (r *PartnerRepository) GetCouponsStatistics(partnerID uuid.UUID) (map[string]int64, error) {
+// GetCouponsStatistics возвращает статистику купонов партнёра
+func (r *PartnerRepository) GetCouponsStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]int64, error) {
 	stats := make(map[string]int64)
 
-	// Общее количество купонов
-	var total int64
-	err := r.db.Table("coupons").Where("partner_id = ?", partnerID).Count(&total).Error
-	if err != nil {
-		return nil, err
-	}
-	stats["total"] = total
+	var count int
+	var err error
 
-	// Активированные купоны
-	var activated int64
-	err = r.db.Table("coupons").Where("partner_id = ? AND status = ?", partnerID, "used").Count(&activated).Error
+	count, err = r.db.NewSelect().Model(map[string]interface{}{}).Table("coupons").Where("partner_id = ?", partnerID).Count(ctx)
 	if err != nil {
-		return nil, err
+		return nil, ErrFailedToGetCouponsStatistics
 	}
-	stats["activated"] = activated
+	stats["total"] = int64(count)
 
-	// Новые купоны
-	var new int64
-	err = r.db.Table("coupons").Where("partner_id = ? AND status = ?", partnerID, "new").Count(&new).Error
+	count, err = r.db.NewSelect().Model(map[string]interface{}{}).Table("coupons").Where("partner_id = ? AND status = ?", partnerID, "used").Count(ctx)
 	if err != nil {
-		return nil, err
+		return nil, ErrFailedToGetCouponsStatistics
 	}
-	stats["new"] = new
+	stats["activated"] = int64(count)
 
-	// Купленные онлайн
-	var purchased int64
-	err = r.db.Table("coupons").Where("partner_id = ? AND is_purchased = ?", partnerID, true).Count(&purchased).Error
+	count, err = r.db.NewSelect().Model(map[string]interface{}{}).Table("coupons").Where("partner_id = ? AND status = ?", partnerID, "new").Count(ctx)
 	if err != nil {
-		return nil, err
+		return nil, ErrFailedToGetCouponsStatistics
 	}
-	stats["purchased"] = purchased
+	stats["new"] = int64(count)
+
+	count, err = r.db.NewSelect().Model(map[string]interface{}{}).Table("coupons").Where("partner_id = ? AND is_purchased = ?", partnerID, true).Count(ctx)
+	if err != nil {
+		return nil, ErrFailedToGetCouponsStatistics
+	}
+	stats["purchased"] = int64(count)
 
 	return stats, nil
 }
 
-// UpdatePassword обновляет пароль партнера
-func (r *PartnerRepository) UpdatePassword(partnerID uuid.UUID, hashedPassword string) error {
-	return r.db.Model(&Partner{}).Where("id = ?", partnerID).Update("password", hashedPassword).Error
+// UpdatePassword обновляет пароль партнёра
+func (r *PartnerRepository) UpdatePassword(ctx context.Context, partnerID uuid.UUID, hashedPassword string) error {
+	_, err := r.db.NewUpdate().Model((*Partner)(nil)).Set("password = ?", hashedPassword).Where("id = ?", partnerID).Exec(ctx)
+	if err != nil {
+		return ErrFailedToUpdatePartnerPassword
+	}
+	return nil
 }
 
-// GetNextPartnerCode возвращает следующий доступный код партнера (начиная с 0001)
-func (r *PartnerRepository) GetNextPartnerCode() (string, error) {
+// GetNextPartnerCode возвращает следующий доступный код партнёра (начиная с 0001)
+func (r *PartnerRepository) GetNextPartnerCode(ctx context.Context) (string, error) {
 	var maxCode string
-	err := r.db.Model(&Partner{}).Select("COALESCE(MAX(CAST(partner_code AS INTEGER)), 0)").Scan(&maxCode).Error
+	err := r.db.NewSelect().Model((*Partner)(nil)).ColumnExpr("COALESCE(MAX(CAST(partner_code AS INTEGER)), 0)").Scan(ctx, &maxCode)
 	if err != nil {
-		return "", err
+		return "", ErrFailedToGetPartnerCode
 	}
-
-	// Если максимальный код 0 или меньше, начинаем с 1
-	// Иначе инкрементируем на 1
-	// Код 0000 зарезервирован для собственных купонов
 	var nextCode int
 	if maxCode == "" || maxCode == "0" {
 		nextCode = 1
 	} else {
-		// Парсим строку в число
 		if _, err := fmt.Sscanf(maxCode, "%d", &nextCode); err != nil {
-			return "", err
+			return "", ErrFailedToGetPartnerCode
 		}
 		nextCode++
 	}
-
-	// Форматируем как 4-значную строку с ведущими нулями
 	return fmt.Sprintf("%04d", nextCode), nil
 }

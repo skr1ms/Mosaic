@@ -1,15 +1,15 @@
 package randomCouponCode
 
 import (
+	"context"
 	"crypto/rand"
 	"fmt"
 	"math/big"
 	"strconv"
 )
 
-// CouponRepository интерфейс для проверки существования купонов
 type CouponRepository interface {
-	CodeExists(code string) (bool, error)
+	CodeExists(ctx context.Context, code string) (bool, error)
 }
 
 // GenerateCouponCode генерирует уникальный код купона в формате XXXX-XXXX-XXXX
@@ -47,7 +47,6 @@ func GenerateCouponCode() string {
 }
 
 // GenerateCouponCodeWithPartner - обратная совместимость, генерирует код без проверки уникальности
-// Deprecated: используйте GenerateUniqueCouponCode с репозиторием
 func GenerateCouponCodeWithPartner(partnerCode string) string {
 	var code int
 	if len(partnerCode) == 4 {
@@ -73,7 +72,7 @@ func generateUniqueSuffix(prefix string, repo CouponRepository) (string, error) 
 		fullCode := prefix + suffix
 
 		// Проверяем, существует ли такой код
-		exists, err := repo.CodeExists(fullCode)
+		exists, err := repo.CodeExists(context.Background(), fullCode)
 		if err != nil {
 			return "", fmt.Errorf("ошибка проверки существования кода: %v", err)
 		}
@@ -95,4 +94,3 @@ func generateRandomDigits(length int) string {
 	}
 	return result
 }
-

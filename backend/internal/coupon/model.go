@@ -4,32 +4,35 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/uptrace/bun"
 )
 
 type Coupon struct {
-	ID            uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	PartnerID     uuid.UUID  `gorm:"type:uuid;not null" json:"partner_id"`
-	IsBlocked     bool       `gorm:"default:false;index:idx_coupons_blocked" json:"is_blocked"`
-	Code          string     `gorm:"unique;not null;size:12;index" json:"code"` // 12-значный код купона в формате XXXX-XXXX-XXXX
-	Size          string     `gorm:"type:coupon_size;not null;index:idx_coupons_filters,priority:1" json:"size"`
-	Style         string     `gorm:"type:coupon_style;not null;index:idx_coupons_filters,priority:2" json:"style"`
-	Status        string     `gorm:"type:coupon_status;default:'new';index:idx_coupons_status;index:idx_coupons_partner_status,priority:2;index:idx_coupons_filters,priority:3" json:"status"`
-	IsPurchased   bool       `gorm:"default:false;index:idx_coupons_purchased" json:"is_purchased"`
-	PurchaseEmail *string    `gorm:"size:255" json:"purchase_email"`
-	PurchasedAt   *time.Time `gorm:"index:idx_coupons_purchased_at" json:"purchased_at"`
+	bun.BaseModel `bun:"table:coupons,alias:c"`
+
+	ID            uuid.UUID  `bun:"id,pk,type:uuid,default:gen_random_uuid()" json:"id"`
+	PartnerID     uuid.UUID  `bun:"partner_id,type:uuid,notnull" json:"partner_id"`
+	IsBlocked     bool       `bun:"is_blocked,default:false" json:"is_blocked"`
+	Code          string     `bun:"code,unique,notnull" json:"code"` // 12-значный код купона в формате XXXX-XXXX-XXXX
+	Size          string     `bun:"size,type:coupon_size,notnull" json:"size"`
+	Style         string     `bun:"style,type:coupon_style,notnull" json:"style"`
+	Status        string     `bun:"status,type:coupon_status,default:'new'" json:"status"`
+	IsPurchased   bool       `bun:"is_purchased,default:false" json:"is_purchased"`
+	PurchaseEmail *string    `bun:"purchase_email" json:"purchase_email"`
+	PurchasedAt   *time.Time `bun:"purchased_at" json:"purchased_at"`
 
 	// Поля для пользовательского API
-	UserEmail   *string    `gorm:"size:255" json:"user_email"`                         // Email пользователя при активации
-	ActivatedAt *time.Time `gorm:"index:idx_coupons_activated_at" json:"activated_at"` // Время активации купона
-	UsedAt      *time.Time `gorm:"index:idx_coupons_used_at" json:"used_at"`           // Время использования купона
-	CompletedAt *time.Time `gorm:"index:idx_coupons_completed_at" json:"completed_at"` // Время завершения обработки
+	UserEmail   *string    `bun:"user_email" json:"user_email"`     // Email пользователя при активации
+	ActivatedAt *time.Time `bun:"activated_at" json:"activated_at"` // Время активации купона
+	UsedAt      *time.Time `bun:"used_at" json:"used_at"`           // Время использования купона
+	CompletedAt *time.Time `bun:"completed_at" json:"completed_at"` // Время завершения обработки
 
-	OriginalImageURL *string    `gorm:"size:255" json:"original_image_url"`
-	PreviewURL       *string    `gorm:"size:255" json:"preview_url"`
-	SchemaURL        *string    `gorm:"size:255" json:"schema_url"`
-	SchemaSentEmail  *string    `gorm:"size:255" json:"schema_sent_email"`
-	SchemaSentAt     *time.Time `json:"schema_sent_at"`
-	CreatedAt        time.Time  `gorm:"index:idx_coupons_created_at" json:"created_at"`
+	OriginalImageURL *string    `bun:"original_image_url" json:"original_image_url"`
+	PreviewURL       *string    `bun:"preview_url" json:"preview_url"`
+	SchemaURL        *string    `bun:"schema_url" json:"schema_url"`
+	SchemaSentEmail  *string    `bun:"schema_sent_email" json:"schema_sent_email"`
+	SchemaSentAt     *time.Time `bun:"schema_sent_at" json:"schema_sent_at"`
+	CreatedAt        time.Time  `bun:"created_at,nullzero,notnull,default:current_timestamp" json:"created_at"`
 }
 
 // - idx_coupons_partner_id: быстрый поиск купонов по партнеру
@@ -40,3 +43,16 @@ type Coupon struct {
 // - idx_coupons_created_at: сортировка по дате создания
 // - idx_coupons_purchased_at: аналитика по датам покупки
 // - idx_coupons_used_at: аналитика по датам использования
+
+func (c *Coupon) CreateIndex() string {
+	return `
+	CREATE INDEX IF NOT EXISTS idx_coupons_partner_id ON coupons(partner_id);
+	CREATE INDEX IF NOT EXISTS idx_coupons_partner_status ON coupons(partner_id, status);
+	CREATE INDEX IF NOT EXISTS idx_coupons_status ON coupons(status);
+	CREATE INDEX IF NOT EXISTS idx_coupons_filters ON coupons(size, style, status);
+	CREATE INDEX IF NOT EXISTS idx_coupons_purchased ON coupons(is_purchased);
+	CREATE INDEX IF NOT EXISTS idx_coupons_created_at ON coupons(created_at);
+	CREATE INDEX IF NOT EXISTS idx_coupons_purchased_at ON coupons(purchased_at);
+	CREATE INDEX IF NOT EXISTS idx_coupons_used_at ON coupons(used_at);
+	`
+}

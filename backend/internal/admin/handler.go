@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -39,47 +40,47 @@ func NewAdminHandler(router fiber.Router, deps *AdminHandlerDeps) {
 	protected := adminRoutes.Use(middleware.JWTMiddleware(deps.JwtService), middleware.AdminOnly())
 
 	// Управление администраторами
-	protected.Post("/admins", handler.CreateAdmin)    // создание 
-	protected.Get("/admins", handler.GetAdmins)       // получение списка администраторов 
+	protected.Post("/admins", handler.CreateAdmin)    // создание
+	protected.Get("/admins", handler.GetAdmins)       // получение списка администраторов
 	protected.Get("/dashboard", handler.GetDashboard) // получение дашборда администратора
 
 	// Управление партнерами
-	protected.Get("/partners", handler.GetPartners)                         // получение списка партнеров 
-	protected.Post("/partners", handler.CreatePartner)                      // создание партнера 
-	protected.Get("/partners/:id", handler.GetPartner)                      // получение информации о партнере 
-	protected.Put("/partners/:id", handler.UpdatePartner)                   // обновление информации о партнере 
-	protected.Patch("/partners/:id/block", handler.BlockPartner)            // блокировка партнера 
-	protected.Patch("/partners/:id/unblock", handler.UnblockPartner)        // разблокировка партнера 
-	protected.Delete("/partners/:id", handler.DeletePartner)                // удаление партнера 
-	protected.Get("/partners/:id/statistics", handler.GetPartnerStatistics) // получение статистики партнера 
+	protected.Get("/partners", handler.GetPartners)                         // получение списка партнеров
+	protected.Post("/partners", handler.CreatePartner)                      // создание партнера
+	protected.Get("/partners/:id", handler.GetPartner)                      // получение информации о партнере
+	protected.Put("/partners/:id", handler.UpdatePartner)                   // обновление информации о партнере
+	protected.Patch("/partners/:id/block", handler.BlockPartner)            // блокировка партнера
+	protected.Patch("/partners/:id/unblock", handler.UnblockPartner)        // разблокировка партнера
+	protected.Delete("/partners/:id", handler.DeletePartner)                // удаление партнера
+	protected.Get("/partners/:id/statistics", handler.GetPartnerStatistics) // получение статистики партнера
 
 	// Управление купонами
-	protected.Get("/coupons", handler.GetCoupons)                              // получение списка купонов 
-	protected.Get("/coupons/paginated", handler.GetCouponsPaginated)           // получение купонов с пагинацией 
-	protected.Post("/coupons", handler.CreateCoupons)                          // создание купонов 
-	protected.Get("/coupons/export", handler.ExportCoupons)                    // экспорт купонов 
-	protected.Get("/coupons/export/partner/:id", handler.ExportPartnerCoupons) // экспорт купонов партнера 
-	protected.Post("/coupons/batch-delete", handler.BatchDeleteCoupons)        // массовое удаление купонов 
-	protected.Get("/coupons/:id", handler.GetCoupon)                           // получение информации о купоне 
-	protected.Patch("/coupons/:id/reset", handler.ResetCoupon)                 // сброс купона 
-	protected.Delete("/coupons/:id", handler.DeleteCoupon)                     // удаление купона 
-	protected.Post("/batch-delete", handler.BatchDeleteCoupons)                // Пакетное удаление купонов 
+	protected.Get("/coupons", handler.GetCoupons)                              // получение списка купонов
+	protected.Get("/coupons/paginated", handler.GetCouponsPaginated)           // получение купонов с пагинацией
+	protected.Post("/coupons", handler.CreateCoupons)                          // создание купонов
+	protected.Get("/coupons/export", handler.ExportCoupons)                    // экспорт купонов
+	protected.Get("/coupons/export/partner/:id", handler.ExportPartnerCoupons) // экспорт купонов партнера
+	protected.Post("/coupons/batch-delete", handler.BatchDeleteCoupons)        // массовое удаление купонов
+	protected.Get("/coupons/:id", handler.GetCoupon)                           // получение информации о купоне
+	protected.Patch("/coupons/:id/reset", handler.ResetCoupon)                 // сброс купона
+	protected.Delete("/coupons/:id", handler.DeleteCoupon)                     // удаление купона
+	protected.Post("/batch-delete", handler.BatchDeleteCoupons)                // Пакетное удаление купонов
 
 	// Статистика и аналитика
-	protected.Get("/statistics", handler.GetStatistics)                    // получение общей статистики 
-	protected.Get("/statistics/partners", handler.GetPartnersStatistics)   // получение статистики партнеров 
-	protected.Get("/statistics/system", handler.GetSystemStatistics)       // получение системной статистики 
-	protected.Get("/statistics/analytics", handler.GetAnalytics)           // получение аналитики 
-	protected.Get("/statistics/dashboard", handler.GetDashboardStatistics) // получение статистики для дашборда 
+	protected.Get("/statistics", handler.GetStatistics)                    // получение общей статистики
+	protected.Get("/statistics/partners", handler.GetPartnersStatistics)   // получение статистики партнеров
+	protected.Get("/statistics/system", handler.GetSystemStatistics)       // получение системной статистики
+	protected.Get("/statistics/analytics", handler.GetAnalytics)           // получение аналитики
+	protected.Get("/statistics/dashboard", handler.GetDashboardStatistics) // получение статистики для дашборда
 
 	// Управление задачами обработки изображений
-	protected.Get("/images", handler.GetAllImages)              // получение всех задач обработки изображений 
-	protected.Get("/images/:id", handler.GetImageDetails)       // получение деталей задачи обработки 
-	protected.Delete("/images/:id", handler.DeleteImageTask)    // удаление задачи обработки 
-	protected.Post("/images/:id/retry", handler.RetryImageTask) // повторная обработка изображения 
+	protected.Get("/images", handler.GetAllImages)              // получение всех задач обработки изображений
+	protected.Get("/images/:id", handler.GetImageDetails)       // получение деталей задачи обработки
+	protected.Delete("/images/:id", handler.DeleteImageTask)    // удаление задачи обработки
+	protected.Post("/images/:id/retry", handler.RetryImageTask) // повторная обработка изображения
 
 	// Профиль администратора
-	protected.Put("/profile/password", handler.ChangePassword) // изменение пароля администратора 
+	protected.Put("/profile/password", handler.ChangePassword) // изменение пароля администратора
 }
 
 // CreateAdmin создает нового администратора
@@ -250,28 +251,28 @@ func (handler *AdminHandler) CreatePartner(c *fiber.Ctx) error {
 	}
 
 	// Проверяем, существует ли уже партнер с таким логином
-	existingPartner, err := handler.deps.AdminService.deps.PartnerRepository.GetByLogin(req.Login)
+	existingPartner, err := handler.deps.AdminService.deps.PartnerRepository.GetByLogin(context.Background(), req.Login)
 	if err == nil && existingPartner != nil {
-		handler.deps.Logger.Error().Str("login", req.Login).Msg("Partner with this login already exists")
-		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
-			"error": "Partner with this login already exists",
+		handler.deps.Logger.Error().Str("login", req.Login).Msg(ErrPartnerAlreadyExists.Error())
+		return c.Status(ErrPartnerAlreadyExists.HTTPStatus).JSON(fiber.Map{
+			"error": ErrPartnerAlreadyExists.Error(),
 		})
 	}
 
 	// Проверяем, существует ли уже партнер с таким доменом
-	existingPartnerByDomain, err := handler.deps.AdminService.deps.PartnerRepository.GetByDomain(req.Domain)
+	existingPartnerByDomain, err := handler.deps.AdminService.deps.PartnerRepository.GetByDomain(context.Background(), req.Domain)
 	if err == nil && existingPartnerByDomain != nil {
-		handler.deps.Logger.Error().Str("domain", req.Domain).Msg("Partner with this domain already exists")
-		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
-			"error": "Partner with this domain already exists",
+		handler.deps.Logger.Error().Str("domain", req.Domain).Msg(ErrPartnerAlreadyExists.Error())
+		return c.Status(ErrPartnerAlreadyExists.HTTPStatus).JSON(fiber.Map{
+			"error": ErrPartnerAlreadyExists.Error(),
 		})
 	}
 
 	// Генерируем следующий доступный код партнера
-	partnerCode, err := handler.deps.AdminService.deps.PartnerRepository.GetNextPartnerCode()
+	partnerCode, err := handler.deps.AdminService.deps.PartnerRepository.GetNextPartnerCode(context.Background())
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg("Failed to generate partner code")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to generate partner code"})
+		handler.deps.Logger.Error().Err(err).Msg(ErrFailedToGeneratePartnerCode.Error())
+		return c.Status(ErrFailedToGeneratePartnerCode.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToGeneratePartnerCode.Error()})
 	}
 
 	hashedPassword, err := bcrypt.HashPassword(req.Password)
@@ -298,7 +299,7 @@ func (handler *AdminHandler) CreatePartner(c *fiber.Ctx) error {
 		Status:          req.Status,
 	}
 
-	if err := handler.deps.AdminService.deps.PartnerRepository.Create(partner); err != nil {
+	if err := handler.deps.AdminService.deps.PartnerRepository.Create(context.Background(), partner); err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrFailedToCreatePartner.Error())
 		return c.Status(ErrFailedToCreatePartner.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToCreatePartner.Error()})
 	}
@@ -330,24 +331,24 @@ func (handler *AdminHandler) GetPartner(c *fiber.Ctx) error {
 		return c.Status(ErrInvalidID.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidID.Error()})
 	}
 
-	partner, err := handler.deps.AdminService.deps.PartnerRepository.GetByID(partnerID)
+	partner, err := handler.deps.AdminService.deps.PartnerRepository.GetByID(context.Background(), partnerID)
 	if err != nil {
 		handler.deps.Logger.Error().Err(err).Str("partner_id", partnerID.String()).Msg(ErrPartnerNotFound.Error())
 		return c.Status(ErrPartnerNotFound.HTTPStatus).JSON(fiber.Map{"error": ErrPartnerNotFound.Error()})
 	}
 
 	// Получаем информацию о партнере
-	totalCoupons, err := handler.deps.AdminService.deps.CouponRepository.CountByPartnerID(partnerID)
+	totalCoupons, err := handler.deps.AdminService.deps.CouponRepository.CountByPartnerID(context.Background(), partnerID)
 	if err != nil {
 		totalCoupons = 0
 	}
 
-	activatedCoupons, err := handler.deps.AdminService.deps.CouponRepository.CountActivatedByPartnerID(partnerID)
+	activatedCoupons, err := handler.deps.AdminService.deps.CouponRepository.CountActivatedByPartnerID(context.Background(), partnerID)
 	if err != nil {
 		activatedCoupons = 0
 	}
 
-	purchasedCoupons, err := handler.deps.AdminService.deps.CouponRepository.CountPurchasedByPartnerID(partnerID)
+	purchasedCoupons, err := handler.deps.AdminService.deps.CouponRepository.CountPurchasedByPartnerID(context.Background(), partnerID)
 	if err != nil {
 		purchasedCoupons = 0
 	}
@@ -403,7 +404,7 @@ func (handler *AdminHandler) UpdatePartner(c *fiber.Ctx) error {
 		return c.Status(ErrInvalidID.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidID.Error()})
 	}
 
-	partner, err := handler.deps.AdminService.deps.PartnerRepository.GetByID(partnerID)
+	partner, err := handler.deps.AdminService.deps.PartnerRepository.GetByID(context.Background(), partnerID)
 	if err != nil {
 		handler.deps.Logger.Error().Err(err).Str("partner_id", partnerID.String()).Msg(ErrPartnerNotFound.Error())
 		return c.Status(ErrPartnerNotFound.HTTPStatus).JSON(fiber.Map{"error": ErrPartnerNotFound.Error()})
@@ -411,7 +412,7 @@ func (handler *AdminHandler) UpdatePartner(c *fiber.Ctx) error {
 
 	updatePartnerData.UpdatePartnerData(partner, &req)
 
-	if err := handler.deps.AdminService.deps.PartnerRepository.Update(partner); err != nil {
+	if err := handler.deps.AdminService.deps.PartnerRepository.Update(context.Background(), partner); err != nil {
 		handler.deps.Logger.Error().Err(err).Str("partner_id", partnerID.String()).Msg(ErrFailedToUpdatePartner.Error())
 		return c.Status(ErrFailedToUpdatePartner.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToUpdatePartner.Error()})
 	}
@@ -443,14 +444,14 @@ func (handler *AdminHandler) BlockPartner(c *fiber.Ctx) error {
 		return c.Status(ErrInvalidID.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidID.Error()})
 	}
 
-	if err := handler.deps.AdminService.deps.PartnerRepository.UpdateStatus(partnerID, "blocked"); err != nil {
+	if err := handler.deps.AdminService.deps.PartnerRepository.UpdateStatus(context.Background(), partnerID, "blocked"); err != nil {
 		handler.deps.Logger.Error().Err(err).Str("partner_id", partnerID.String()).Msg(ErrFailedToBlockPartner.Error())
 		return c.Status(ErrFailedToBlockPartner.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToBlockPartner.Error()})
 	}
 
-	if err := handler.deps.AdminService.deps.CouponRepository.UpdateStatusByPartnerID(partnerID, true); err != nil {
-		handler.deps.Logger.Error().Err(err).Str("partner_id", partnerID.String()).Msg("Failed to block coupons")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to block coupons"})
+	if err := handler.deps.AdminService.deps.CouponRepository.UpdateStatusByPartnerID(context.Background(), partnerID, true); err != nil {
+		handler.deps.Logger.Error().Err(err).Str("partner_id", partnerID.String()).Msg(ErrFailedToBlockCoupons.Error())
+		return c.Status(ErrFailedToBlockCoupons.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToBlockCoupons.Error()})
 	}
 
 	return c.JSON(fiber.Map{"message": "Partner blocked successfully"})
@@ -476,13 +477,14 @@ func (handler *AdminHandler) UnblockPartner(c *fiber.Ctx) error {
 		return c.Status(ErrInvalidID.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidID.Error()})
 	}
 
-	if err := handler.deps.AdminService.deps.PartnerRepository.UpdateStatus(partnerID, "active"); err != nil {
+	if err := handler.deps.AdminService.deps.PartnerRepository.UpdateStatus(context.Background(), partnerID, "active"); err != nil {
 		handler.deps.Logger.Error().Err(err).Str("partner_id", partnerID.String()).Msg(ErrFailedToUnblockPartner.Error())
 		return c.Status(ErrFailedToUnblockPartner.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToUnblockPartner.Error()})
 	}
 
-	if err := handler.deps.AdminService.deps.CouponRepository.UpdateStatusByPartnerID(partnerID, false); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to unblock coupons"})
+	if err := handler.deps.AdminService.deps.CouponRepository.UpdateStatusByPartnerID(context.Background(), partnerID, false); err != nil {
+		handler.deps.Logger.Error().Err(err).Str("partner_id", partnerID.String()).Msg(ErrFailedToUnblockCoupons.Error())
+		return c.Status(ErrFailedToUnblockCoupons.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToUnblockCoupons.Error()})
 	}
 
 	return c.JSON(fiber.Map{"message": "Partner unblocked successfully"})
@@ -505,22 +507,24 @@ func (handler *AdminHandler) UnblockPartner(c *fiber.Ctx) error {
 func (handler *AdminHandler) DeletePartner(c *fiber.Ctx) error {
 	partnerID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid partner ID"})
+		handler.deps.Logger.Error().Err(err).Str("id", c.Params("id")).Msg(ErrInvalidID.Error())
+		return c.Status(ErrInvalidID.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidID.Error()})
 	}
 
-	partner, err := handler.deps.AdminService.deps.PartnerRepository.GetByID(partnerID)
+	partner, err := handler.deps.AdminService.deps.PartnerRepository.GetByID(context.Background(), partnerID)
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Partner not found"})
+		handler.deps.Logger.Error().Err(err).Str("partner_id", partnerID.String()).Msg(ErrPartnerNotFound.Error())
+		return c.Status(ErrPartnerNotFound.HTTPStatus).JSON(fiber.Map{"error": ErrPartnerNotFound.Error()})
 	}
 
-	totalCoupons, _ := handler.deps.AdminService.deps.CouponRepository.CountByPartnerID(partnerID)
-	activatedCoupons, _ := handler.deps.AdminService.deps.CouponRepository.CountActivatedByPartnerID(partnerID)
+	totalCoupons, _ := handler.deps.AdminService.deps.CouponRepository.CountByPartnerID(context.Background(), partnerID)
+	activatedCoupons, _ := handler.deps.AdminService.deps.CouponRepository.CountActivatedByPartnerID(context.Background(), partnerID)
 
 	confirm := c.Query("confirm") == "true"
 	if !confirm {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   "Deletion requires confirmation",
-			"warning": "This action will permanently delete the partner and all associated data",
+			"error":   ErrDeletionRequiresConfirmation.Error(),
+			"warning": ErrDeletionRequiresConfirmation.Message,
 			"partner_info": fiber.Map{
 				"brand_name":        partner.BrandName,
 				"total_coupons":     totalCoupons,
@@ -531,17 +535,19 @@ func (handler *AdminHandler) DeletePartner(c *fiber.Ctx) error {
 	}
 
 	// Используем транзакцию для атомарного удаления партнера и его купонов
-	err = handler.deps.AdminService.deps.PartnerRepository.DeleteWithCoupons(partnerID)
+	err = handler.deps.AdminService.deps.PartnerRepository.DeleteWithCoupons(context.Background(), partnerID)
 
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to delete partner and associated data"})
+		handler.deps.Logger.Error().Err(err).Str("partner_id", partnerID.String()).Msg(ErrFailedToDeletePartner.Error())
+		return c.Status(ErrFailedToDeletePartner.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToDeletePartner.Error()})
 	}
 
 	// Проверяем, что купоны действительно удалены
-	remainingCoupons, _ := handler.deps.AdminService.deps.CouponRepository.CountByPartnerID(partnerID)
+	remainingCoupons, _ := handler.deps.AdminService.deps.CouponRepository.CountByPartnerID(context.Background(), partnerID)
 	if remainingCoupons > 0 {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":             "Partner deleted but some coupons remain",
+		handler.deps.Logger.Error().Err(err).Str("partner_id", partnerID.String()).Msg(ErrFailedToDeletePartner.Error())
+		return c.Status(ErrFailedToDeletePartner.HTTPStatus).JSON(fiber.Map{
+			"error":             ErrFailedToDeletePartner.Error(),
 			"remaining_coupons": remainingCoupons,
 		})
 	}
@@ -572,23 +578,27 @@ func (handler *AdminHandler) DeletePartner(c *fiber.Ctx) error {
 func (handler *AdminHandler) GetPartnerStatistics(c *fiber.Ctx) error {
 	partnerID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid partner ID"})
+		handler.deps.Logger.Error().Err(err).Str("id", c.Params("id")).Msg(ErrInvalidID.Error())
+		return c.Status(ErrInvalidID.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidID.Error()})
 	}
 
 	// Получаем статистику партнера
-	totalCoupons, err := handler.deps.AdminService.deps.CouponRepository.CountByPartnerID(partnerID)
+	totalCoupons, err := handler.deps.AdminService.deps.CouponRepository.CountByPartnerID(context.Background(), partnerID)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get statistics"})
+		handler.deps.Logger.Error().Err(err).Str("partner_id", partnerID.String()).Msg(ErrFailedToGetStatistics.Error())
+		return c.Status(ErrFailedToGetStatistics.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToGetStatistics.Error()})
 	}
 
-	activatedCoupons, err := handler.deps.AdminService.deps.CouponRepository.CountActivatedByPartnerID(partnerID)
+	activatedCoupons, err := handler.deps.AdminService.deps.CouponRepository.CountActivatedByPartnerID(context.Background(), partnerID)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get statistics"})
+		handler.deps.Logger.Error().Err(err).Str("partner_id", partnerID.String()).Msg(ErrFailedToGetStatistics.Error())
+		return c.Status(ErrFailedToGetStatistics.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToGetStatistics.Error()})
 	}
 
-	purchasedCoupons, err := handler.deps.AdminService.deps.CouponRepository.CountPurchasedByPartnerID(partnerID)
+	purchasedCoupons, err := handler.deps.AdminService.deps.CouponRepository.CountPurchasedByPartnerID(context.Background(), partnerID)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get statistics"})
+		handler.deps.Logger.Error().Err(err).Str("partner_id", partnerID.String()).Msg(ErrFailedToGetStatistics.Error())
+		return c.Status(ErrFailedToGetStatistics.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToGetStatistics.Error()})
 	}
 
 	unusedCoupons := totalCoupons - activatedCoupons
@@ -650,7 +660,7 @@ func (handler *AdminHandler) GetCoupons(c *fiber.Ctx) error {
 		filters["style"] = style
 	}
 
-	coupons, err := handler.deps.AdminService.deps.CouponRepository.GetFiltered(filters)
+	coupons, err := handler.deps.AdminService.deps.CouponRepository.GetFiltered(context.Background(), filters)
 	if err != nil {
 		handler.deps.Logger.Error().Err(err).Interface("filters", filters).Msg(ErrFailedToGetCoupons.Error())
 		return c.Status(ErrFailedToGetCoupons.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToGetCoupons.Error()})
@@ -661,7 +671,7 @@ func (handler *AdminHandler) GetCoupons(c *fiber.Ctx) error {
 	for i, coupon := range coupons {
 		partnerName := "Собственный"
 		if coupon.PartnerID != uuid.Nil {
-			if partner, err := handler.deps.AdminService.deps.PartnerRepository.GetByID(coupon.PartnerID); err == nil {
+			if partner, err := handler.deps.AdminService.deps.PartnerRepository.GetByID(context.Background(), coupon.PartnerID); err == nil {
 				partnerName = partner.BrandName
 			}
 		}
@@ -743,11 +753,12 @@ func (handler *AdminHandler) GetCouponsPaginated(c *fiber.Ctx) error {
 
 	// Получаем купоны с пагинацией
 	coupons, total, err := handler.deps.AdminService.deps.CouponRepository.SearchWithPagination(
-		code, status, size, style, partnerID, page, limit,
+		context.Background(), code, status, size, style, partnerID, page, limit,
 	)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to fetch coupons",
+		handler.deps.Logger.Error().Err(err).Interface("code", code).Interface("status", status).Interface("size", size).Interface("style", style).Interface("partner_id", partnerID).Msg(ErrFailedToGetCoupons.Error())
+		return c.Status(ErrFailedToGetCoupons.HTTPStatus).JSON(fiber.Map{
+			"error": ErrFailedToGetCoupons.Error(),
 		})
 	}
 
@@ -756,7 +767,7 @@ func (handler *AdminHandler) GetCouponsPaginated(c *fiber.Ctx) error {
 	for i, coupon := range coupons {
 		partnerName := "Собственный"
 		if coupon.PartnerID != uuid.Nil {
-			if partner, err := handler.deps.AdminService.deps.PartnerRepository.GetByID(coupon.PartnerID); err == nil {
+			if partner, err := handler.deps.AdminService.deps.PartnerRepository.GetByID(context.Background(), coupon.PartnerID); err == nil {
 				partnerName = partner.BrandName
 			}
 		}
@@ -783,8 +794,8 @@ func (handler *AdminHandler) GetCouponsPaginated(c *fiber.Ctx) error {
 	}
 
 	// Вычисляем данные пагинации
-	totalPages := (total + int64(limit) - 1) / int64(limit)
-	hasNext := int64(page) < totalPages
+	totalPages := (int(total) + limit - 1) / limit
+	hasNext := page < totalPages
 	hasPrev := page > 1
 
 	return c.JSON(fiber.Map{
@@ -818,20 +829,22 @@ func (handler *AdminHandler) CreateCoupons(c *fiber.Ctx) error {
 	var req coupon.CreateCouponRequest
 
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		handler.deps.Logger.Error().Err(err).Msg(ErrBadRequest.Error())
+		return c.Status(ErrBadRequest.HTTPStatus).JSON(fiber.Map{"error": ErrBadRequest.Error()})
 	}
 
 	// Валидация количества
 	if req.Count < 1 || req.Count > 10000 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Count must be between 1 and 10000"})
+		return c.Status(ErrInvalidRequestBody.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidRequestBody.Error()})
 	}
 
 	// Получаем код партнера
 	var partnerCode string = "0000" // Для собственных купонов
 	if req.PartnerID != uuid.Nil {
-		partner, err := handler.deps.AdminService.deps.PartnerRepository.GetByID(req.PartnerID)
+		partner, err := handler.deps.AdminService.deps.PartnerRepository.GetByID(context.Background(), req.PartnerID)
 		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Partner not found"})
+			handler.deps.Logger.Error().Err(err).Str("partner_id", req.PartnerID.String()).Msg(ErrPartnerNotFound.Error())
+			return c.Status(ErrPartnerNotFound.HTTPStatus).JSON(fiber.Map{"error": ErrPartnerNotFound.Error()})
 		}
 		partnerCode = partner.PartnerCode
 	}
@@ -844,8 +857,9 @@ func (handler *AdminHandler) CreateCoupons(c *fiber.Ctx) error {
 		// Генерируем уникальный код купона
 		code, err := randomCouponCode.GenerateUniqueCouponCode(partnerCode, handler.deps.AdminService.deps.CouponRepository)
 		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Ошибка при генерации уникального кода купона: " + err.Error(),
+			handler.deps.Logger.Error().Err(err).Str("partner_code", partnerCode).Msg(ErrFailedToGenerateCouponCode.Error())
+			return c.Status(ErrFailedToGenerateCouponCode.HTTPStatus).JSON(fiber.Map{
+				"error": ErrFailedToGenerateCouponCode.Error(),
 			})
 		}
 
@@ -860,8 +874,9 @@ func (handler *AdminHandler) CreateCoupons(c *fiber.Ctx) error {
 	}
 
 	// Создаем купоны в базе данных
-	if err := handler.deps.AdminService.deps.CouponRepository.CreateBatch(coupons); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to create coupons"})
+	if err := handler.deps.AdminService.deps.CouponRepository.CreateBatch(context.Background(), coupons); err != nil {
+		handler.deps.Logger.Error().Err(err).Msg(ErrFailedToCreateCoupons.Error())
+		return c.Status(ErrFailedToCreateCoupons.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToCreateCoupons.Error()})
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
@@ -898,16 +913,18 @@ func (handler *AdminHandler) ExportCoupons(c *fiber.Ctx) error {
 	}
 
 	// Получаем все купоны с данными партнеров
-	coupons, err := handler.deps.AdminService.deps.PartnerRepository.GetAllCouponsForExport()
+	coupons, err := handler.deps.AdminService.deps.PartnerRepository.GetAllCouponsForExport(context.Background())
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to fetch coupons",
+		handler.deps.Logger.Error().Err(err).Msg(ErrFailedToFetchCoupons.Error())
+		return c.Status(ErrFailedToFetchCoupons.HTTPStatus).JSON(fiber.Map{
+			"error": ErrFailedToFetchCoupons.Error(),
 		})
 	}
 
 	if len(coupons) == 0 {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "No coupons found for export",
+		handler.deps.Logger.Error().Msg(ErrNoCouponsFoundForExport.Error())
+		return c.Status(ErrNoCouponsFoundForExport.HTTPStatus).JSON(fiber.Map{
+			"error": ErrNoCouponsFoundForExport.Error(),
 		})
 	}
 
@@ -1009,8 +1026,9 @@ func (handler *AdminHandler) ExportPartnerCoupons(c *fiber.Ctx) error {
 	partnerIDStr := c.Params("id")
 	partnerID, err := uuid.Parse(partnerIDStr)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid partner ID",
+		handler.deps.Logger.Error().Err(err).Str("partner_id", partnerIDStr).Msg(ErrInvalidID.Error())
+		return c.Status(ErrInvalidID.HTTPStatus).JSON(fiber.Map{
+			"error": ErrInvalidID.Error(),
 		})
 	}
 
@@ -1020,24 +1038,27 @@ func (handler *AdminHandler) ExportPartnerCoupons(c *fiber.Ctx) error {
 	}
 
 	// Проверяем существование партнера
-	partner, err := handler.deps.AdminService.deps.PartnerRepository.GetByID(partnerID)
+	partner, err := handler.deps.AdminService.deps.PartnerRepository.GetByID(context.Background(), partnerID)
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "Partner not found",
+		handler.deps.Logger.Error().Err(err).Str("partner_id", partnerID.String()).Msg(ErrPartnerNotFound.Error())
+		return c.Status(ErrPartnerNotFound.HTTPStatus).JSON(fiber.Map{
+			"error": ErrPartnerNotFound.Error(),
 		})
 	}
 
 	// Получаем купоны партнера со статусом "new"
-	coupons, err := handler.deps.AdminService.deps.PartnerRepository.GetPartnerCouponsForExport(partnerID, "new")
+	coupons, err := handler.deps.AdminService.deps.PartnerRepository.GetPartnerCouponsForExport(context.Background(), partnerID, "new")
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to fetch partner coupons",
+		handler.deps.Logger.Error().Err(err).Str("partner_id", partnerID.String()).Msg(ErrFailedToExportCoupons.Error())
+		return c.Status(ErrFailedToExportCoupons.HTTPStatus).JSON(fiber.Map{
+			"error": ErrFailedToExportCoupons.Error(),
 		})
 	}
 
 	if len(coupons) == 0 {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "No new coupons found for this partner",
+		handler.deps.Logger.Error().Str("partner_id", partnerID.String()).Msg(ErrNoCouponsFoundForExport.Error())
+		return c.Status(ErrNoCouponsFoundForExport.HTTPStatus).JSON(fiber.Map{
+			"error": ErrNoCouponsFoundForExport.Error(),
 		})
 	}
 
@@ -1113,13 +1134,15 @@ func (handler *AdminHandler) BatchDeleteCoupons(c *fiber.Ctx) error {
 	}
 
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		handler.deps.Logger.Error().Err(err).Msg(ErrBadRequest.Error())
+		return c.Status(ErrBadRequest.HTTPStatus).JSON(fiber.Map{"error": ErrBadRequest.Error()})
 	}
 
 	// Проверяем подтверждение
 	if !req.Confirm {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Confirmation required for batch deletion",
+		handler.deps.Logger.Error().Msg(ErrBadRequest.Error())
+		return c.Status(ErrBadRequest.HTTPStatus).JSON(fiber.Map{
+			"error": ErrBadRequest.Error(),
 		})
 	}
 
@@ -1128,17 +1151,19 @@ func (handler *AdminHandler) BatchDeleteCoupons(c *fiber.Ctx) error {
 	for _, idStr := range req.CouponIDs {
 		id, err := uuid.Parse(idStr)
 		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": fmt.Sprintf("Invalid UUID: %s", idStr),
+			handler.deps.Logger.Error().Err(err).Str("coupon_id", idStr).Msg(ErrInvalidID.Error())
+			return c.Status(ErrInvalidID.HTTPStatus).JSON(fiber.Map{
+				"error": ErrInvalidID.Error(),
 			})
 		}
 		ids = append(ids, id)
 	}
 
-	deletedCount, err := handler.deps.AdminService.deps.CouponRepository.BatchDelete(ids)
+	deletedCount, err := handler.deps.AdminService.deps.CouponRepository.BatchDelete(context.Background(), ids)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to delete coupons",
+		handler.deps.Logger.Error().Err(err).Msg(ErrFailedToDeleteCoupons.Error())
+		return c.Status(ErrFailedToDeleteCoupons.HTTPStatus).JSON(fiber.Map{
+			"error": ErrFailedToDeleteCoupons.Error(),
 		})
 	}
 
@@ -1165,18 +1190,20 @@ func (handler *AdminHandler) BatchDeleteCoupons(c *fiber.Ctx) error {
 func (handler *AdminHandler) GetCoupon(c *fiber.Ctx) error {
 	couponID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid coupon ID"})
+		handler.deps.Logger.Error().Err(err).Str("coupon_id", c.Params("id")).Msg(ErrInvalidID.Error())
+		return c.Status(ErrInvalidID.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidID.Error()})
 	}
 
-	coupon, err := handler.deps.AdminService.deps.CouponRepository.GetByID(couponID)
+	coupon, err := handler.deps.AdminService.deps.CouponRepository.GetByID(context.Background(), couponID)
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Coupon not found"})
+		handler.deps.Logger.Error().Err(err).Str("coupon_id", couponID.String()).Msg(ErrCouponNotFound.Error())
+		return c.Status(ErrCouponNotFound.HTTPStatus).JSON(fiber.Map{"error": ErrCouponNotFound.Error()})
 	}
 
 	// Получаем информацию о партнере
 	var partnerName string = "Собственный"
 	if coupon.PartnerID != uuid.Nil {
-		partner, err := handler.deps.AdminService.deps.PartnerRepository.GetByID(coupon.PartnerID)
+		partner, err := handler.deps.AdminService.deps.PartnerRepository.GetByID(context.Background(), coupon.PartnerID)
 		if err == nil {
 			partnerName = partner.BrandName
 		}
@@ -1219,11 +1246,13 @@ func (handler *AdminHandler) GetCoupon(c *fiber.Ctx) error {
 func (handler *AdminHandler) ResetCoupon(c *fiber.Ctx) error {
 	couponID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid coupon ID"})
+		handler.deps.Logger.Error().Err(err).Str("coupon_id", c.Params("id")).Msg(ErrInvalidID.Error())
+		return c.Status(ErrInvalidID.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidID.Error()})
 	}
 
-	if err := handler.deps.AdminService.deps.CouponRepository.Reset(couponID); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to reset coupon"})
+	if err := handler.deps.AdminService.deps.CouponRepository.Reset(context.Background(), couponID); err != nil {
+		handler.deps.Logger.Error().Err(err).Str("coupon_id", couponID.String()).Msg(ErrFailedToResetCoupon.Error())
+		return c.Status(ErrFailedToResetCoupon.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToResetCoupon.Error()})
 	}
 
 	return c.JSON(fiber.Map{"message": "Coupon reset successfully"})
@@ -1246,20 +1275,23 @@ func (handler *AdminHandler) ResetCoupon(c *fiber.Ctx) error {
 func (handler *AdminHandler) DeleteCoupon(c *fiber.Ctx) error {
 	couponID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid coupon ID"})
+		handler.deps.Logger.Error().Err(err).Str("coupon_id", c.Params("id")).Msg(ErrInvalidID.Error())
+		return c.Status(ErrInvalidID.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidID.Error()})
 	}
 
 	// Проверяем существование купона
-	coupon, err := handler.deps.AdminService.deps.CouponRepository.GetByID(couponID)
+	coupon, err := handler.deps.AdminService.deps.CouponRepository.GetByID(context.Background(), couponID)
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Coupon not found"})
+		handler.deps.Logger.Error().Err(err).Str("coupon_id", couponID.String()).Msg(ErrCouponNotFound.Error())
+		return c.Status(ErrCouponNotFound.HTTPStatus).JSON(fiber.Map{"error": ErrCouponNotFound.Error()})
 	}
 
 	// Проверяем подтверждение
 	confirm := c.Query("confirm") == "true"
 	if !confirm {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   "Deletion requires confirmation",
+		handler.deps.Logger.Error().Msg(ErrBadRequest.Error())
+		return c.Status(ErrBadRequest.HTTPStatus).JSON(fiber.Map{
+			"error":   ErrBadRequest.Error(),
 			"warning": "This action will permanently delete the coupon",
 			"coupon_info": fiber.Map{
 				"code":   coupon.Code,
@@ -1272,8 +1304,9 @@ func (handler *AdminHandler) DeleteCoupon(c *fiber.Ctx) error {
 	}
 
 	// Удаляем купон
-	if err := handler.deps.AdminService.deps.CouponRepository.Delete(couponID); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to delete coupon"})
+	if err := handler.deps.AdminService.deps.CouponRepository.Delete(context.Background(), couponID); err != nil {
+		handler.deps.Logger.Error().Err(err).Str("coupon_id", couponID.String()).Msg(ErrFailedToDeleteCoupon.Error())
+		return c.Status(ErrFailedToDeleteCoupon.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToDeleteCoupon.Error()})
 	}
 
 	return c.JSON(fiber.Map{
@@ -1299,26 +1332,26 @@ func (handler *AdminHandler) DeleteCoupon(c *fiber.Ctx) error {
 func (handler *AdminHandler) GetStatistics(c *fiber.Ctx) error {
 	// Общее количество купонов
 	var totalCoupons int64
-	handler.deps.AdminService.deps.CouponRepository.GetAll()
-	if coupons, err := handler.deps.AdminService.deps.CouponRepository.GetAll(); err == nil {
+	handler.deps.AdminService.deps.CouponRepository.GetAll(context.Background())
+	if coupons, err := handler.deps.AdminService.deps.CouponRepository.GetAll(context.Background()); err == nil {
 		totalCoupons = int64(len(coupons))
 	}
 
 	// Количество активированных купонов
 	var activatedCoupons int64
-	if coupons, err := handler.deps.AdminService.deps.CouponRepository.GetFiltered(map[string]interface{}{"status": "used"}); err == nil {
+	if coupons, err := handler.deps.AdminService.deps.CouponRepository.GetFiltered(context.Background(), map[string]interface{}{"status": "used"}); err == nil {
 		activatedCoupons = int64(len(coupons))
 	}
 
 	// Количество активных партнеров
 	var activePartners int64
-	if partners, err := handler.deps.AdminService.deps.PartnerRepository.GetActivePartners(); err == nil {
+	if partners, err := handler.deps.AdminService.deps.PartnerRepository.GetActivePartners(context.Background()); err == nil {
 		activePartners = int64(len(partners))
 	}
 
 	// Всего партнеров
 	var totalPartners int64
-	if partners, err := handler.deps.AdminService.deps.PartnerRepository.GetAll(); err == nil {
+	if partners, err := handler.deps.AdminService.deps.PartnerRepository.GetAll(context.Background()); err == nil {
 		totalPartners = int64(len(partners))
 	}
 
@@ -1348,16 +1381,17 @@ func (handler *AdminHandler) GetStatistics(c *fiber.Ctx) error {
 // @Failure 403 {object} map[string]interface{} "Нет прав доступа"
 // @Router /admin/statistics/partners [get]
 func (handler *AdminHandler) GetPartnersStatistics(c *fiber.Ctx) error {
-	partners, err := handler.deps.AdminService.deps.PartnerRepository.GetAll()
+	partners, err := handler.deps.AdminService.deps.PartnerRepository.GetAll(context.Background())
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to fetch partners"})
+		handler.deps.Logger.Error().Err(err).Msg(ErrFailedToFetchPartners.Error())
+		return c.Status(ErrFailedToFetchPartners.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToFetchPartners.Error()})
 	}
 
 	var partnersStats []fiber.Map
 	for _, partner := range partners {
-		totalCoupons, _ := handler.deps.AdminService.deps.CouponRepository.CountByPartnerID(partner.ID)
-		activatedCoupons, _ := handler.deps.AdminService.deps.CouponRepository.CountActivatedByPartnerID(partner.ID)
-		purchasedCoupons, _ := handler.deps.AdminService.deps.CouponRepository.CountPurchasedByPartnerID(partner.ID)
+		totalCoupons, _ := handler.deps.AdminService.deps.CouponRepository.CountByPartnerID(context.Background(), partner.ID)
+		activatedCoupons, _ := handler.deps.AdminService.deps.CouponRepository.CountActivatedByPartnerID(context.Background(), partner.ID)
+		purchasedCoupons, _ := handler.deps.AdminService.deps.CouponRepository.CountPurchasedByPartnerID(context.Background(), partner.ID)
 
 		activationRate := float64(0)
 		if totalCoupons > 0 {
@@ -1410,8 +1444,8 @@ func (handler *AdminHandler) ChangePassword(c *fiber.Ctx) error {
 
 	claims, err := jwt.GetClaimsFromFiberContext(c)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg("Unauthorized - failed to get claims")
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+		handler.deps.Logger.Error().Err(err).Msg(ErrUnauthorized.Error())
+		return c.Status(ErrUnauthorized.HTTPStatus).JSON(fiber.Map{"error": ErrUnauthorized.Error()})
 	}
 
 	if err := handler.deps.AdminService.ChangePassword(claims.UserID, req); err != nil {

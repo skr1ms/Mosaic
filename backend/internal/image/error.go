@@ -182,7 +182,21 @@ var (
 		Message:    "Failed to find coupon by ID",
 		HTTPStatus: http.StatusNotFound,
 	}
-	
+	ErrFailedToMarkTaskAsCompleted = APIError{
+		Code:       "FAILED_TO_MARK_TASK_AS_COMPLETED",
+		Message:    "Failed to mark task as completed",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToMarkTaskAsFailed = APIError{
+		Code:       "FAILED_TO_MARK_TASK_AS_FAILED",
+		Message:    "Failed to mark task as failed",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToUpdateTask = APIError{
+		Code:       "FAILED_TO_UPDATE_TASK",
+		Message:    "Failed to update task",
+		HTTPStatus: http.StatusInternalServerError,
+	}
 )
 
 // IsAPIError проверяет, является ли ошибка типом APIError

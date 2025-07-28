@@ -76,7 +76,7 @@ func (handler *CouponHandler) GetCoupons(c *fiber.Ctx) error {
 		if apiErr, ok := GetAPIError(err); ok {
 			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{"error": apiErr.Error()})
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
+		return c.Status(ErrInternalServerError.HTTPStatus).JSON(fiber.Map{"error": ErrInternalServerError.Error()})
 	}
 
 	return c.JSON(coupons)
@@ -95,7 +95,7 @@ func (handler *CouponHandler) GetCoupons(c *fiber.Ctx) error {
 // @Router /coupons/{id} [get]
 func (handler *CouponHandler) GetCouponDetails(c *fiber.Ctx) error {
 	handler.deps.Logger.Error().Msg(ErrCouponNotFound.Message)
-	return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": ErrCouponNotFound.Error()})
+	return c.Status(ErrCouponNotFound.HTTPStatus).JSON(fiber.Map{"error": ErrCouponNotFound.Error()})
 }
 
 // GetCouponByID возвращает купон по ID
@@ -114,7 +114,7 @@ func (handler *CouponHandler) GetCouponByID(c *fiber.Ctx) error {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidCouponID.Message)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": ErrInvalidCouponID.Error()})
+		return c.Status(ErrInvalidCouponID.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidCouponID.Error()})
 	}
 
 	// Получаем купон
@@ -123,7 +123,7 @@ func (handler *CouponHandler) GetCouponByID(c *fiber.Ctx) error {
 		if apiErr, ok := GetAPIError(err); ok {
 			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{"error": apiErr.Error()})
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
+		return c.Status(ErrInternalServerError.HTTPStatus).JSON(fiber.Map{"error": ErrInternalServerError.Error()})
 	}
 
 	return c.JSON(coupon)
@@ -148,7 +148,8 @@ func (handler *CouponHandler) GetCouponByCode(c *fiber.Ctx) error {
 		if apiErr, ok := GetAPIError(err); ok {
 			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{"error": apiErr.Error()})
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
+		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
+		return c.Status(ErrInternalServerError.HTTPStatus).JSON(fiber.Map{"error": ErrInternalServerError.Error()})
 	}
 
 	return c.JSON(coupon)
@@ -172,7 +173,7 @@ func (handler *CouponHandler) ActivateCoupon(c *fiber.Ctx) error {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidCouponID.Error())
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": ErrInvalidCouponID.Error()})
+		return c.Status(ErrInvalidCouponID.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidCouponID.Error()})
 	}
 
 	var req ActivateCouponRequest
@@ -180,7 +181,7 @@ func (handler *CouponHandler) ActivateCoupon(c *fiber.Ctx) error {
 	// Парсим запрос
 	if err := c.BodyParser(&req); err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidRequestBody.Message)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": ErrInvalidRequestBody.Error()})
+		return c.Status(ErrInvalidRequestBody.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidRequestBody.Error()})
 	}
 
 	// Активируем купон
@@ -188,7 +189,8 @@ func (handler *CouponHandler) ActivateCoupon(c *fiber.Ctx) error {
 		if apiErr, ok := GetAPIError(err); ok {
 			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{"error": apiErr.Error()})
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
+		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
+		return c.Status(ErrInternalServerError.HTTPStatus).JSON(fiber.Map{"error": ErrInternalServerError.Error()})
 	}
 
 	return c.JSON(fiber.Map{"message": "Coupon activated successfully"})
@@ -210,7 +212,7 @@ func (handler *CouponHandler) ResetCoupon(c *fiber.Ctx) error {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidCouponID.Message)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": ErrInvalidCouponID.Error()})
+		return c.Status(ErrInvalidCouponID.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidCouponID.Error()})
 	}
 
 	// Сбрасываем купон
@@ -218,7 +220,8 @@ func (handler *CouponHandler) ResetCoupon(c *fiber.Ctx) error {
 		if apiErr, ok := GetAPIError(err); ok {
 			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{"error": apiErr.Error()})
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
+		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
+		return c.Status(ErrInternalServerError.HTTPStatus).JSON(fiber.Map{"error": ErrInternalServerError.Error()})
 	}
 
 	return c.JSON(fiber.Map{"message": "Coupon reset successfully"})
@@ -242,7 +245,7 @@ func (handler *CouponHandler) SendSchema(c *fiber.Ctx) error {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidCouponID.Message)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": ErrInvalidCouponID.Error()})
+		return c.Status(ErrInvalidCouponID.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidCouponID.Error()})
 	}
 
 	var req SendSchemaRequest
@@ -250,7 +253,7 @@ func (handler *CouponHandler) SendSchema(c *fiber.Ctx) error {
 	// Парсим запрос
 	if err := c.BodyParser(&req); err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidRequestBody.Message)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": ErrInvalidRequestBody.Error()})
+		return c.Status(ErrInvalidRequestBody.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidRequestBody.Error()})
 	}
 
 	// Отправляем схему
@@ -258,7 +261,8 @@ func (handler *CouponHandler) SendSchema(c *fiber.Ctx) error {
 		if apiErr, ok := GetAPIError(err); ok {
 			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{"error": apiErr.Error()})
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
+		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
+		return c.Status(ErrInternalServerError.HTTPStatus).JSON(fiber.Map{"error": ErrInternalServerError.Error()})
 	}
 
 	return c.JSON(fiber.Map{"message": "Schema sent successfully"})
@@ -282,7 +286,7 @@ func (handler *CouponHandler) MarkAsPurchased(c *fiber.Ctx) error {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidCouponID.Message)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": ErrInvalidCouponID.Error()})
+		return c.Status(ErrInvalidCouponID.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidCouponID.Error()})
 	}
 
 	var req MarkAsPurchasedRequest
@@ -290,7 +294,7 @@ func (handler *CouponHandler) MarkAsPurchased(c *fiber.Ctx) error {
 	// Парсим запрос
 	if err := c.BodyParser(&req); err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidRequestBody.Message)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": ErrInvalidRequestBody.Error()})
+		return c.Status(ErrInvalidRequestBody.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidRequestBody.Error()})
 	}
 
 	// Помечаем купон как купленный
@@ -298,7 +302,8 @@ func (handler *CouponHandler) MarkAsPurchased(c *fiber.Ctx) error {
 		if apiErr, ok := GetAPIError(err); ok {
 			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{"error": apiErr.Error()})
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
+		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
+		return c.Status(ErrInternalServerError.HTTPStatus).JSON(fiber.Map{"error": ErrInternalServerError.Error()})
 	}
 
 	return c.JSON(fiber.Map{"message": "Coupon marked as purchased"})
@@ -331,7 +336,8 @@ func (handler *CouponHandler) GetStatistics(c *fiber.Ctx) error {
 		if apiErr, ok := GetAPIError(err); ok {
 			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{"error": apiErr.Error()})
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
+		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
+		return c.Status(ErrInternalServerError.HTTPStatus).JSON(fiber.Map{"error": ErrInternalServerError.Error()})
 	}
 
 	return c.JSON(stats)
@@ -356,11 +362,12 @@ func (handler *CouponHandler) ValidateCoupon(c *fiber.Ctx) error {
 		if apiErr, ok := GetAPIError(err); ok {
 			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{"error": apiErr.Error()})
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
+		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
+		return c.Status(ErrInternalServerError.HTTPStatus).JSON(fiber.Map{"error": ErrInternalServerError.Error()})
 	}
 
 	if !validationResult.Valid {
-		return c.Status(fiber.StatusNotFound).JSON(validationResult)
+		return c.Status(ErrCouponNotFound.HTTPStatus).JSON(validationResult)
 	}
 
 	return c.JSON(validationResult)
@@ -397,7 +404,8 @@ func (handler *CouponHandler) ExportCoupons(c *fiber.Ctx) error {
 		if apiErr, ok := GetAPIError(err); ok {
 			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{"error": apiErr.Error()})
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
+		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
+		return c.Status(ErrInternalServerError.HTTPStatus).JSON(fiber.Map{"error": ErrInternalServerError.Error()})
 	}
 
 	// Устанавливаем заголовки для скачивания файла
@@ -425,7 +433,7 @@ func (handler *CouponHandler) DownloadMaterials(c *fiber.Ctx) error {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidCouponID.Message)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": ErrInvalidCouponID.Error()})
+		return c.Status(ErrInvalidCouponID.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidCouponID.Error()})
 	}
 
 	// Скачиваем материалы
@@ -434,7 +442,8 @@ func (handler *CouponHandler) DownloadMaterials(c *fiber.Ctx) error {
 		if apiErr, ok := GetAPIError(err); ok {
 			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{"error": apiErr.Error()})
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
+		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
+		return c.Status(ErrInternalServerError.HTTPStatus).JSON(fiber.Map{"error": ErrInternalServerError.Error()})
 	}
 
 	// Устанавливаем заголовки для скачивания
@@ -495,7 +504,8 @@ func (handler *CouponHandler) GetCouponsPaginated(c *fiber.Ctx) error {
 		if apiErr, ok := GetAPIError(err); ok {
 			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{"error": apiErr.Error()})
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
+		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
+		return c.Status(ErrInternalServerError.HTTPStatus).JSON(fiber.Map{"error": ErrInternalServerError.Error()})
 	}
 
 	// Вычисляем данные пагинации
@@ -550,7 +560,8 @@ func (handler *CouponHandler) GetCouponsByPartner(c *fiber.Ctx) error {
 		if apiErr, ok := GetAPIError(err); ok {
 			return c.Status(apiErr.HTTPStatus).JSON(fiber.Map{"error": apiErr.Error()})
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
+		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
+		return c.Status(ErrInternalServerError.HTTPStatus).JSON(fiber.Map{"error": ErrInternalServerError.Error()})
 	}
 
 	return c.JSON(fiber.Map{

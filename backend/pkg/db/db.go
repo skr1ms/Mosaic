@@ -1,21 +1,24 @@
 package db
 
 import (
-	"log"
-
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/skr1ms/mosaic/config"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+
+	"github.com/uptrace/bun"
+	"github.com/uptrace/bun/dialect/pgdialect"
 )
 
 type Db struct {
-	*gorm.DB
+	*bun.DB
 }
 
-func NewDB(cfg *config.Config) *Db {
-	db, err := gorm.Open(postgres.Open(cfg.DatabaseConfig.URL), &gorm.Config{})
+func NewDb(config *config.Config) *Db {
+	db, err := pgx.ParseConfig(config.DatabaseConfig.URL)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	return &Db{db}
+	db.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
+	psqlDB := stdlib.OpenDB(*db)
+	return &Db{bun.NewDB(psqlDB, pgdialect.New())}
 }

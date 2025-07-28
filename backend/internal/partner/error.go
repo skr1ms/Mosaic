@@ -167,6 +167,96 @@ var (
 		Message:    "Failed to find partner coupons for export",
 		HTTPStatus: http.StatusNotFound,
 	}
+	ErrFailedToGetRecentCoupons = APIError{
+		Code:       "FAILED_TO_GET_RECENT_COUPONS",
+		Message:    "Failed to get recent coupons",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToGetCouponStats = APIError{
+		Code:       "FAILED_TO_GET_COUPON_STATS",
+		Message:    "Failed to get coupon stats",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToFindPartnersByIds = APIError{
+		Code:       "FAILED_TO_FIND_PARTNERS_BY_IDS",
+		Message:    "Failed to find partners by ids",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToFindPartnerCoupons = APIError{
+		Code:       "FAILED_TO_FIND_PARTNER_COUPONS",
+		Message:    "Failed to find partner coupons",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToGetPartnerCoupons = APIError{
+		Code:       "FAILED_TO_GET_PARTNER_COUPONS",
+		Message:    "Failed to get partner coupons",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToGetActivePartnersCount = APIError{
+		Code:       "FAILED_TO_GET_ACTIVE_PARTNERS_COUNT",
+		Message:    "Failed to get active partners count",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToUpdatePartnerData = APIError{
+		Code:       "FAILED_TO_UPDATE_PARTNER_DATA",
+		Message:    "Failed to update partner data",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToCheckPartnerCodeExists = APIError{
+		Code:       "FAILED_TO_CHECK_PARTNER_CODE_EXISTS",
+		Message:    "Failed to check partner code exists",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToCheckDomainExists = APIError{
+		Code:       "FAILED_TO_CHECK_DOMAIN_EXISTS",
+		Message:    "Failed to check domain exists",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToCheckLoginExists = APIError{
+		Code:       "FAILED_TO_CHECK_LOGIN_EXISTS",
+		Message:    "Failed to check login exists",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToUpdatePartnerStatus = APIError{
+		Code:       "FAILED_TO_UPDATE_PARTNER_STATUS",
+		Message:    "Failed to update partner status",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToUpdatePartnerLastLogin = APIError{
+		Code:       "FAILED_TO_UPDATE_PARTNER_LAST_LOGIN",
+		Message:    "Failed to update partner last login",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToUpdatePartner = APIError{
+		Code:       "FAILED_TO_UPDATE_PARTNER",
+		Message:    "Failed to update partner",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToUpdatePartnerPassword = APIError{
+		Code:       "FAILED_TO_UPDATE_PARTNER_PASSWORD",
+		Message:    "Failed to update partner password",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToGetPartnerCode = APIError{
+		Code:       "FAILED_TO_GET_PARTNER_CODE",
+		Message:    "Failed to get partner code",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToGetCouponsStatistics = APIError{
+		Code:       "FAILED_TO_GET_COUPONS_STATISTICS",
+		Message:    "Failed to get coupons statistics",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToGetAllCouponsForExport = APIError{
+		Code:       "FAILED_TO_GET_ALL_COUPONS_FOR_EXPORT",
+		Message:    "Failed to get all coupons for export",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrForbidden = APIError{
+		Code:       "FORBIDDEN",
+		Message:    "Forbidden",
+		HTTPStatus: http.StatusForbidden,
+	}
 )
 
 // IsAPIError проверяет, является ли ошибка типом APIError

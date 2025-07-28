@@ -52,7 +52,7 @@ func main() {
 	}
 
 	migrations.Init(cfg)
-	database := db.NewDB(cfg)
+	database := db.NewDb(cfg)
 
 	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)

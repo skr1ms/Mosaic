@@ -1,148 +1,184 @@
 package coupon
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
+	"github.com/uptrace/bun"
 )
 
 type CouponRepository struct {
-	db *gorm.DB
+	db *bun.DB
 }
 
-func NewCouponRepository(db *gorm.DB) *CouponRepository {
+func NewCouponRepository(db *bun.DB) *CouponRepository {
 	return &CouponRepository{db: db}
 }
 
-// Create создает новый купон
-func (r *CouponRepository) Create(coupon *Coupon) error {
-	return r.db.Create(coupon).Error
+// Create создаёт новый купон
+func (r *CouponRepository) Create(ctx context.Context, coupon *Coupon) error {
+	_, err := r.db.NewInsert().Model(coupon).Exec(ctx)
+	if err != nil {
+		return ErrFailedToCreateCoupon
+	}
+	return nil
 }
 
-// CreateBatch создает множество купонов за одну операцию
-func (r *CouponRepository) CreateBatch(coupons []*Coupon) error {
-	return r.db.CreateInBatches(coupons, 100).Error
+// CreateBatch создаёт множество купонов за одну операцию
+func (r *CouponRepository) CreateBatch(ctx context.Context, coupons []*Coupon) error {
+	_, err := r.db.NewInsert().Model(&coupons).Exec(ctx)
+	if err != nil {
+		return ErrFailedToCreateCoupon
+	}
+	return nil
 }
 
 // GetByCode находит купон по коду
-func (r *CouponRepository) GetByCode(code string) (*Coupon, error) {
-	var coupon Coupon
-	err := r.db.Where("code = ?", code).First(&coupon).Error
+func (r *CouponRepository) GetByCode(ctx context.Context, code string) (*Coupon, error) {
+	coupon := new(Coupon)
+	err := r.db.NewSelect().Model(coupon).Where("code = ?", code).Scan(ctx)
 	if err != nil {
-		return nil, err
+		return nil, ErrFailedToFindCouponByCode
 	}
-	return &coupon, nil
+	return coupon, nil
 }
 
 // GetByID находит купон по ID
-func (r *CouponRepository) GetByID(id uuid.UUID) (*Coupon, error) {
-	var coupon Coupon
-	err := r.db.Where("id = ?", id).First(&coupon).Error
+func (r *CouponRepository) GetByID(ctx context.Context, id uuid.UUID) (*Coupon, error) {
+	coupon := new(Coupon)
+	err := r.db.NewSelect().Model(coupon).Where("id = ?", id).Scan(ctx)
 	if err != nil {
-		return nil, err
+		return nil, ErrFailedToFindCouponByID
 	}
-	return &coupon, nil
+	return coupon, nil
 }
 
-// GetByPartnerID возвращает купоны партнера
-func (r *CouponRepository) GetByPartnerID(partnerID uuid.UUID) ([]*Coupon, error) {
+// GetByPartnerID возвращает купоны партнёра
+func (r *CouponRepository) GetByPartnerID(ctx context.Context, partnerID uuid.UUID) ([]*Coupon, error) {
 	var coupons []*Coupon
-	err := r.db.Where("partner_id = ?", partnerID).Find(&coupons).Error
+	err := r.db.NewSelect().Model(&coupons).Where("partner_id = ?", partnerID).Scan(ctx)
 	if err != nil {
-		return nil, ErrFailedToFindCouponsByPartnerID
+		return nil, ErrFailedToFindCoupons
 	}
 	return coupons, nil
 }
 
 // GetAll возвращает все купоны
-func (r *CouponRepository) GetAll() ([]*Coupon, error) {
+func (r *CouponRepository) GetAll(ctx context.Context) ([]*Coupon, error) {
 	var coupons []*Coupon
-	err := r.db.Find(&coupons).Error
+	err := r.db.NewSelect().Model(&coupons).Scan(ctx)
 	if err != nil {
-		return nil, ErrFailedToFindAllCoupons
+		return nil, ErrFailedToFindCoupons
 	}
 	return coupons, nil
 }
 
 // Update обновляет купон
-func (r *CouponRepository) Update(coupon *Coupon) error {
-	return r.db.Save(coupon).Error
+func (r *CouponRepository) Update(ctx context.Context, coupon *Coupon) error {
+	_, err := r.db.NewUpdate().Model(coupon).WherePK().Exec(ctx)
+	if err != nil {
+		return ErrFailedToUpdateCouponStatus
+	}
+	return nil
 }
 
-// UpdateStatusByPartnerID обновляет статус купонов партнера
-func (r *CouponRepository) UpdateStatusByPartnerID(partnerID uuid.UUID, status bool) error {
-	return r.db.Model(&Coupon{}).Where("partner_id = ?", partnerID).Update("is_blocked", status).Error
+// UpdateStatusByPartnerID обновляет статус купонов партнёра
+func (r *CouponRepository) UpdateStatusByPartnerID(ctx context.Context, partnerID uuid.UUID, status bool) error {
+	_, err := r.db.NewUpdate().Model((*Coupon)(nil)).Set("is_blocked = ?", status).Where("partner_id = ?", partnerID).Exec(ctx)
+	if err != nil {
+		return ErrFailedToUpdateCouponStatus
+	}
+	return nil
 }
 
 // ActivateCoupon активирует купон (меняет статус на 'used')
-func (r *CouponRepository) ActivateCoupon(id uuid.UUID, originalImageURL, previewURL, schemaURL string) error {
+func (r *CouponRepository) ActivateCoupon(ctx context.Context, id uuid.UUID, originalImageURL, previewURL, schemaURL string) error {
 	now := time.Now()
-	return r.db.Model(&Coupon{}).Where("id = ?", id).Updates(map[string]interface{}{
-		"status":             "used",
-		"used_at":            &now,
-		"original_image_url": originalImageURL,
-		"preview_url":        previewURL,
-		"schema_url":         schemaURL,
-	}).Error
+	_, err := r.db.NewUpdate().Model((*Coupon)(nil)).
+		Set("status = ?", "used").
+		Set("used_at = ?", &now).
+		Set("original_image_url = ?", originalImageURL).
+		Set("preview_url = ?", previewURL).
+		Set("schema_url = ?", schemaURL).
+		Where("id = ?", id).
+		Exec(ctx)
+	if err != nil {
+		return ErrFailedToActivateCoupon
+	}
+	return nil
 }
 
 // SendSchema записывает информацию об отправке схемы на email
-func (r *CouponRepository) SendSchema(id uuid.UUID, email string) error {
+func (r *CouponRepository) SendSchema(ctx context.Context, id uuid.UUID, email string) error {
 	now := time.Now()
-	return r.db.Model(&Coupon{}).Where("id = ?", id).Updates(map[string]interface{}{
-		"schema_sent_email": email,
-		"schema_sent_at":    &now,
-	}).Error
+	_, err := r.db.NewUpdate().Model((*Coupon)(nil)).
+		Set("schema_sent_email = ?", email).
+		Set("schema_sent_at = ?", &now).
+		Where("id = ?", id).
+		Exec(ctx)
+	if err != nil {
+		return ErrFailedToSendSchema
+	}
+	return nil
 }
 
 // MarkAsPurchased помечает купон как купленный онлайн
-func (r *CouponRepository) MarkAsPurchased(id uuid.UUID, purchaseEmail string) error {
+func (r *CouponRepository) MarkAsPurchased(ctx context.Context, id uuid.UUID, purchaseEmail string) error {
 	now := time.Now()
-	return r.db.Model(&Coupon{}).Where("id = ?", id).Updates(map[string]interface{}{
-		"is_purchased":   true,
-		"purchase_email": purchaseEmail,
-		"purchased_at":   &now,
-	}).Error
+	_, err := r.db.NewUpdate().Model((*Coupon)(nil)).
+		Set("is_purchased = ?", true).
+		Set("purchase_email = ?", purchaseEmail).
+		Set("purchased_at = ?", &now).
+		Where("id = ?", id).
+		Exec(ctx)
+	if err != nil {
+		return ErrFailedToMarkAsPurchased
+	}
+	return nil
 }
 
 // Delete удаляет купон
-func (r *CouponRepository) Delete(id uuid.UUID) error {
-	return r.db.Delete(&Coupon{}, id).Error
+func (r *CouponRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.NewDelete().Model((*Coupon)(nil)).Where("id = ?", id).Exec(ctx)
+	if err != nil {
+		return ErrFailedToDeleteCoupon
+	}
+	return nil
 }
 
 // BatchDelete массово удаляет купоны по списку ID
-func (r *CouponRepository) BatchDelete(ids []uuid.UUID) (int64, error) {
-	result := r.db.Where("id IN ?", ids).Delete(&Coupon{})
-	return result.RowsAffected, result.Error
+func (r *CouponRepository) BatchDelete(ctx context.Context, ids []uuid.UUID) (int64, error) {
+	res, err := r.db.NewDelete().Model((*Coupon)(nil)).Where("id IN (?)", bun.In(ids)).Exec(ctx)
+	if err != nil {
+		return 0, ErrFailedToDeleteCoupon
+	}
+	rows, _ := res.RowsAffected()
+	return rows, nil
 }
 
 // Search выполняет поиск купонов по различным критериям
-func (r *CouponRepository) Search(code, status, size, style string, partnerID *uuid.UUID) ([]*Coupon, error) {
-	query := r.db.Model(&Coupon{})
+func (r *CouponRepository) Search(ctx context.Context, code, status, size, style string, partnerID *uuid.UUID) ([]*Coupon, error) {
+	query := r.db.NewSelect().Model((*Coupon)(nil))
 
 	if code != "" {
 		query = query.Where("code ILIKE ?", "%"+code+"%")
 	}
-
 	if status != "" {
 		query = query.Where("status = ?", status)
 	}
-
 	if size != "" {
 		query = query.Where("size = ?", size)
 	}
-
 	if style != "" {
 		query = query.Where("style = ?", style)
 	}
-
 	if partnerID != nil {
 		query = query.Where("partner_id = ?", *partnerID)
 	}
 
 	var coupons []*Coupon
-	err := query.Order("created_at DESC").Find(&coupons).Error
+	err := query.Order("created_at DESC").Scan(ctx, &coupons)
 	if err != nil {
 		return nil, ErrFailedToFindCoupons
 	}
@@ -150,40 +186,33 @@ func (r *CouponRepository) Search(code, status, size, style string, partnerID *u
 }
 
 // SearchWithPagination выполняет поиск купонов с пагинацией
-func (r *CouponRepository) SearchWithPagination(code, status, size, style string, partnerID *uuid.UUID, page, limit int) ([]*Coupon, int64, error) {
-	query := r.db.Model(&Coupon{})
+func (r *CouponRepository) SearchWithPagination(ctx context.Context, code, status, size, style string, partnerID *uuid.UUID, page, limit int) ([]*Coupon, int, error) {
+	query := r.db.NewSelect().Model((*Coupon)(nil))
 
 	if code != "" {
 		query = query.Where("code ILIKE ?", "%"+code+"%")
 	}
-
 	if status != "" {
 		query = query.Where("status = ?", status)
 	}
-
 	if size != "" {
 		query = query.Where("size = ?", size)
 	}
-
 	if style != "" {
 		query = query.Where("style = ?", style)
 	}
-
 	if partnerID != nil {
 		query = query.Where("partner_id = ?", *partnerID)
 	}
 
-	// Подсчитываем общее количество
-	var total int64
-	if err := query.Count(&total).Error; err != nil {
-		return nil, 0, err
+	total, err := query.Count(ctx)
+	if err != nil {
+		return nil, 0, ErrFailedToFindCoupons
 	}
 
-	// Применяем пагинацию
 	offset := (page - 1) * limit
 	var coupons []*Coupon
-	err := query.Order("created_at DESC").Offset(offset).Limit(limit).Find(&coupons).Error
-
+	err = query.Order("created_at DESC").Offset(offset).Limit(limit).Scan(ctx, &coupons)
 	if err != nil {
 		return nil, 0, ErrFailedToFindCoupons
 	}
@@ -191,93 +220,110 @@ func (r *CouponRepository) SearchWithPagination(code, status, size, style string
 }
 
 // GetStatistics возвращает статистику по купонам
-func (r *CouponRepository) GetStatistics(partnerID *uuid.UUID) (map[string]int64, error) {
+func (r *CouponRepository) GetStatistics(ctx context.Context, partnerID *uuid.UUID) (map[string]int64, error) {
 	stats := make(map[string]int64)
 
-	baseQuery := r.db.Model(&Coupon{})
+	baseQuery := r.db.NewSelect().Model((*Coupon)(nil))
 	if partnerID != nil {
 		baseQuery = baseQuery.Where("partner_id = ?", *partnerID)
 	}
 
-	var total, used, new, purchased int64
+	count, err := baseQuery.Count(ctx)
+	if err != nil {
+		return nil, ErrFailedToGetStatistics
+	}
+	stats["total"] = int64(count)
 
-	// Общее количество купонов
-	baseQuery.Count(&total)
-	stats["total"] = total
-
-	// Активированные купоны
-	usedQuery := r.db.Model(&Coupon{}).Where("status = ?", "used")
+	usedQuery := r.db.NewSelect().Model((*Coupon)(nil)).Where("status = ?", "used")
 	if partnerID != nil {
 		usedQuery = usedQuery.Where("partner_id = ?", *partnerID)
 	}
-	usedQuery.Count(&used)
-	stats["used"] = used
+	count, err = usedQuery.Count(ctx)
+	if err != nil {
+		return nil, ErrFailedToGetStatistics
+	}
+	stats["used"] = int64(count)
 
-	// Новые купоны
-	newQuery := r.db.Model(&Coupon{}).Where("status = ?", "new")
+	newQuery := r.db.NewSelect().Model((*Coupon)(nil)).Where("status = ?", "new")
 	if partnerID != nil {
 		newQuery = newQuery.Where("partner_id = ?", *partnerID)
 	}
-	newQuery.Count(&new)
-	stats["new"] = new
+	count, err = newQuery.Count(ctx)
+	if err != nil {
+		return nil, ErrFailedToGetStatistics
+	}
+	stats["new"] = int64(count)
 
-	// Купленные онлайн
-	purchasedQuery := r.db.Model(&Coupon{}).Where("is_purchased = ?", true)
+	purchasedQuery := r.db.NewSelect().Model((*Coupon)(nil)).Where("is_purchased = ?", true)
 	if partnerID != nil {
 		purchasedQuery = purchasedQuery.Where("partner_id = ?", *partnerID)
 	}
-	purchasedQuery.Count(&purchased)
-	stats["purchased"] = purchased
+	count, err = purchasedQuery.Count(ctx)
+	if err != nil {
+		return nil, ErrFailedToGetStatistics
+	}
+	stats["purchased"] = int64(count)
 
 	return stats, nil
 }
 
 // ResetCoupon сбрасывает купон в исходное состояние
-func (r *CouponRepository) ResetCoupon(id uuid.UUID) error {
-	return r.db.Model(&Coupon{}).Where("id = ?", id).Updates(map[string]interface{}{
-		"status":             "new",
-		"used_at":            nil,
-		"is_blocked":         false,
-		"is_purchased":       false,
-		"purchase_email":     nil,
-		"purchased_at":       nil,
-		"original_image_url": nil,
-		"preview_url":        nil,
-		"schema_url":         nil,
-		"schema_sent_email":  nil,
-		"schema_sent_at":     nil,
-	}).Error
+func (r *CouponRepository) ResetCoupon(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.NewUpdate().Model((*Coupon)(nil)).
+		Set("status = ?", "new").
+		Set("used_at = NULL").
+		Set("is_blocked = ?", false).
+		Set("is_purchased = ?", false).
+		Set("purchase_email = NULL").
+		Set("purchased_at = NULL").
+		Set("original_image_url = NULL").
+		Set("preview_url = NULL").
+		Set("schema_url = NULL").
+		Set("schema_sent_email = NULL").
+		Set("schema_sent_at = NULL").
+		Where("id = ?", id).
+		Exec(ctx)
+	if err != nil {
+		return ErrFailedToResetCoupon
+	}
+	return nil
 }
 
 // Reset - алиас для ResetCoupon (для совместимости с handler)
-func (r *CouponRepository) Reset(id uuid.UUID) error {
-	return r.ResetCoupon(id)
+func (r *CouponRepository) Reset(ctx context.Context, id uuid.UUID) error {
+	return r.ResetCoupon(ctx, id)
 }
 
-// CountByPartnerID возвращает количество купонов партнера
-func (r *CouponRepository) CountByPartnerID(partnerID uuid.UUID) (int64, error) {
-	var count int64
-	err := r.db.Model(&Coupon{}).Where("partner_id = ?", partnerID).Count(&count).Error
-	return count, err
+// CountByPartnerID возвращает количество купонов партнёра
+func (r *CouponRepository) CountByPartnerID(ctx context.Context, partnerID uuid.UUID) (int, error) {
+	count, err := r.db.NewSelect().Model((*Coupon)(nil)).Where("partner_id = ?", partnerID).Count(ctx)
+	if err != nil {
+		return 0, ErrFailedToCountCoupons
+	}
+	return count, nil
 }
 
-// CountActivatedByPartnerID возвращает количество активированных купонов партнера
-func (r *CouponRepository) CountActivatedByPartnerID(partnerID uuid.UUID) (int64, error) {
-	var count int64
-	err := r.db.Model(&Coupon{}).Where("partner_id = ? AND status = ?", partnerID, "used").Count(&count).Error
-	return count, err
+// CountActivatedByPartnerID возвращает количество активированных купонов партнёра
+func (r *CouponRepository) CountActivatedByPartnerID(ctx context.Context, partnerID uuid.UUID) (int, error) {
+	count, err := r.db.NewSelect().Model((*Coupon)(nil)).Where("partner_id = ? AND status = ?", partnerID, "used").Count(ctx)
+	if err != nil {
+		return 0, ErrFailedToCountActivatedCoupons
+	}
+	return count, nil
 }
 
-// CountPurchasedByPartnerID возвращает количество купленных онлайн купонов партнера
-func (r *CouponRepository) CountPurchasedByPartnerID(partnerID uuid.UUID) (int64, error) {
-	var count int64
-	err := r.db.Model(&Coupon{}).Where("partner_id = ? AND is_purchased = ?", partnerID, true).Count(&count).Error
-	return count, err
+// CountPurchasedByPartnerID возвращает количество купленных онлайн купонов партнёра
+func (r *CouponRepository) CountPurchasedByPartnerID(ctx context.Context, partnerID uuid.UUID) (int, error) {
+	count, err := r.db.NewSelect().Model((*Coupon)(nil)).Where("partner_id = ? AND is_purchased = ?", partnerID, true).Count(ctx)
+	if err != nil {
+		return 0, ErrFailedToCountPurchasedCoupons
+	}
+	return count, nil
 }
 
 // GetFiltered возвращает купоны с применением фильтров
-func (r *CouponRepository) GetFiltered(filters map[string]interface{}) ([]*Coupon, error) {
-	query := r.db.Model(&Coupon{})
+func (r *CouponRepository) GetFiltered(ctx context.Context, filters map[string]interface{}) ([]*Coupon, error) {
+	query := r.db.NewSelect().Model((*Coupon)(nil))
 
 	for key, value := range filters {
 		switch key {
@@ -297,17 +343,21 @@ func (r *CouponRepository) GetFiltered(filters map[string]interface{}) ([]*Coupo
 	}
 
 	var coupons []*Coupon
-	err := query.Order("created_at DESC").Find(&coupons).Error
-	return coupons, err
+	err := query.Order("created_at DESC").Scan(ctx, &coupons)
+	if err != nil {
+		return nil, ErrFailedToFindCoupons
+	}
+	return coupons, nil
 }
 
 // GetRecentActivated возвращает последние активированные купоны с сортировкой по дате активации и лимитом
-func (r *CouponRepository) GetRecentActivated(limit int) ([]*Coupon, error) {
+func (r *CouponRepository) GetRecentActivated(ctx context.Context, limit int) ([]*Coupon, error) {
 	var coupons []*Coupon
-	err := r.db.Where("status = ? AND used_at IS NOT NULL", "used").
+	err := r.db.NewSelect().Model(&coupons).
+		Where("status = ? AND used_at IS NOT NULL", "used").
 		Order("used_at DESC").
 		Limit(limit).
-		Find(&coupons).Error
+		Scan(ctx)
 	if err != nil {
 		return nil, ErrFailedToFindRecentActivatedCoupons
 	}
@@ -315,9 +365,8 @@ func (r *CouponRepository) GetRecentActivated(limit int) ([]*Coupon, error) {
 }
 
 // CodeExists проверяет, существует ли купон с данным кодом
-func (r *CouponRepository) CodeExists(code string) (bool, error) {
-	var count int64
-	err := r.db.Model(&Coupon{}).Where("code = ?", code).Count(&count).Error
+func (r *CouponRepository) CodeExists(ctx context.Context, code string) (bool, error) {
+	count, err := r.db.NewSelect().Model((*Coupon)(nil)).Where("code = ?", code).Count(ctx)
 	if err != nil {
 		return false, ErrFailedToCheckCodeExists
 	}

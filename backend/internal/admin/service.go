@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -65,14 +66,14 @@ func (s *AdminService) CreateAdmin(req CreateAdminRequest) (*Admin, error) {
 	// Проверяем, существует ли администратор с таким логином
 	existingAdmin, err := s.deps.AdminRepository.GetByLogin(req.Login)
 	if err == nil && existingAdmin != nil {
-		s.deps.Logger.Error().Str("login", req.Login).Msg("Admin with this login already exists")
+		s.deps.Logger.Error().Str("login", req.Login).Msg(ErrAdminAlreadyExists.Message)
 		return nil, ErrAdminAlreadyExists
 	}
 
 	// Хешируем пароль
 	hashedPassword, err := bcrypt.HashPassword(req.Password)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg("Failed to hash password")
+		s.deps.Logger.Error().Err(err).Msg(ErrPasswordHashingFailed.Message)
 		return nil, ErrPasswordHashingFailed
 	}
 
@@ -83,7 +84,7 @@ func (s *AdminService) CreateAdmin(req CreateAdminRequest) (*Admin, error) {
 	}
 
 	if err := s.deps.AdminRepository.Create(admin); err != nil {
-		s.deps.Logger.Error().Err(err).Msg("Failed to create admin")
+		s.deps.Logger.Error().Err(err).Msg(ErrFailedToCreateAdmin.Message)
 		return nil, ErrFailedToCreateAdmin
 	}
 
@@ -136,7 +137,7 @@ func (s *AdminService) GetDashboardData() (map[string]interface{}, error) {
 	result := make(map[string]interface{})
 
 	// Общая статистика по купонам
-	allCoupons, err := s.deps.CouponRepository.GetAll()
+	allCoupons, err := s.deps.CouponRepository.GetAll(context.Background())
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrFailedToFindAllCoupons.Message)
 		return nil, ErrFailedToFindAllCoupons
@@ -163,7 +164,7 @@ func (s *AdminService) GetDashboardData() (map[string]interface{}, error) {
 	}
 
 	// Статистика по партнерам
-	allPartners, err := s.deps.PartnerRepository.GetAll()
+	allPartners, err := s.deps.PartnerRepository.GetAll(context.Background())
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrFailedToFindAllPartners.Message)
 		return nil, ErrFailedToFindAllPartners
@@ -182,13 +183,13 @@ func (s *AdminService) GetDashboardData() (map[string]interface{}, error) {
 	}
 
 	// Последние активированные купоны
-	recentCoupons, err := s.deps.CouponRepository.GetRecentActivated(10)
+	recentCoupons, err := s.deps.CouponRepository.GetRecentActivated(context.Background(), 10)
 	if err == nil {
 		result["recent_activations"] = recentCoupons
 	}
 
 	// Статистика по задачам обработки изображений
-	allImages, err := s.deps.ImageRepository.GetAll()
+	allImages, err := s.deps.ImageRepository.GetAll(context.Background())
 	if err == nil {
 		processingImages := 0
 		completedImages := 0
@@ -222,10 +223,10 @@ func (s *AdminService) GetPartners(search, status string) ([]*partner.Partner, e
 	var err error
 
 	if search == "" && status == "" {
-		partners, err = s.deps.PartnerRepository.GetAll()
+		partners, err = s.deps.PartnerRepository.GetAll(context.Background())
 	} else {
 		// Если есть поисковые фильтры, используем поиск
-		partners, err = s.deps.PartnerRepository.Search(search, status)
+		partners, err = s.deps.PartnerRepository.Search(context.Background(), search, status)
 	}
 
 	if err != nil {
@@ -239,13 +240,13 @@ func (s *AdminService) GetPartners(search, status string) ([]*partner.Partner, e
 // CreatePartner создает нового партнера
 func (s *AdminService) CreatePartner(req partner.CreatePartnerRequest) (*partner.Partner, error) {
 	// Проверяем уникальность логина
-	if _, err := s.deps.PartnerRepository.GetByLogin(req.Login); err == nil {
+	if _, err := s.deps.PartnerRepository.GetByLogin(context.Background(), req.Login); err == nil {
 		s.deps.Logger.Error().Str("login", req.Login).Msg(ErrPartnerAlreadyExists.Message)
 		return nil, ErrPartnerAlreadyExists
 	}
 
 	// Проверяем уникальность домена
-	if _, err := s.deps.PartnerRepository.GetByDomain(req.Domain); err == nil {
+	if _, err := s.deps.PartnerRepository.GetByDomain(context.Background(), req.Domain); err == nil {
 		s.deps.Logger.Error().Str("domain", req.Domain).Msg(ErrPartnerAlreadyExists.Message)
 		return nil, ErrPartnerAlreadyExists
 	}
@@ -288,7 +289,7 @@ func (s *AdminService) CreatePartner(req partner.CreatePartnerRequest) (*partner
 		Status:          req.Status,
 	}
 
-	if err := s.deps.PartnerRepository.Create(newPartner); err != nil {
+	if err := s.deps.PartnerRepository.Create(context.Background(), newPartner); err != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrFailedToCreatePartner.Message)
 		return nil, ErrFailedToCreatePartner
 	}
@@ -299,7 +300,7 @@ func (s *AdminService) CreatePartner(req partner.CreatePartnerRequest) (*partner
 // generateUniquePartnerCode генерирует уникальный 4-значный код партнера
 func (s *AdminService) generateUniquePartnerCode() (string, error) {
 	// Получаем всех партнеров и находим максимальный код
-	partners, err := s.deps.PartnerRepository.GetAll()
+	partners, err := s.deps.PartnerRepository.GetAll(context.Background())
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrFailedToFindAllPartners.Message)
 		return "", ErrFailedToFindAllPartners
@@ -327,7 +328,7 @@ func (s *AdminService) generateUniquePartnerCode() (string, error) {
 
 // GetPartner возвращает партнера по ID
 func (s *AdminService) GetPartner(id uuid.UUID) (*partner.Partner, error) {
-	p, err := s.deps.PartnerRepository.GetByID(id)
+	p, err := s.deps.PartnerRepository.GetByID(context.Background(), id)
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Str("partner_id", id.String()).Msg(ErrPartnerNotFound.Message)
 		return nil, ErrPartnerNotFound
@@ -338,7 +339,7 @@ func (s *AdminService) GetPartner(id uuid.UUID) (*partner.Partner, error) {
 // UpdatePartner обновляет информацию о партнере
 func (s *AdminService) UpdatePartner(id uuid.UUID, req partner.UpdatePartnerRequest) (*partner.Partner, error) {
 	// Получаем существующего партнера
-	existingPartner, err := s.deps.PartnerRepository.GetByID(id)
+	existingPartner, err := s.deps.PartnerRepository.GetByID(context.Background(), id)
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Str("partner_id", id.String()).Msg(ErrPartnerNotFound.Message)
 		return nil, ErrPartnerNotFound
@@ -346,7 +347,7 @@ func (s *AdminService) UpdatePartner(id uuid.UUID, req partner.UpdatePartnerRequ
 
 	// Проверяем уникальность логина (если он изменяется)
 	if req.Login != nil && *req.Login != existingPartner.Login {
-		if _, err := s.deps.PartnerRepository.GetByLogin(*req.Login); err == nil {
+		if _, err := s.deps.PartnerRepository.GetByLogin(context.Background(), *req.Login); err == nil {
 			s.deps.Logger.Error().Str("login", *req.Login).Msg(ErrPartnerAlreadyExists.Message)
 			return nil, ErrPartnerAlreadyExists
 		}
@@ -355,7 +356,7 @@ func (s *AdminService) UpdatePartner(id uuid.UUID, req partner.UpdatePartnerRequ
 
 	// Проверяем уникальность домена (если он изменяется)
 	if req.Domain != nil && *req.Domain != existingPartner.Domain {
-		if _, err := s.deps.PartnerRepository.GetByDomain(*req.Domain); err == nil {
+		if _, err := s.deps.PartnerRepository.GetByDomain(context.Background(), *req.Domain); err == nil {
 			s.deps.Logger.Error().Str("domain", *req.Domain).Msg(ErrPartnerAlreadyExists.Message)
 			return nil, ErrPartnerAlreadyExists
 		}
@@ -386,7 +387,7 @@ func (s *AdminService) UpdatePartner(id uuid.UUID, req partner.UpdatePartnerRequ
 	}
 
 	// Сохраняем изменения
-	if err := s.deps.PartnerRepository.Update(existingPartner); err != nil {
+	if err := s.deps.PartnerRepository.Update(context.Background(), existingPartner); err != nil {
 		s.deps.Logger.Error().Err(err).Str("partner_id", id.String()).Msg(ErrFailedToUpdatePartner.Message)
 		return nil, ErrFailedToUpdatePartner
 	}
@@ -396,20 +397,20 @@ func (s *AdminService) UpdatePartner(id uuid.UUID, req partner.UpdatePartnerRequ
 
 // BlockPartner блокирует партнера
 func (s *AdminService) BlockPartner(id uuid.UUID) error {
-	p, err := s.deps.PartnerRepository.GetByID(id)
+	p, err := s.deps.PartnerRepository.GetByID(context.Background(), id)
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Str("partner_id", id.String()).Msg(ErrPartnerNotFound.Message)
 		return ErrPartnerNotFound
 	}
 
 	p.Status = "blocked"
-	if err := s.deps.PartnerRepository.Update(p); err != nil {
+	if err := s.deps.PartnerRepository.Update(context.Background(), p); err != nil {
 		s.deps.Logger.Error().Err(err).Str("partner_id", id.String()).Msg(ErrFailedToBlockPartner.Message)
 		return ErrFailedToBlockPartner
 	}
 
 	// Блокируем все купоны партнера
-	if err := s.deps.CouponRepository.UpdateStatusByPartnerID(id, true); err != nil {
+	if err := s.deps.CouponRepository.UpdateStatusByPartnerID(context.Background(), id, true); err != nil {
 		s.deps.Logger.Error().Err(err).Str("partner_id", id.String()).Msg(ErrFailedToBlockCoupons.Message)
 		return ErrFailedToBlockCoupons
 	}
@@ -419,20 +420,20 @@ func (s *AdminService) BlockPartner(id uuid.UUID) error {
 
 // UnblockPartner разблокирует партнера
 func (s *AdminService) UnblockPartner(id uuid.UUID) error {
-	p, err := s.deps.PartnerRepository.GetByID(id)
+	p, err := s.deps.PartnerRepository.GetByID(context.Background(), id)
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Str("partner_id", id.String()).Msg(ErrPartnerNotFound.Message)
 		return ErrPartnerNotFound
 	}
 
 	p.Status = "active"
-	if err := s.deps.PartnerRepository.Update(p); err != nil {
+	if err := s.deps.PartnerRepository.Update(context.Background(), p); err != nil {
 		s.deps.Logger.Error().Err(err).Str("partner_id", id.String()).Msg(ErrFailedToUnblockPartner.Message)
 		return ErrFailedToUnblockPartner
 	}
 
 	// Разблокируем все купоны партнера
-	if err := s.deps.CouponRepository.UpdateStatusByPartnerID(id, false); err != nil {
+	if err := s.deps.CouponRepository.UpdateStatusByPartnerID(context.Background(), id, false); err != nil {
 		s.deps.Logger.Error().Err(err).Str("partner_id", id.String()).Msg(ErrFailedToUnblockCoupons.Message)
 		return ErrFailedToUnblockCoupons
 	}
@@ -442,8 +443,8 @@ func (s *AdminService) UnblockPartner(id uuid.UUID) error {
 
 // DeletePartner удаляет партнера
 func (s *AdminService) DeletePartner(id uuid.UUID) error {
-	if err := s.deps.PartnerRepository.Delete(id); err != nil {
-		s.deps.Logger.Error().Err(err).Str("partner_id", id.String()).Msg("Failed to delete partner")
+	if err := s.deps.PartnerRepository.DeleteWithCoupons(context.Background(), id); err != nil {
+		s.deps.Logger.Error().Err(err).Str("partner_id", id.String()).Msg(ErrFailedToDeletePartner.Message)
 		return ErrFailedToDeletePartner
 	}
 	return nil
@@ -452,16 +453,16 @@ func (s *AdminService) DeletePartner(id uuid.UUID) error {
 // GetPartnerStatistics возвращает статистику партнера
 func (s *AdminService) GetPartnerStatistics(id uuid.UUID) (map[string]interface{}, error) {
 	// Проверяем существование партнера
-	_, err := s.deps.PartnerRepository.GetByID(id)
+	_, err := s.deps.PartnerRepository.GetByID(context.Background(), id)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Str("partner_id", id.String()).Msg("Partner not found")
+		s.deps.Logger.Error().Err(err).Str("partner_id", id.String()).Msg(ErrPartnerNotFound.Message)
 		return nil, ErrPartnerNotFound
 	}
 
 	// Получаем статистику купонов
-	stats, err := s.deps.CouponRepository.GetStatistics(&id)
+	stats, err := s.deps.CouponRepository.GetStatistics(context.Background(), &id)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Str("partner_id", id.String()).Msg("Failed to get partner statistics")
+		s.deps.Logger.Error().Err(err).Str("partner_id", id.String()).Msg(ErrFailedToGetPartnerStatistics.Message)
 		return nil, ErrFailedToGetPartnerStatistics
 	}
 
@@ -472,11 +473,11 @@ func (s *AdminService) GetPartnerStatistics(id uuid.UUID) (map[string]interface{
 
 // GetCoupons возвращает список купонов с фильтрацией
 func (s *AdminService) GetCoupons(code, status, size, style string, partnerID *uuid.UUID) ([]*coupon.Coupon, error) {
-	coupons, err := s.deps.CouponRepository.Search(code, status, size, style, partnerID)
+	coupons, err := s.deps.CouponRepository.Search(context.Background(), code, status, size, style, partnerID)
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Interface("filters", map[string]interface{}{
 			"code": code, "status": status, "size": size, "style": style, "partner_id": partnerID,
-		}).Msg("Failed to search coupons")
+		}).Msg(ErrFailedToGetCoupons.Message)
 		return nil, ErrFailedToGetCoupons
 	}
 	return coupons, nil
@@ -484,14 +485,14 @@ func (s *AdminService) GetCoupons(code, status, size, style string, partnerID *u
 
 // GetCouponsPaginated возвращает купоны с пагинацией
 func (s *AdminService) GetCouponsPaginated(code, status, size, style string, partnerID *uuid.UUID, page, limit int) ([]*coupon.Coupon, int64, error) {
-	coupons, total, err := s.deps.CouponRepository.SearchWithPagination(code, status, size, style, partnerID, page, limit)
+	coupons, total, err := s.deps.CouponRepository.SearchWithPagination(context.Background(), code, status, size, style, partnerID, page, limit)
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Interface("filters", map[string]interface{}{
 			"code": code, "status": status, "size": size, "style": style, "partner_id": partnerID, "page": page, "limit": limit,
-		}).Msg("Failed to search coupons with pagination")
+		}).Msg(ErrFailedToGetCoupons.Message)
 		return nil, 0, ErrFailedToGetCoupons
 	}
-	return coupons, total, nil
+	return coupons, int64(total), nil
 }
 
 // CreateCoupons создает купоны
@@ -500,9 +501,9 @@ func (s *AdminService) CreateCoupons(req coupon.CreateCouponRequest) ([]*coupon.
 	partnerCode := "0000" // По умолчанию для собственных купонов
 
 	if req.PartnerID != uuid.Nil {
-		partner, err := s.deps.PartnerRepository.GetByID(req.PartnerID)
+		partner, err := s.deps.PartnerRepository.GetByID(context.Background(), req.PartnerID)
 		if err != nil {
-			s.deps.Logger.Error().Err(err).Str("partner_id", req.PartnerID.String()).Msg("Partner not found for coupon creation")
+			s.deps.Logger.Error().Err(err).Str("partner_id", req.PartnerID.String()).Msg(ErrPartnerNotFound.Message)
 			return nil, ErrPartnerNotFound
 		}
 		partnerCode = partner.PartnerCode
@@ -515,7 +516,7 @@ func (s *AdminService) CreateCoupons(req coupon.CreateCouponRequest) ([]*coupon.
 		// Генерируем уникальный код купона
 		code, err := randomCouponCode.GenerateUniqueCouponCode(partnerCode, s.deps.CouponRepository)
 		if err != nil {
-			s.deps.Logger.Error().Err(err).Str("partner_code", partnerCode).Int("attempt", i).Msg("Failed to generate unique coupon code")
+			s.deps.Logger.Error().Err(err).Str("partner_code", partnerCode).Int("attempt", i).Msg(ErrFailedToCreateCoupons.Message)
 			return nil, ErrFailedToCreateCoupons
 		}
 
@@ -529,8 +530,8 @@ func (s *AdminService) CreateCoupons(req coupon.CreateCouponRequest) ([]*coupon.
 	}
 
 	// Сохраняем купоны в базе данных
-	if err := s.deps.CouponRepository.CreateBatch(coupons); err != nil {
-		s.deps.Logger.Error().Err(err).Int("count", req.Count).Str("partner_code", partnerCode).Msg("Failed to create coupon batch")
+	if err := s.deps.CouponRepository.CreateBatch(context.Background(), coupons); err != nil {
+		s.deps.Logger.Error().Err(err).Int("count", req.Count).Str("partner_code", partnerCode).Msg(ErrFailedToCreateCoupons.Message)
 		return nil, ErrFailedToCreateCoupons
 	}
 
@@ -540,18 +541,18 @@ func (s *AdminService) CreateCoupons(req coupon.CreateCouponRequest) ([]*coupon.
 // ExportCoupons экспортирует купоны в CSV
 func (s *AdminService) ExportCoupons(code, status, size, style string, partnerID *uuid.UUID) (string, error) {
 	// Получаем купоны для экспорта
-	coupons, err := s.deps.CouponRepository.Search(code, status, size, style, partnerID)
+	coupons, err := s.deps.CouponRepository.Search(context.Background(), code, status, size, style, partnerID)
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Interface("filters", map[string]interface{}{
 			"code": code, "status": status, "size": size, "style": style, "partner_id": partnerID,
-		}).Msg("Failed to get coupons for export")
+		}).Msg(ErrFailedToExportCoupons.Message)
 		return "", ErrFailedToExportCoupons
 	}
 
 	if len(coupons) == 0 {
 		s.deps.Logger.Warn().Interface("filters", map[string]interface{}{
 			"code": code, "status": status, "size": size, "style": style, "partner_id": partnerID,
-		}).Msg("No coupons found for export")
+		}).Msg(ErrNoCouponsFoundForExport.Message)
 		return "", ErrFailedToExportCoupons
 	}
 
@@ -594,12 +595,12 @@ func (s *AdminService) ExportPartnerCoupons(partnerID uuid.UUID) (string, error)
 // BatchDeleteCoupons удаляет купоны по списку ID
 func (s *AdminService) BatchDeleteCoupons(couponIDs []uuid.UUID) (int64, error) {
 	if len(couponIDs) == 0 {
-		return 0, fmt.Errorf("список ID купонов пуст")
+		return 0, ErrBadRequest
 	}
 
-	deleted, err := s.deps.CouponRepository.BatchDelete(couponIDs)
+	deleted, err := s.deps.CouponRepository.BatchDelete(context.Background(), couponIDs)
 	if err != nil {
-		return 0, fmt.Errorf("ошибка удаления купонов: %v", err)
+		return 0, ErrFailedToDeleteCoupons
 	}
 
 	return deleted, nil
@@ -607,7 +608,7 @@ func (s *AdminService) BatchDeleteCoupons(couponIDs []uuid.UUID) (int64, error) 
 
 // GetCoupon возвращает купон по ID
 func (s *AdminService) GetCoupon(id uuid.UUID) (*coupon.Coupon, error) {
-	c, err := s.deps.CouponRepository.GetByID(id)
+	c, err := s.deps.CouponRepository.GetByID(context.Background(), id)
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Str("coupon_id", id.String()).Msg(ErrCouponNotFound.Message)
 		return nil, ErrCouponNotFound
@@ -617,7 +618,7 @@ func (s *AdminService) GetCoupon(id uuid.UUID) (*coupon.Coupon, error) {
 
 // ResetCoupon сбрасывает купон в исходное состояние
 func (s *AdminService) ResetCoupon(id uuid.UUID) error {
-	if err := s.deps.CouponRepository.Reset(id); err != nil {
+	if err := s.deps.CouponRepository.Reset(context.Background(), id); err != nil {
 		s.deps.Logger.Error().Err(err).Str("coupon_id", id.String()).Msg(ErrFailedToResetCoupon.Message)
 		return ErrFailedToResetCoupon
 	}
@@ -626,7 +627,7 @@ func (s *AdminService) ResetCoupon(id uuid.UUID) error {
 
 // DeleteCoupon удаляет купон
 func (s *AdminService) DeleteCoupon(id uuid.UUID) error {
-	if err := s.deps.CouponRepository.Delete(id); err != nil {
+	if err := s.deps.CouponRepository.Delete(context.Background(), id); err != nil {
 		s.deps.Logger.Error().Err(err).Str("coupon_id", id.String()).Msg(ErrFailedToDeleteCoupon.Message)
 		return ErrFailedToDeleteCoupon
 	}
@@ -635,7 +636,7 @@ func (s *AdminService) DeleteCoupon(id uuid.UUID) error {
 
 // GetStatistics возвращает общую статистику
 func (s *AdminService) GetStatistics() (map[string]interface{}, error) {
-	stats, err := s.deps.CouponRepository.GetStatistics(nil)
+	stats, err := s.deps.CouponRepository.GetStatistics(context.Background(), nil)
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrFailedToGetStatistics.Message)
 		return nil, ErrFailedToGetStatistics
@@ -648,7 +649,7 @@ func (s *AdminService) GetStatistics() (map[string]interface{}, error) {
 
 // GetPartnersStatistics возвращает статистику по партнерам
 func (s *AdminService) GetPartnersStatistics() (map[string]interface{}, error) {
-	partners, err := s.deps.PartnerRepository.GetAll()
+	partners, err := s.deps.PartnerRepository.GetAll(context.Background())
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrFailedToGetPartners.Message)
 		return nil, ErrFailedToGetPartners
@@ -658,7 +659,7 @@ func (s *AdminService) GetPartnersStatistics() (map[string]interface{}, error) {
 	partnerStats := make([]map[string]interface{}, 0, len(partners))
 
 	for _, p := range partners {
-		stats, err := s.deps.CouponRepository.GetStatistics(&p.ID)
+		stats, err := s.deps.CouponRepository.GetStatistics(context.Background(), &p.ID)
 		if err != nil {
 			continue // Пропускаем партнеров с ошибкой статистики
 		}
@@ -681,13 +682,13 @@ func (s *AdminService) GetSystemStatistics() (map[string]interface{}, error) {
 	result := make(map[string]interface{})
 
 	// Статистика по купонам
-	couponStats, err := s.deps.CouponRepository.GetStatistics(nil)
+	couponStats, err := s.deps.CouponRepository.GetStatistics(context.Background(), nil)
 	if err == nil {
 		result["coupons"] = couponStats
 	}
 
 	// Статистика по партнерам
-	partners, err := s.deps.PartnerRepository.GetAll()
+	partners, err := s.deps.PartnerRepository.GetAll(context.Background())
 	if err == nil {
 		activePartners := 0
 		for _, p := range partners {
@@ -702,7 +703,7 @@ func (s *AdminService) GetSystemStatistics() (map[string]interface{}, error) {
 	}
 
 	// Статистика по обработке изображений
-	images, err := s.deps.ImageRepository.GetAll()
+	images, err := s.deps.ImageRepository.GetAll(context.Background())
 	if err == nil {
 		processingImages := 0
 		completedImages := 0
@@ -735,7 +736,7 @@ func (s *AdminService) GetAnalytics() (map[string]interface{}, error) {
 	result := make(map[string]interface{})
 
 	// Получаем все купоны для анализа
-	allCoupons, err := s.deps.CouponRepository.GetAll()
+	allCoupons, err := s.deps.CouponRepository.GetAll(context.Background())
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrFailedToGetCoupons.Message)
 		return nil, ErrFailedToGetCoupons
@@ -772,7 +773,7 @@ func (s *AdminService) GetDashboardStatistics() (map[string]interface{}, error) 
 
 // GetAllImages возвращает все задачи обработки изображений
 func (s *AdminService) GetAllImages() ([]*image.Image, error) {
-	images, err := s.deps.ImageRepository.GetAll()
+	images, err := s.deps.ImageRepository.GetAll(context.Background())
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrFailedToGetImages.Message)
 		return nil, ErrFailedToGetImages
@@ -782,7 +783,7 @@ func (s *AdminService) GetAllImages() ([]*image.Image, error) {
 
 // GetImageDetails возвращает детали задачи обработки изображения
 func (s *AdminService) GetImageDetails(id uuid.UUID) (*image.Image, error) {
-	task, err := s.deps.ImageRepository.GetByID(id)
+	task, err := s.deps.ImageRepository.GetByID(context.Background(), id)
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Str("image_id", id.String()).Msg(ErrImageNotFound.Message)
 		return nil, ErrImageNotFound
@@ -792,7 +793,7 @@ func (s *AdminService) GetImageDetails(id uuid.UUID) (*image.Image, error) {
 
 // DeleteImageTask удаляет задачу обработки изображения
 func (s *AdminService) DeleteImageTask(id uuid.UUID) error {
-	if err := s.deps.ImageRepository.Delete(id); err != nil {
+	if err := s.deps.ImageRepository.Delete(context.Background(), id); err != nil {
 		s.deps.Logger.Error().Err(err).Str("image_id", id.String()).Msg(ErrFailedToDeleteImage.Message)
 		return ErrFailedToDeleteImage
 	}
@@ -801,7 +802,7 @@ func (s *AdminService) DeleteImageTask(id uuid.UUID) error {
 
 // RetryImageTask повторно запускает обработку изображения
 func (s *AdminService) RetryImageTask(id uuid.UUID) error {
-	task, err := s.deps.ImageRepository.GetByID(id)
+	task, err := s.deps.ImageRepository.GetByID(context.Background(), id)
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Str("image_id", id.String()).Msg(ErrImageNotFound.Message)
 		return ErrImageNotFound
@@ -813,7 +814,7 @@ func (s *AdminService) RetryImageTask(id uuid.UUID) error {
 	task.StartedAt = nil
 	task.CompletedAt = nil
 
-	if err := s.deps.ImageRepository.Update(task); err != nil {
+	if err := s.deps.ImageRepository.Update(context.Background(), task); err != nil {
 		s.deps.Logger.Error().Err(err).Str("image_id", id.String()).Msg(ErrFailedToUpdateImage.Message)
 		return ErrFailedToUpdateImage
 	}

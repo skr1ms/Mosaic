@@ -3,6 +3,7 @@ package coupon
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -30,7 +31,7 @@ func NewCouponService(deps *CouponServiceDeps) *CouponService {
 
 // SearchCoupons ищет купоны с фильтрацией
 func (s *CouponService) SearchCoupons(code, status, size, style string, partnerID *uuid.UUID) ([]*Coupon, error) {
-	coupons, err := s.deps.CouponRepository.Search(code, status, size, style, partnerID)
+	coupons, err := s.deps.CouponRepository.Search(context.Background(), code, status, size, style, partnerID)
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrFailedToFindCoupons.Error())
 		return nil, ErrFailedToFindCoupons
@@ -40,7 +41,7 @@ func (s *CouponService) SearchCoupons(code, status, size, style string, partnerI
 
 // GetCouponByID получает купон по ID
 func (s *CouponService) GetCouponByID(id uuid.UUID) (*Coupon, error) {
-	coupon, err := s.deps.CouponRepository.GetByID(id)
+	coupon, err := s.deps.CouponRepository.GetByID(context.Background(), id)
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrCouponNotFound.Message)
 		return nil, ErrCouponNotFound
@@ -50,7 +51,7 @@ func (s *CouponService) GetCouponByID(id uuid.UUID) (*Coupon, error) {
 
 // GetCouponByCode получает купон по коду
 func (s *CouponService) GetCouponByCode(code string) (*Coupon, error) {
-	coupon, err := s.deps.CouponRepository.GetByCode(code)
+	coupon, err := s.deps.CouponRepository.GetByCode(context.Background(), code)
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrCouponNotFound.Message)
 		return nil, ErrCouponNotFound
@@ -60,7 +61,7 @@ func (s *CouponService) GetCouponByCode(code string) (*Coupon, error) {
 
 // ActivateCoupon активирует купон
 func (s *CouponService) ActivateCoupon(id uuid.UUID, originalImageURL, previewURL, schemaURL string) error {
-	if err := s.deps.CouponRepository.ActivateCoupon(id, originalImageURL, previewURL, schemaURL); err != nil {
+	if err := s.deps.CouponRepository.ActivateCoupon(context.Background(), id, originalImageURL, previewURL, schemaURL); err != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrFailedToActivateCoupon.Message)
 		return ErrFailedToActivateCoupon
 	}
@@ -69,7 +70,7 @@ func (s *CouponService) ActivateCoupon(id uuid.UUID, originalImageURL, previewUR
 
 // ResetCoupon сбрасывает купон в исходное состояние
 func (s *CouponService) ResetCoupon(id uuid.UUID) error {
-	if err := s.deps.CouponRepository.ResetCoupon(id); err != nil {
+	if err := s.deps.CouponRepository.ResetCoupon(context.Background(), id); err != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrFailedToResetCoupon.Message)
 		return ErrFailedToResetCoupon
 	}
@@ -78,7 +79,7 @@ func (s *CouponService) ResetCoupon(id uuid.UUID) error {
 
 // SendSchema отправляет схему на email
 func (s *CouponService) SendSchema(id uuid.UUID, email string) error {
-	if err := s.deps.CouponRepository.SendSchema(id, email); err != nil {
+	if err := s.deps.CouponRepository.SendSchema(context.Background(), id, email); err != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrFailedToSendSchema.Message)
 		return ErrFailedToSendSchema
 	}
@@ -87,7 +88,7 @@ func (s *CouponService) SendSchema(id uuid.UUID, email string) error {
 
 // MarkAsPurchased помечает купон как купленный
 func (s *CouponService) MarkAsPurchased(id uuid.UUID, purchaseEmail string) error {
-	if err := s.deps.CouponRepository.MarkAsPurchased(id, purchaseEmail); err != nil {
+	if err := s.deps.CouponRepository.MarkAsPurchased(context.Background(), id, purchaseEmail); err != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrFailedToMarkAsPurchased.Message)
 		return ErrFailedToMarkAsPurchased
 	}
@@ -96,7 +97,7 @@ func (s *CouponService) MarkAsPurchased(id uuid.UUID, purchaseEmail string) erro
 
 // GetStatistics возвращает статистику по купонам
 func (s *CouponService) GetStatistics(partnerID *uuid.UUID) (map[string]int64, error) {
-	stats, err := s.deps.CouponRepository.GetStatistics(partnerID)
+	stats, err := s.deps.CouponRepository.GetStatistics(context.Background(), partnerID)
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrFailedToGetStatistics.Message)
 		return nil, ErrFailedToGetStatistics
@@ -106,7 +107,7 @@ func (s *CouponService) GetStatistics(partnerID *uuid.UUID) (map[string]int64, e
 
 // ValidateCoupon проверяет валидность купона
 func (s *CouponService) ValidateCoupon(code string) (*CouponValidationResponse, error) {
-	coupon, err := s.deps.CouponRepository.GetByCode(code)
+	coupon, err := s.deps.CouponRepository.GetByCode(context.Background(), code)
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrCouponNotFound.Message)
 		return &CouponValidationResponse{
@@ -141,7 +142,7 @@ func (s *CouponService) ValidateCoupon(code string) (*CouponValidationResponse, 
 
 // ExportCoupons экспортирует купоны в текстовый файл
 func (s *CouponService) ExportCoupons(partnerID *uuid.UUID, status, format string) (string, error) {
-	coupons, err := s.deps.CouponRepository.Search("", status, "", "", partnerID)
+	coupons, err := s.deps.CouponRepository.Search(context.Background(), "", status, "", "", partnerID)
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrFailedToFetchCouponsForExport.Message)
 		return "", ErrFailedToFetchCouponsForExport
@@ -177,7 +178,7 @@ func (s *CouponService) ExportCoupons(partnerID *uuid.UUID, status, format strin
 
 // DownloadMaterials создает ZIP архив с материалами купона
 func (s *CouponService) DownloadMaterials(id uuid.UUID) ([]byte, string, error) {
-	coupon, err := s.deps.CouponRepository.GetByID(id)
+	coupon, err := s.deps.CouponRepository.GetByID(context.Background(), id)
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrCouponNotFound.Message)
 		return nil, "", ErrCouponNotFound
@@ -283,19 +284,19 @@ func (s *CouponService) SearchCouponsWithPagination(code, status, size, style st
 	}
 
 	coupons, total, err := s.deps.CouponRepository.SearchWithPagination(
-		code, status, size, style, partnerID, page, limit,
+		context.Background(), code, status, size, style, partnerID, page, limit,
 	)
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrFailedToFetchCoupons.Message)
 		return nil, 0, ErrFailedToFetchCoupons
 	}
 
-	return coupons, total, nil
+	return coupons, int64(total), nil
 }
 
 // SearchCouponsByPartner возвращает купоны конкретного партнера
 func (s *CouponService) SearchCouponsByPartner(partnerID uuid.UUID, status, size, style string) ([]*Coupon, error) {
-	coupons, err := s.deps.CouponRepository.Search("", status, size, style, &partnerID)
+	coupons, err := s.deps.CouponRepository.Search(context.Background(), "", status, size, style, &partnerID)
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrFailedToFetchPartnerCoupons.Message)
 		return nil, ErrFailedToFetchPartnerCoupons

@@ -4,16 +4,27 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/uptrace/bun"
 )
 
 type Admin struct {
-	ID        uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id" validate:"required"`
-	Login     string     `gorm:"unique;not null;size:255;index" json:"login" validate:"required,secure_login"`
-	Password  string     `gorm:"not null;size:255" json:"password" validate:"required,secure_password"`
-	LastLogin *time.Time `gorm:"index:idx_admins_last_login" json:"last_login"`
-	CreatedAt time.Time  `gorm:"index:idx_admins_created_at" json:"created_at"`
+	bun.BaseModel `bun:"table:admins,alias:a"`
+
+	ID        uuid.UUID  `bun:"id,pk,type:uuid,default:gen_random_uuid()" json:"id" validate:"required"`
+	Login     string     `bun:"login,unique,notnull" json:"login" validate:"required,secure_login"`
+	Password  string     `bun:"password,notnull" json:"password" validate:"required,secure_password"`
+	LastLogin *time.Time `bun:"last_login" json:"last_login"`
+	CreatedAt time.Time  `bun:"created_at,nullzero,notnull,default:current_timestamp" json:"created_at"`
 }
 
-// - login уже имеет unique индекс, но добавляем обычный для быстрого поиска
-// - idx_admins_last_login: сортировка по последнему входу
+// - idx_admins_login: быстрый поиск по логину
+// - idx_admins_last_login: аналитика по датам последнего входа
 // - idx_admins_created_at: сортировка по дате создания
+
+func (a *Admin) CreateIndex() string {
+	return `
+	CREATE INDEX IF NOT EXISTS idx_admins_login ON admins(login);
+	CREATE INDEX IF NOT EXISTS idx_admins_last_login ON admins(last_login);
+	CREATE INDEX IF NOT EXISTS idx_admins_created_at ON admins(created_at);
+	`
+}

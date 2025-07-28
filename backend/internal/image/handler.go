@@ -1,11 +1,13 @@
 package image
 
 import (
+	"context"
+	"database/sql"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"github.com/skr1ms/mosaic/internal/coupon"
-	"gorm.io/gorm"
 )
 
 type ImageHandlerDeps struct {
@@ -54,7 +56,7 @@ func (handler *ImageHandler) GetQueue(c *fiber.Ctx) error {
 	tasks, err := handler.deps.ImageService.GetQueue(status)
 	if err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrFailedToFetchQueue.Message)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": ErrFailedToFetchQueue.Error()})
+		return c.Status(ErrFailedToFetchQueue.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToFetchQueue.Error()})
 	}
 
 	return c.JSON(tasks)
@@ -75,14 +77,14 @@ func (handler *ImageHandler) GetTaskByID(c *fiber.Ctx) error {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidTaskID.Error())
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": ErrInvalidTaskID.Error()})
+		return c.Status(ErrInvalidTaskID.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidTaskID.Error()})
 	}
 
 	// Получаем задачу по ID
-	task, err := handler.deps.ImageRepository.GetByID(id)
+	task, err := handler.deps.ImageRepository.GetByID(context.Background(), id)
 	if err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrTaskNotFound.Error())
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": ErrTaskNotFound.Error()})
+		return c.Status(ErrTaskNotFound.HTTPStatus).JSON(fiber.Map{"error": ErrTaskNotFound.Error()})
 	}
 
 	return c.JSON(task)
@@ -104,13 +106,13 @@ func (handler *ImageHandler) AddToQueue(c *fiber.Ctx) error {
 
 	if err := c.BodyParser(&req); err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrBadRequest.Error())
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": ErrBadRequest.Error()})
+		return c.Status(ErrBadRequest.HTTPStatus).JSON(fiber.Map{"error": ErrBadRequest.Error()})
 	}
 
 	// Добавить логику для добавления задачи в очередь
 	if err := handler.deps.ImageService.AddToQueue(req.CouponID); err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrFailedToAddToQueue.Error())
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": ErrFailedToAddToQueue.Error()})
+		return c.Status(ErrFailedToAddToQueue.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToAddToQueue.Error()})
 	}
 
 	task := &Image{
@@ -125,9 +127,9 @@ func (handler *ImageHandler) AddToQueue(c *fiber.Ctx) error {
 	}
 
 	// Добавить логику для создания задачи
-	if err := handler.deps.ImageRepository.Create(task); err != nil {
+	if err := handler.deps.ImageRepository.Create(context.Background(), task); err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrFailedToCreateTask.Error())
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": ErrFailedToCreateTask.Error()})
+		return c.Status(ErrFailedToCreateTask.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToCreateTask.Error()})
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(task)
@@ -144,14 +146,14 @@ func (handler *ImageHandler) AddToQueue(c *fiber.Ctx) error {
 // @Router /image-processing/next [get]
 func (handler *ImageHandler) GetNextTask(c *fiber.Ctx) error {
 	// Получаем следующую задачу в очереди
-	task, err := handler.deps.ImageRepository.GetNextInQueue()
+	task, err := handler.deps.ImageRepository.GetNextInQueue(context.Background())
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if err == sql.ErrNoRows {
 			handler.deps.Logger.Info().Msg("No tasks in queue")
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": ErrNoTasksInQueue.Error()})
+			return c.Status(ErrNoTasksInQueue.HTTPStatus).JSON(fiber.Map{"message": ErrNoTasksInQueue.Error()})
 		}
 		handler.deps.Logger.Error().Err(err).Msg(ErrFailedToGetNextTask.Error())
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": ErrFailedToGetNextTask.Error()})
+		return c.Status(ErrFailedToGetNextTask.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToGetNextTask.Error()})
 	}
 
 	return c.JSON(task)
@@ -172,13 +174,13 @@ func (handler *ImageHandler) StartProcessing(c *fiber.Ctx) error {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidTaskID.Error())
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": ErrInvalidTaskID.Error()})
+		return c.Status(ErrInvalidTaskID.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidTaskID.Error()})
 	}
 
 	// Начинаем обработку задачи: обновляем статус и время начала
-	if err := handler.deps.ImageRepository.StartProcessing(id); err != nil {
+	if err := handler.deps.ImageRepository.StartProcessing(context.Background(), id); err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrFailedToStartProcessing.Error())
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": ErrFailedToStartProcessing.Error()})
+		return c.Status(ErrFailedToStartProcessing.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToStartProcessing.Error()})
 	}
 
 	return c.JSON(fiber.Map{"message": "Processing started"})
@@ -199,13 +201,13 @@ func (handler *ImageHandler) CompleteProcessing(c *fiber.Ctx) error {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidTaskID.Error())
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": ErrInvalidTaskID.Error()})
+		return c.Status(ErrInvalidTaskID.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidTaskID.Error()})
 	}
 
 	// Завершаем обработку задачи: обновляем статус и время завершения
-	if err := handler.deps.ImageRepository.CompleteProcessing(id); err != nil {
+	if err := handler.deps.ImageRepository.CompleteProcessing(context.Background(), id); err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrFailedToCompleteProcessing.Error())
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": ErrFailedToCompleteProcessing.Error()})
+		return c.Status(ErrFailedToCompleteProcessing.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToCompleteProcessing.Error()})
 	}
 
 	return c.JSON(fiber.Map{"message": "Processing completed"})
@@ -228,20 +230,20 @@ func (handler *ImageHandler) FailProcessing(c *fiber.Ctx) error {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidTaskID.Error())
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": ErrInvalidTaskID.Error()})
+		return c.Status(ErrInvalidTaskID.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidTaskID.Error()})
 	}
 
 	var req FailProcessingRequest
 
 	if err := c.BodyParser(&req); err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrBadRequest.Error())
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": ErrBadRequest.Error()})
+		return c.Status(ErrBadRequest.HTTPStatus).JSON(fiber.Map{"error": ErrBadRequest.Error()})
 	}
 
 	// Помечаем задачу как неудачную с сообщением об ошибке
-	if err := handler.deps.ImageRepository.FailProcessing(id, req.ErrorMessage); err != nil {
+	if err := handler.deps.ImageRepository.FailProcessing(context.Background(), id, req.ErrorMessage); err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrFailedToMarkAsFailed.Error())
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": ErrFailedToMarkAsFailed.Error()})
+		return c.Status(ErrFailedToMarkAsFailed.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToMarkAsFailed.Error()})
 	}
 
 	return c.JSON(fiber.Map{"message": "Task marked as failed"})
@@ -262,13 +264,13 @@ func (handler *ImageHandler) RetryTask(c *fiber.Ctx) error {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidTaskID.Error())
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": ErrInvalidTaskID.Error()})
+		return c.Status(ErrInvalidTaskID.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidTaskID.Error()})
 	}
 
 	// Ставим задачу на повторную обработку
-	if err := handler.deps.ImageRepository.RetryTask(id); err != nil {
+	if err := handler.deps.ImageRepository.RetryTask(context.Background(), id); err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrFailedToRetryTask.Error())
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": ErrFailedToRetryTask.Error()})
+		return c.Status(ErrFailedToRetryTask.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToRetryTask.Error()})
 	}
 
 	return c.JSON(fiber.Map{"message": "Task queued for retry"})
@@ -289,13 +291,13 @@ func (handler *ImageHandler) DeleteTask(c *fiber.Ctx) error {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidTaskID.Error())
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": ErrInvalidTaskID.Error()})
+		return c.Status(ErrInvalidTaskID.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidTaskID.Error()})
 	}
 
 	// Удаляем задачу из базы данных
-	if err := handler.deps.ImageRepository.Delete(id); err != nil {
+	if err := handler.deps.ImageRepository.Delete(context.Background(), id); err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrFailedToDeleteTask.Error())
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": ErrFailedToDeleteTask.Error()})
+		return c.Status(ErrFailedToDeleteTask.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToDeleteTask.Error()})
 	}
 
 	return c.JSON(fiber.Map{"message": "Task deleted successfully"})
@@ -310,10 +312,10 @@ func (handler *ImageHandler) DeleteTask(c *fiber.Ctx) error {
 // @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
 // @Router /image-processing/statistics [get]
 func (handler *ImageHandler) GetStatistics(c *fiber.Ctx) error {
-	stats, err := handler.deps.ImageRepository.GetStatistics()
+	stats, err := handler.deps.ImageRepository.GetStatistics(context.Background())
 	if err != nil {
 		handler.deps.Logger.Error().Err(err).Msg(ErrFailedToGetStatistics.Error())
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": ErrFailedToGetStatistics.Error()})
+		return c.Status(ErrFailedToGetStatistics.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToGetStatistics.Error()})
 	}
 
 	return c.JSON(stats)

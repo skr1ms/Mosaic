@@ -1,6 +1,8 @@
 package migrations
 
 import (
+	"context"
+
 	"github.com/skr1ms/mosaic/config"
 	"github.com/skr1ms/mosaic/internal/admin"
 	"github.com/skr1ms/mosaic/internal/coupon"
@@ -8,38 +10,54 @@ import (
 	"github.com/skr1ms/mosaic/internal/partner"
 	"github.com/skr1ms/mosaic/pkg/bcrypt"
 	"github.com/skr1ms/mosaic/pkg/db"
-	"gorm.io/gorm"
+	"github.com/uptrace/bun"
 )
 
 func Init(cfg *config.Config) {
-	database := db.NewDB(cfg)
+	database := db.NewDb(cfg)
+	ctx := context.Background()
 
-	if err := createEnumTypes(database.DB); err != nil {
+	if err := createEnumTypes(database.DB, ctx); err != nil {
 		panic("Failed to create enum types: " + err.Error())
 	}
 
-	err := database.AutoMigrate(
-		&partner.Partner{},
-		&admin.Admin{},
-		&coupon.Coupon{},
-		&image.Image{},
-	)
-	if err != nil {
-		panic("Failed to migrate database: " + err.Error())
+	// Создаем таблицы
+	models := []interface{}{
+		(*partner.Partner)(nil),
+		(*admin.Admin)(nil),
+		(*coupon.Coupon)(nil),
+		(*image.Image)(nil),
+	}
+
+	for _, model := range models {
+		_, err := database.NewCreateTable().Model(model).IfNotExists().Exec(ctx)
+		if err != nil {
+			panic("Failed to create table: " + err.Error())
+		}
+	}
+
+	// Создаем ограничения внешнего ключа с каскадным удалением
+	if err := createForeignKeys(database.DB, ctx); err != nil {
+		panic("Failed to create foreign keys: " + err.Error())
+	}
+
+	// Создаем индексы для таблиц
+	if err := createIndexes(database.DB, ctx); err != nil {
+		panic("Failed to create indexes: " + err.Error())
 	}
 
 	// Миграция кодов партнеров в строковый формат
-	if err := migratePartnerCodes(database.DB); err != nil {
+	if err := migratePartnerCodes(database.DB, ctx); err != nil {
 		panic("Failed to migrate partner codes: " + err.Error())
 	}
 
 	// Создаем дефолтного администратора, если администраторов нет
-	if err := createDefaultAdmin(database.DB); err != nil {
+	if err := createDefaultAdmin(database.DB, ctx); err != nil {
 		panic("Failed to create default admin: " + err.Error())
 	}
 }
 
-func createEnumTypes(db *gorm.DB) error {
+func createEnumTypes(db *bun.DB, ctx context.Context) error {
 	enumQueries := []string{
 		// ENUM для статуса партнера
 		`DO $$ BEGIN
@@ -77,9 +95,9 @@ func createEnumTypes(db *gorm.DB) error {
 		END $$;`,
 	}
 
-	return db.Transaction(func(tx *gorm.DB) error {
+	return db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
 		for _, query := range enumQueries {
-			if err := tx.Exec(query).Error; err != nil {
+			if _, err := tx.Exec(query); err != nil {
 				return err
 			}
 		}
@@ -87,19 +105,76 @@ func createEnumTypes(db *gorm.DB) error {
 	})
 }
 
-// createDefaultAdmin создает дефолтного администратора, если его нет
-func createDefaultAdmin(db *gorm.DB) error {
-	var count int64
-	if err := db.Model(&admin.Admin{}).Count(&count).Error; err != nil {
+// createForeignKeys создает ограничения внешнего ключа с каскадным удалением
+func createForeignKeys(db *bun.DB, ctx context.Context) error {
+	foreignKeyQueries := []string{
+		// Ограничение между coupons и partners
+		`DO $$ BEGIN
+			ALTER TABLE coupons 
+			ADD CONSTRAINT fk_coupons_partner_id 
+			FOREIGN KEY (partner_id) REFERENCES partners(id) 
+			ON DELETE CASCADE;
+		EXCEPTION
+			WHEN duplicate_object THEN null;
+		END $$;`,
+
+		// Ограничение между images и coupons
+		`DO $$ BEGIN
+			ALTER TABLE images 
+			ADD CONSTRAINT fk_images_coupon_id 
+			FOREIGN KEY (coupon_id) REFERENCES coupons(id) 
+			ON DELETE CASCADE;
+		EXCEPTION
+			WHEN duplicate_object THEN null;
+		END $$;`,
+	}
+
+	return db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+		for _, query := range foreignKeyQueries {
+			if _, err := tx.Exec(query); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+// createIndexes создает индексы для таблиц
+func createIndexes(db *bun.DB, ctx context.Context) error {
+	partnerModel := &partner.Partner{}
+	if _, err := db.ExecContext(ctx, partnerModel.CreateIndex()); err != nil {
 		return err
 	}
 
-	// Если есть хотя бы один админ, ничего не делаем
+	adminModel := &admin.Admin{}
+	if _, err := db.ExecContext(ctx, adminModel.CreateIndex()); err != nil {
+		return err
+	}
+
+	couponModel := &coupon.Coupon{}
+	if _, err := db.ExecContext(ctx, couponModel.CreateIndex()); err != nil {
+		return err
+	}
+
+	imageModel := &image.Image{}
+	if _, err := db.ExecContext(ctx, imageModel.CreateIndex()); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// createDefaultAdmin создает дефолтного администратора, если его нет
+func createDefaultAdmin(db *bun.DB, ctx context.Context) error {
+	count, err := db.NewSelect().Model((*admin.Admin)(nil)).Count(ctx)
+	if err != nil {
+		return err
+	}
+
 	if count > 0 {
 		return nil
 	}
 
-	// Создаем дефолтного админа
 	defaultPassword := "admin123"
 	hashedPassword, err := bcrypt.HashPassword(defaultPassword)
 	if err != nil {
@@ -111,63 +186,52 @@ func createDefaultAdmin(db *gorm.DB) error {
 		Password: hashedPassword,
 	}
 
-	if err := db.Create(defaultAdmin).Error; err != nil {
-		return err
-	}
-
-	return nil
+	_, err = db.NewInsert().Model(defaultAdmin).Exec(ctx)
+	return err
 }
 
 // migratePartnerCodes мигрирует коды партнеров из int16 в строковый формат с ведущими нулями
-func migratePartnerCodes(db *gorm.DB) error {
-	// Проверяем, есть ли уже колонка partner_code как строка
+func migratePartnerCodes(db *bun.DB, ctx context.Context) error {
 	var columnType string
-	err := db.Raw(`
+	err := db.NewRaw(`
 		SELECT data_type 
 		FROM information_schema.columns 
 		WHERE table_name = 'partners' AND column_name = 'partner_code'
-	`).Scan(&columnType).Error
+	`).Scan(ctx, &columnType)
 
 	if err != nil {
 		return err
 	}
 
-	// Если колонка уже строка, миграция не нужна
 	if columnType == "character varying" {
 		return nil
 	}
 
-	// Выполняем миграцию
-	return db.Transaction(func(tx *gorm.DB) error {
-		// Создаем временную колонку
-		if err := tx.Exec("ALTER TABLE partners ADD COLUMN partner_code_new VARCHAR(4)").Error; err != nil {
+	return db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+		if _, err := tx.Exec("ALTER TABLE partners ADD COLUMN partner_code_new VARCHAR(4)"); err != nil {
 			return err
 		}
 
-		// Копируем данные с форматированием
-		if err := tx.Exec(`
+		if _, err := tx.Exec(`
 			UPDATE partners 
 			SET partner_code_new = LPAD(CAST(partner_code AS TEXT), 4, '0')
-		`).Error; err != nil {
+		`); err != nil {
 			return err
 		}
 
-		// Удаляем старую колонку
-		if err := tx.Exec("ALTER TABLE partners DROP COLUMN partner_code").Error; err != nil {
+		if _, err := tx.Exec("ALTER TABLE partners DROP COLUMN partner_code"); err != nil {
 			return err
 		}
 
-		// Переименовываем новую колонку
-		if err := tx.Exec("ALTER TABLE partners RENAME COLUMN partner_code_new TO partner_code").Error; err != nil {
+		if _, err := tx.Exec("ALTER TABLE partners RENAME COLUMN partner_code_new TO partner_code"); err != nil {
 			return err
 		}
 
-		// Добавляем ограничения
-		if err := tx.Exec("ALTER TABLE partners ALTER COLUMN partner_code SET NOT NULL").Error; err != nil {
+		if _, err := tx.Exec("ALTER TABLE partners ALTER COLUMN partner_code SET NOT NULL"); err != nil {
 			return err
 		}
 
-		if err := tx.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_partners_partner_code ON partners(partner_code)").Error; err != nil {
+		if _, err := tx.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_partners_partner_code ON partners(partner_code)"); err != nil {
 			return err
 		}
 

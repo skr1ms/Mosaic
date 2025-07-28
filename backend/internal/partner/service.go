@@ -1,6 +1,7 @@
 package partner
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -35,7 +36,7 @@ func NewPartnerService(deps *PartnerServiceDeps) *PartnerService {
 
 func (s *PartnerService) ExportCoupons(partnerID uuid.UUID, status, format string) (string, string, error) {
 	// Получаем купоны партнера со статусом "new"
-	coupons, err := s.deps.PartnerRepository.GetPartnerCouponsForExport(partnerID, "new")
+	coupons, err := s.deps.PartnerRepository.GetPartnerCouponsForExport(context.Background(), partnerID, "new")
 	if err != nil {
 		return "", "", ErrFailedToFetchCoupons
 	}
@@ -82,7 +83,7 @@ func (s *PartnerService) ExportCoupons(partnerID uuid.UUID, status, format strin
 
 func (s *PartnerService) UpdatePassword(partnerID uuid.UUID, currentPassword, newPassword string) error {
 	// Получаем текущего партнера
-	partner, err := s.deps.PartnerRepository.GetByID(partnerID)
+	partner, err := s.deps.PartnerRepository.GetByID(context.Background(), partnerID)
 	if err != nil {
 		return ErrFailedToFindPartnerByID
 	}
@@ -99,16 +100,16 @@ func (s *PartnerService) UpdatePassword(partnerID uuid.UUID, currentPassword, ne
 	}
 
 	// Обновляем пароль
-	if err := s.deps.PartnerRepository.UpdatePassword(partnerID, hashedPassword); err != nil {
+	if err := s.deps.PartnerRepository.UpdatePassword(context.Background(), partnerID, hashedPassword); err != nil {
 		return ErrFailedToUpdatePassword
 	}
 
 	return nil
 }
 
-func (s *PartnerService) ForgotPassword(email string /*captcha string*/) error {
+func (s *PartnerService) ForgotPassword(ctx context.Context, email string /*captcha string*/) error {
 	// Находим партнера по email
-	partner, err := s.deps.PartnerRepository.GetByEmail(email)
+	partner, err := s.deps.PartnerRepository.GetByEmail(ctx, email)
 	if err != nil {
 		return ErrPartnerNotFound
 	}
@@ -148,7 +149,7 @@ func (s *PartnerService) ForgotPassword(email string /*captcha string*/) error {
 	return nil
 }
 
-func (s *PartnerService) ResetPassword(token, newPassword string) error {
+func (s *PartnerService) ResetPassword(ctx context.Context, token, newPassword string) error {
 	// Валидируем токен сброса пароля
 	claims, err := s.deps.JwtService.ValidatePasswordResetToken(token)
 	if err != nil {
@@ -156,7 +157,7 @@ func (s *PartnerService) ResetPassword(token, newPassword string) error {
 	}
 
 	// Находим партнера
-	partner, err := s.deps.PartnerRepository.GetByEmail(claims.Login) // login == email
+	partner, err := s.deps.PartnerRepository.GetByEmail(ctx, claims.Login) // login == email
 	if err != nil {
 		return ErrFailedToFindPartnerByEmail
 	}
@@ -173,7 +174,7 @@ func (s *PartnerService) ResetPassword(token, newPassword string) error {
 	}
 
 	// Обновляем пароль
-	if err := s.deps.PartnerRepository.UpdatePassword(claims.UserID, hashedPassword); err != nil {
+	if err := s.deps.PartnerRepository.UpdatePassword(ctx, claims.UserID, hashedPassword); err != nil {
 		return ErrFailedToUpdatePassword
 	}
 
@@ -181,9 +182,9 @@ func (s *PartnerService) ResetPassword(token, newPassword string) error {
 }
 
 // DeletePartnerWithCoupons удаляет партнера и все его купоны
-func (s *PartnerService) DeletePartnerWithCoupons(partnerID uuid.UUID) error {
+func (s *PartnerService) DeletePartnerWithCoupons(ctx context.Context, partnerID uuid.UUID) error {
 	// Начинаем транзакцию
-	err := s.deps.PartnerRepository.DeleteWithCoupons(partnerID)
+	err := s.deps.PartnerRepository.DeleteWithCoupons(ctx, partnerID)
 	if err != nil {
 		return ErrFailedToDeletePartner
 	}

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/uptrace/bun"
 )
 
 // ProcessingParams содержит параметры обработки изображения
@@ -35,23 +36,25 @@ func (p *ProcessingParams) Scan(value interface{}) error {
 }
 
 type Image struct {
-	ID                uuid.UUID        `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	CouponID          uuid.UUID        `gorm:"type:uuid;not null;index:idx_image_coupon_id" json:"coupon_id"`
-	OriginalImagePath string           `gorm:"not null;size:255" json:"original_image_path"`
-	EditedImagePath   *string          `gorm:"size:255" json:"edited_image_path"`  // Путь к отредактированному изображению
-	PreviewPath       *string          `gorm:"size:255" json:"preview_path"`       // Путь к превью изображения
-	ResultPath        *string          `gorm:"size:255" json:"result_path"`        // Путь к готовой схеме
-	ProcessingParams  ProcessingParams `gorm:"type:json" json:"processing_params"` // Параметры обработки
-	UserEmail         string           `gorm:"not null;size:255;index:idx_image_user_email" json:"user_email"`
-	Status            string           `gorm:"type:processing_status;default:'queued';index:idx_image_status;index:idx_image_queue_order,priority:1;index:idx_image_retry,priority:1" json:"status"`
-	Priority          int              `gorm:"default:0;index:idx_image_queue_order,priority:2" json:"priority"`
-	StartedAt         *time.Time       `gorm:"index:idx_image_started_at" json:"started_at"`
-	CompletedAt       *time.Time       `gorm:"index:idx_image_completed_at" json:"completed_at"`
-	ErrorMessage      *string          `gorm:"type:text" json:"error_message"`
-	RetryCount        int              `gorm:"default:0;index:idx_image_retry,priority:2" json:"retry_count"`
-	MaxRetries        int              `gorm:"default:3" json:"max_retries"`
-	CreatedAt         time.Time        `gorm:"index:idx_image_created_at;index:idx_image_queue_order,priority:3" json:"created_at"`
-	UpdatedAt         time.Time        `gorm:"index:idx_image_updated_at" json:"updated_at"`
+	bun.BaseModel `bun:"table:images,alias:i"`
+
+	ID                uuid.UUID        `bun:"id,pk,type:uuid,default:gen_random_uuid()" json:"id"`
+	CouponID          uuid.UUID        `bun:"coupon_id,type:uuid,notnull" json:"coupon_id"`
+	OriginalImagePath string           `bun:"original_image_path,notnull" json:"original_image_path"`
+	EditedImagePath   *string          `bun:"edited_image_path" json:"edited_image_path"`           // Путь к отредактированному изображению
+	PreviewPath       *string          `bun:"preview_path" json:"preview_path"`                     // Путь к превью изображения
+	ResultPath        *string          `bun:"result_path" json:"result_path"`                       // Путь к готовой схеме
+	ProcessingParams  ProcessingParams `bun:"processing_params,type:json" json:"processing_params"` // Параметры обработки
+	UserEmail         string           `bun:"user_email,notnull" json:"user_email"`
+	Status            string           `bun:"status,type:processing_status,default:'queued'" json:"status"`
+	Priority          int              `bun:"priority,default:0" json:"priority"`
+	StartedAt         *time.Time       `bun:"started_at" json:"started_at"`
+	CompletedAt       *time.Time       `bun:"completed_at" json:"completed_at"`
+	ErrorMessage      *string          `bun:"error_message,type:text" json:"error_message"`
+	RetryCount        int              `bun:"retry_count,default:0" json:"retry_count"`
+	MaxRetries        int              `bun:"max_retries,default:3" json:"max_retries"`
+	CreatedAt         time.Time        `bun:"created_at,nullzero,notnull,default:current_timestamp" json:"created_at"`
+	UpdatedAt         time.Time        `bun:"updated_at,nullzero,notnull,default:current_timestamp" json:"updated_at"`
 }
 
 // - idx_image_coupon_id: быстрый поиск задач по купону
@@ -63,3 +66,17 @@ type Image struct {
 // - idx_image_completed_at: аналитика времени завершения
 // - idx_image_created_at: сортировка по дате создания
 // - idx_image_updated_at: сортировка по дате обновления
+
+func (i *Image) CreateIndex() string {
+	return `
+	CREATE INDEX IF NOT EXISTS idx_images_coupon_id ON images(coupon_id);
+	CREATE INDEX IF NOT EXISTS idx_images_status ON images(status);
+	CREATE INDEX IF NOT EXISTS idx_images_queue_order ON images(status, priority DESC, created_at ASC);
+	CREATE INDEX IF NOT EXISTS idx_images_retry ON images(status, retry_count);
+	CREATE INDEX IF NOT EXISTS idx_images_user_email ON images(user_email);
+	CREATE INDEX IF NOT EXISTS idx_images_started_at ON images(started_at);
+	CREATE INDEX IF NOT EXISTS idx_images_completed_at ON images(completed_at);
+	CREATE INDEX IF NOT EXISTS idx_images_created_at ON images(created_at);
+	CREATE INDEX IF NOT EXISTS idx_images_updated_at ON images(updated_at);
+	`
+}

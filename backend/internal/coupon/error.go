@@ -17,6 +17,16 @@ func (e APIError) Error() string {
 }
 
 var (
+	ErrInternalServerError = APIError{
+		Code:       "INTERNAL_SERVER_ERROR",
+		Message:    "Internal server error",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToDeleteCoupon = APIError{
+		Code:       "FAILED_TO_DELETE_COUPON",
+		Message:    "Failed to delete coupon",
+		HTTPStatus: http.StatusInternalServerError,
+	}
 	ErrFailedToFindCoupons = APIError{
 		Code:       "COUPONS_FETCH_FAILED",
 		Message:    "Failed to find coupons",
@@ -140,6 +150,46 @@ var (
 	ErrFailedToCheckCodeExists = APIError{
 		Code:       "FAILED_TO_CHECK_CODE_EXISTS",
 		Message:    "Failed to check code exists",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToCountCoupons = APIError{
+		Code:       "FAILED_TO_COUNT_COUPONS",
+		Message:    "Failed to count coupons",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToCountActivatedCoupons = APIError{
+		Code:       "FAILED_TO_COUNT_ACTIVATED_COUPONS",
+		Message:    "Failed to count activated coupons",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToCountPurchasedCoupons = APIError{
+		Code:       "FAILED_TO_COUNT_PURCHASED_COUPONS",
+		Message:    "Failed to count purchased coupons",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToUpdateCouponStatus = APIError{
+		Code:       "FAILED_TO_UPDATE_COUPON_STATUS",
+		Message:    "Failed to update coupon status",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToUpdateCoupon = APIError{
+		Code:       "FAILED_TO_UPDATE_COUPON",
+		Message:    "Failed to update coupon",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToCreateCoupon = APIError{
+		Code:       "FAILED_TO_CREATE_COUPON",
+		Message:    "Failed to create coupon",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToFindCouponByCode = APIError{
+		Code:       "FAILED_TO_FIND_COUPON_BY_CODE",
+		Message:    "Failed to find coupon by code",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToFindCouponByID = APIError{
+		Code:       "FAILED_TO_FIND_COUPON_BY_ID",
+		Message:    "Failed to find coupon by ID",
 		HTTPStatus: http.StatusNotFound,
 	}
 )

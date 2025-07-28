@@ -17,6 +17,41 @@ func (e APIError) Error() string {
 }
 
 var (
+	ErrBadRequest = APIError{
+		Code:       "BAD_REQUEST",
+		Message:    "Bad request",
+		HTTPStatus: http.StatusBadRequest,
+	}
+	ErrFailedToGenerateCouponCode = APIError{
+		Code:       "COUPON_CODE_GENERATION_FAILED",
+		Message:    "Failed to generate coupon code",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToFetchPartners = APIError{
+		Code:       "PARTNERS_FETCH_FAILED",
+		Message:    "Failed to fetch partners",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToFetchCoupons = APIError{
+		Code:       "COUPONS_FETCH_FAILED",
+		Message:    "Failed to fetch coupons",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToFetchImages = APIError{
+		Code:       "IMAGES_FETCH_FAILED",
+		Message:    "Failed to fetch images",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrNoCouponsFoundForExport = APIError{
+		Code:       "NO_COUPONS_FOUND_FOR_EXPORT",
+		Message:    "No coupons found for export",
+		HTTPStatus: http.StatusNotFound,
+	}
+	ErrFailedToFetchAdmins = APIError{
+		Code:       "ADMINS_FETCH_FAILED",
+		Message:    "Failed to fetch admins",
+		HTTPStatus: http.StatusInternalServerError,
+	}
 	ErrAdminNotFound = APIError{
 		Code:       "ADMIN_NOT_FOUND",
 		Message:    "Admin not found",
@@ -291,6 +326,36 @@ var (
 		Code:       "COUPONS_BLOCK_FAILED",
 		Message:    "Failed to block coupons",
 		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToUpdateLastLogin = APIError{
+		Code:       "ADMIN_UPDATE_LAST_LOGIN_FAILED",
+		Message:    "Failed to update last login",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToUpdatePassword = APIError{
+		Code:       "ADMIN_UPDATE_PASSWORD_FAILED",
+		Message:    "Failed to update password",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrFailedToDeleteAdmin = APIError{
+		Code:       "ADMIN_DELETE_FAILED",
+		Message:    "Failed to delete admin",
+		HTTPStatus: http.StatusInternalServerError,
+	}
+	ErrDeletionRequiresConfirmation = APIError{
+		Code:       "DELETION_REQUIRES_CONFIRMATION",
+		Message:    "Deletion requires confirmation",
+		HTTPStatus: http.StatusBadRequest,
+	}
+	ErrUnauthorized = APIError{
+		Code:       "UNAUTHORIZED",
+		Message:    "Unauthorized",
+		HTTPStatus: http.StatusUnauthorized,
+	}
+	ErrInvalidRequestBody = APIError{
+		Code:       "INVALID_REQUEST_BODY",
+		Message:    "Invalid request body",
+		HTTPStatus: http.StatusBadRequest,
 	}
 )
 

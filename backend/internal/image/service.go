@@ -1,6 +1,7 @@
 package image
 
 import (
+	"context"
 	"path/filepath"
 	"time"
 
@@ -26,15 +27,14 @@ func NewImageService(deps *ImageServiceDeps) *ImageService {
 	}
 }
 
-
 func (s *ImageService) GetQueue(status string) ([]*Image, error) {
 	var tasks []*Image
 	var err error
 
 	if status != "" {
-		tasks, err = s.deps.ImageRepository.GetByStatus(status)
+		tasks, err = s.deps.ImageRepository.GetByStatus(context.Background(), status)
 	} else {
-		tasks, err = s.deps.ImageRepository.GetAll()
+		tasks, err = s.deps.ImageRepository.GetAll(context.Background())
 	}
 
 	if err != nil {
@@ -47,14 +47,14 @@ func (s *ImageService) GetQueue(status string) ([]*Image, error) {
 
 func (s *ImageService) AddToQueue(couponID uuid.UUID) error {
 	// Получаем купон
-	coupon, err := s.deps.CouponRepository.GetByID(couponID)
+	coupon, err := s.deps.CouponRepository.GetByID(context.Background(), couponID)
 	if err != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrCouponNotFound.Error())
 		return ErrCouponNotFound
 	}
 
 	// Если купон уже в очереди, то не добавляем в очередь
-	existingTask, err := s.deps.ImageRepository.GetByCouponID(couponID)
+	existingTask, err := s.deps.ImageRepository.GetByCouponID(context.Background(), couponID)
 	if err == nil && existingTask != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrCouponAlreadyInQueue.Error())
 		return ErrCouponAlreadyInQueue
@@ -88,7 +88,7 @@ func (s *ImageService) ApplyEditing(task *Image, req types.EditImageRequest) err
 	task.EditedImagePath = &editedPath
 
 	// Обновляем задачу в базе данных
-	if err := s.deps.ImageRepository.Update(task); err != nil {
+	if err := s.deps.ImageRepository.Update(context.Background(), task); err != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrFailedToUpdateTaskWithEditedImagePath.Message)
 		return ErrFailedToUpdateTaskWithEditedImagePath
 	}
@@ -138,7 +138,7 @@ func (s *ImageService) ApplyProcessing(task *Image, req types.ProcessImageReques
 	task.StartedAt = &now
 
 	// Обновляем задачу в базе данных
-	if err := s.deps.ImageRepository.Update(task); err != nil {
+	if err := s.deps.ImageRepository.Update(context.Background(), task); err != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrFailedToUpdateTaskWithProcessingParams.Message)
 		return ErrFailedToUpdateTaskWithProcessingParams
 	}
@@ -179,7 +179,7 @@ func (s *ImageService) GenerateSchema(task *Image, req types.GenerateSchemaReque
 	task.CompletedAt = &now
 
 	// Обновляем задачу в базе данных
-	if err := s.deps.ImageRepository.Update(task); err != nil {
+	if err := s.deps.ImageRepository.Update(context.Background(), task); err != nil {
 		s.deps.Logger.Error().Err(err).Msg(ErrFailedToUpdateTaskWithSchemaPath.Message)
 		return "", ErrFailedToUpdateTaskWithSchemaPath
 	}

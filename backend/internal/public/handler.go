@@ -1,6 +1,8 @@
 package public
 
 import (
+	"context"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog"
 	"github.com/skr1ms/mosaic/internal/types"
@@ -60,7 +62,7 @@ func NewPublicHandler(router fiber.Router, deps *PublicHandlerDeps) {
 func (handler *PublicHandler) GetPartnerByDomain(c *fiber.Ctx) error {
 	domain := c.Params("domain")
 
-	result, err := handler.deps.PublicService.deps.PartnerRepository.GetByDomain(domain)
+	result, err := handler.deps.PublicService.deps.PartnerRepository.GetByDomain(context.Background(), domain)
 	if err != nil {
 		if apiErr, ok := IsAPIError(err); ok {
 			handler.deps.Logger.Error().Err(err).Msg(apiErr.Message)
@@ -69,7 +71,7 @@ func (handler *PublicHandler) GetPartnerByDomain(c *fiber.Ctx) error {
 			})
 		}
 		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		return c.Status(ErrInternalServerError.HTTPStatus).JSON(fiber.Map{
 			"error": ErrInternalServerError.Error(),
 		})
 	}
@@ -99,7 +101,7 @@ func (handler *PublicHandler) GetCouponByCode(c *fiber.Ctx) error {
 			})
 		}
 		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		return c.Status(ErrInternalServerError.HTTPStatus).JSON(fiber.Map{
 			"error": ErrInternalServerError.Error(),
 		})
 	}
@@ -125,7 +127,7 @@ func (handler *PublicHandler) ActivateCoupon(c *fiber.Ctx) error {
 
 	var req ActivateCouponRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+		return c.Status(ErrBadRequest.HTTPStatus).JSON(fiber.Map{
 			"error": ErrBadRequest.Error(),
 		})
 	}
@@ -139,7 +141,7 @@ func (handler *PublicHandler) ActivateCoupon(c *fiber.Ctx) error {
 			})
 		}
 		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		return c.Status(ErrInternalServerError.HTTPStatus).JSON(fiber.Map{
 			"error": ErrInternalServerError.Error(),
 		})
 	}
@@ -162,7 +164,7 @@ func (handler *PublicHandler) ActivateCoupon(c *fiber.Ctx) error {
 func (handler *PublicHandler) UploadImage(c *fiber.Ctx) error {
 	couponID := c.FormValue("coupon_id")
 	if couponID == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+		return c.Status(ErrCouponIDRequired.HTTPStatus).JSON(fiber.Map{
 			"error": ErrCouponIDRequired.Error(),
 		})
 	}
@@ -170,7 +172,7 @@ func (handler *PublicHandler) UploadImage(c *fiber.Ctx) error {
 	// Получаем файл
 	file, err := c.FormFile("image")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+		return c.Status(ErrImageFileRequired.HTTPStatus).JSON(fiber.Map{
 			"error": ErrImageFileRequired.Error(),
 		})
 	}
@@ -184,7 +186,7 @@ func (handler *PublicHandler) UploadImage(c *fiber.Ctx) error {
 			})
 		}
 		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		return c.Status(ErrInternalServerError.HTTPStatus).JSON(fiber.Map{
 			"error": ErrInternalServerError.Error(),
 		})
 	}
@@ -209,7 +211,7 @@ func (handler *PublicHandler) EditImage(c *fiber.Ctx) error {
 
 	var req types.EditImageRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+		return c.Status(ErrBadRequest.HTTPStatus).JSON(fiber.Map{
 			"error": ErrBadRequest.Error(),
 		})
 	}
@@ -223,7 +225,7 @@ func (handler *PublicHandler) EditImage(c *fiber.Ctx) error {
 			})
 		}
 		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		return c.Status(ErrInternalServerError.HTTPStatus).JSON(fiber.Map{
 			"error": ErrInternalServerError.Error(),
 		})
 	}
@@ -248,7 +250,7 @@ func (handler *PublicHandler) ProcessImage(c *fiber.Ctx) error {
 
 	var req types.ProcessImageRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+		return c.Status(ErrBadRequest.HTTPStatus).JSON(fiber.Map{
 			"error": "Ошибка в запросе",
 		})
 	}
@@ -262,7 +264,7 @@ func (handler *PublicHandler) ProcessImage(c *fiber.Ctx) error {
 			})
 		}
 		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		return c.Status(ErrInternalServerError.HTTPStatus).JSON(fiber.Map{
 			"error": ErrInternalServerError.Error(),
 		})
 	}
@@ -287,7 +289,7 @@ func (handler *PublicHandler) GenerateSchema(c *fiber.Ctx) error {
 
 	var req types.GenerateSchemaRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+		return c.Status(ErrBadRequest.HTTPStatus).JSON(fiber.Map{
 			"error": ErrBadRequest.Error(),
 		})
 	}
@@ -301,7 +303,7 @@ func (handler *PublicHandler) GenerateSchema(c *fiber.Ctx) error {
 			})
 		}
 		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		return c.Status(ErrInternalServerError.HTTPStatus).JSON(fiber.Map{
 			"error": ErrInternalServerError.Error(),
 		})
 	}
@@ -330,7 +332,7 @@ func (handler *PublicHandler) DownloadSchema(c *fiber.Ctx) error {
 			})
 		}
 		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		return c.Status(ErrInternalServerError.HTTPStatus).JSON(fiber.Map{
 			"error": ErrInternalServerError.Error(),
 		})
 	}
@@ -356,7 +358,7 @@ func (handler *PublicHandler) SendSchemaToEmail(c *fiber.Ctx) error {
 
 	var req SendEmailRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+		return c.Status(ErrBadRequest.HTTPStatus).JSON(fiber.Map{
 			"error": "Ошибка в запросе",
 		})
 	}
@@ -370,7 +372,7 @@ func (handler *PublicHandler) SendSchemaToEmail(c *fiber.Ctx) error {
 			})
 		}
 		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		return c.Status(ErrInternalServerError.HTTPStatus).JSON(fiber.Map{
 			"error": "Внутренняя ошибка сервера",
 		})
 	}
@@ -399,7 +401,7 @@ func (handler *PublicHandler) GetImagePreview(c *fiber.Ctx) error {
 			})
 		}
 		handler.deps.Logger.Error().Err(err).Msg("Внутренняя ошибка сервера")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		return c.Status(ErrInternalServerError.HTTPStatus).JSON(fiber.Map{
 			"error": ErrInternalServerError.Error(),
 		})
 	}
@@ -428,7 +430,7 @@ func (handler *PublicHandler) GetProcessingStatus(c *fiber.Ctx) error {
 			})
 		}
 		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		return c.Status(ErrInternalServerError.HTTPStatus).JSON(fiber.Map{
 			"error": ErrInternalServerError.Error(),
 		})
 	}
@@ -449,7 +451,7 @@ func (handler *PublicHandler) GetProcessingStatus(c *fiber.Ctx) error {
 func (handler *PublicHandler) PurchaseCoupon(c *fiber.Ctx) error {
 	var req PurchaseCouponRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+		return c.Status(ErrBadRequest.HTTPStatus).JSON(fiber.Map{
 			"error": ErrBadRequest.Error(),
 		})
 	}
@@ -463,7 +465,7 @@ func (handler *PublicHandler) PurchaseCoupon(c *fiber.Ctx) error {
 			})
 		}
 		handler.deps.Logger.Error().Err(err).Msg(ErrInternalServerError.Error())
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		return c.Status(ErrInternalServerError.HTTPStatus).JSON(fiber.Map{
 			"error": ErrInternalServerError.Error(),
 		})
 	}
