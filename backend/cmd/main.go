@@ -65,6 +65,7 @@ func main() {
 	}))
 
 	app.Use(recover.New())
+	app.Use(logger)
 
 	// swagger ui middleware
 	app.Use(swagger.New(swagger.Config{
