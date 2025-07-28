@@ -2,13 +2,13 @@ package public
 
 import (
 	"context"
+	"fmt"
 	"mime/multipart"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/rs/zerolog"
 	"github.com/skr1ms/mosaic/internal/coupon"
 	"github.com/skr1ms/mosaic/internal/image"
 	"github.com/skr1ms/mosaic/internal/partner"
@@ -21,7 +21,6 @@ type PublicServiceDeps struct {
 	ImageRepository   *image.ImageRepository
 	PartnerRepository *partner.PartnerRepository
 	ImageService      *image.ImageService
-	Logger            *zerolog.Logger
 }
 
 type PublicService struct {
@@ -38,8 +37,7 @@ func NewPublicService(deps *PublicServiceDeps) *PublicService {
 func (s *PublicService) GetPartnerByDomain(domain string) (map[string]interface{}, error) {
 	partner, err := s.deps.PartnerRepository.GetByDomain(context.Background(), domain)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrPartnerNotFound.Error())
-		return nil, ErrPartnerNotFound
+		return nil, fmt.Errorf("failed to get partner by domain: %w", err)
 	}
 
 	// Возвращаем только публичную информацию
@@ -62,13 +60,12 @@ func (s *PublicService) GetPartnerByDomain(domain string) (map[string]interface{
 func (s *PublicService) GetCouponByCode(code string) (map[string]interface{}, error) {
 	// Валидация формата кода (12 цифр)
 	if len(code) != 12 || !isNumeric(code) {
-		return nil, ErrInvalidCouponCode
+		return nil, fmt.Errorf("invalid coupon code")
 	}
 
 	coupon, err := s.deps.CouponRepository.GetByCode(context.Background(), code)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrCouponNotFound.Error())
-		return nil, ErrCouponNotFound
+		return nil, fmt.Errorf("coupon not found: %w", err)
 	}
 
 	return map[string]interface{}{
@@ -85,13 +82,11 @@ func (s *PublicService) GetCouponByCode(code string) (map[string]interface{}, er
 func (s *PublicService) ActivateCoupon(code string, req ActivateCouponRequest) (map[string]interface{}, error) {
 	coupon, err := s.deps.CouponRepository.GetByCode(context.Background(), code)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrCouponNotFound.Error())
-		return nil, ErrCouponNotFound
+		return nil, fmt.Errorf("coupon not found: %w", err)
 	}
 
 	if coupon.Status != "new" {
-		s.deps.Logger.Error().Msg(ErrCouponAlreadyUsed.Error())
-		return nil, ErrCouponAlreadyUsed
+		return nil, fmt.Errorf("coupon already used")
 	}
 
 	// Активируем купон
@@ -101,8 +96,7 @@ func (s *PublicService) ActivateCoupon(code string, req ActivateCouponRequest) (
 	coupon.ActivatedAt = &now
 
 	if err := s.deps.CouponRepository.Update(context.Background(), coupon); err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrFailedToActivateCoupon.Error())
-		return nil, ErrFailedToActivateCoupon
+		return nil, fmt.Errorf("failed to activate coupon: %w", err)
 	}
 
 	return map[string]interface{}{
@@ -116,39 +110,33 @@ func (s *PublicService) ActivateCoupon(code string, req ActivateCouponRequest) (
 func (s *PublicService) UploadImage(couponID string, file *multipart.FileHeader) (map[string]interface{}, error) {
 	couponUUID, err := uuid.Parse(couponID)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrInvalidCouponID.Error())
-		return nil, ErrInvalidCouponID
+		return nil, fmt.Errorf("invalid coupon id: %w", err)
 	}
 
 	// Проверяем купон
 	coupon, err := s.deps.CouponRepository.GetByID(context.Background(), couponUUID)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrCouponNotFound.Error())
-		return nil, ErrCouponNotFound
+		return nil, fmt.Errorf("coupon not found: %w", err)
 	}
 
 	if coupon.Status != "activated" {
-		s.deps.Logger.Error().Msg(ErrCouponNotActivated.Error())
-		return nil, ErrCouponNotActivated
+		return nil, fmt.Errorf("coupon not activated")
 	}
 
 	// Проверяем тип файла
 	if !isValidImageType(file) {
-		s.deps.Logger.Error().Msg(ErrInvalidImageType.Error())
-		return nil, ErrInvalidImageType
+		return nil, fmt.Errorf("invalid image type")
 	}
 
 	// Проверяем размер файла (макс. 10MB)
 	if file.Size > 10<<20 {
-		s.deps.Logger.Error().Msg(ErrFileTooLarge.Error())
-		return nil, ErrFileTooLarge
+		return nil, fmt.Errorf("file too large")
 	}
 
 	// Сохраняем файл и создаем задачу на обработку
 	imagePath, err := s.saveUploadedFile(file, couponUUID)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrFailedToSaveFile.Error())
-		return nil, ErrFailedToSaveFile
+		return nil, fmt.Errorf("failed to save file: %w", err)
 	}
 
 	// Создаем задачу на обработку
@@ -161,8 +149,7 @@ func (s *PublicService) UploadImage(couponID string, file *multipart.FileHeader)
 	}
 
 	if err := s.deps.ImageRepository.Create(context.Background(), task); err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrFailedToCreateImageTask.Error())
-		return nil, ErrFailedToCreateImageTask
+		return nil, fmt.Errorf("failed to create image task: %w", err)
 	}
 
 	return map[string]interface{}{
@@ -176,21 +163,18 @@ func (s *PublicService) UploadImage(couponID string, file *multipart.FileHeader)
 func (s *PublicService) EditImage(imageID string, req types.EditImageRequest) (map[string]interface{}, error) {
 	imageUUID, err := uuid.Parse(imageID)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrInvalidImageID.Error())
-		return nil, ErrInvalidImageID
+		return nil, fmt.Errorf("invalid image id: %w", err)
 	}
 
 	// Получаем задачу
 	task, err := s.deps.ImageRepository.GetByID(context.Background(), imageUUID)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrImageNotFound.Error())
-		return nil, ErrImageNotFound
+		return nil, fmt.Errorf("image not found: %w", err)
 	}
 
 	// Применяем редактирование через сервис
 	if err := s.deps.ImageService.ApplyEditing(task, req); err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrFailedToEditImage.Error())
-		return nil, ErrFailedToEditImage
+		return nil, fmt.Errorf("failed to edit image: %w", err)
 	}
 
 	return map[string]interface{}{
@@ -203,21 +187,18 @@ func (s *PublicService) EditImage(imageID string, req types.EditImageRequest) (m
 func (s *PublicService) ProcessImage(imageID string, req types.ProcessImageRequest) (map[string]interface{}, error) {
 	imageUUID, err := uuid.Parse(imageID)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrInvalidImageID.Error())
-		return nil, ErrInvalidImageID
+		return nil, fmt.Errorf("invalid image id: %w", err)
 	}
 
 	// Получаем задачу
 	task, err := s.deps.ImageRepository.GetByID(context.Background(), imageUUID)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrImageNotFound.Error())
-		return nil, ErrImageNotFound
+		return nil, fmt.Errorf("image not found: %w", err)
 	}
 
 	// Применяем обработку через сервис
 	if err := s.deps.ImageService.ApplyProcessing(task, req); err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrFailedToProcessImage.Error())
-		return nil, ErrFailedToProcessImage
+		return nil, fmt.Errorf("failed to process image: %w", err)
 	}
 
 	return map[string]interface{}{
@@ -230,22 +211,19 @@ func (s *PublicService) ProcessImage(imageID string, req types.ProcessImageReque
 func (s *PublicService) GenerateSchema(imageID string, req types.GenerateSchemaRequest) (map[string]interface{}, error) {
 	imageUUID, err := uuid.Parse(imageID)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrInvalidImageID.Error())
-		return nil, ErrInvalidImageID
+		return nil, fmt.Errorf("invalid image id: %w", err)
 	}
 
 	// Получаем задачу
 	task, err := s.deps.ImageRepository.GetByID(context.Background(), imageUUID)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrImageNotFound.Error())
-		return nil, ErrImageNotFound
+		return nil, fmt.Errorf("image not found: %w", err)
 	}
 
 	// Генерируем схему через сервис
 	schemaPath, err := s.deps.ImageService.GenerateSchema(task, req)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrFailedToGenerateSchema.Error())
-		return nil, ErrFailedToGenerateSchema
+		return nil, fmt.Errorf("failed to generate schema: %w", err)
 	}
 
 	// Обновляем купон как использованный
@@ -267,15 +245,13 @@ func (s *PublicService) GenerateSchema(imageID string, req types.GenerateSchemaR
 func (s *PublicService) GetImagePreview(imageID string) (map[string]interface{}, error) {
 	imageUUID, err := uuid.Parse(imageID)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrInvalidImageID.Error())
-		return nil, ErrInvalidImageID
+		return nil, fmt.Errorf("invalid image id: %w", err)
 	}
 
 	// Получаем задачу
 	task, err := s.deps.ImageRepository.GetByID(context.Background(), imageUUID)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrImageNotFound.Error())
-		return nil, ErrImageNotFound
+		return nil, fmt.Errorf("image not found: %w", err)
 	}
 
 	var previewURL *string
@@ -295,15 +271,13 @@ func (s *PublicService) GetImagePreview(imageID string) (map[string]interface{},
 func (s *PublicService) GetProcessingStatus(imageID string) (map[string]interface{}, error) {
 	imageUUID, err := uuid.Parse(imageID)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrInvalidImageID.Error())
-		return nil, ErrInvalidImageID
+		return nil, fmt.Errorf("invalid image id: %w", err)
 	}
 
 	// Получаем задачу
 	task, err := s.deps.ImageRepository.GetByID(context.Background(), imageUUID)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrImageNotFound.Error())
-		return nil, ErrImageNotFound
+		return nil, fmt.Errorf("image not found: %w", err)
 	}
 
 	progress := 0
@@ -332,23 +306,22 @@ func (s *PublicService) GetProcessingStatus(imageID string) (map[string]interfac
 func (s *PublicService) GetImageForDownload(imageID string) (*image.Image, error) {
 	imageUUID, err := uuid.Parse(imageID)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrInvalidImageID.Error())
-		return nil, ErrInvalidImageID
+		return nil, fmt.Errorf("invalid image id: %w", err)
 	}
 
 	// Получаем задачу
 	task, err := s.deps.ImageRepository.GetByID(context.Background(), imageUUID)
 	if err != nil {
-		return nil, ErrImageNotFound
+		return nil, fmt.Errorf("image not found: %w", err)
 	}
 
 	if task.Status != "completed" {
-		return nil, ErrSchemaNotReady
+		return nil, fmt.Errorf("schema not ready")
 	}
 
 	// Проверяем наличие результата
 	if task.ResultPath == nil {
-		return nil, ErrSchemaFileNotFound
+		return nil, fmt.Errorf("schema file not found")
 	}
 
 	return task, nil
@@ -358,19 +331,17 @@ func (s *PublicService) GetImageForDownload(imageID string) (*image.Image, error
 func (s *PublicService) SendSchemaToEmail(imageID string, req SendEmailRequest) (map[string]interface{}, error) {
 	imageUUID, err := uuid.Parse(imageID)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrInvalidImageID.Error())
-		return nil, ErrInvalidImageID
+		return nil, fmt.Errorf("invalid image id: %w", err)
 	}
 
 	// Получаем задачу
 	task, err := s.deps.ImageRepository.GetByID(context.Background(), imageUUID)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrImageNotFound.Error())
-		return nil, ErrImageNotFound
+		return nil, fmt.Errorf("image not found: %w", err)
 	}
 
 	if task.Status != "completed" {
-		return nil, ErrSchemaNotReady
+		return nil, fmt.Errorf("schema not ready")
 	}
 
 	// TODO: Отправляем email через сервис
@@ -396,14 +367,12 @@ func (s *PublicService) PurchaseCoupon(req PurchaseCouponRequest) (map[string]in
 	// Генерируем код купона для собственных купонов (код партнера 0000)
 	code, err := randomCouponCode.GenerateUniqueCouponCode("0000", s.deps.CouponRepository)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrFailedToGenerateCouponCode.Error())
-		return nil, ErrFailedToGenerateCouponCode
+		return nil, fmt.Errorf("failed to generate coupon code: %w", err)
 	}
 	newCoupon.Code = code
 
 	if err := s.deps.CouponRepository.Create(context.Background(), newCoupon); err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrFailedToCreateCoupon.Error())
-		return nil, ErrFailedToCreateCoupon
+		return nil, fmt.Errorf("failed to create coupon: %w", err)
 	}
 
 	// TODO: Интеграция с платежной системой

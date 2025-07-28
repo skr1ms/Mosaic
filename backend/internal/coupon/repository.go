@@ -2,6 +2,7 @@ package coupon
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -20,7 +21,7 @@ func NewCouponRepository(db *bun.DB) *CouponRepository {
 func (r *CouponRepository) Create(ctx context.Context, coupon *Coupon) error {
 	_, err := r.db.NewInsert().Model(coupon).Exec(ctx)
 	if err != nil {
-		return ErrFailedToCreateCoupon
+		return fmt.Errorf("failed to create coupon: %w", err)
 	}
 	return nil
 }
@@ -29,7 +30,7 @@ func (r *CouponRepository) Create(ctx context.Context, coupon *Coupon) error {
 func (r *CouponRepository) CreateBatch(ctx context.Context, coupons []*Coupon) error {
 	_, err := r.db.NewInsert().Model(&coupons).Exec(ctx)
 	if err != nil {
-		return ErrFailedToCreateCoupon
+		return fmt.Errorf("failed to create coupon: %w", err)
 	}
 	return nil
 }
@@ -39,7 +40,7 @@ func (r *CouponRepository) GetByCode(ctx context.Context, code string) (*Coupon,
 	coupon := new(Coupon)
 	err := r.db.NewSelect().Model(coupon).Where("code = ?", code).Scan(ctx)
 	if err != nil {
-		return nil, ErrFailedToFindCouponByCode
+		return nil, fmt.Errorf("failed to find coupon by code: %w", err)
 	}
 	return coupon, nil
 }
@@ -49,7 +50,7 @@ func (r *CouponRepository) GetByID(ctx context.Context, id uuid.UUID) (*Coupon, 
 	coupon := new(Coupon)
 	err := r.db.NewSelect().Model(coupon).Where("id = ?", id).Scan(ctx)
 	if err != nil {
-		return nil, ErrFailedToFindCouponByID
+		return nil, fmt.Errorf("failed to find coupon by ID: %w", err)
 	}
 	return coupon, nil
 }
@@ -59,7 +60,7 @@ func (r *CouponRepository) GetByPartnerID(ctx context.Context, partnerID uuid.UU
 	var coupons []*Coupon
 	err := r.db.NewSelect().Model(&coupons).Where("partner_id = ?", partnerID).Scan(ctx)
 	if err != nil {
-		return nil, ErrFailedToFindCoupons
+		return nil, fmt.Errorf("failed to find coupons: %w", err)
 	}
 	return coupons, nil
 }
@@ -69,7 +70,7 @@ func (r *CouponRepository) GetAll(ctx context.Context) ([]*Coupon, error) {
 	var coupons []*Coupon
 	err := r.db.NewSelect().Model(&coupons).Scan(ctx)
 	if err != nil {
-		return nil, ErrFailedToFindCoupons
+		return nil, fmt.Errorf("failed to find coupons: %w", err)
 	}
 	return coupons, nil
 }
@@ -78,7 +79,7 @@ func (r *CouponRepository) GetAll(ctx context.Context) ([]*Coupon, error) {
 func (r *CouponRepository) Update(ctx context.Context, coupon *Coupon) error {
 	_, err := r.db.NewUpdate().Model(coupon).WherePK().Exec(ctx)
 	if err != nil {
-		return ErrFailedToUpdateCouponStatus
+		return fmt.Errorf("failed to update coupon status: %w", err)
 	}
 	return nil
 }
@@ -87,7 +88,7 @@ func (r *CouponRepository) Update(ctx context.Context, coupon *Coupon) error {
 func (r *CouponRepository) UpdateStatusByPartnerID(ctx context.Context, partnerID uuid.UUID, status bool) error {
 	_, err := r.db.NewUpdate().Model((*Coupon)(nil)).Set("is_blocked = ?", status).Where("partner_id = ?", partnerID).Exec(ctx)
 	if err != nil {
-		return ErrFailedToUpdateCouponStatus
+		return fmt.Errorf("failed to update coupon status: %w", err)
 	}
 	return nil
 }
@@ -104,7 +105,7 @@ func (r *CouponRepository) ActivateCoupon(ctx context.Context, id uuid.UUID, ori
 		Where("id = ?", id).
 		Exec(ctx)
 	if err != nil {
-		return ErrFailedToActivateCoupon
+		return fmt.Errorf("failed to activate coupon: %w", err)
 	}
 	return nil
 }
@@ -118,7 +119,7 @@ func (r *CouponRepository) SendSchema(ctx context.Context, id uuid.UUID, email s
 		Where("id = ?", id).
 		Exec(ctx)
 	if err != nil {
-		return ErrFailedToSendSchema
+		return fmt.Errorf("failed to send schema: %w", err)
 	}
 	return nil
 }
@@ -133,7 +134,7 @@ func (r *CouponRepository) MarkAsPurchased(ctx context.Context, id uuid.UUID, pu
 		Where("id = ?", id).
 		Exec(ctx)
 	if err != nil {
-		return ErrFailedToMarkAsPurchased
+		return fmt.Errorf("failed to mark as purchased: %w", err)
 	}
 	return nil
 }
@@ -142,7 +143,7 @@ func (r *CouponRepository) MarkAsPurchased(ctx context.Context, id uuid.UUID, pu
 func (r *CouponRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	_, err := r.db.NewDelete().Model((*Coupon)(nil)).Where("id = ?", id).Exec(ctx)
 	if err != nil {
-		return ErrFailedToDeleteCoupon
+		return fmt.Errorf("failed to delete coupon: %w", err)
 	}
 	return nil
 }
@@ -151,7 +152,7 @@ func (r *CouponRepository) Delete(ctx context.Context, id uuid.UUID) error {
 func (r *CouponRepository) BatchDelete(ctx context.Context, ids []uuid.UUID) (int64, error) {
 	res, err := r.db.NewDelete().Model((*Coupon)(nil)).Where("id IN (?)", bun.In(ids)).Exec(ctx)
 	if err != nil {
-		return 0, ErrFailedToDeleteCoupon
+		return 0, fmt.Errorf("failed to delete coupons: %w", err)
 	}
 	rows, _ := res.RowsAffected()
 	return rows, nil
@@ -180,7 +181,7 @@ func (r *CouponRepository) Search(ctx context.Context, code, status, size, style
 	var coupons []*Coupon
 	err := query.Order("created_at DESC").Scan(ctx, &coupons)
 	if err != nil {
-		return nil, ErrFailedToFindCoupons
+		return nil, fmt.Errorf("failed to find coupons: %w", err)
 	}
 	return coupons, nil
 }
@@ -207,14 +208,14 @@ func (r *CouponRepository) SearchWithPagination(ctx context.Context, code, statu
 
 	total, err := query.Count(ctx)
 	if err != nil {
-		return nil, 0, ErrFailedToFindCoupons
+		return nil, 0, fmt.Errorf("failed to find coupons: %w", err)
 	}
 
 	offset := (page - 1) * limit
 	var coupons []*Coupon
 	err = query.Order("created_at DESC").Offset(offset).Limit(limit).Scan(ctx, &coupons)
 	if err != nil {
-		return nil, 0, ErrFailedToFindCoupons
+		return nil, 0, fmt.Errorf("failed to find coupons: %w", err)
 	}
 	return coupons, total, nil
 }
@@ -230,7 +231,7 @@ func (r *CouponRepository) GetStatistics(ctx context.Context, partnerID *uuid.UU
 
 	count, err := baseQuery.Count(ctx)
 	if err != nil {
-		return nil, ErrFailedToGetStatistics
+		return nil, fmt.Errorf("failed to get statistics: %w", err)
 	}
 	stats["total"] = int64(count)
 
@@ -240,7 +241,7 @@ func (r *CouponRepository) GetStatistics(ctx context.Context, partnerID *uuid.UU
 	}
 	count, err = usedQuery.Count(ctx)
 	if err != nil {
-		return nil, ErrFailedToGetStatistics
+		return nil, fmt.Errorf("failed to get statistics: %w", err)
 	}
 	stats["used"] = int64(count)
 
@@ -250,7 +251,7 @@ func (r *CouponRepository) GetStatistics(ctx context.Context, partnerID *uuid.UU
 	}
 	count, err = newQuery.Count(ctx)
 	if err != nil {
-		return nil, ErrFailedToGetStatistics
+		return nil, fmt.Errorf("failed to get statistics: %w", err)
 	}
 	stats["new"] = int64(count)
 
@@ -260,7 +261,7 @@ func (r *CouponRepository) GetStatistics(ctx context.Context, partnerID *uuid.UU
 	}
 	count, err = purchasedQuery.Count(ctx)
 	if err != nil {
-		return nil, ErrFailedToGetStatistics
+		return nil, fmt.Errorf("failed to get statistics: %w", err)
 	}
 	stats["purchased"] = int64(count)
 
@@ -284,7 +285,7 @@ func (r *CouponRepository) ResetCoupon(ctx context.Context, id uuid.UUID) error 
 		Where("id = ?", id).
 		Exec(ctx)
 	if err != nil {
-		return ErrFailedToResetCoupon
+		return fmt.Errorf("failed to reset coupon: %w", err)
 	}
 	return nil
 }
@@ -298,7 +299,7 @@ func (r *CouponRepository) Reset(ctx context.Context, id uuid.UUID) error {
 func (r *CouponRepository) CountByPartnerID(ctx context.Context, partnerID uuid.UUID) (int, error) {
 	count, err := r.db.NewSelect().Model((*Coupon)(nil)).Where("partner_id = ?", partnerID).Count(ctx)
 	if err != nil {
-		return 0, ErrFailedToCountCoupons
+		return 0, fmt.Errorf("failed to count coupons: %w", err)
 	}
 	return count, nil
 }
@@ -307,7 +308,7 @@ func (r *CouponRepository) CountByPartnerID(ctx context.Context, partnerID uuid.
 func (r *CouponRepository) CountActivatedByPartnerID(ctx context.Context, partnerID uuid.UUID) (int, error) {
 	count, err := r.db.NewSelect().Model((*Coupon)(nil)).Where("partner_id = ? AND status = ?", partnerID, "used").Count(ctx)
 	if err != nil {
-		return 0, ErrFailedToCountActivatedCoupons
+		return 0, fmt.Errorf("failed to count activated coupons: %w", err)
 	}
 	return count, nil
 }
@@ -316,7 +317,7 @@ func (r *CouponRepository) CountActivatedByPartnerID(ctx context.Context, partne
 func (r *CouponRepository) CountPurchasedByPartnerID(ctx context.Context, partnerID uuid.UUID) (int, error) {
 	count, err := r.db.NewSelect().Model((*Coupon)(nil)).Where("partner_id = ? AND is_purchased = ?", partnerID, true).Count(ctx)
 	if err != nil {
-		return 0, ErrFailedToCountPurchasedCoupons
+		return 0, fmt.Errorf("failed to count purchased coupons: %w", err)
 	}
 	return count, nil
 }
@@ -345,7 +346,7 @@ func (r *CouponRepository) GetFiltered(ctx context.Context, filters map[string]i
 	var coupons []*Coupon
 	err := query.Order("created_at DESC").Scan(ctx, &coupons)
 	if err != nil {
-		return nil, ErrFailedToFindCoupons
+		return nil, fmt.Errorf("failed to find coupons: %w", err)
 	}
 	return coupons, nil
 }
@@ -359,7 +360,7 @@ func (r *CouponRepository) GetRecentActivated(ctx context.Context, limit int) ([
 		Limit(limit).
 		Scan(ctx)
 	if err != nil {
-		return nil, ErrFailedToFindRecentActivatedCoupons
+		return nil, fmt.Errorf("failed to find recent activated coupons: %w", err)
 	}
 	return coupons, nil
 }
@@ -368,7 +369,7 @@ func (r *CouponRepository) GetRecentActivated(ctx context.Context, limit int) ([
 func (r *CouponRepository) CodeExists(ctx context.Context, code string) (bool, error) {
 	count, err := r.db.NewSelect().Model((*Coupon)(nil)).Where("code = ?", code).Count(ctx)
 	if err != nil {
-		return false, ErrFailedToCheckCodeExists
+		return false, fmt.Errorf("failed to check code exists: %w", err)
 	}
 	return count > 0, nil
 }

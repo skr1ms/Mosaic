@@ -11,12 +11,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/rs/zerolog"
 )
 
 type CouponServiceDeps struct {
 	CouponRepository *CouponRepository
-	Logger           *zerolog.Logger
 }
 
 type CouponService struct {
@@ -33,8 +31,7 @@ func NewCouponService(deps *CouponServiceDeps) *CouponService {
 func (s *CouponService) SearchCoupons(code, status, size, style string, partnerID *uuid.UUID) ([]*Coupon, error) {
 	coupons, err := s.deps.CouponRepository.Search(context.Background(), code, status, size, style, partnerID)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrFailedToFindCoupons.Error())
-		return nil, ErrFailedToFindCoupons
+		return nil, fmt.Errorf("failed to find coupons: %w", err)
 	}
 	return coupons, nil
 }
@@ -43,8 +40,7 @@ func (s *CouponService) SearchCoupons(code, status, size, style string, partnerI
 func (s *CouponService) GetCouponByID(id uuid.UUID) (*Coupon, error) {
 	coupon, err := s.deps.CouponRepository.GetByID(context.Background(), id)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrCouponNotFound.Error())
-		return nil, ErrCouponNotFound
+		return nil, fmt.Errorf("coupon not found: %w", err)
 	}
 	return coupon, nil
 }
@@ -53,8 +49,7 @@ func (s *CouponService) GetCouponByID(id uuid.UUID) (*Coupon, error) {
 func (s *CouponService) GetCouponByCode(code string) (*Coupon, error) {
 	coupon, err := s.deps.CouponRepository.GetByCode(context.Background(), code)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrCouponNotFound.Error())
-		return nil, ErrCouponNotFound
+		return nil, fmt.Errorf("coupon not found: %w", err)
 	}
 	return coupon, nil
 }
@@ -62,8 +57,7 @@ func (s *CouponService) GetCouponByCode(code string) (*Coupon, error) {
 // ActivateCoupon активирует купон
 func (s *CouponService) ActivateCoupon(id uuid.UUID, originalImageURL, previewURL, schemaURL string) error {
 	if err := s.deps.CouponRepository.ActivateCoupon(context.Background(), id, originalImageURL, previewURL, schemaURL); err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrFailedToActivateCoupon.Error())
-		return ErrFailedToActivateCoupon
+		return fmt.Errorf("failed to activate coupon: %w", err)
 	}
 	return nil
 }
@@ -71,8 +65,7 @@ func (s *CouponService) ActivateCoupon(id uuid.UUID, originalImageURL, previewUR
 // ResetCoupon сбрасывает купон в исходное состояние
 func (s *CouponService) ResetCoupon(id uuid.UUID) error {
 	if err := s.deps.CouponRepository.ResetCoupon(context.Background(), id); err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrFailedToResetCoupon.Error())
-		return ErrFailedToResetCoupon
+		return fmt.Errorf("failed to reset coupon: %w", err)
 	}
 	return nil
 }
@@ -80,8 +73,7 @@ func (s *CouponService) ResetCoupon(id uuid.UUID) error {
 // SendSchema отправляет схему на email
 func (s *CouponService) SendSchema(id uuid.UUID, email string) error {
 	if err := s.deps.CouponRepository.SendSchema(context.Background(), id, email); err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrFailedToSendSchema.Error())
-		return ErrFailedToSendSchema
+		return fmt.Errorf("failed to send schema: %w", err)
 	}
 	return nil
 }
@@ -89,8 +81,7 @@ func (s *CouponService) SendSchema(id uuid.UUID, email string) error {
 // MarkAsPurchased помечает купон как купленный
 func (s *CouponService) MarkAsPurchased(id uuid.UUID, purchaseEmail string) error {
 	if err := s.deps.CouponRepository.MarkAsPurchased(context.Background(), id, purchaseEmail); err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrFailedToMarkAsPurchased.Error())
-		return ErrFailedToMarkAsPurchased
+		return fmt.Errorf("failed to mark as purchased: %w", err)
 	}
 	return nil
 }
@@ -99,8 +90,7 @@ func (s *CouponService) MarkAsPurchased(id uuid.UUID, purchaseEmail string) erro
 func (s *CouponService) GetStatistics(partnerID *uuid.UUID) (map[string]int64, error) {
 	stats, err := s.deps.CouponRepository.GetStatistics(context.Background(), partnerID)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrFailedToGetStatistics.Error())
-		return nil, ErrFailedToGetStatistics
+		return nil, fmt.Errorf("failed to get statistics: %w", err)
 	}
 	return stats, nil
 }
@@ -109,27 +99,24 @@ func (s *CouponService) GetStatistics(partnerID *uuid.UUID) (map[string]int64, e
 func (s *CouponService) ValidateCoupon(code string) (*CouponValidationResponse, error) {
 	coupon, err := s.deps.CouponRepository.GetByCode(context.Background(), code)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrCouponNotFound.Error())
 		return &CouponValidationResponse{
 			Valid:   false,
-			Message: ErrCouponNotFound.Error(),
+			Message: "Coupon not found",
 		}, nil
 	}
 
 	if coupon.Status == "used" {
-		s.deps.Logger.Error().Msg(ErrCouponAlreadyUsed.Error())
 		size := string(coupon.Size)
 		style := string(coupon.Style)
 		return &CouponValidationResponse{
 			Valid:   false,
-			Message: ErrCouponAlreadyUsed.Error(),
+			Message: "Coupon already used",
 			UsedAt:  coupon.UsedAt,
 			Size:    &size,
 			Style:   &style,
 		}, nil
 	}
 
-	s.deps.Logger.Info().Msg("Coupon is valid and ready to use")
 	size := string(coupon.Size)
 	style := string(coupon.Style)
 	return &CouponValidationResponse{
@@ -144,8 +131,7 @@ func (s *CouponService) ValidateCoupon(code string) (*CouponValidationResponse, 
 func (s *CouponService) ExportCoupons(partnerID *uuid.UUID, status, format string) (string, error) {
 	coupons, err := s.deps.CouponRepository.Search(context.Background(), "", status, "", "", partnerID)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrFailedToFetchCouponsForExport.Error())
-		return "", ErrFailedToFetchCouponsForExport
+		return "", fmt.Errorf("failed to fetch coupons for export: %w", err)
 	}
 
 	var content strings.Builder
@@ -180,13 +166,11 @@ func (s *CouponService) ExportCoupons(partnerID *uuid.UUID, status, format strin
 func (s *CouponService) DownloadMaterials(id uuid.UUID) ([]byte, string, error) {
 	coupon, err := s.deps.CouponRepository.GetByID(context.Background(), id)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrCouponNotFound.Error())
-		return nil, "", ErrCouponNotFound
+		return nil, "", fmt.Errorf("coupon not found: %w", err)
 	}
 
 	if coupon.Status != "used" {
-		s.deps.Logger.Error().Msg(ErrCouponMustBeUsedToDownloadMaterials.Error())
-		return nil, "", ErrCouponMustBeUsedToDownloadMaterials
+		return nil, "", fmt.Errorf("coupon must be used to download materials")
 	}
 
 	var buf bytes.Buffer
@@ -200,26 +184,22 @@ func (s *CouponService) DownloadMaterials(id uuid.UUID) ([]byte, string, error) 
 
 		resp, err := http.Get(fileURL)
 		if err != nil {
-			s.deps.Logger.Error().Err(err).Msg(ErrFailedToDownloadFile.Error())
-			return ErrFailedToDownloadFile
+			return fmt.Errorf("failed to download file: %w", err)
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			s.deps.Logger.Error().Msg(ErrFailedToDownloadFile.Error())
-			return ErrFailedToDownloadFile
+			return fmt.Errorf("failed to download file: %w", err)
 		}
 
 		fileWriter, err := zipWriter.Create(filename)
 		if err != nil {
-			s.deps.Logger.Error().Err(err).Msg(ErrFailedToCreateFileWriter.Error())
-			return ErrFailedToCreateFileWriter
+			return fmt.Errorf("failed to create file writer: %w", err)
 		}
 
 		_, err = io.Copy(fileWriter, resp.Body)
 		if err != nil {
-			s.deps.Logger.Error().Err(err).Msg(ErrFailedToCopyFileToZip.Error())
-			return ErrFailedToCopyFileToZip
+			return fmt.Errorf("failed to copy file to zip: %w", err)
 		}
 
 		return nil
@@ -228,19 +208,19 @@ func (s *CouponService) DownloadMaterials(id uuid.UUID) ([]byte, string, error) 
 	// Добавляем файлы в архив
 	if coupon.OriginalImageURL != nil && *coupon.OriginalImageURL != "" {
 		if err := addFileToZip(*coupon.OriginalImageURL, "original_image.jpg"); err != nil {
-			s.deps.Logger.Error().Err(err).Msg("Error adding original image to zip")
+			return nil, "", fmt.Errorf("failed to add original image to zip: %w", err)
 		}
 	}
 
 	if coupon.PreviewURL != nil && *coupon.PreviewURL != "" {
 		if err := addFileToZip(*coupon.PreviewURL, "preview.jpg"); err != nil {
-			s.deps.Logger.Error().Err(err).Msg("Error adding preview to zip")
+			return nil, "", fmt.Errorf("failed to add preview to zip: %w", err)
 		}
 	}
 
 	if coupon.SchemaURL != nil && *coupon.SchemaURL != "" {
 		if err := addFileToZip(*coupon.SchemaURL, "schema.pdf"); err != nil {
-			s.deps.Logger.Error().Err(err).Msg("Error adding schema to zip")
+			return nil, "", fmt.Errorf("failed to add schema to zip: %w", err)
 		}
 	}
 
@@ -265,8 +245,7 @@ Used: %s
 
 	err = zipWriter.Close()
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrFailedToCreateArchive.Error())
-		return nil, "", ErrFailedToCreateArchive
+		return nil, "", fmt.Errorf("failed to create archive: %w", err)
 	}
 
 	filename := fmt.Sprintf("coupon_%s_materials.zip", coupon.Code)
@@ -287,8 +266,7 @@ func (s *CouponService) SearchCouponsWithPagination(code, status, size, style st
 		context.Background(), code, status, size, style, partnerID, page, limit,
 	)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrFailedToFetchCoupons.Error())
-		return nil, 0, ErrFailedToFetchCoupons
+		return nil, 0, fmt.Errorf("failed to fetch coupons: %w", err)
 	}
 
 	return coupons, int64(total), nil
@@ -298,8 +276,7 @@ func (s *CouponService) SearchCouponsWithPagination(code, status, size, style st
 func (s *CouponService) SearchCouponsByPartner(partnerID uuid.UUID, status, size, style string) ([]*Coupon, error) {
 	coupons, err := s.deps.CouponRepository.Search(context.Background(), "", status, size, style, &partnerID)
 	if err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrFailedToFetchPartnerCoupons.Error())
-		return nil, ErrFailedToFetchPartnerCoupons
+		return nil, fmt.Errorf("failed to fetch partner coupons: %w", err)
 	}
 	return coupons, nil
 }

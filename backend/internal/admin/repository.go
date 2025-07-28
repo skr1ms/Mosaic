@@ -2,6 +2,7 @@ package admin
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -20,7 +21,7 @@ func (r *AdminRepository) Create(admin *Admin) error {
 	ctx := context.Background()
 	_, err := r.db.NewInsert().Model(admin).Exec(ctx)
 	if err != nil {
-		return ErrFailedToCreateAdmin
+		return fmt.Errorf("failed to create admin: %w", err)
 	}
 	return nil
 }
@@ -31,7 +32,7 @@ func (r *AdminRepository) GetByLogin(login string) (*Admin, error) {
 	admin := new(Admin)
 	err := r.db.NewSelect().Model(admin).Where("login = ?", login).Scan(ctx)
 	if err != nil {
-		return nil, ErrFailedToFindAdminByLogin
+		return nil, fmt.Errorf("failed to find admin by login: %w", err)
 	}
 	return admin, nil
 }
@@ -42,7 +43,7 @@ func (r *AdminRepository) GetByID(id uuid.UUID) (*Admin, error) {
 	admin := new(Admin)
 	err := r.db.NewSelect().Model(admin).Where("id = ?", id).Scan(ctx)
 	if err != nil {
-		return nil, ErrFailedToFindAdminByID
+		return nil, fmt.Errorf("failed to find admin by id: %w", err)
 	}
 	return admin, nil
 }
@@ -53,7 +54,7 @@ func (r *AdminRepository) GetAll() ([]*Admin, error) {
 	var admins []*Admin
 	err := r.db.NewSelect().Model(&admins).Scan(ctx)
 	if err != nil {
-		return nil, ErrFailedToFindAllAdmins
+		return nil, fmt.Errorf("failed to find all admins: %w", err)
 	}
 	return admins, nil
 }
@@ -64,7 +65,7 @@ func (r *AdminRepository) UpdateLastLogin(id uuid.UUID) error {
 	now := time.Now()
 	_, err := r.db.NewUpdate().Model((*Admin)(nil)).Set("last_login = ?", &now).Where("id = ?", id).Exec(ctx)
 	if err != nil {
-		return ErrFailedToUpdateLastLogin
+		return fmt.Errorf("failed to update last login: %w", err)
 	}
 	return nil
 }
@@ -74,7 +75,7 @@ func (r *AdminRepository) Delete(id uuid.UUID) error {
 	ctx := context.Background()
 	_, err := r.db.NewDelete().Model((*Admin)(nil)).Where("id = ?", id).Exec(ctx)
 	if err != nil {
-		return ErrFailedToDeleteAdmin
+		return fmt.Errorf("failed to delete admin: %w", err)
 	}
 	return nil
 }
@@ -84,7 +85,7 @@ func (r *AdminRepository) UpdatePassword(id uuid.UUID, hashedPassword string) er
 	ctx := context.Background()
 	_, err := r.db.NewUpdate().Model((*Admin)(nil)).Set("password = ?", hashedPassword).Where("id = ?", id).Exec(ctx)
 	if err != nil {
-		return ErrFailedToUpdatePassword
+		return fmt.Errorf("failed to update password: %w", err)
 	}
 	return nil
 }

@@ -21,7 +21,7 @@ func NewPartnerRepository(db *bun.DB) *PartnerRepository {
 func (r *PartnerRepository) Create(ctx context.Context, partner *Partner) error {
 	_, err := r.db.NewInsert().Model(partner).Exec(ctx)
 	if err != nil {
-		return ErrFailedToCreatePartner
+		return fmt.Errorf("failed to create partner: %w", err)
 	}
 	return nil
 }
@@ -31,7 +31,7 @@ func (r *PartnerRepository) GetByLogin(ctx context.Context, login string) (*Part
 	partner := new(Partner)
 	err := r.db.NewSelect().Model(partner).Where("login = ?", login).Scan(ctx)
 	if err != nil {
-		return nil, ErrFailedToFindPartnerByLogin
+		return nil, fmt.Errorf("failed to find partner by login: %w", err)
 	}
 	return partner, nil
 }
@@ -41,7 +41,7 @@ func (r *PartnerRepository) GetByPartnerCode(ctx context.Context, code string) (
 	partner := new(Partner)
 	err := r.db.NewSelect().Model(partner).Where("partner_code = ?", code).Scan(ctx)
 	if err != nil {
-		return nil, ErrFailedToFindPartnerByPartnerCode
+		return nil, fmt.Errorf("failed to find partner by partner code: %w", err)
 	}
 	return partner, nil
 }
@@ -51,7 +51,7 @@ func (r *PartnerRepository) GetByDomain(ctx context.Context, domain string) (*Pa
 	partner := new(Partner)
 	err := r.db.NewSelect().Model(partner).Where("domain = ?", domain).Scan(ctx)
 	if err != nil {
-		return nil, ErrFailedToFindPartnerByDomain
+		return nil, fmt.Errorf("failed to find partner by domain: %w", err)
 	}
 	return partner, nil
 }
@@ -61,7 +61,7 @@ func (r *PartnerRepository) GetByID(ctx context.Context, id uuid.UUID) (*Partner
 	partner := new(Partner)
 	err := r.db.NewSelect().Model(partner).Where("id = ?", id).Scan(ctx)
 	if err != nil {
-		return nil, ErrFailedToFindPartnerByID
+		return nil, fmt.Errorf("failed to find partner by id: %w", err)
 	}
 	return partner, nil
 }
@@ -71,7 +71,7 @@ func (r *PartnerRepository) GetByEmail(ctx context.Context, email string) (*Part
 	partner := new(Partner)
 	err := r.db.NewSelect().Model(partner).Where("email = ?", email).Scan(ctx)
 	if err != nil {
-		return nil, ErrFailedToFindPartnerByEmail
+		return nil, fmt.Errorf("failed to find partner by email: %w", err)
 	}
 	return partner, nil
 }
@@ -81,7 +81,7 @@ func (r *PartnerRepository) GetAll(ctx context.Context) ([]*Partner, error) {
 	var partners []*Partner
 	err := r.db.NewSelect().Model(&partners).Scan(ctx)
 	if err != nil {
-		return nil, ErrFailedToFindAllPartners
+		return nil, fmt.Errorf("failed to find all partners: %w", err)
 	}
 	return partners, nil
 }
@@ -91,7 +91,7 @@ func (r *PartnerRepository) GetActivePartners(ctx context.Context) ([]*Partner, 
 	var partners []*Partner
 	err := r.db.NewSelect().Model(&partners).Where("status = ?", "active").Scan(ctx)
 	if err != nil {
-		return nil, ErrFailedToFindActivePartners
+		return nil, fmt.Errorf("failed to find active partners: %w", err)
 	}
 	return partners, nil
 }
@@ -100,7 +100,7 @@ func (r *PartnerRepository) GetActivePartners(ctx context.Context) ([]*Partner, 
 func (r *PartnerRepository) Update(ctx context.Context, partner *Partner) error {
 	_, err := r.db.NewUpdate().Model(partner).WherePK().Exec(ctx)
 	if err != nil {
-		return ErrFailedToUpdatePartner
+		return fmt.Errorf("failed to update partner: %w", err)
 	}
 	return nil
 }
@@ -110,7 +110,7 @@ func (r *PartnerRepository) UpdateLastLogin(ctx context.Context, id uuid.UUID) e
 	now := time.Now()
 	_, err := r.db.NewUpdate().Model((*Partner)(nil)).Set("last_login = ?", &now).Where("id = ?", id).Exec(ctx)
 	if err != nil {
-		return ErrFailedToUpdatePartnerLastLogin
+		return fmt.Errorf("failed to update partner last login: %w", err)
 	}
 	return nil
 }
@@ -119,7 +119,7 @@ func (r *PartnerRepository) UpdateLastLogin(ctx context.Context, id uuid.UUID) e
 func (r *PartnerRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status string) error {
 	_, err := r.db.NewUpdate().Model((*Partner)(nil)).Set("status = ?", status).Where("id = ?", id).Exec(ctx)
 	if err != nil {
-		return ErrFailedToUpdatePartnerStatus
+		return fmt.Errorf("failed to update partner status: %w", err)
 	}
 	return nil
 }
@@ -128,7 +128,7 @@ func (r *PartnerRepository) UpdateStatus(ctx context.Context, id uuid.UUID, stat
 func (r *PartnerRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	_, err := r.db.NewDelete().Model((*Partner)(nil)).Where("id = ?", id).Exec(ctx)
 	if err != nil {
-		return ErrFailedToDeletePartner
+		return fmt.Errorf("failed to delete partner: %w", err)
 	}
 	return nil
 }
@@ -139,13 +139,13 @@ func (r *PartnerRepository) DeleteWithCoupons(ctx context.Context, id uuid.UUID)
 		// Проверяем, сколько купонов у партнера для логирования
 		_, err := tx.NewSelect().Table("coupons").Where("partner_id = ?", id).Count(ctx)
 		if err != nil {
-			return ErrFailedToDeletePartner
+			return fmt.Errorf("failed to delete partner: %w", err)
 		}
 
 		// Удаляем партнера - купоны и изображения удалятся автоматически благодаря CASCADE
 		_, err = tx.NewDelete().Model((*Partner)(nil)).Where("id = ?", id).Exec(ctx)
 		if err != nil {
-			return ErrFailedToDeletePartner
+			return fmt.Errorf("failed to delete partner: %w", err)
 		}
 
 		return nil
@@ -166,7 +166,7 @@ func (r *PartnerRepository) Search(ctx context.Context, queryStr string, status 
 	var partners []*Partner
 	err := query.Scan(ctx, &partners)
 	if err != nil {
-		return nil, ErrFailedToFindPartners
+		return nil, fmt.Errorf("failed to find partners: %w", err)
 	}
 	return partners, nil
 }
@@ -197,7 +197,7 @@ func (r *PartnerRepository) GetPartnerCouponsForExport(ctx context.Context, part
 	query += " ORDER BY c.created_at DESC"
 	err := r.db.NewRaw(query, args...).Scan(ctx, &coupons)
 	if err != nil {
-		return nil, ErrFailedToFindPartnerCouponsForExport
+		return nil, fmt.Errorf("failed to find partner coupons for export: %w", err)
 	}
 	return coupons, nil
 }
@@ -222,7 +222,7 @@ func (r *PartnerRepository) GetAllCouponsForExport(ctx context.Context) ([]*Expo
 		ORDER BY p.id, c.created_at DESC`
 	err := r.db.NewRaw(query).Scan(ctx, &coupons)
 	if err != nil {
-		return nil, ErrFailedToGetAllCouponsForExport
+		return nil, fmt.Errorf("failed to get all coupons for export: %w", err)
 	}
 	return coupons, nil
 }
@@ -236,25 +236,25 @@ func (r *PartnerRepository) GetCouponsStatistics(ctx context.Context, partnerID 
 
 	count, err = r.db.NewSelect().Model(map[string]interface{}{}).Table("coupons").Where("partner_id = ?", partnerID).Count(ctx)
 	if err != nil {
-		return nil, ErrFailedToGetCouponsStatistics
+		return nil, fmt.Errorf("failed to get coupons statistics: %w", err)
 	}
 	stats["total"] = int64(count)
 
 	count, err = r.db.NewSelect().Model(map[string]interface{}{}).Table("coupons").Where("partner_id = ? AND status = ?", partnerID, "used").Count(ctx)
 	if err != nil {
-		return nil, ErrFailedToGetCouponsStatistics
+		return nil, fmt.Errorf("failed to get coupons statistics: %w", err)
 	}
 	stats["activated"] = int64(count)
 
 	count, err = r.db.NewSelect().Model(map[string]interface{}{}).Table("coupons").Where("partner_id = ? AND status = ?", partnerID, "new").Count(ctx)
 	if err != nil {
-		return nil, ErrFailedToGetCouponsStatistics
+		return nil, fmt.Errorf("failed to get coupons statistics: %w", err)
 	}
 	stats["new"] = int64(count)
 
 	count, err = r.db.NewSelect().Model(map[string]interface{}{}).Table("coupons").Where("partner_id = ? AND is_purchased = ?", partnerID, true).Count(ctx)
 	if err != nil {
-		return nil, ErrFailedToGetCouponsStatistics
+		return nil, fmt.Errorf("failed to get coupons statistics: %w", err)
 	}
 	stats["purchased"] = int64(count)
 
@@ -265,7 +265,7 @@ func (r *PartnerRepository) GetCouponsStatistics(ctx context.Context, partnerID 
 func (r *PartnerRepository) UpdatePassword(ctx context.Context, partnerID uuid.UUID, hashedPassword string) error {
 	_, err := r.db.NewUpdate().Model((*Partner)(nil)).Set("password = ?", hashedPassword).Where("id = ?", partnerID).Exec(ctx)
 	if err != nil {
-		return ErrFailedToUpdatePartnerPassword
+		return fmt.Errorf("failed to update partner password: %w", err)
 	}
 	return nil
 }
@@ -275,14 +275,14 @@ func (r *PartnerRepository) GetNextPartnerCode(ctx context.Context) (string, err
 	var maxCode string
 	err := r.db.NewSelect().Model((*Partner)(nil)).ColumnExpr("COALESCE(MAX(CAST(partner_code AS INTEGER)), 0)").Scan(ctx, &maxCode)
 	if err != nil {
-		return "", ErrFailedToGetPartnerCode
+		return "", fmt.Errorf("failed to get partner code: %w", err)
 	}
 	var nextCode int
 	if maxCode == "" || maxCode == "0" {
 		nextCode = 1
 	} else {
 		if _, err := fmt.Sscanf(maxCode, "%d", &nextCode); err != nil {
-			return "", ErrFailedToGetPartnerCode
+			return "", fmt.Errorf("failed to get partner code: %w", err)
 		}
 		nextCode++
 	}

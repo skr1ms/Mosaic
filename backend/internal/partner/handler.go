@@ -20,7 +20,6 @@ type PartnerHandlerDeps struct {
 	CouponRepository *coupon.CouponRepository
 	JwtService       *jwt.JWT
 	MailSender       *email.Mailer
-	Logger           *zerolog.Logger
 }
 
 type PartnerHandler struct {
@@ -81,16 +80,19 @@ func (handler *PartnerHandler) GetDashboard(c *fiber.Ctx) error {
 //	@Failure		404	{object}	map[string]interface{}	"Партнер не найден"
 //	@Router			/partner/profile [get]
 func (handler *PartnerHandler) GetProfile(c *fiber.Ctx) error {
+	log := zerolog.Ctx(c.UserContext())
 	// Получаем claims из контекста
 	claims, err := jwt.GetClaimsFromFiberContext(c)
 	if err != nil {
-		return c.Status(ErrFailedToGetJwtClaims.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToGetJwtClaims.Error()})
+		log.Error().Err(err).Msg("Failed to get JWT claims")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
 	// Получаем партнера
 	partner, err := handler.deps.PartnerService.deps.PartnerRepository.GetByID(context.Background(), claims.UserID)
 	if err != nil {
-		return c.Status(ErrPartnerNotFound.HTTPStatus).JSON(fiber.Map{"error": ErrPartnerNotFound.Error()})
+		log.Error().Err(err).Msg("Partner not found")
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Partner not found"})
 	}
 
 	// Возвращаем профиль партнера
@@ -123,7 +125,7 @@ func (handler *PartnerHandler) GetProfile(c *fiber.Ctx) error {
 //	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
 //	@Router			/partner/profile [put]
 func (handler *PartnerHandler) UpdateProfile(c *fiber.Ctx) error {
-	return c.Status(ErrForbidden.HTTPStatus).JSON(fiber.Map{"error": ErrForbidden.Error()})
+	return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
 }
 
 // UpdatePassword обновляет пароль партнера
@@ -142,22 +144,26 @@ func (handler *PartnerHandler) UpdateProfile(c *fiber.Ctx) error {
 //	@Failure		500		{object}	map[string]interface{}	"Внутренняя ошибка сервера"
 //	@Router			/partner/profile/password [put]
 func (handler *PartnerHandler) UpdatePassword(c *fiber.Ctx) error {
+	log := zerolog.Ctx(c.UserContext())
 	// Получаем claims из контекста
 	claims, err := jwt.GetClaimsFromFiberContext(c)
 	if err != nil {
-		return c.Status(ErrFailedToGetJwtClaims.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToGetJwtClaims.Error()})
+		log.Error().Err(err).Msg("Failed to get JWT claims")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
 	// Парсим запрос
 	var req UpdatePasswordRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(ErrBadRequest.HTTPStatus).JSON(fiber.Map{"error": ErrBadRequest.Error()})
+		log.Error().Err(err).Msg("Failed to parse request body")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Bad request"})
 	}
 
 	// Валидация запроса
 	if err := middleware.ValidateStruct(&req); err != nil {
-		return c.Status(ErrValidationFailed.HTTPStatus).JSON(fiber.Map{
-			"error":   ErrValidationFailed.Error(),
+		log.Error().Err(err).Msg("Validation failed")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   "Validation failed",
 			"details": err.Error(),
 		})
 	}
@@ -165,8 +171,8 @@ func (handler *PartnerHandler) UpdatePassword(c *fiber.Ctx) error {
 	// Обновляем пароль
 	err = handler.deps.PartnerService.UpdatePassword(claims.UserID, req.CurrentPassword, req.NewPassword)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Str("user_id", claims.UserID.String()).Msg(ErrFailedToUpdatePassword.Error())
-		return c.Status(ErrFailedToUpdatePassword.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToUpdatePassword.Error()})
+		log.Error().Err(err).Msg("Failed to update password")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to update password"})
 	}
 
 	return c.JSON(fiber.Map{"message": "Password updated successfully"})
@@ -184,17 +190,19 @@ func (handler *PartnerHandler) UpdatePassword(c *fiber.Ctx) error {
 //	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
 //	@Router			/partner/coupons [get]
 func (handler *PartnerHandler) GetMyCoupons(c *fiber.Ctx) error {
+	log := zerolog.Ctx(c.UserContext())
 	// Получаем claims из контекста
 	claims, err := jwt.GetClaimsFromFiberContext(c)
 	if err != nil {
-		return c.Status(ErrFailedToGetJwtClaims.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToGetJwtClaims.Error()})
+		log.Error().Err(err).Msg("Failed to get JWT claims")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
 	// Получаем купоны
 	coupons, err := handler.deps.CouponRepository.GetByPartnerID(context.Background(), claims.UserID)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Str("user_id", claims.UserID.String()).Msg(ErrFailedToGetCoupons.Error())
-		return c.Status(ErrFailedToGetCoupons.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToGetCoupons.Error()})
+		log.Error().Err(err).Msg("Failed to get coupons")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get coupons"})
 	}
 
 	// Возвращаем купоны
@@ -219,10 +227,12 @@ func (handler *PartnerHandler) GetMyCoupons(c *fiber.Ctx) error {
 //	@Failure		500		{object}	map[string]interface{}	"Внутренняя ошибка сервера"
 //	@Router			/partner/coupons/export [get]
 func (handler *PartnerHandler) ExportCoupons(c *fiber.Ctx) error {
+	log := zerolog.Ctx(c.UserContext())
 	// Получаем claims из контекста
 	claims, err := jwt.GetClaimsFromFiberContext(c)
 	if err != nil {
-		return c.Status(ErrFailedToGetJwtClaims.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToGetJwtClaims.Error()})
+		log.Error().Err(err).Msg("Failed to get JWT claims")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
 	// Получаем формат
@@ -234,8 +244,8 @@ func (handler *PartnerHandler) ExportCoupons(c *fiber.Ctx) error {
 	// Экспортируем купоны
 	content, filename, err := handler.deps.PartnerService.ExportCoupons(claims.UserID, "new", format)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Str("user_id", claims.UserID.String()).Msg(ErrFailedToExportCoupons.Error())
-		return c.Status(ErrFailedToExportCoupons.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToExportCoupons.Error()})
+		log.Error().Err(err).Msg("Failed to export coupons")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to export coupons"})
 	}
 
 	// Устанавливаем заголовки для автоматического скачивания
@@ -258,9 +268,11 @@ func (handler *PartnerHandler) ExportCoupons(c *fiber.Ctx) error {
 //	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
 //	@Router			/partner/statistics [get]
 func (handler *PartnerHandler) GetMyStatistics(c *fiber.Ctx) error {
+	log := zerolog.Ctx(c.UserContext())
 	claims, err := jwt.GetClaimsFromFiberContext(c)
 	if err != nil {
-		return c.Status(ErrFailedToGetJwtClaims.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToGetJwtClaims.Error()})
+		log.Error().Err(err).Msg("Failed to get JWT claims")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
 	return c.JSON(fiber.Map{
@@ -315,26 +327,27 @@ func (handler *PartnerHandler) GetUsageStatistics(c *fiber.Ctx) error {
 //
 // ForgotPassword обрабатывает запрос на сброс пароля
 func (handler *PartnerHandler) ForgotPassword(c *fiber.Ctx) error {
+	log := zerolog.Ctx(c.UserContext())
 	var reqPayload ForgotPasswordRequest
 	if err := c.BodyParser(&reqPayload); err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(ErrBadRequest.Error())
-		return c.Status(ErrBadRequest.HTTPStatus).JSON(fiber.Map{
-			"error": ErrBadRequest.Error(),
+		log.Error().Err(err).Msg("Failed to parse request body")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Bad request",
 		})
 	}
 
 	if err := middleware.ValidateStruct(&reqPayload); err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(ErrValidationFailed.Error())
-		return c.Status(ErrValidationFailed.HTTPStatus).JSON(fiber.Map{
-			"error":   ErrValidationFailed.Error(),
+		log.Error().Err(err).Msg("Validation failed")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   "Validation failed",
 			"details": err.Error(),
 		})
 	}
 
 	err := handler.deps.PartnerService.ForgotPassword(context.Background(), reqPayload.Email /*captcha*/)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Str("email", reqPayload.Email).Msg(ErrFailedToSendForgotPasswordEmail.Error())
-		return c.Status(ErrFailedToSendForgotPasswordEmail.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToSendForgotPasswordEmail.Error()})
+		log.Error().Err(err).Str("email", reqPayload.Email).Msg("Failed to send forgot password email")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to send forgot password email"})
 	}
 
 	return c.JSON(fiber.Map{
@@ -357,25 +370,26 @@ func (handler *PartnerHandler) ForgotPassword(c *fiber.Ctx) error {
 //	@Failure		500		{object}	map[string]interface{}	"Внутренняя ошибка сервера"
 //	@Router			/partner/reset-password [post]
 func (handler *PartnerHandler) ResetPassword(c *fiber.Ctx) error {
+	log := zerolog.Ctx(c.UserContext())
 	var req ResetPasswordRequest
 
 	if err := c.BodyParser(&req); err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(ErrBadRequest.Error())
-		return c.Status(ErrBadRequest.HTTPStatus).JSON(fiber.Map{"error": ErrBadRequest.Error()})
+		log.Error().Err(err).Msg("Failed to parse request body")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Bad request"})
 	}
 
 	if err := middleware.ValidateStruct(&req); err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(ErrValidationFailed.Error())
-		return c.Status(ErrValidationFailed.HTTPStatus).JSON(fiber.Map{
-			"error":   ErrValidationFailed.Error(),
+		log.Error().Err(err).Msg("Validation failed")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   "Validation failed",
 			"details": err.Error(),
 		})
 	}
 
 	err := handler.deps.PartnerService.ResetPassword(context.Background(), req.Token, req.NewPassword)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(ErrFailedToResetPassword.Error())
-		return c.Status(ErrFailedToResetPassword.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToResetPassword.Error()})
+		log.Error().Err(err).Msg("Failed to reset password")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to reset password"})
 	}
 
 	return c.JSON(fiber.Map{
