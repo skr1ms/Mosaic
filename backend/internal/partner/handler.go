@@ -54,30 +54,32 @@ func NewPartnerHandler(router fiber.Router, deps *PartnerHandlerDeps) {
 }
 
 // GetDashboard возвращает данные для дашборда партнера
-// @Summary Дашборд партнера
-// @Description Возвращает данные для главной страницы партнера
-// @Tags partner-dashboard
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {object} map[string]interface{} "Данные дашборда"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Router /partner/dashboard [get]
+//
+//	@Summary		Дашборд партнера
+//	@Description	Возвращает данные для главной страницы партнера
+//	@Tags			partner-dashboard
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	map[string]interface{}	"Данные дашборда"
+//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
+//	@Router			/partner/dashboard [get]
 func (handler *PartnerHandler) GetDashboard(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "Partner dashboard"})
 }
 
 // GetProfile возвращает профиль партнера
-// @Summary Профиль партнера
-// @Description Возвращает информацию о профиле текущего партнера
-// @Tags partner-profile
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {object} map[string]interface{} "Профиль партнера"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Failure 404 {object} map[string]interface{} "Партнер не найден"
-// @Router /partner/profile [get]
+//
+//	@Summary		Профиль партнера
+//	@Description	Возвращает информацию о профиле текущего партнера
+//	@Tags			partner-profile
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	map[string]interface{}	"Профиль партнера"
+//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
+//	@Failure		404	{object}	map[string]interface{}	"Партнер не найден"
+//	@Router			/partner/profile [get]
 func (handler *PartnerHandler) GetProfile(c *fiber.Ctx) error {
 	// Получаем claims из контекста
 	claims, err := jwt.GetClaimsFromFiberContext(c)
@@ -111,32 +113,34 @@ func (handler *PartnerHandler) GetProfile(c *fiber.Ctx) error {
 }
 
 // UpdateProfile обновляет профиль партнера (только для чтения в партнерской панели)
-// @Summary Обновление профиля партнера
-// @Description Попытка обновления профиля партнера (доступно только администратору)
-// @Tags partner-profile
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Router /partner/profile [put]
+//
+//	@Summary		Обновление профиля партнера
+//	@Description	Попытка обновления профиля партнера (доступно только администратору)
+//	@Tags			partner-profile
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
+//	@Router			/partner/profile [put]
 func (handler *PartnerHandler) UpdateProfile(c *fiber.Ctx) error {
 	return c.Status(ErrForbidden.HTTPStatus).JSON(fiber.Map{"error": ErrForbidden.Error()})
 }
 
 // UpdatePassword обновляет пароль партнера
-// @Summary Обновление пароля партнера
-// @Description Обновляет пароль партнера
-// @Tags partner-profile
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param request body UpdatePasswordRequest true "Новый пароль"
-// @Success 200 {object} map[string]interface{} "Пароль обновлен"
-// @Failure 400 {object} map[string]interface{} "Ошибка в запросе"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 404 {object} map[string]interface{} "Партнер не найден"
-// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
-// @Router /partner/profile/password [put]
+//
+//	@Summary		Обновление пароля партнера
+//	@Description	Обновляет пароль партнера
+//	@Tags			partner-profile
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			request	body		partner.UpdatePasswordRequest	true	"Новый пароль"
+//	@Success		200		{object}	map[string]interface{}	"Пароль обновлен"
+//	@Failure		400		{object}	map[string]interface{}	"Ошибка в запросе"
+//	@Failure		401		{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		404		{object}	map[string]interface{}	"Партнер не найден"
+//	@Failure		500		{object}	map[string]interface{}	"Внутренняя ошибка сервера"
+//	@Router			/partner/profile/password [put]
 func (handler *PartnerHandler) UpdatePassword(c *fiber.Ctx) error {
 	// Получаем claims из контекста
 	claims, err := jwt.GetClaimsFromFiberContext(c)
@@ -169,15 +173,16 @@ func (handler *PartnerHandler) UpdatePassword(c *fiber.Ctx) error {
 }
 
 // GetMyCoupons возвращает купоны партнера
-// @Summary Купоны партнера
-// @Description Возвращает список купонов текущего партнера
-// @Tags partner-coupons
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {object} map[string]interface{} "Список купонов партнера"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Router /partner/coupons [get]
+//
+//	@Summary		Купоны партнера
+//	@Description	Возвращает список купонов текущего партнера
+//	@Tags			partner-coupons
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	map[string]interface{}	"Список купонов партнера"
+//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
+//	@Router			/partner/coupons [get]
 func (handler *PartnerHandler) GetMyCoupons(c *fiber.Ctx) error {
 	// Получаем claims из контекста
 	claims, err := jwt.GetClaimsFromFiberContext(c)
@@ -201,17 +206,18 @@ func (handler *PartnerHandler) GetMyCoupons(c *fiber.Ctx) error {
 }
 
 // ExportCoupons экспортирует купоны партнера в файл
-// @Summary Экспорт купонов партнера
-// @Description Экспортирует купоны партнера со статусом "new" в формате .txt или .csv
-// @Tags partner-coupons
-// @Produce text/plain,text/csv
-// @Security BearerAuth
-// @Param format query string false "Формат файла (txt или csv)" default(txt)
-// @Success 200 {string} string "Файл с купонами"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
-// @Router /partner/coupons/export [get]
+//
+//	@Summary		Экспорт купонов партнера
+//	@Description	Экспортирует купоны партнера со статусом "new" в формате .txt или .csv
+//	@Tags			partner-coupons
+//	@Produce		text/plain,text/csv
+//	@Security		BearerAuth
+//	@Param			format	query		string					false	"Формат файла (txt или csv)"	default(txt)
+//	@Success		200		{string}	string					"Файл с купонами"
+//	@Failure		401		{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403		{object}	map[string]interface{}	"Нет прав доступа"
+//	@Failure		500		{object}	map[string]interface{}	"Внутренняя ошибка сервера"
+//	@Router			/partner/coupons/export [get]
 func (handler *PartnerHandler) ExportCoupons(c *fiber.Ctx) error {
 	// Получаем claims из контекста
 	claims, err := jwt.GetClaimsFromFiberContext(c)
@@ -241,15 +247,16 @@ func (handler *PartnerHandler) ExportCoupons(c *fiber.Ctx) error {
 }
 
 // GetMyStatistics возвращает статистику партнера
-// @Summary Статистика партнера
-// @Description Возвращает общую статистику текущего партнера
-// @Tags partner-statistics
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {object} map[string]interface{} "Статистика партнера"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Router /partner/statistics [get]
+//
+//	@Summary		Статистика партнера
+//	@Description	Возвращает общую статистику текущего партнера
+//	@Tags			partner-statistics
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	map[string]interface{}	"Статистика партнера"
+//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
+//	@Router			/partner/statistics [get]
 func (handler *PartnerHandler) GetMyStatistics(c *fiber.Ctx) error {
 	claims, err := jwt.GetClaimsFromFiberContext(c)
 	if err != nil {
@@ -263,45 +270,49 @@ func (handler *PartnerHandler) GetMyStatistics(c *fiber.Ctx) error {
 }
 
 // GetSalesStatistics возвращает статистику продаж партнера
-// @Summary Статистика продаж
-// @Description Возвращает статистику продаж текущего партнера
-// @Tags partner-statistics
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {object} map[string]interface{} "Статистика продаж"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Router /partner/statistics/sales [get]
+//
+//	@Summary		Статистика продаж
+//	@Description	Возвращает статистику продаж текущего партнера
+//	@Tags			partner-statistics
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	map[string]interface{}	"Статистика продаж"
+//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
+//	@Router			/partner/statistics/sales [get]
 func (handler *PartnerHandler) GetSalesStatistics(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "Sales statistics"})
 }
 
 // GetUsageStatistics возвращает статистику использования купонов
-// @Summary Статистика использования купонов
-// @Description Возвращает статистику использования купонов партнера
-// @Tags partner-statistics
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {object} map[string]interface{} "Статистика использования"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Router /partner/statistics/usage [get]
+//
+//	@Summary		Статистика использования купонов
+//	@Description	Возвращает статистику использования купонов партнера
+//	@Tags			partner-statistics
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	map[string]interface{}	"Статистика использования"
+//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
+//	@Router			/partner/statistics/usage [get]
 func (handler *PartnerHandler) GetUsageStatistics(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "Usage statistics"})
 }
 
 // ForgotPassword отправляет email с ссылкой для сброса пароля
-// @Summary Запрос сброса пароля партнера
-// @Description Отправляет email с ссылкой для сброса пароля партнера
-// @Tags partner-auth
-// @Accept json
-// @Produce json
-// @Param request body ForgotPasswordRequest true "Email и captcha токен"
-// @Success 200 {object} map[string]interface{} "Email отправлен"
-// @Failure 400 {object} map[string]interface{} "Ошибка в запросе"
-// @Failure 404 {object} map[string]interface{} "Партнер не найден"
-// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
-// @Router /partner/forgot-password [post]
+//
+//	@Summary		Запрос сброса пароля партнера
+//	@Description	Отправляет email с ссылкой для сброса пароля партнера
+//	@Tags			partner-auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		partner.ForgotPasswordRequest	true	"Email и captcha токен"
+//	@Success		200		{object}	map[string]interface{}	"Email отправлен"
+//	@Failure		400		{object}	map[string]interface{}	"Ошибка в запросе"
+//	@Failure		404		{object}	map[string]interface{}	"Партнер не найден"
+//	@Failure		500		{object}	map[string]interface{}	"Внутренняя ошибка сервера"
+//	@Router			/partner/forgot-password [post]
+//
 // ForgotPassword обрабатывает запрос на сброс пароля
 func (handler *PartnerHandler) ForgotPassword(c *fiber.Ctx) error {
 	var reqPayload ForgotPasswordRequest
@@ -332,18 +343,19 @@ func (handler *PartnerHandler) ForgotPassword(c *fiber.Ctx) error {
 }
 
 // ResetPassword сбрасывает пароль по токену
-// @Summary Сброс пароля партнера
-// @Description Сбрасывает пароль партнера используя токен из email
-// @Tags partner-auth
-// @Accept json
-// @Produce json
-// @Param request body ResetPasswordRequest true "Токен сброса и новый пароль"
-// @Success 200 {object} map[string]interface{} "Пароль изменен"
-// @Failure 400 {object} map[string]interface{} "Ошибка в запросе"
-// @Failure 401 {object} map[string]interface{} "Неверный или истекший токен"
-// @Failure 404 {object} map[string]interface{} "Партнер не найден"
-// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
-// @Router /partner/reset-password [post]
+//
+//	@Summary		Сброс пароля партнера
+//	@Description	Сбрасывает пароль партнера используя токен из email
+//	@Tags			partner-auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		partner.ResetPasswordRequest	true	"Токен сброса и новый пароль"
+//	@Success		200		{object}	map[string]interface{}	"Пароль изменен"
+//	@Failure		400		{object}	map[string]interface{}	"Ошибка в запросе"
+//	@Failure		401		{object}	map[string]interface{}	"Неверный или истекший токен"
+//	@Failure		404		{object}	map[string]interface{}	"Партнер не найден"
+//	@Failure		500		{object}	map[string]interface{}	"Внутренняя ошибка сервера"
+//	@Router			/partner/reset-password [post]
 func (handler *PartnerHandler) ResetPassword(c *fiber.Ctx) error {
 	var req ResetPasswordRequest
 

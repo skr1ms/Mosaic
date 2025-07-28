@@ -24,7 +24,7 @@ var (
 	}
 	ErrImageUploadFailed = APIError{
 		Code:       "IMAGE_UPLOAD_FAILED",
-		Message:    "Failed to upload image",	
+		Message:    "Failed to upload image",
 		HTTPStatus: http.StatusInternalServerError,
 	}
 	ErrImageProcessingFailed = APIError{

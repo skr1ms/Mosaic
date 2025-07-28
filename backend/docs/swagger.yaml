@@ -1,72 +1,340 @@
 basePath: /api
 definitions:
+  admin.ChangePasswordRequest:
+    properties:
+      current_password:
+        type: string
+      new_password:
+        type: string
+    required:
+    - current_password
+    - new_password
+    type: object
   admin.CreateAdminRequest:
     properties:
       login:
         type: string
       password:
         type: string
+    required:
+    - login
+    - password
     type: object
-  admin.LoginRequest:
+  auth.LoginRequest:
     properties:
       login:
         type: string
       password:
         type: string
+    required:
+    - login
+    - password
     type: object
-  admin.RefreshTokenRequest:
+  auth.RefreshTokenRequest:
     properties:
       refresh_token:
         type: string
+    required:
+    - refresh_token
     type: object
-  coupon.CreateCouponsRequest:
+  coupon.ActivateCouponRequest:
+    properties:
+      original_image_url:
+        type: string
+      preview_url:
+        type: string
+      schema_url:
+        type: string
+    type: object
+  coupon.CouponSize:
+    enum:
+    - 21x30
+    - 30x40
+    - 40x40
+    - 40x50
+    - 40x60
+    - 50x70
+    type: string
+    x-enum-varnames:
+    - Size21x30
+    - Size30x40
+    - Size40x40
+    - Size40x50
+    - Size40x60
+    - Size50x70
+  coupon.CouponStyle:
+    enum:
+    - grayscale
+    - skin_tones
+    - pop_art
+    - max_colors
+    type: string
+    x-enum-varnames:
+    - StyleGrayscale
+    - StyleSkinTones
+    - StylePopArt
+    - StyleMaxColors
+  coupon.CreateCouponRequest:
     properties:
       count:
+        maximum: 1000
+        minimum: 1
         type: integer
       partner_id:
         type: string
       size:
-        type: string
+        allOf:
+        - $ref: '#/definitions/coupon.CouponSize'
+        enum:
+        - 21x30
+        - 30x40
+        - 40x40
+        - 40x50
+        - 40x60
+        - 50x70
       style:
-        type: string
+        allOf:
+        - $ref: '#/definitions/coupon.CouponStyle'
+        enum:
+        - grayscale
+        - skin_tones
+        - pop_art
+        - max_colors
+    required:
+    - count
+    - partner_id
+    - size
+    - style
     type: object
-  image_processing.AddToQueueRequest:
+  coupon.MarkAsPurchasedRequest:
+    properties:
+      purchase_email:
+        type: string
+    required:
+    - purchase_email
+    type: object
+  coupon.SendSchemaRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  image.AddToQueueRequest:
     properties:
       coupon_id:
         type: string
       original_image_path:
         type: string
       priority:
+        maximum: 10
+        minimum: 1
         type: integer
       processing_params:
-        $ref: '#/definitions/image_processing.ProcessingParams'
+        $ref: '#/definitions/image.ProcessingParams'
       user_email:
         type: string
+    required:
+    - coupon_id
+    - original_image_path
+    - processing_params
+    - user_email
     type: object
-  image_processing.FailProcessingRequest:
+  image.FailProcessingRequest:
     properties:
       error_message:
+        maxLength: 500
+        minLength: 1
         type: string
+    required:
+    - error_message
     type: object
-  image_processing.ProcessingParams:
+  image.ProcessingParams:
     properties:
       settings:
         additionalProperties: true
         type: object
       style:
+        enum:
+        - grayscale
+        - skin_tones
+        - pop_art
+        - max_colors
         type: string
+    required:
+    - settings
+    - style
     type: object
-  partner.LoginRequest:
+  partner.CreatePartnerRequest:
     properties:
+      address:
+        type: string
+      allow_sales:
+        type: boolean
+      brand_name:
+        type: string
+      domain:
+        type: string
+      email:
+        type: string
       login:
+        type: string
+      logo_url:
+        type: string
+      ozon_link:
         type: string
       password:
         type: string
-    type: object
-  partner.RefreshTokenRequest:
-    properties:
-      refresh_token:
+      phone:
         type: string
+      status:
+        enum:
+        - active
+        - inactive
+        - pending
+        type: string
+      telegram:
+        type: string
+      whatsapp:
+        type: string
+      wildberries_link:
+        type: string
+    required:
+    - brand_name
+    - domain
+    - login
+    - password
+    - phone
+    type: object
+  partner.ForgotPasswordRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  partner.ResetPasswordRequest:
+    properties:
+      new_password:
+        type: string
+      token:
+        type: string
+    required:
+    - new_password
+    - token
+    type: object
+  partner.UpdatePasswordRequest:
+    properties:
+      current_password:
+        type: string
+      new_password:
+        type: string
+    required:
+    - current_password
+    - new_password
+    type: object
+  public.ActivateCouponRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  public.PurchaseCouponRequest:
+    properties:
+      email:
+        type: string
+      payment_token:
+        description: Токен оплаты
+        type: string
+      size:
+        enum:
+        - 21x30
+        - 30x40
+        - 40x40
+        - 40x50
+        - 40x60
+        - 50x70
+        type: string
+      style:
+        enum:
+        - grayscale
+        - skin_tones
+        - pop_art
+        - max_colors
+        type: string
+    required:
+    - email
+    - payment_token
+    - size
+    - style
+    type: object
+  public.SendEmailRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  types.EditImageRequest:
+    properties:
+      crop_height:
+        description: Высота области кадрирования
+        type: integer
+      crop_width:
+        description: Ширина области кадрирования
+        type: integer
+      crop_x:
+        description: X координата начала кадрирования
+        type: integer
+      crop_y:
+        description: Y координата начала кадрирования
+        type: integer
+      rotation:
+        description: Поворот в градусах (0, 90, 180, 270)
+        type: integer
+      scale:
+        description: Масштаб (0.1 - 5.0)
+        type: number
+    type: object
+  types.GenerateSchemaRequest:
+    properties:
+      confirmed:
+        description: Подтверждение создания схемы
+        type: boolean
+    required:
+    - confirmed
+    type: object
+  types.ProcessImageRequest:
+    properties:
+      brightness:
+        description: -100 до 100
+        type: number
+      contrast:
+        description: low, high
+        type: string
+      lighting:
+        description: sun, moon, venus
+        type: string
+      saturation:
+        description: -100 до 100
+        type: number
+      settings:
+        additionalProperties: true
+        description: Дополнительные настройки
+        type: object
+      style:
+        enum:
+        - grayscale
+        - skin_tones
+        - pop_art
+        - max_colors
+        type: string
+      use_ai:
+        description: Использовать AI обработку
+        type: boolean
+    required:
+    - style
     type: object
 host: localhost:3000
 info:
@@ -161,7 +429,36 @@ paths:
       - admin-management
   /admin/coupons:
     get:
-      description: Возвращает список всех купонов
+      description: Возвращает список всех купонов с возможностью фильтрации
+      parameters:
+      - description: Поиск по номеру купона
+        in: query
+        name: search
+        type: string
+      - description: ID партнера для фильтрации
+        in: query
+        name: partner_id
+        type: string
+      - description: Статус для фильтрации (new/used)
+        in: query
+        name: status
+        type: string
+      - description: Размер для фильтрации
+        in: query
+        name: size
+        type: string
+      - description: Стиль для фильтрации
+        in: query
+        name: style
+        type: string
+      - description: Количество записей на странице (по умолчанию 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Смещение для пагинации (по умолчанию 0)
+        in: query
+        name: offset
+        type: integer
       produces:
       - application/json
       responses:
@@ -188,12 +485,24 @@ paths:
     post:
       consumes:
       - application/json
-      description: Создает новые купоны
+      description: Создает новые купоны в пакетном режиме
+      parameters:
+      - description: Параметры создания купонов
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/coupon.CreateCouponRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Купоны созданы
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Ошибка в запросе
           schema:
             additionalProperties: true
             type: object
@@ -204,6 +513,11 @@ paths:
             type: object
         "403":
           description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
           schema:
             additionalProperties: true
             type: object
@@ -214,13 +528,17 @@ paths:
       - admin-coupons
   /admin/coupons/{id}:
     delete:
-      description: Удаляет купон по ID
+      description: Удаляет купон по ID с подтверждением
       parameters:
       - description: ID купона
         in: path
         name: id
         required: true
         type: string
+      - description: Подтверждение удаления (true/false)
+        in: query
+        name: confirm
+        type: boolean
       produces:
       - application/json
       responses:
@@ -229,6 +547,11 @@ paths:
           schema:
             additionalProperties: true
             type: object
+        "400":
+          description: Неверный ID или требуется подтверждение
+          schema:
+            additionalProperties: true
+            type: object
         "401":
           description: Не авторизован
           schema:
@@ -239,15 +562,18 @@ paths:
           schema:
             additionalProperties: true
             type: object
+        "404":
+          description: Купон не найден
+          schema:
+            additionalProperties: true
+            type: object
       security:
       - BearerAuth: []
       summary: Удаление купона
       tags:
       - admin-coupons
-    put:
-      consumes:
-      - application/json
-      description: Обновляет данные купона
+    get:
+      description: Возвращает детальную информацию о купоне по ID
       parameters:
       - description: ID купона
         in: path
@@ -258,7 +584,12 @@ paths:
       - application/json
       responses:
         "200":
-          description: Купон обновлен
+          description: Информация о купоне
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверный ID
           schema:
             additionalProperties: true
             type: object
@@ -272,9 +603,293 @@ paths:
           schema:
             additionalProperties: true
             type: object
+        "404":
+          description: Купон не найден
+          schema:
+            additionalProperties: true
+            type: object
       security:
       - BearerAuth: []
-      summary: Обновление купона
+      summary: Детальная информация о купоне
+      tags:
+      - admin-coupons
+  /admin/coupons/{id}/reset:
+    patch:
+      description: Сбрасывает купон в статус "новый" с удалением всех данных активации
+      parameters:
+      - description: ID купона
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Купон сброшен
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверный ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Купон не найден
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Сброс купона
+      tags:
+      - admin-coupons
+  /admin/coupons/batch-delete:
+    post:
+      consumes:
+      - application/json
+      description: Удаляет множество купонов по их ID в административной панели
+      parameters:
+      - description: Список ID купонов для удаления
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties:
+            items:
+              type: string
+            type: array
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Результат массового удаления
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Ошибка в запросе
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Массовое удаление купонов для админа
+      tags:
+      - admin-coupons
+  /admin/coupons/export:
+    get:
+      description: Экспортирует список купонов в файл (поддерживаются форматы txt
+        и csv)
+      parameters:
+      - default: txt
+        description: Формат экспорта (txt или csv)
+        in: query
+        name: format
+        type: string
+      - description: Имя файла (без расширения)
+        in: query
+        name: filename
+        type: string
+      - description: ID партнера для фильтрации
+        in: query
+        name: partner_id
+        type: string
+      - description: Статус для фильтрации (new/used)
+        in: query
+        name: status
+        type: string
+      - description: Размер для фильтрации
+        in: query
+        name: size
+        type: string
+      - description: Стиль для фильтрации
+        in: query
+        name: style
+        type: string
+      produces:
+      - text/plain
+      - text/csv
+      responses:
+        "200":
+          description: Файл с купонами
+          schema:
+            type: string
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Экспорт купонов
+      tags:
+      - admin-coupons
+  /admin/coupons/export/partner/{id}:
+    get:
+      description: Экспортирует купоны конкретного партнера со статусом "new" в формате
+        .txt или .csv
+      parameters:
+      - description: ID партнера
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: txt
+        description: Формат файла (txt или csv)
+        in: query
+        name: format
+        type: string
+      produces:
+      - text/plain
+      - text/csv
+      responses:
+        "200":
+          description: Файл с купонами партнера
+          schema:
+            type: string
+        "400":
+          description: Неверный ID партнера
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Партнер не найден
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Экспорт купонов партнера для админа
+      tags:
+      - admin-coupons
+  /admin/coupons/paginated:
+    get:
+      description: Возвращает список купонов с пагинацией и расширенной фильтрацией
+        для административной панели
+      parameters:
+      - description: Номер страницы (по умолчанию 1)
+        in: query
+        name: page
+        type: integer
+      - description: Количество элементов на странице (по умолчанию 20, максимум 100)
+        in: query
+        name: limit
+        type: integer
+      - description: Поиск по коду купона
+        in: query
+        name: search
+        type: string
+      - description: ID партнера
+        in: query
+        name: partner_id
+        type: string
+      - description: Статус купона (new, used)
+        in: query
+        name: status
+        type: string
+      - description: Размер купона
+        in: query
+        name: size
+        type: string
+      - description: Стиль купона
+        in: query
+        name: style
+        type: string
+      - description: Дата создания от (RFC3339)
+        in: query
+        name: created_from
+        type: string
+      - description: Дата создания до (RFC3339)
+        in: query
+        name: created_to
+        type: string
+      - description: Дата активации от (RFC3339)
+        in: query
+        name: used_from
+        type: string
+      - description: Дата активации до (RFC3339)
+        in: query
+        name: used_to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Купоны с информацией о пагинации
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверные параметры запроса
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Список купонов с пагинацией для админа
       tags:
       - admin-coupons
   /admin/dashboard:
@@ -303,6 +918,166 @@ paths:
       summary: Дашборд администратора
       tags:
       - admin-dashboard
+  /admin/images:
+    get:
+      description: Возвращает список всех задач обработки изображений с фильтрацией
+      parameters:
+      - description: Фильтр по статусу (queued, processing, completed, failed)
+        in: query
+        name: status
+        type: string
+      - description: Фильтр по ID партнера
+        in: query
+        name: partner_id
+        type: string
+      - description: Лимит записей (по умолчанию 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Смещение (по умолчанию 0)
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список задач обработки
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Все задачи обработки изображений
+      tags:
+      - admin-images
+  /admin/images/{id}:
+    delete:
+      description: Удаляет задачу обработки изображения и связанные файлы
+      parameters:
+      - description: ID задачи
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Задача удалена
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Задача не найдена
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Удаление задачи обработки
+      tags:
+      - admin-images
+    get:
+      description: Возвращает подробную информацию о задаче обработки изображения
+      parameters:
+      - description: ID задачи
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Детали задачи
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Задача не найдена
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Детали задачи обработки
+      tags:
+      - admin-images
+  /admin/images/{id}/retry:
+    post:
+      description: Перезапускает неудачную задачу обработки изображения
+      parameters:
+      - description: ID задачи
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Задача поставлена на повтор
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Задача не может быть повторена
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Задача не найдена
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Повторная обработка изображения
+      tags:
+      - admin-images
   /admin/login:
     post:
       consumes:
@@ -314,7 +1089,7 @@ paths:
         name: credentials
         required: true
         schema:
-          $ref: '#/definitions/admin.LoginRequest'
+          $ref: '#/definitions/auth.LoginRequest'
       produces:
       - application/json
       responses:
@@ -343,7 +1118,16 @@ paths:
       - admin-auth
   /admin/partners:
     get:
-      description: Возвращает список всех партнеров
+      description: Возвращает список всех партнеров с возможностью фильтрации и поиска
+      parameters:
+      - description: Поиск по названию бренда, домену или email
+        in: query
+        name: search
+        type: string
+      - description: Фильтр по статусу (active/blocked)
+        in: query
+        name: status
+        type: string
       produces:
       - application/json
       responses:
@@ -370,12 +1154,25 @@ paths:
     post:
       consumes:
       - application/json
-      description: Создает нового партнера
+      description: Создает нового партнера с автоматически генерируемым кодом (начиная
+        с 0001, 0000 зарезервирован для собственных купонов)
+      parameters:
+      - description: Данные нового партнера
+        in: body
+        name: partner
+        required: true
+        schema:
+          $ref: '#/definitions/partner.CreatePartnerRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Партнер создан
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Ошибка в запросе
           schema:
             additionalProperties: true
             type: object
@@ -386,6 +1183,16 @@ paths:
             type: object
         "403":
           description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Партнер с таким логином/доменом уже существует
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
           schema:
             additionalProperties: true
             type: object
@@ -396,18 +1203,27 @@ paths:
       - admin-partners
   /admin/partners/{id}:
     delete:
-      description: Удаляет партнера по ID
+      description: Удаляет партнера по ID с удалением всех связанных данных
       parameters:
       - description: ID партнера
         in: path
         name: id
         required: true
         type: string
+      - description: Подтверждение удаления (true/false)
+        in: query
+        name: confirm
+        type: boolean
       produces:
       - application/json
       responses:
         "200":
           description: Партнер удален
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверный ID или требуется подтверждение
           schema:
             additionalProperties: true
             type: object
@@ -421,9 +1237,55 @@ paths:
           schema:
             additionalProperties: true
             type: object
+        "404":
+          description: Партнер не найден
+          schema:
+            additionalProperties: true
+            type: object
       security:
       - BearerAuth: []
       summary: Удаление партнера
+      tags:
+      - admin-partners
+    get:
+      description: Возвращает детальную информацию о партнере по ID
+      parameters:
+      - description: ID партнера
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Информация о партнере
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверный ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Партнер не найден
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Детальная информация о партнере
       tags:
       - admin-partners
     put:
@@ -459,6 +1321,172 @@ paths:
       summary: Обновление партнера
       tags:
       - admin-partners
+  /admin/partners/{id}/block:
+    patch:
+      description: Блокирует партнера (временное отключение доступа)
+      parameters:
+      - description: ID партнера
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Партнер заблокирован
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверный ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Партнер не найден
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Блокировка партнера
+      tags:
+      - admin-partners
+  /admin/partners/{id}/statistics:
+    get:
+      description: Возвращает детальную статистику по конкретному партнеру
+      parameters:
+      - description: ID партнера
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Статистика партнера
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверный ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Статистика партнера
+      tags:
+      - admin-partners
+  /admin/partners/{id}/unblock:
+    patch:
+      description: Разблокирует партнера (восстановление доступа)
+      parameters:
+      - description: ID партнера
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Партнер разблокирован
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверный ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Партнер не найден
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Разблокировка партнера
+      tags:
+      - admin-partners
+  /admin/profile/password:
+    put:
+      consumes:
+      - application/json
+      description: Изменяет пароль текущего администратора
+      parameters:
+      - description: Данные для смены пароля
+        in: body
+        name: password
+        required: true
+        schema:
+          $ref: '#/definitions/admin.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Пароль изменен
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Ошибка в запросе
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Неверный текущий пароль
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Смена пароля
+      tags:
+      - admin-profile
   /admin/refresh:
     post:
       consumes:
@@ -470,7 +1498,7 @@ paths:
         name: refresh
         required: true
         schema:
-          $ref: '#/definitions/admin.RefreshTokenRequest'
+          $ref: '#/definitions/auth.RefreshTokenRequest'
       produces:
       - application/json
       responses:
@@ -518,6 +1546,533 @@ paths:
       summary: Общая статистика
       tags:
       - admin-statistics
+  /admin/statistics/analytics:
+    get:
+      description: Возвращает детальную аналитику по использованию системы
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Аналитика
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Аналитика
+      tags:
+      - admin-statistics
+  /admin/statistics/dashboard:
+    get:
+      description: Возвращает основную статистику для отображения на дашборде администратора
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Статистика дашборда
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Статистика дашборда
+      tags:
+      - admin-statistics
+  /admin/statistics/partners:
+    get:
+      description: Возвращает детальную статистику по всем партнерам
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Статистика по партнерам
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Статистика по партнерам
+      tags:
+      - admin-statistics
+  /admin/statistics/system:
+    get:
+      description: 'Возвращает детальную статистику системы: производительность, нагрузка,
+        состояние очереди'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Системная статистика
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Нет прав доступа
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Системная статистика
+      tags:
+      - admin-statistics
+  /api/coupons/{code}:
+    get:
+      description: Возвращает информацию о купоне для проверки его валидности
+      parameters:
+      - description: Код купона (12 цифр)
+        in: path
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Информация о купоне
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверный формат кода
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Купон не найден
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Информация о купоне
+      tags:
+      - coupons
+  /api/coupons/{code}/activate:
+    post:
+      consumes:
+      - application/json
+      description: Активирует купон и подготавливает его для загрузки изображения
+      parameters:
+      - description: Код купона
+        in: path
+        name: code
+        required: true
+        type: string
+      - description: Данные для активации
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/public.ActivateCouponRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Купон активирован
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Ошибка в запросе
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Купон не найден
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Купон уже использован
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Активация купона
+      tags:
+      - coupons
+  /api/coupons/purchase:
+    post:
+      consumes:
+      - application/json
+      description: Покупает новый купон с оплатой картой
+      parameters:
+      - description: Параметры покупки
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/public.PurchaseCouponRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Купон куплен
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Ошибка в запросе
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Покупка купона
+      tags:
+      - coupons
+  /api/images/{id}/download:
+    get:
+      description: Скачивает готовую схему мозаики
+      parameters:
+      - description: ID изображения
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Файл схемы
+          schema:
+            type: file
+        "404":
+          description: Схема не найдена
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Скачивание схемы
+      tags:
+      - images
+  /api/images/{id}/edit:
+    post:
+      consumes:
+      - application/json
+      description: Применяет кадрирование, поворот и масштабирование к изображению
+      parameters:
+      - description: ID изображения
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Параметры редактирования
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.EditImageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Изображение отредактировано
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Ошибка в запросе
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Изображение не найдено
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Редактирование изображения
+      tags:
+      - images
+  /api/images/{id}/generate-schema:
+    post:
+      consumes:
+      - application/json
+      description: Создает финальную схему алмазной мозаики
+      parameters:
+      - description: ID изображения
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Параметры генерации
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.GenerateSchemaRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Схема создана
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Ошибка в запросе
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Изображение не найдено
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Создание схемы мозаики
+      tags:
+      - images
+  /api/images/{id}/preview:
+    get:
+      description: Возвращает превью обработанного изображения
+      parameters:
+      - description: ID изображения
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Превью изображения
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Изображение не найдено
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Превью изображения
+      tags:
+      - images
+  /api/images/{id}/process:
+    post:
+      consumes:
+      - application/json
+      description: Применяет выбранный стиль обработки к изображению
+      parameters:
+      - description: ID изображения
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Параметры обработки
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.ProcessImageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Обработка начата
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Ошибка в запросе
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Изображение не найдено
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Обработка изображения
+      tags:
+      - images
+  /api/images/{id}/send-email:
+    post:
+      consumes:
+      - application/json
+      description: Отправляет готовую схему мозаики на указанный email
+      parameters:
+      - description: ID изображения
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Email для отправки
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/public.SendEmailRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Схема отправлена
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Ошибка в запросе
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Схема не найдена
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Отправка схемы на email
+      tags:
+      - images
+  /api/images/{id}/status:
+    get:
+      description: Возвращает текущий статус обработки изображения
+      parameters:
+      - description: ID изображения
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Статус обработки
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Изображение не найдено
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Статус обработки
+      tags:
+      - images
+  /api/images/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Загружает изображение пользователя для создания схемы мозаики
+      parameters:
+      - description: ID активированного купона
+        in: formData
+        name: coupon_id
+        required: true
+        type: string
+      - description: Файл изображения (JPG, PNG)
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Изображение загружено
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Ошибка в запросе
+          schema:
+            additionalProperties: true
+            type: object
+        "413":
+          description: Файл слишком большой
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Загрузка изображения
+      tags:
+      - images
+  /api/partners/{domain}/info:
+    get:
+      description: Возвращает брендинг и контактную информацию партнера для White
+        Label
+      parameters:
+      - description: Доменное имя партнера
+        in: path
+        name: domain
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Информация о партнере
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Партнер не найден
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Информация о партнере по домену
+      tags:
+      - public
+  /api/sizes:
+    get:
+      description: Возвращает список доступных размеров мозаики
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Доступные размеры
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+      summary: Доступные размеры
+      tags:
+      - public
+  /api/styles:
+    get:
+      description: Возвращает список доступных стилей обработки
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Доступные стили
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+      summary: Доступные стили
+      tags:
+      - public
   /coupons:
     get:
       description: Возвращает список купонов с возможностью фильтрации по коду, статусу,
@@ -561,68 +2116,7 @@ paths:
       summary: Список купонов с фильтрацией
       tags:
       - coupons
-    post:
-      consumes:
-      - application/json
-      description: Создает указанное количество новых купонов для партнера
-      parameters:
-      - description: Параметры для создания купонов
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/coupon.CreateCouponsRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Купоны созданы успешно
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Ошибка в запросе
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Внутренняя ошибка сервера
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Создание купонов
-      tags:
-      - coupons
   /coupons/{id}:
-    delete:
-      description: Удаляет купон по ID
-      parameters:
-      - description: ID купона
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Купон удален
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Неверный ID купона
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Внутренняя ошибка сервера
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Удаление купона
-      tags:
-      - coupons
     get:
       description: Возвращает детальную информацию о купоне по его ID
       parameters:
@@ -669,9 +2163,7 @@ paths:
         name: request
         required: true
         schema:
-          additionalProperties:
-            type: string
-          type: object
+          $ref: '#/definitions/coupon.ActivateCouponRequest'
       produces:
       - application/json
       responses:
@@ -693,6 +2185,41 @@ paths:
       summary: Активация купона
       tags:
       - coupons
+  /coupons/{id}/download-materials:
+    get:
+      description: Скачивает архив с материалами погашенного купона (оригинал, превью,
+        схема)
+      parameters:
+      - description: ID купона
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/zip
+      responses:
+        "200":
+          description: ZIP архив с материалами
+          schema:
+            type: string
+        "400":
+          description: Неверный ID купона
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Купон не найден или не использован
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Скачивание материалов купона
+      tags:
+      - coupons
   /coupons/{id}/purchase:
     put:
       consumes:
@@ -709,9 +2236,7 @@ paths:
         name: request
         required: true
         schema:
-          additionalProperties:
-            type: string
-          type: object
+          $ref: '#/definitions/coupon.MarkAsPurchasedRequest'
       produces:
       - application/json
       responses:
@@ -779,9 +2304,7 @@ paths:
         name: request
         required: true
         schema:
-          additionalProperties:
-            type: string
-          type: object
+          $ref: '#/definitions/coupon.SendSchemaRequest'
       produces:
       - application/json
       responses:
@@ -826,6 +2349,159 @@ paths:
             additionalProperties: true
             type: object
       summary: Получение купона по коду
+      tags:
+      - coupons
+  /coupons/code/{code}/validate:
+    post:
+      description: Проверяет существование и доступность купона для активации
+      parameters:
+      - description: Код купона
+        in: path
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Информация о статусе купона
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Купон не найден
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Валидация купона
+      tags:
+      - coupons
+  /coupons/export:
+    get:
+      description: Экспортирует купоны в текстовый файл с фильтрацией
+      parameters:
+      - description: ID партнера для фильтрации
+        in: query
+        name: partner_id
+        type: string
+      - description: Статус купонов для экспорта
+        in: query
+        name: status
+        type: string
+      - description: 'Формат экспорта: codes (только коды) или full (полная информация)'
+        in: query
+        name: format
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Текстовый файл с купонами
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Экспорт купонов
+      tags:
+      - coupons
+  /coupons/paginated:
+    get:
+      description: Возвращает список купонов с пагинацией и фильтрацией
+      parameters:
+      - description: Номер страницы (по умолчанию 1)
+        in: query
+        name: page
+        type: integer
+      - description: Количество элементов на странице (по умолчанию 20, максимум 100)
+        in: query
+        name: limit
+        type: integer
+      - description: Код купона для поиска
+        in: query
+        name: code
+        type: string
+      - description: Статус купона (new, used)
+        in: query
+        name: status
+        type: string
+      - description: Размер купона
+        in: query
+        name: size
+        type: string
+      - description: Стиль купона
+        in: query
+        name: style
+        type: string
+      - description: ID партнера
+        in: query
+        name: partner_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Купоны с информацией о пагинации
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверные параметры запроса
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Список купонов с пагинацией
+      tags:
+      - coupons
+  /coupons/partner/{partner_id}:
+    get:
+      description: Возвращает все купоны конкретного партнера с возможностью фильтрации
+      parameters:
+      - description: ID партнера
+        in: path
+        name: partner_id
+        required: true
+        type: string
+      - description: Статус купонов
+        in: query
+        name: status
+        type: string
+      - description: Размер купонов
+        in: query
+        name: size
+        type: string
+      - description: Стиль купонов
+        in: query
+        name: style
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Купоны партнера
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "400":
+          description: Неверный ID партнера
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Купоны партнера
       tags:
       - coupons
   /coupons/statistics:
@@ -914,7 +2590,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/image_processing.AddToQueueRequest'
+          $ref: '#/definitions/image.AddToQueueRequest'
       produces:
       - application/json
       responses:
@@ -1042,7 +2718,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/image_processing.FailProcessingRequest'
+          $ref: '#/definitions/image.FailProcessingRequest'
       produces:
       - application/json
       responses:
@@ -1169,23 +2845,24 @@ paths:
       summary: Купоны партнера
       tags:
       - partner-coupons
-  /partner/coupons/{id}:
+  /partner/coupons/export:
     get:
-      description: Возвращает подробную информацию о купоне
+      description: Экспортирует купоны партнера со статусом "new" в формате .txt или
+        .csv
       parameters:
-      - description: ID купона
-        in: path
-        name: id
-        required: true
+      - default: txt
+        description: Формат файла (txt или csv)
+        in: query
+        name: format
         type: string
       produces:
-      - application/json
+      - text/plain
+      - text/csv
       responses:
         "200":
-          description: Детали купона
+          description: Файл с купонами
           schema:
-            additionalProperties: true
-            type: object
+            type: string
         "401":
           description: Не авторизован
           schema:
@@ -1196,9 +2873,14 @@ paths:
           schema:
             additionalProperties: true
             type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
       security:
       - BearerAuth: []
-      summary: Детали купона
+      summary: Экспорт купонов партнера
       tags:
       - partner-coupons
   /partner/dashboard:
@@ -1227,6 +2909,44 @@ paths:
       summary: Дашборд партнера
       tags:
       - partner-dashboard
+  /partner/forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: Отправляет email с ссылкой для сброса пароля партнера
+      parameters:
+      - description: Email и captcha токен
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/partner.ForgotPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Email отправлен
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Ошибка в запросе
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Партнер не найден
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Запрос сброса пароля партнера
+      tags:
+      - partner-auth
   /partner/login:
     post:
       consumes:
@@ -1238,7 +2958,7 @@ paths:
         name: credentials
         required: true
         schema:
-          $ref: '#/definitions/partner.LoginRequest'
+          $ref: '#/definitions/auth.LoginRequest'
       produces:
       - application/json
       responses:
@@ -1318,6 +3038,51 @@ paths:
       summary: Обновление профиля партнера
       tags:
       - partner-profile
+  /partner/profile/password:
+    put:
+      consumes:
+      - application/json
+      description: Обновляет пароль партнера
+      parameters:
+      - description: Новый пароль
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/partner.UpdatePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Пароль обновлен
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Ошибка в запросе
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Партнер не найден
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Обновление пароля партнера
+      tags:
+      - partner-profile
   /partner/refresh:
     post:
       consumes:
@@ -1329,7 +3094,7 @@ paths:
         name: refresh
         required: true
         schema:
-          $ref: '#/definitions/partner.RefreshTokenRequest'
+          $ref: '#/definitions/auth.RefreshTokenRequest'
       produces:
       - application/json
       responses:
@@ -1349,6 +3114,49 @@ paths:
             additionalProperties: true
             type: object
       summary: Обновление токенов партнера
+      tags:
+      - partner-auth
+  /partner/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Сбрасывает пароль партнера используя токен из email
+      parameters:
+      - description: Токен сброса и новый пароль
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/partner.ResetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Пароль изменен
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Ошибка в запросе
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Неверный или истекший токен
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Партнер не найден
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Сброс пароля партнера
       tags:
       - partner-auth
   /partner/statistics:

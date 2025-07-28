@@ -147,7 +147,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Возвращает список всех купонов",
+                "description": "Возвращает список всех купонов с возможностью фильтрации",
                 "produces": [
                     "application/json"
                 ],
@@ -155,6 +155,50 @@ const docTemplate = `{
                     "admin-coupons"
                 ],
                 "summary": "Список купонов",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Поиск по номеру купона",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID партнера для фильтрации",
+                        "name": "partner_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Статус для фильтрации (new/used)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Размер для фильтрации",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Стиль для фильтрации",
+                        "name": "style",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Количество записей на странице (по умолчанию 50)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Смещение для пагинации (по умолчанию 0)",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Список купонов",
@@ -185,7 +229,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Создает новые купоны",
+                "description": "Создает новые купоны в пакетном режиме",
                 "consumes": [
                     "application/json"
                 ],
@@ -196,12 +240,190 @@ const docTemplate = `{
                     "admin-coupons"
                 ],
                 "summary": "Создание купонов",
+                "parameters": [
+                    {
+                        "description": "Параметры создания купонов",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/coupon.CreateCouponRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "201": {
                         "description": "Купоны созданы",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка в запросе",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Не авторизован",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Нет прав доступа",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/coupons/batch-delete": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Удаляет множество купонов по их ID в административной панели",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-coupons"
+                ],
+                "summary": "Массовое удаление купонов для админа",
+                "parameters": [
+                    {
+                        "description": "Список ID купонов для удаления",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Результат массового удаления",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка в запросе",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Не авторизован",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Нет прав доступа",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/coupons/export": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Экспортирует список купонов в файл (поддерживаются форматы txt и csv)",
+                "produces": [
+                    "text/plain",
+                    "text/csv"
+                ],
+                "tags": [
+                    "admin-coupons"
+                ],
+                "summary": "Экспорт купонов",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "txt",
+                        "description": "Формат экспорта (txt или csv)",
+                        "name": "format",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Имя файла (без расширения)",
+                        "name": "filename",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID партнера для фильтрации",
+                        "name": "partner_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Статус для фильтрации (new/used)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Размер для фильтрации",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Стиль для фильтрации",
+                        "name": "style",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Файл с купонами",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     "401": {
@@ -221,36 +443,47 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/coupons/{id}": {
-            "put": {
+        "/admin/coupons/export/partner/{id}": {
+            "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Обновляет данные купона",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Экспортирует купоны конкретного партнера со статусом \"new\" в формате .txt или .csv",
                 "produces": [
-                    "application/json"
+                    "text/plain",
+                    "text/csv"
                 ],
                 "tags": [
                     "admin-coupons"
                 ],
-                "summary": "Обновление купона",
+                "summary": "Экспорт купонов партнера для админа",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID купона",
+                        "description": "ID партнера",
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "txt",
+                        "description": "Формат файла (txt или csv)",
+                        "name": "format",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Купон обновлен",
+                        "description": "Файл с купонами партнера",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный ID партнера",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -269,6 +502,205 @@ const docTemplate = `{
                             "type": "object",
                             "additionalProperties": true
                         }
+                    },
+                    "404": {
+                        "description": "Партнер не найден",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/coupons/paginated": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает список купонов с пагинацией и расширенной фильтрацией для административной панели",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-coupons"
+                ],
+                "summary": "Список купонов с пагинацией для админа",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Номер страницы (по умолчанию 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Количество элементов на странице (по умолчанию 20, максимум 100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Поиск по коду купона",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID партнера",
+                        "name": "partner_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Статус купона (new, used)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Размер купона",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Стиль купона",
+                        "name": "style",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Дата создания от (RFC3339)",
+                        "name": "created_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Дата создания до (RFC3339)",
+                        "name": "created_to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Дата активации от (RFC3339)",
+                        "name": "used_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Дата активации до (RFC3339)",
+                        "name": "used_to",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Купоны с информацией о пагинации",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Неверные параметры запроса",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Не авторизован",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Нет прав доступа",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/coupons/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает детальную информацию о купоне по ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-coupons"
+                ],
+                "summary": "Детальная информация о купоне",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID купона",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Информация о купоне",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Не авторизован",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Нет прав доступа",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Купон не найден",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
                     }
                 }
             },
@@ -278,7 +710,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет купон по ID",
+                "description": "Удаляет купон по ID с подтверждением",
                 "produces": [
                     "application/json"
                 ],
@@ -293,11 +725,24 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Подтверждение удаления (true/false)",
+                        "name": "confirm",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "Купон удален",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный ID или требуется подтверждение",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -312,6 +757,76 @@ const docTemplate = `{
                     },
                     "403": {
                         "description": "Нет прав доступа",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Купон не найден",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/coupons/{id}/reset": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Сбрасывает купон в статус \"новый\" с удалением всех данных активации",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-coupons"
+                ],
+                "summary": "Сброс купона",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID купона",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Купон сброшен",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Не авторизован",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Нет прав доступа",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Купон не найден",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -360,6 +875,248 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/images": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает список всех задач обработки изображений с фильтрацией",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-images"
+                ],
+                "summary": "Все задачи обработки изображений",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Фильтр по статусу (queued, processing, completed, failed)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Фильтр по ID партнера",
+                        "name": "partner_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Лимит записей (по умолчанию 50)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Смещение (по умолчанию 0)",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Список задач обработки",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Не авторизован",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Нет прав доступа",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/images/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает подробную информацию о задаче обработки изображения",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-images"
+                ],
+                "summary": "Детали задачи обработки",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID задачи",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Детали задачи",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Не авторизован",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Нет прав доступа",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Задача не найдена",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Удаляет задачу обработки изображения и связанные файлы",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-images"
+                ],
+                "summary": "Удаление задачи обработки",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID задачи",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Задача удалена",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Не авторизован",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Нет прав доступа",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Задача не найдена",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/images/{id}/retry": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Перезапускает неудачную задачу обработки изображения",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-images"
+                ],
+                "summary": "Повторная обработка изображения",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID задачи",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Задача поставлена на повтор",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Задача не может быть повторена",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Не авторизован",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Нет прав доступа",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Задача не найдена",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/admin/login": {
             "post": {
                 "description": "Авторизация администратора по логину и паролю",
@@ -380,7 +1137,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.LoginRequest"
+                            "$ref": "#/definitions/auth.LoginRequest"
                         }
                     }
                 ],
@@ -423,7 +1180,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Возвращает список всех партнеров",
+                "description": "Возвращает список всех партнеров с возможностью фильтрации и поиска",
                 "produces": [
                     "application/json"
                 ],
@@ -431,6 +1188,20 @@ const docTemplate = `{
                     "admin-partners"
                 ],
                 "summary": "Список партнеров",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Поиск по названию бренда, домену или email",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Фильтр по статусу (active/blocked)",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Список партнеров",
@@ -461,7 +1232,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Создает нового партнера",
+                "description": "Создает нового партнера с автоматически генерируемым кодом (начиная с 0001, 0000 зарезервирован для собственных купонов)",
                 "consumes": [
                     "application/json"
                 ],
@@ -472,9 +1243,27 @@ const docTemplate = `{
                     "admin-partners"
                 ],
                 "summary": "Создание партнера",
+                "parameters": [
+                    {
+                        "description": "Данные нового партнера",
+                        "name": "partner",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/partner.CreatePartnerRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "201": {
                         "description": "Партнер создан",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка в запросе",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -493,11 +1282,86 @@ const docTemplate = `{
                             "type": "object",
                             "additionalProperties": true
                         }
+                    },
+                    "409": {
+                        "description": "Партнер с таким логином/доменом уже существует",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
                     }
                 }
             }
         },
         "/admin/partners/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает детальную информацию о партнере по ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-partners"
+                ],
+                "summary": "Детальная информация о партнере",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID партнера",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Информация о партнере",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Не авторизован",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Нет прав доступа",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Партнер не найден",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
             "put": {
                 "security": [
                     {
@@ -554,7 +1418,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет партнера по ID",
+                "description": "Удаляет партнера по ID с удалением всех связанных данных",
                 "produces": [
                     "application/json"
                 ],
@@ -569,11 +1433,24 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Подтверждение удаления (true/false)",
+                        "name": "confirm",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "Партнер удален",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный ID или требуется подтверждение",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -588,6 +1465,263 @@ const docTemplate = `{
                     },
                     "403": {
                         "description": "Нет прав доступа",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Партнер не найден",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/partners/{id}/block": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Блокирует партнера (временное отключение доступа)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-partners"
+                ],
+                "summary": "Блокировка партнера",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID партнера",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Партнер заблокирован",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Не авторизован",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Нет прав доступа",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Партнер не найден",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/partners/{id}/statistics": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает детальную статистику по конкретному партнеру",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-partners"
+                ],
+                "summary": "Статистика партнера",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID партнера",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Статистика партнера",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Не авторизован",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Нет прав доступа",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/partners/{id}/unblock": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Разблокирует партнера (восстановление доступа)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-partners"
+                ],
+                "summary": "Разблокировка партнера",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID партнера",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Партнер разблокирован",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Не авторизован",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Нет прав доступа",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Партнер не найден",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/profile/password": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Изменяет пароль текущего администратора",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-profile"
+                ],
+                "summary": "Смена пароля",
+                "parameters": [
+                    {
+                        "description": "Данные для смены пароля",
+                        "name": "password",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/admin.ChangePasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Пароль изменен",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка в запросе",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Не авторизован",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Неверный текущий пароль",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -616,7 +1750,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.RefreshTokenRequest"
+                            "$ref": "#/definitions/auth.RefreshTokenRequest"
                         }
                     }
                 ],
@@ -685,6 +1819,788 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/statistics/analytics": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает детальную аналитику по использованию системы",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-statistics"
+                ],
+                "summary": "Аналитика",
+                "responses": {
+                    "200": {
+                        "description": "Аналитика",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Не авторизован",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Нет прав доступа",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/statistics/dashboard": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает основную статистику для отображения на дашборде администратора",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-statistics"
+                ],
+                "summary": "Статистика дашборда",
+                "responses": {
+                    "200": {
+                        "description": "Статистика дашборда",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Не авторизован",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Нет прав доступа",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/statistics/partners": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает детальную статистику по всем партнерам",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-statistics"
+                ],
+                "summary": "Статистика по партнерам",
+                "responses": {
+                    "200": {
+                        "description": "Статистика по партнерам",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Не авторизован",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Нет прав доступа",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/statistics/system": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает детальную статистику системы: производительность, нагрузка, состояние очереди",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin-statistics"
+                ],
+                "summary": "Системная статистика",
+                "responses": {
+                    "200": {
+                        "description": "Системная статистика",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Не авторизован",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Нет прав доступа",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/coupons/purchase": {
+            "post": {
+                "description": "Покупает новый купон с оплатой картой",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "coupons"
+                ],
+                "summary": "Покупка купона",
+                "parameters": [
+                    {
+                        "description": "Параметры покупки",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/public.PurchaseCouponRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Купон куплен",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка в запросе",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/coupons/{code}": {
+            "get": {
+                "description": "Возвращает информацию о купоне для проверки его валидности",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "coupons"
+                ],
+                "summary": "Информация о купоне",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Код купона (12 цифр)",
+                        "name": "code",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Информация о купоне",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат кода",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Купон не найден",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/coupons/{code}/activate": {
+            "post": {
+                "description": "Активирует купон и подготавливает его для загрузки изображения",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "coupons"
+                ],
+                "summary": "Активация купона",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Код купона",
+                        "name": "code",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Данные для активации",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/public.ActivateCouponRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Купон активирован",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка в запросе",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Купон не найден",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "409": {
+                        "description": "Купон уже использован",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/images/upload": {
+            "post": {
+                "description": "Загружает изображение пользователя для создания схемы мозаики",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "images"
+                ],
+                "summary": "Загрузка изображения",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID активированного купона",
+                        "name": "coupon_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Файл изображения (JPG, PNG)",
+                        "name": "image",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Изображение загружено",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка в запросе",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "413": {
+                        "description": "Файл слишком большой",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/images/{id}/download": {
+            "get": {
+                "description": "Скачивает готовую схему мозаики",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "images"
+                ],
+                "summary": "Скачивание схемы",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID изображения",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Файл схемы",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "404": {
+                        "description": "Схема не найдена",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/images/{id}/edit": {
+            "post": {
+                "description": "Применяет кадрирование, поворот и масштабирование к изображению",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "images"
+                ],
+                "summary": "Редактирование изображения",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID изображения",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Параметры редактирования",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.EditImageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Изображение отредактировано",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка в запросе",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Изображение не найдено",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/images/{id}/generate-schema": {
+            "post": {
+                "description": "Создает финальную схему алмазной мозаики",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "images"
+                ],
+                "summary": "Создание схемы мозаики",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID изображения",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Параметры генерации",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.GenerateSchemaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Схема создана",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка в запросе",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Изображение не найдено",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/images/{id}/preview": {
+            "get": {
+                "description": "Возвращает превью обработанного изображения",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "images"
+                ],
+                "summary": "Превью изображения",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID изображения",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Превью изображения",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Изображение не найдено",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/images/{id}/process": {
+            "post": {
+                "description": "Применяет выбранный стиль обработки к изображению",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "images"
+                ],
+                "summary": "Обработка изображения",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID изображения",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Параметры обработки",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.ProcessImageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Обработка начата",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка в запросе",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Изображение не найдено",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/images/{id}/send-email": {
+            "post": {
+                "description": "Отправляет готовую схему мозаики на указанный email",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "images"
+                ],
+                "summary": "Отправка схемы на email",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID изображения",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Email для отправки",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/public.SendEmailRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Схема отправлена",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка в запросе",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Схема не найдена",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/images/{id}/status": {
+            "get": {
+                "description": "Возвращает текущий статус обработки изображения",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "images"
+                ],
+                "summary": "Статус обработки",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID изображения",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Статус обработки",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Изображение не найдено",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/partners/{domain}/info": {
+            "get": {
+                "description": "Возвращает брендинг и контактную информацию партнера для White Label",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "public"
+                ],
+                "summary": "Информация о партнере по домену",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Доменное имя партнера",
+                        "name": "domain",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Информация о партнере",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Партнер не найден",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/sizes": {
+            "get": {
+                "description": "Возвращает список доступных размеров мозаики",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "public"
+                ],
+                "summary": "Доступные размеры",
+                "responses": {
+                    "200": {
+                        "description": "Доступные размеры",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/styles": {
+            "get": {
+                "description": "Возвращает список доступных стилей обработки",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "public"
+                ],
+                "summary": "Доступные стили",
+                "responses": {
+                    "200": {
+                        "description": "Доступные стили",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/coupons": {
             "get": {
                 "description": "Возвращает список купонов с возможностью фильтрации по коду, статусу, размеру, стилю и партнеру",
@@ -746,53 +2662,6 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "post": {
-                "description": "Создает указанное количество новых купонов для партнера",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "coupons"
-                ],
-                "summary": "Создание купонов",
-                "parameters": [
-                    {
-                        "description": "Параметры для создания купонов",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/coupon.CreateCouponsRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Купоны созданы успешно",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Ошибка в запросе",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Внутренняя ошибка сервера",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
             }
         },
         "/coupons/code/{code}": {
@@ -824,6 +2693,234 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Купон не найден",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/coupons/code/{code}/validate": {
+            "post": {
+                "description": "Проверяет существование и доступность купона для активации",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "coupons"
+                ],
+                "summary": "Валидация купона",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Код купона",
+                        "name": "code",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Информация о статусе купона",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Купон не найден",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/coupons/export": {
+            "get": {
+                "description": "Экспортирует купоны в текстовый файл с фильтрацией",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "coupons"
+                ],
+                "summary": "Экспорт купонов",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID партнера для фильтрации",
+                        "name": "partner_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Статус купонов для экспорта",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Формат экспорта: codes (только коды) или full (полная информация)",
+                        "name": "format",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Текстовый файл с купонами",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/coupons/paginated": {
+            "get": {
+                "description": "Возвращает список купонов с пагинацией и фильтрацией",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "coupons"
+                ],
+                "summary": "Список купонов с пагинацией",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Номер страницы (по умолчанию 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Количество элементов на странице (по умолчанию 20, максимум 100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Код купона для поиска",
+                        "name": "code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Статус купона (new, used)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Размер купона",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Стиль купона",
+                        "name": "style",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID партнера",
+                        "name": "partner_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Купоны с информацией о пагинации",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Неверные параметры запроса",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/coupons/partner/{partner_id}": {
+            "get": {
+                "description": "Возвращает все купоны конкретного партнера с возможностью фильтрации",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "coupons"
+                ],
+                "summary": "Купоны партнера",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID партнера",
+                        "name": "partner_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Статус купонов",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Размер купонов",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Стиль купонов",
+                        "name": "style",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Купоны партнера",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный ID партнера",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -910,48 +3007,6 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "delete": {
-                "description": "Удаляет купон по ID",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "coupons"
-                ],
-                "summary": "Удаление купона",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID купона",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Купон удален",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный ID купона",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Внутренняя ошибка сервера",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
             }
         },
         "/coupons/{id}/activate": {
@@ -981,10 +3036,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/coupon.ActivateCouponRequest"
                         }
                     }
                 ],
@@ -998,6 +3050,56 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Неверный ID купона",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/coupons/{id}/download-materials": {
+            "get": {
+                "description": "Скачивает архив с материалами погашенного купона (оригинал, превью, схема)",
+                "produces": [
+                    "application/zip"
+                ],
+                "tags": [
+                    "coupons"
+                ],
+                "summary": "Скачивание материалов купона",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID купона",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ZIP архив с материалами",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный ID купона",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Купон не найден или не использован",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1040,10 +3142,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/coupon.MarkAsPurchasedRequest"
                         }
                     }
                 ],
@@ -1143,10 +3242,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/coupon.SendSchemaRequest"
                         }
                     }
                 ],
@@ -1267,7 +3363,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/image_processing.AddToQueueRequest"
+                            "$ref": "#/definitions/image.AddToQueueRequest"
                         }
                     }
                 ],
@@ -1453,7 +3549,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/image_processing.FailProcessingRequest"
+                            "$ref": "#/definitions/image.FailProcessingRequest"
                         }
                     }
                 ],
@@ -1638,36 +3734,36 @@ const docTemplate = `{
                 }
             }
         },
-        "/partner/coupons/{id}": {
+        "/partner/coupons/export": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Возвращает подробную информацию о купоне",
+                "description": "Экспортирует купоны партнера со статусом \"new\" в формате .txt или .csv",
                 "produces": [
-                    "application/json"
+                    "text/plain",
+                    "text/csv"
                 ],
                 "tags": [
                     "partner-coupons"
                 ],
-                "summary": "Детали купона",
+                "summary": "Экспорт купонов партнера",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID купона",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
+                        "default": "txt",
+                        "description": "Формат файла (txt или csv)",
+                        "name": "format",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Детали купона",
+                        "description": "Файл с купонами",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "type": "string"
                         }
                     },
                     "401": {
@@ -1679,6 +3775,13 @@ const docTemplate = `{
                     },
                     "403": {
                         "description": "Нет прав доступа",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1727,6 +3830,62 @@ const docTemplate = `{
                 }
             }
         },
+        "/partner/forgot-password": {
+            "post": {
+                "description": "Отправляет email с ссылкой для сброса пароля партнера",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "partner-auth"
+                ],
+                "summary": "Запрос сброса пароля партнера",
+                "parameters": [
+                    {
+                        "description": "Email и captcha токен",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/partner.ForgotPasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Email отправлен",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка в запросе",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Партнер не найден",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/partner/login": {
             "post": {
                 "description": "Авторизация партнера по логину и паролю",
@@ -1747,7 +3906,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/partner.LoginRequest"
+                            "$ref": "#/definitions/auth.LoginRequest"
                         }
                     }
                 ],
@@ -1864,6 +4023,74 @@ const docTemplate = `{
                 }
             }
         },
+        "/partner/profile/password": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Обновляет пароль партнера",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "partner-profile"
+                ],
+                "summary": "Обновление пароля партнера",
+                "parameters": [
+                    {
+                        "description": "Новый пароль",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/partner.UpdatePasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Пароль обновлен",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка в запросе",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Не авторизован",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Партнер не найден",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/partner/refresh": {
             "post": {
                 "description": "Обновляет access и refresh токены используя refresh токен",
@@ -1884,7 +4111,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/partner.RefreshTokenRequest"
+                            "$ref": "#/definitions/auth.RefreshTokenRequest"
                         }
                     }
                 ],
@@ -1905,6 +4132,69 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Неверный или истекший refresh токен",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/partner/reset-password": {
+            "post": {
+                "description": "Сбрасывает пароль партнера используя токен из email",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "partner-auth"
+                ],
+                "summary": "Сброс пароля партнера",
+                "parameters": [
+                    {
+                        "description": "Токен сброса и новый пароль",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/partner.ResetPasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Пароль изменен",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка в запросе",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Неверный или истекший токен",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Партнер не найден",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -2035,8 +4325,27 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "admin.ChangePasswordRequest": {
+            "type": "object",
+            "required": [
+                "current_password",
+                "new_password"
+            ],
+            "properties": {
+                "current_password": {
+                    "type": "string"
+                },
+                "new_password": {
+                    "type": "string"
+                }
+            }
+        },
         "admin.CreateAdminRequest": {
             "type": "object",
+            "required": [
+                "login",
+                "password"
+            ],
             "properties": {
                 "login": {
                     "type": "string"
@@ -2046,8 +4355,12 @@ const docTemplate = `{
                 }
             }
         },
-        "admin.LoginRequest": {
+        "auth.LoginRequest": {
             "type": "object",
+            "required": [
+                "login",
+                "password"
+            ],
             "properties": {
                 "login": {
                     "type": "string"
@@ -2057,33 +4370,142 @@ const docTemplate = `{
                 }
             }
         },
-        "admin.RefreshTokenRequest": {
+        "auth.RefreshTokenRequest": {
             "type": "object",
+            "required": [
+                "refresh_token"
+            ],
             "properties": {
                 "refresh_token": {
                     "type": "string"
                 }
             }
         },
-        "coupon.CreateCouponsRequest": {
+        "coupon.ActivateCouponRequest": {
             "type": "object",
             "properties": {
+                "original_image_url": {
+                    "type": "string"
+                },
+                "preview_url": {
+                    "type": "string"
+                },
+                "schema_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "coupon.CouponSize": {
+            "type": "string",
+            "enum": [
+                "21x30",
+                "30x40",
+                "40x40",
+                "40x50",
+                "40x60",
+                "50x70"
+            ],
+            "x-enum-varnames": [
+                "Size21x30",
+                "Size30x40",
+                "Size40x40",
+                "Size40x50",
+                "Size40x60",
+                "Size50x70"
+            ]
+        },
+        "coupon.CouponStyle": {
+            "type": "string",
+            "enum": [
+                "grayscale",
+                "skin_tones",
+                "pop_art",
+                "max_colors"
+            ],
+            "x-enum-varnames": [
+                "StyleGrayscale",
+                "StyleSkinTones",
+                "StylePopArt",
+                "StyleMaxColors"
+            ]
+        },
+        "coupon.CreateCouponRequest": {
+            "type": "object",
+            "required": [
+                "count",
+                "partner_id",
+                "size",
+                "style"
+            ],
+            "properties": {
                 "count": {
-                    "type": "integer"
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 1
                 },
                 "partner_id": {
                     "type": "string"
                 },
                 "size": {
-                    "type": "string"
+                    "enum": [
+                        "21x30",
+                        "30x40",
+                        "40x40",
+                        "40x50",
+                        "40x60",
+                        "50x70"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/coupon.CouponSize"
+                        }
+                    ]
                 },
                 "style": {
+                    "enum": [
+                        "grayscale",
+                        "skin_tones",
+                        "pop_art",
+                        "max_colors"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/coupon.CouponStyle"
+                        }
+                    ]
+                }
+            }
+        },
+        "coupon.MarkAsPurchasedRequest": {
+            "type": "object",
+            "required": [
+                "purchase_email"
+            ],
+            "properties": {
+                "purchase_email": {
                     "type": "string"
                 }
             }
         },
-        "image_processing.AddToQueueRequest": {
+        "coupon.SendSchemaRequest": {
             "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "image.AddToQueueRequest": {
+            "type": "object",
+            "required": [
+                "coupon_id",
+                "original_image_path",
+                "processing_params",
+                "user_email"
+            ],
             "properties": {
                 "coupon_id": {
                     "type": "string"
@@ -2092,52 +4514,293 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "priority": {
-                    "type": "integer"
+                    "type": "integer",
+                    "maximum": 10,
+                    "minimum": 1
                 },
                 "processing_params": {
-                    "$ref": "#/definitions/image_processing.ProcessingParams"
+                    "$ref": "#/definitions/image.ProcessingParams"
                 },
                 "user_email": {
                     "type": "string"
                 }
             }
         },
-        "image_processing.FailProcessingRequest": {
+        "image.FailProcessingRequest": {
             "type": "object",
+            "required": [
+                "error_message"
+            ],
             "properties": {
                 "error_message": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 500,
+                    "minLength": 1
                 }
             }
         },
-        "image_processing.ProcessingParams": {
+        "image.ProcessingParams": {
             "type": "object",
+            "required": [
+                "settings",
+                "style"
+            ],
             "properties": {
                 "settings": {
                     "type": "object",
                     "additionalProperties": true
                 },
                 "style": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "grayscale",
+                        "skin_tones",
+                        "pop_art",
+                        "max_colors"
+                    ]
                 }
             }
         },
-        "partner.LoginRequest": {
+        "partner.CreatePartnerRequest": {
             "type": "object",
+            "required": [
+                "brand_name",
+                "domain",
+                "login",
+                "password",
+                "phone"
+            ],
             "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "allow_sales": {
+                    "type": "boolean"
+                },
+                "brand_name": {
+                    "type": "string"
+                },
+                "domain": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
                 "login": {
+                    "type": "string"
+                },
+                "logo_url": {
+                    "type": "string"
+                },
+                "ozon_link": {
                     "type": "string"
                 },
                 "password": {
                     "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "inactive",
+                        "pending"
+                    ]
+                },
+                "telegram": {
+                    "type": "string"
+                },
+                "whatsapp": {
+                    "type": "string"
+                },
+                "wildberries_link": {
+                    "type": "string"
                 }
             }
         },
-        "partner.RefreshTokenRequest": {
+        "partner.ForgotPasswordRequest": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "partner.ResetPasswordRequest": {
+            "type": "object",
+            "required": [
+                "new_password",
+                "token"
+            ],
+            "properties": {
+                "new_password": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "partner.UpdatePasswordRequest": {
+            "type": "object",
+            "required": [
+                "current_password",
+                "new_password"
+            ],
+            "properties": {
+                "current_password": {
+                    "type": "string"
+                },
+                "new_password": {
+                    "type": "string"
+                }
+            }
+        },
+        "public.ActivateCouponRequest": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "public.PurchaseCouponRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "payment_token",
+                "size",
+                "style"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "payment_token": {
+                    "description": "Токен оплаты",
+                    "type": "string"
+                },
+                "size": {
+                    "type": "string",
+                    "enum": [
+                        "21x30",
+                        "30x40",
+                        "40x40",
+                        "40x50",
+                        "40x60",
+                        "50x70"
+                    ]
+                },
+                "style": {
+                    "type": "string",
+                    "enum": [
+                        "grayscale",
+                        "skin_tones",
+                        "pop_art",
+                        "max_colors"
+                    ]
+                }
+            }
+        },
+        "public.SendEmailRequest": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.EditImageRequest": {
             "type": "object",
             "properties": {
-                "refresh_token": {
+                "crop_height": {
+                    "description": "Высота области кадрирования",
+                    "type": "integer"
+                },
+                "crop_width": {
+                    "description": "Ширина области кадрирования",
+                    "type": "integer"
+                },
+                "crop_x": {
+                    "description": "X координата начала кадрирования",
+                    "type": "integer"
+                },
+                "crop_y": {
+                    "description": "Y координата начала кадрирования",
+                    "type": "integer"
+                },
+                "rotation": {
+                    "description": "Поворот в градусах (0, 90, 180, 270)",
+                    "type": "integer"
+                },
+                "scale": {
+                    "description": "Масштаб (0.1 - 5.0)",
+                    "type": "number"
+                }
+            }
+        },
+        "types.GenerateSchemaRequest": {
+            "type": "object",
+            "required": [
+                "confirmed"
+            ],
+            "properties": {
+                "confirmed": {
+                    "description": "Подтверждение создания схемы",
+                    "type": "boolean"
+                }
+            }
+        },
+        "types.ProcessImageRequest": {
+            "type": "object",
+            "required": [
+                "style"
+            ],
+            "properties": {
+                "brightness": {
+                    "description": "-100 до 100",
+                    "type": "number"
+                },
+                "contrast": {
+                    "description": "low, high",
                     "type": "string"
+                },
+                "lighting": {
+                    "description": "sun, moon, venus",
+                    "type": "string"
+                },
+                "saturation": {
+                    "description": "-100 до 100",
+                    "type": "number"
+                },
+                "settings": {
+                    "description": "Дополнительные настройки",
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "style": {
+                    "type": "string",
+                    "enum": [
+                        "grayscale",
+                        "skin_tones",
+                        "pop_art",
+                        "max_colors"
+                    ]
+                },
+                "use_ai": {
+                    "description": "Использовать AI обработку",
+                    "type": "boolean"
                 }
             }
         }
@@ -2162,6 +4825,8 @@ var SwaggerInfo = &swag.Spec{
 	Description:      "API для системы мозаичных купонов",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
+	LeftDelim:        "{{",
+	RightDelim:       "}}",
 }
 
 func init() {

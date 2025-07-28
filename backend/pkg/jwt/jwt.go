@@ -238,21 +238,21 @@ func GetClaimsFromFiberContext(c *fiber.Ctx) (*Claims, error) {
 
 // CreatePasswordResetToken создает токен для сброса пароля
 func (j *JWT) CreatePasswordResetToken(userID uuid.UUID, email string) (string, error) {
-    now := time.Now()
-    claims := &Claims{
-        UserID:    userID,
-        Login:     email,
-        TokenType: "password_reset", 
-        RegisteredClaims: jwt.RegisteredClaims{
-            ExpiresAt: jwt.NewNumericDate(now.Add(1 * time.Hour)), // TTL 1 час
-            IssuedAt:  jwt.NewNumericDate(now),
-            NotBefore: jwt.NewNumericDate(now),
-            Subject:   userID.String(),
-        },
-    }
+	now := time.Now()
+	claims := &Claims{
+		UserID:    userID,
+		Login:     email,
+		TokenType: "password_reset",
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(now.Add(1 * time.Hour)), // TTL 1 час
+			IssuedAt:  jwt.NewNumericDate(now),
+			NotBefore: jwt.NewNumericDate(now),
+			Subject:   userID.String(),
+		},
+	}
 
-    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-    return token.SignedString([]byte(j.SecretKey)) // Используем основной секрет
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(j.SecretKey)) // Используем основной секрет
 }
 
 // ValidatePasswordResetToken проверяет токен для сброса пароля

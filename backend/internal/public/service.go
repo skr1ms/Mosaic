@@ -465,4 +465,3 @@ func (s *PublicService) saveUploadedFile(file *multipart.FileHeader, couponID uu
 	// Реализация сохранения файла будет в image service
 	return path, nil
 }
-

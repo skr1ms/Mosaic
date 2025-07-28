@@ -31,7 +31,7 @@ func UpdatePartnerData(partner *partner.Partner, req *partner.UpdatePartnerReque
 	if req.Address != nil && *req.Address != "" {
 		partner.Address = *req.Address
 	}
-			if req.Phone != nil && *req.Phone != "" {
+	if req.Phone != nil && *req.Phone != "" {
 		partner.Phone = *req.Phone
 	}
 	if req.Telegram != nil && *req.Telegram != "" {

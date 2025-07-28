@@ -26,34 +26,35 @@ func NewCouponHandler(router fiber.Router, deps *CouponHandlerDeps) {
 	}
 
 	api := handler.Group("/coupons")
-	api.Get("/", handler.GetCoupons)                             // Получение списка купонов с фильтрацией
-	api.Get("/:id", handler.GetCouponDetails)                    // Получение деталей купона
-	api.Get("/paginated", handler.GetCouponsPaginated)           // Пагинация списка купонов
-	api.Get("/:id", handler.GetCouponByID)                       // Получение купона по ID
-	api.Get("/code/:code", handler.GetCouponByCode)              // Получение купона по коду
-	api.Post("/code/:code/validate", handler.ValidateCoupon)     // Валидация купона по коду
-	api.Put("/:id/activate", handler.ActivateCoupon)             // Активация купона
-	api.Put("/:id/reset", handler.ResetCoupon)                   // Сброс купона в исходное состояние
-	api.Put("/:id/send-schema", handler.SendSchema)              // Отправка схемы купона на email
-	api.Put("/:id/purchase", handler.MarkAsPurchased)            // Пометка купона как купленного
-	api.Get("/export", handler.ExportCoupons)                    // Экспорт купонов в zip файл
-	api.Get("/statistics", handler.GetStatistics)                // Получение статистики по купонам
-	api.Get("/partner/:partner_id", handler.GetCouponsByPartner) // Получение купонов по ID партнера
+	api.Get("/", handler.GetCoupons)                              // Получение списка купонов с фильтрацией
+	api.Get("/paginated", handler.GetCouponsPaginated)            // Пагинация списка купонов
+	api.Get("/:id", handler.GetCouponByID)                        // Получение купона по ID
+	api.Get("/code/:code", handler.GetCouponByCode)               // Получение купона по коду
+	api.Post("/code/:code/validate", handler.ValidateCoupon)      // Валидация купона по коду
+	api.Put("/:id/activate", handler.ActivateCoupon)              // Активация купона
+	api.Put("/:id/reset", handler.ResetCoupon)                    // Сброс купона в исходное состояние
+	api.Put("/:id/send-schema", handler.SendSchema)               // Отправка схемы купона на email
+	api.Put("/:id/purchase", handler.MarkAsPurchased)             // Пометка купона как купленного
+	api.Get("/export", handler.ExportCoupons)                     // Экспорт купонов в zip файл
+	api.Get("/statistics", handler.GetStatistics)                 // Получение статистики по купонам
+	api.Get("/:id/download-materials", handler.DownloadMaterials) // Скачивание материалов купона
+	api.Get("/partner/:partner_id", handler.GetCouponsByPartner)  // Получение купонов по ID партнера
 }
 
 // GetCoupons возвращает список купонов с фильтрацией
-// @Summary Список купонов с фильтрацией
-// @Description Возвращает список купонов с возможностью фильтрации по коду, статусу, размеру, стилю и партнеру
-// @Tags coupons
-// @Produce json
-// @Param code query string false "Код купона для поиска"
-// @Param status query string false "Статус купона (new, used)"
-// @Param size query string false "Размер купона"
-// @Param style query string false "Стиль купона"
-// @Param partner_id query string false "ID партнера"
-// @Success 200 {array} map[string]interface{} "Список купонов"
-// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
-// @Router /coupons [get]
+//
+//	@Summary		Список купонов с фильтрацией
+//	@Description	Возвращает список купонов с возможностью фильтрации по коду, статусу, размеру, стилю и партнеру
+//	@Tags			coupons
+//	@Produce		json
+//	@Param			code		query		string					false	"Код купона для поиска"
+//	@Param			status		query		string					false	"Статус купона (new, used)"
+//	@Param			size		query		string					false	"Размер купона"
+//	@Param			style		query		string					false	"Стиль купона"
+//	@Param			partner_id	query		string					false	"ID партнера"
+//	@Success		200			{array}		map[string]interface{}	"Список купонов"
+//	@Failure		500			{object}	map[string]interface{}	"Внутренняя ошибка сервера"
+//	@Router			/coupons [get]
 func (handler *CouponHandler) GetCoupons(c *fiber.Ctx) error {
 	// Получаем параметры запроса
 	code := c.Query("code")
@@ -82,32 +83,17 @@ func (handler *CouponHandler) GetCoupons(c *fiber.Ctx) error {
 	return c.JSON(coupons)
 }
 
-// GetCouponDetails возвращает детали купона
-// @Summary Детали купона
-// @Description Возвращает подробную информацию о купоне
-// @Tags coupons
-// @Produce json
-// @Security BearerAuth
-// @Param id path string true "ID купона"
-// @Success 200 {object} map[string]interface{} "Детали купона"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Router /coupons/{id} [get]
-func (handler *CouponHandler) GetCouponDetails(c *fiber.Ctx) error {
-	handler.deps.Logger.Error().Msg(ErrCouponNotFound.Message)
-	return c.Status(ErrCouponNotFound.HTTPStatus).JSON(fiber.Map{"error": ErrCouponNotFound.Error()})
-}
-
 // GetCouponByID возвращает купон по ID
-// @Summary Получение купона по ID
-// @Description Возвращает детальную информацию о купоне по его ID
-// @Tags coupons
-// @Produce json
-// @Param id path string true "ID купона"
-// @Success 200 {object} map[string]interface{} "Информация о купоне"
-// @Failure 400 {object} map[string]interface{} "Неверный ID купона"
-// @Failure 404 {object} map[string]interface{} "Купон не найден"
-// @Router /coupons/{id} [get]
+//
+//	@Summary		Получение купона по ID
+//	@Description	Возвращает детальную информацию о купоне по его ID
+//	@Tags			coupons
+//	@Produce		json
+//	@Param			id	path		string					true	"ID купона"
+//	@Success		200	{object}	map[string]interface{}	"Информация о купоне"
+//	@Failure		400	{object}	map[string]interface{}	"Неверный ID купона"
+//	@Failure		404	{object}	map[string]interface{}	"Купон не найден"
+//	@Router			/coupons/{id} [get]
 func (handler *CouponHandler) GetCouponByID(c *fiber.Ctx) error {
 	// Получаем ID купона
 	idStr := c.Params("id")
@@ -130,14 +116,15 @@ func (handler *CouponHandler) GetCouponByID(c *fiber.Ctx) error {
 }
 
 // GetCouponByCode возвращает купон по коду
-// @Summary Получение купона по коду
-// @Description Возвращает детальную информацию о купоне по его коду
-// @Tags coupons
-// @Produce json
-// @Param code path string true "Код купона"
-// @Success 200 {object} map[string]interface{} "Информация о купоне"
-// @Failure 404 {object} map[string]interface{} "Купон не найден"
-// @Router /coupons/code/{code} [get]
+//
+//	@Summary		Получение купона по коду
+//	@Description	Возвращает детальную информацию о купоне по его коду
+//	@Tags			coupons
+//	@Produce		json
+//	@Param			code	path		string					true	"Код купона"
+//	@Success		200		{object}	map[string]interface{}	"Информация о купоне"
+//	@Failure		404		{object}	map[string]interface{}	"Купон не найден"
+//	@Router			/coupons/code/{code} [get]
 func (handler *CouponHandler) GetCouponByCode(c *fiber.Ctx) error {
 	// Получаем код купона
 	code := c.Params("code")
@@ -156,17 +143,18 @@ func (handler *CouponHandler) GetCouponByCode(c *fiber.Ctx) error {
 }
 
 // ActivateCoupon активирует купон
-// @Summary Активация купона
-// @Description Активирует купон, изменяя его статус на 'used' и добавляя ссылки на изображения
-// @Tags coupons
-// @Accept json
-// @Produce json
-// @Param id path string true "ID купона"
-// @Param request body ActivateCouponRequest true "Ссылки на изображения"
-// @Success 200 {object} map[string]interface{} "Купон активирован"
-// @Failure 400 {object} map[string]interface{} "Неверный ID купона"
-// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
-// @Router /coupons/{id}/activate [put]
+//
+//	@Summary		Активация купона
+//	@Description	Активирует купон, изменяя его статус на 'used' и добавляя ссылки на изображения
+//	@Tags			coupons
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string					true	"ID купона"
+//	@Param			request	body		coupon.ActivateCouponRequest	true	"Ссылки на изображения"
+//	@Success		200		{object}	map[string]interface{}	"Купон активирован"
+//	@Failure		400		{object}	map[string]interface{}	"Неверный ID купона"
+//	@Failure		500		{object}	map[string]interface{}	"Внутренняя ошибка сервера"
+//	@Router			/coupons/{id}/activate [put]
 func (handler *CouponHandler) ActivateCoupon(c *fiber.Ctx) error {
 	// Получаем ID купона
 	idStr := c.Params("id")
@@ -197,15 +185,16 @@ func (handler *CouponHandler) ActivateCoupon(c *fiber.Ctx) error {
 }
 
 // ResetCoupon сбрасывает купон в исходное состояние
-// @Summary Сброс купона
-// @Description Сбрасывает купон в исходное состояние (статус 'new')
-// @Tags coupons
-// @Produce json
-// @Param id path string true "ID купона"
-// @Success 200 {object} map[string]interface{} "Купон сброшен"
-// @Failure 400 {object} map[string]interface{} "Неверный ID купона"
-// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
-// @Router /coupons/{id}/reset [put]
+//
+//	@Summary		Сброс купона
+//	@Description	Сбрасывает купон в исходное состояние (статус 'new')
+//	@Tags			coupons
+//	@Produce		json
+//	@Param			id	path		string					true	"ID купона"
+//	@Success		200	{object}	map[string]interface{}	"Купон сброшен"
+//	@Failure		400	{object}	map[string]interface{}	"Неверный ID купона"
+//	@Failure		500	{object}	map[string]interface{}	"Внутренняя ошибка сервера"
+//	@Router			/coupons/{id}/reset [put]
 func (handler *CouponHandler) ResetCoupon(c *fiber.Ctx) error {
 	// Получаем ID купона
 	idStr := c.Params("id")
@@ -228,17 +217,18 @@ func (handler *CouponHandler) ResetCoupon(c *fiber.Ctx) error {
 }
 
 // SendSchema отправляет схему на email
-// @Summary Отправка схемы на email
-// @Description Отправляет схему купона на указанный email адрес
-// @Tags coupons
-// @Accept json
-// @Produce json
-// @Param id path string true "ID купона"
-// @Param request body SendSchemaRequest true "Email для отправки"
-// @Success 200 {object} map[string]interface{} "Схема отправлена"
-// @Failure 400 {object} map[string]interface{} "Неверный ID купона"
-// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
-// @Router /coupons/{id}/send-schema [put]
+//
+//	@Summary		Отправка схемы на email
+//	@Description	Отправляет схему купона на указанный email адрес
+//	@Tags			coupons
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string					true	"ID купона"
+//	@Param			request	body		coupon.SendSchemaRequest		true	"Email для отправки"
+//	@Success		200		{object}	map[string]interface{}	"Схема отправлена"
+//	@Failure		400		{object}	map[string]interface{}	"Неверный ID купона"
+//	@Failure		500		{object}	map[string]interface{}	"Внутренняя ошибка сервера"
+//	@Router			/coupons/{id}/send-schema [put]
 func (handler *CouponHandler) SendSchema(c *fiber.Ctx) error {
 	// Получаем ID купона
 	idStr := c.Params("id")
@@ -269,17 +259,18 @@ func (handler *CouponHandler) SendSchema(c *fiber.Ctx) error {
 }
 
 // MarkAsPurchased помечает купон как купленный
-// @Summary Пометка купона как купленного
-// @Description Помечает купон как купленный онлайн с указанием email покупателя
-// @Tags coupons
-// @Accept json
-// @Produce json
-// @Param id path string true "ID купона"
-// @Param request body MarkAsPurchasedRequest true "Email покупателя"
-// @Success 200 {object} map[string]interface{} "Купон помечен как купленный"
-// @Failure 400 {object} map[string]interface{} "Неверный ID купона"
-// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
-// @Router /coupons/{id}/purchase [put]
+//
+//	@Summary		Пометка купона как купленного
+//	@Description	Помечает купон как купленный онлайн с указанием email покупателя
+//	@Tags			coupons
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string					true	"ID купона"
+//	@Param			request	body		coupon.MarkAsPurchasedRequest	true	"Email покупателя"
+//	@Success		200		{object}	map[string]interface{}	"Купон помечен как купленный"
+//	@Failure		400		{object}	map[string]interface{}	"Неверный ID купона"
+//	@Failure		500		{object}	map[string]interface{}	"Внутренняя ошибка сервера"
+//	@Router			/coupons/{id}/purchase [put]
 func (handler *CouponHandler) MarkAsPurchased(c *fiber.Ctx) error {
 	// Получаем ID купона
 	idStr := c.Params("id")
@@ -310,14 +301,15 @@ func (handler *CouponHandler) MarkAsPurchased(c *fiber.Ctx) error {
 }
 
 // GetStatistics возвращает статистику по купонам
-// @Summary Статистика по купонам
-// @Description Возвращает статистику по купонам с возможностью фильтрации по партнеру
-// @Tags coupons
-// @Produce json
-// @Param partner_id query string false "ID партнера для фильтрации"
-// @Success 200 {object} map[string]interface{} "Статистика по купонам"
-// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
-// @Router /coupons/statistics [get]
+//
+//	@Summary		Статистика по купонам
+//	@Description	Возвращает статистику по купонам с возможностью фильтрации по партнеру
+//	@Tags			coupons
+//	@Produce		json
+//	@Param			partner_id	query		string					false	"ID партнера для фильтрации"
+//	@Success		200			{object}	map[string]interface{}	"Статистика по купонам"
+//	@Failure		500			{object}	map[string]interface{}	"Внутренняя ошибка сервера"
+//	@Router			/coupons/statistics [get]
 func (handler *CouponHandler) GetStatistics(c *fiber.Ctx) error {
 	// Получаем ID партнера
 	partnerIDStr := c.Query("partner_id")
@@ -344,14 +336,15 @@ func (handler *CouponHandler) GetStatistics(c *fiber.Ctx) error {
 }
 
 // ValidateCoupon проверяет валидность купона без получения полной информации
-// @Summary Валидация купона
-// @Description Проверяет существование и доступность купона для активации
-// @Tags coupons
-// @Produce json
-// @Param code path string true "Код купона"
-// @Success 200 {object} map[string]interface{} "Информация о статусе купона"
-// @Failure 404 {object} map[string]interface{} "Купон не найден"
-// @Router /coupons/code/{code}/validate [post]
+//
+//	@Summary		Валидация купона
+//	@Description	Проверяет существование и доступность купона для активации
+//	@Tags			coupons
+//	@Produce		json
+//	@Param			code	path		string					true	"Код купона"
+//	@Success		200		{object}	map[string]interface{}	"Информация о статусе купона"
+//	@Failure		404		{object}	map[string]interface{}	"Купон не найден"
+//	@Router			/coupons/code/{code}/validate [post]
 func (handler *CouponHandler) ValidateCoupon(c *fiber.Ctx) error {
 	// Получаем код купона
 	code := c.Params("code")
@@ -374,16 +367,17 @@ func (handler *CouponHandler) ValidateCoupon(c *fiber.Ctx) error {
 }
 
 // ExportCoupons экспортирует список купонов в текстовый файл
-// @Summary Экспорт купонов
-// @Description Экспортирует купоны в текстовый файл с фильтрацией
-// @Tags coupons
-// @Produce text/plain
-// @Param partner_id query string false "ID партнера для фильтрации"
-// @Param status query string false "Статус купонов для экспорта"
-// @Param format query string false "Формат экспорта: codes (только коды) или full (полная информация)"
-// @Success 200 {string} string "Текстовый файл с купонами"
-// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
-// @Router /coupons/export [get]
+//
+//	@Summary		Экспорт купонов
+//	@Description	Экспортирует купоны в текстовый файл с фильтрацией
+//	@Tags			coupons
+//	@Produce		text/plain
+//	@Param			partner_id	query		string					false	"ID партнера для фильтрации"
+//	@Param			status		query		string					false	"Статус купонов для экспорта"
+//	@Param			format		query		string					false	"Формат экспорта: codes (только коды) или full (полная информация)"
+//	@Success		200			{string}	string					"Текстовый файл с купонами"
+//	@Failure		500			{object}	map[string]interface{}	"Внутренняя ошибка сервера"
+//	@Router			/coupons/export [get]
 func (handler *CouponHandler) ExportCoupons(c *fiber.Ctx) error {
 	// Получаем параметры запроса
 	partnerIDStr := c.Query("partner_id")
@@ -417,16 +411,17 @@ func (handler *CouponHandler) ExportCoupons(c *fiber.Ctx) error {
 }
 
 // DownloadMaterials скачивает материалы погашенного купона
-// @Summary Скачивание материалов купона
-// @Description Скачивает архив с материалами погашенного купона (оригинал, превью, схема)
-// @Tags coupons
-// @Produce application/zip
-// @Param id path string true "ID купона"
-// @Success 200 {string} string "ZIP архив с материалами"
-// @Failure 400 {object} map[string]interface{} "Неверный ID купона"
-// @Failure 404 {object} map[string]interface{} "Купон не найден или не использован"
-// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
-// @Router /coupons/{id}/download-materials [get]
+//
+//	@Summary		Скачивание материалов купона
+//	@Description	Скачивает архив с материалами погашенного купона (оригинал, превью, схема)
+//	@Tags			coupons
+//	@Produce		application/zip
+//	@Param			id	path		string					true	"ID купона"
+//	@Success		200	{string}	string					"ZIP архив с материалами"
+//	@Failure		400	{object}	map[string]interface{}	"Неверный ID купона"
+//	@Failure		404	{object}	map[string]interface{}	"Купон не найден или не использован"
+//	@Failure		500	{object}	map[string]interface{}	"Внутренняя ошибка сервера"
+//	@Router			/coupons/{id}/download-materials [get]
 func (handler *CouponHandler) DownloadMaterials(c *fiber.Ctx) error {
 	// Получаем ID купона
 	idStr := c.Params("id")
@@ -454,21 +449,22 @@ func (handler *CouponHandler) DownloadMaterials(c *fiber.Ctx) error {
 }
 
 // GetCouponsPaginated возвращает купоны с пагинацией
-// @Summary Список купонов с пагинацией
-// @Description Возвращает список купонов с пагинацией и фильтрацией
-// @Tags coupons
-// @Produce json
-// @Param page query int false "Номер страницы (по умолчанию 1)"
-// @Param limit query int false "Количество элементов на странице (по умолчанию 20, максимум 100)"
-// @Param code query string false "Код купона для поиска"
-// @Param status query string false "Статус купона (new, used)"
-// @Param size query string false "Размер купона"
-// @Param style query string false "Стиль купона"
-// @Param partner_id query string false "ID партнера"
-// @Success 200 {object} map[string]interface{} "Купоны с информацией о пагинации"
-// @Failure 400 {object} map[string]interface{} "Неверные параметры запроса"
-// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
-// @Router /coupons/paginated [get]
+//
+//	@Summary		Список купонов с пагинацией
+//	@Description	Возвращает список купонов с пагинацией и фильтрацией
+//	@Tags			coupons
+//	@Produce		json
+//	@Param			page		query		int						false	"Номер страницы (по умолчанию 1)"
+//	@Param			limit		query		int						false	"Количество элементов на странице (по умолчанию 20, максимум 100)"
+//	@Param			code		query		string					false	"Код купона для поиска"
+//	@Param			status		query		string					false	"Статус купона (new, used)"
+//	@Param			size		query		string					false	"Размер купона"
+//	@Param			style		query		string					false	"Стиль купона"
+//	@Param			partner_id	query		string					false	"ID партнера"
+//	@Success		200			{object}	map[string]interface{}	"Купоны с информацией о пагинации"
+//	@Failure		400			{object}	map[string]interface{}	"Неверные параметры запроса"
+//	@Failure		500			{object}	map[string]interface{}	"Внутренняя ошибка сервера"
+//	@Router			/coupons/paginated [get]
 func (handler *CouponHandler) GetCouponsPaginated(c *fiber.Ctx) error {
 	// Получаем параметры пагинации
 	page := c.QueryInt("page", 1)
@@ -527,18 +523,19 @@ func (handler *CouponHandler) GetCouponsPaginated(c *fiber.Ctx) error {
 }
 
 // GetCouponsByPartner возвращает купоны конкретного партнера
-// @Summary Купоны партнера
-// @Description Возвращает все купоны конкретного партнера с возможностью фильтрации
-// @Tags coupons
-// @Produce json
-// @Param partner_id path string true "ID партнера"
-// @Param status query string false "Статус купонов"
-// @Param size query string false "Размер купонов"
-// @Param style query string false "Стиль купонов"
-// @Success 200 {array} map[string]interface{} "Купоны партнера"
-// @Failure 400 {object} map[string]interface{} "Неверный ID партнера"
-// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
-// @Router /coupons/partner/{partner_id} [get]
+//
+//	@Summary		Купоны партнера
+//	@Description	Возвращает все купоны конкретного партнера с возможностью фильтрации
+//	@Tags			coupons
+//	@Produce		json
+//	@Param			partner_id	path		string					true	"ID партнера"
+//	@Param			status		query		string					false	"Статус купонов"
+//	@Param			size		query		string					false	"Размер купонов"
+//	@Param			style		query		string					false	"Стиль купонов"
+//	@Success		200			{array}		map[string]interface{}	"Купоны партнера"
+//	@Failure		400			{object}	map[string]interface{}	"Неверный ID партнера"
+//	@Failure		500			{object}	map[string]interface{}	"Внутренняя ошибка сервера"
+//	@Router			/coupons/partner/{partner_id} [get]
 func (handler *CouponHandler) GetCouponsByPartner(c *fiber.Ctx) error {
 	partnerIDStr := c.Params("partner_id")
 	partnerID, err := uuid.Parse(partnerIDStr)

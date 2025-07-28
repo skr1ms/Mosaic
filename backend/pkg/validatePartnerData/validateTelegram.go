@@ -16,7 +16,7 @@ func ValidateTelegramLink(fl validator.FieldLevel) bool {
 
 	// Паттерны для Telegram: @username, https://t.me/username, t.me/username
 	patterns := []string{
-		`^@[a-zA-Z0-9_]{5,32}$`,                     // @username
+		`^@[a-zA-Z0-9_]{5,32}$`,                     //	@username
 		`^https://t\.me/[a-zA-Z0-9_]{5,32}$`,        // https://t.me/username
 		`^t\.me/[a-zA-Z0-9_]{5,32}$`,                // t.me/username
 		`^https://telegram\.me/[a-zA-Z0-9_]{5,32}$`, // https://telegram.me/username

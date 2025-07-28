@@ -1,25 +1,25 @@
 package main
 
-// @title Mosaic API
-// @version 1.0
-// @description API для системы мозаичных купонов
-// @termsOfService http://swagger.io/terms/
+//	@title			Mosaic API
+//	@version		1.0
+//	@description	API для системы мозаичных купонов
+//	@termsOfService	http://swagger.io/terms/
 
-// @contact.name API Support
-// @contact.url http://www.swagger.io/support
-// @contact.email support@swagger.io
+//	@contact.name	API Support
+//	@contact.url	http://www.swagger.io/support
+//	@contact.email	support@swagger.io
 
-// @license.name MIT
-// @license.url https://opensource.org/licenses/MIT
+//	@license.name	MIT
+//	@license.url	https://opensource.org/licenses/MIT
 
-// @host localhost:3000
-// @BasePath /api
-// @schemes http https
+//	@host		localhost:3000
+//	@BasePath	/api
+//	@schemes	http https
 
-// @securityDefinitions.apikey BearerAuth
-// @in header
-// @name Authorization
-// @description Type "Bearer" followed by a space and JWT token.
+//	@securityDefinitions.apikey	BearerAuth
+//	@in							header
+//	@name						Authorization
+//	@description				Type "Bearer" followed by a space and JWT token.
 
 import (
 	"os"

@@ -84,19 +84,20 @@ func NewAdminHandler(router fiber.Router, deps *AdminHandlerDeps) {
 }
 
 // CreateAdmin создает нового администратора
-// @Summary Создание администратора
-// @Description Создает нового администратора (только для существующих администраторов)
-// @Tags admin-management
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param admin body CreateAdminRequest true "Данные нового администратора"
-// @Success 201 {object} map[string]interface{} "Администратор создан"
-// @Failure 400 {object} map[string]interface{} "Ошибка в запросе"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
-// @Router /admin/admins [post]
+//
+//	@Summary		Создание администратора
+//	@Description	Создает нового администратора (только для существующих администраторов)
+//	@Tags			admin-management
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			admin	body		CreateAdminRequest		true	"Данные нового администратора"
+//	@Success		201		{object}	map[string]interface{}	"Администратор создан"
+//	@Failure		400		{object}	map[string]interface{}	"Ошибка в запросе"
+//	@Failure		401		{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403		{object}	map[string]interface{}	"Нет прав доступа"
+//	@Failure		500		{object}	map[string]interface{}	"Внутренняя ошибка сервера"
+//	@Router			/admin/admins [post]
 func (handler *AdminHandler) CreateAdmin(c *fiber.Ctx) error {
 	var payload CreateAdminRequest
 
@@ -125,16 +126,17 @@ func (handler *AdminHandler) CreateAdmin(c *fiber.Ctx) error {
 }
 
 // GetAdmins возвращает список всех администраторов
-// @Summary Список администраторов
-// @Description Возвращает список всех администраторов
-// @Tags admin-management
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {array} map[string]interface{} "Список администраторов"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
-// @Router /admin/admins [get]
+//
+//	@Summary		Список администраторов
+//	@Description	Возвращает список всех администраторов
+//	@Tags			admin-management
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{array}		map[string]interface{}	"Список администраторов"
+//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
+//	@Failure		500	{object}	map[string]interface{}	"Внутренняя ошибка сервера"
+//	@Router			/admin/admins [get]
 func (handler *AdminHandler) GetAdmins(c *fiber.Ctx) error {
 	admins, err := handler.deps.AdminService.GetAdmins()
 	if err != nil {
@@ -156,15 +158,16 @@ func (handler *AdminHandler) GetAdmins(c *fiber.Ctx) error {
 }
 
 // GetDashboard возвращает данные для дашборда администратора
-// @Summary Дашборд администратора
-// @Description Возвращает данные для главной страницы администратора
-// @Tags admin-dashboard
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {object} map[string]interface{} "Данные дашборда"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Router /admin/dashboard [get]
+//
+//	@Summary		Дашборд администратора
+//	@Description	Возвращает данные для главной страницы администратора
+//	@Tags			admin-dashboard
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	map[string]interface{}	"Данные дашборда"
+//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
+//	@Router			/admin/dashboard [get]
 func (handler *AdminHandler) GetDashboard(c *fiber.Ctx) error {
 	dashboardData, err := handler.deps.AdminService.GetDashboardData()
 	if err != nil {
@@ -176,17 +179,18 @@ func (handler *AdminHandler) GetDashboard(c *fiber.Ctx) error {
 }
 
 // GetPartners возвращает список партнеров с поддержкой фильтрации
-// @Summary Список партнеров
-// @Description Возвращает список всех партнеров с возможностью фильтрации и поиска
-// @Tags admin-partners
-// @Produce json
-// @Security BearerAuth
-// @Param search query string false "Поиск по названию бренда, домену или email"
-// @Param status query string false "Фильтр по статусу (active/blocked)"
-// @Success 200 {object} map[string]interface{} "Список партнеров"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Router /admin/partners [get]
+//
+//	@Summary		Список партнеров
+//	@Description	Возвращает список всех партнеров с возможностью фильтрации и поиска
+//	@Tags			admin-partners
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			search	query		string					false	"Поиск по названию бренда, домену или email"
+//	@Param			status	query		string					false	"Фильтр по статусу (active/blocked)"
+//	@Success		200		{object}	map[string]interface{}	"Список партнеров"
+//	@Failure		401		{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403		{object}	map[string]interface{}	"Нет прав доступа"
+//	@Router			/admin/partners [get]
 func (handler *AdminHandler) GetPartners(c *fiber.Ctx) error {
 	search := c.Query("search")
 	status := c.Query("status")
@@ -228,20 +232,21 @@ func (handler *AdminHandler) GetPartners(c *fiber.Ctx) error {
 }
 
 // CreatePartner создает нового партнера
-// @Summary Создание партнера
-// @Description Создает нового партнера с автоматически генерируемым кодом (начиная с 0001, 0000 зарезервирован для собственных купонов)
-// @Tags admin-partners
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param partner body CreatePartnerRequest true "Данные нового партнера"
-// @Success 201 {object} map[string]interface{} "Партнер создан"
-// @Failure 400 {object} map[string]interface{} "Ошибка в запросе"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Failure 409 {object} map[string]interface{} "Партнер с таким логином/доменом уже существует"
-// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
-// @Router /admin/partners [post]
+//
+//	@Summary		Создание партнера
+//	@Description	Создает нового партнера с автоматически генерируемым кодом (начиная с 0001, 0000 зарезервирован для собственных купонов)
+//	@Tags			admin-partners
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			partner	body		partner.CreatePartnerRequest	true	"Данные нового партнера"
+//	@Success		201		{object}	map[string]interface{}	"Партнер создан"
+//	@Failure		400		{object}	map[string]interface{}	"Ошибка в запросе"
+//	@Failure		401		{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403		{object}	map[string]interface{}	"Нет прав доступа"
+//	@Failure		409		{object}	map[string]interface{}	"Партнер с таким логином/доменом уже существует"
+//	@Failure		500		{object}	map[string]interface{}	"Внутренняя ошибка сервера"
+//	@Router			/admin/partners [post]
 func (handler *AdminHandler) CreatePartner(c *fiber.Ctx) error {
 	var req partner.CreatePartnerRequest
 
@@ -312,18 +317,19 @@ func (handler *AdminHandler) CreatePartner(c *fiber.Ctx) error {
 }
 
 // GetPartner возвращает детальную информацию о партнере
-// @Summary Детальная информация о партнере
-// @Description Возвращает детальную информацию о партнере по ID
-// @Tags admin-partners
-// @Produce json
-// @Security BearerAuth
-// @Param id path string true "ID партнера"
-// @Success 200 {object} map[string]interface{} "Информация о партнере"
-// @Failure 400 {object} map[string]interface{} "Неверный ID"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Failure 404 {object} map[string]interface{} "Партнер не найден"
-// @Router /admin/partners/{id} [get]
+//
+//	@Summary		Детальная информация о партнере
+//	@Description	Возвращает детальную информацию о партнере по ID
+//	@Tags			admin-partners
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path		string					true	"ID партнера"
+//	@Success		200	{object}	map[string]interface{}	"Информация о партнере"
+//	@Failure		400	{object}	map[string]interface{}	"Неверный ID"
+//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
+//	@Failure		404	{object}	map[string]interface{}	"Партнер не найден"
+//	@Router			/admin/partners/{id} [get]
 func (handler *AdminHandler) GetPartner(c *fiber.Ctx) error {
 	partnerID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
@@ -379,17 +385,18 @@ func (handler *AdminHandler) GetPartner(c *fiber.Ctx) error {
 }
 
 // UpdatePartner обновляет партнера
-// @Summary Обновление партнера
-// @Description Обновляет данные партнера
-// @Tags admin-partners
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param id path string true "ID партнера"
-// @Success 200 {object} map[string]interface{} "Партнер обновлен"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Router /admin/partners/{id} [put]
+//
+//	@Summary		Обновление партнера
+//	@Description	Обновляет данные партнера
+//	@Tags			admin-partners
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path		string					true	"ID партнера"
+//	@Success		200	{object}	map[string]interface{}	"Партнер обновлен"
+//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
+//	@Router			/admin/partners/{id} [put]
 func (handler *AdminHandler) UpdatePartner(c *fiber.Ctx) error {
 	var req partner.UpdatePartnerRequest
 
@@ -425,18 +432,19 @@ func (handler *AdminHandler) UpdatePartner(c *fiber.Ctx) error {
 }
 
 // BlockPartner блокирует партнера
-// @Summary Блокировка партнера
-// @Description Блокирует партнера (временное отключение доступа)
-// @Tags admin-partners
-// @Produce json
-// @Security BearerAuth
-// @Param id path string true "ID партнера"
-// @Success 200 {object} map[string]interface{} "Партнер заблокирован"
-// @Failure 400 {object} map[string]interface{} "Неверный ID"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Failure 404 {object} map[string]interface{} "Партнер не найден"
-// @Router /admin/partners/{id}/block [patch]
+//
+//	@Summary		Блокировка партнера
+//	@Description	Блокирует партнера (временное отключение доступа)
+//	@Tags			admin-partners
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path		string					true	"ID партнера"
+//	@Success		200	{object}	map[string]interface{}	"Партнер заблокирован"
+//	@Failure		400	{object}	map[string]interface{}	"Неверный ID"
+//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
+//	@Failure		404	{object}	map[string]interface{}	"Партнер не найден"
+//	@Router			/admin/partners/{id}/block [patch]
 func (handler *AdminHandler) BlockPartner(c *fiber.Ctx) error {
 	partnerID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
@@ -458,18 +466,19 @@ func (handler *AdminHandler) BlockPartner(c *fiber.Ctx) error {
 }
 
 // UnblockPartner разблокирует партнера
-// @Summary Разблокировка партнера
-// @Description Разблокирует партнера (восстановление доступа)
-// @Tags admin-partners
-// @Produce json
-// @Security BearerAuth
-// @Param id path string true "ID партнера"
-// @Success 200 {object} map[string]interface{} "Партнер разблокирован"
-// @Failure 400 {object} map[string]interface{} "Неверный ID"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Failure 404 {object} map[string]interface{} "Партнер не найден"
-// @Router /admin/partners/{id}/unblock [patch]
+//
+//	@Summary		Разблокировка партнера
+//	@Description	Разблокирует партнера (восстановление доступа)
+//	@Tags			admin-partners
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path		string					true	"ID партнера"
+//	@Success		200	{object}	map[string]interface{}	"Партнер разблокирован"
+//	@Failure		400	{object}	map[string]interface{}	"Неверный ID"
+//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
+//	@Failure		404	{object}	map[string]interface{}	"Партнер не найден"
+//	@Router			/admin/partners/{id}/unblock [patch]
 func (handler *AdminHandler) UnblockPartner(c *fiber.Ctx) error {
 	partnerID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
@@ -491,19 +500,20 @@ func (handler *AdminHandler) UnblockPartner(c *fiber.Ctx) error {
 }
 
 // DeletePartner удаляет партнера
-// @Summary Удаление партнера
-// @Description Удаляет партнера по ID с удалением всех связанных данных
-// @Tags admin-partners
-// @Produce json
-// @Security BearerAuth
-// @Param id path string true "ID партнера"
-// @Param confirm query boolean false "Подтверждение удаления (true/false)"
-// @Success 200 {object} map[string]interface{} "Партнер удален"
-// @Failure 400 {object} map[string]interface{} "Неверный ID или требуется подтверждение"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Failure 404 {object} map[string]interface{} "Партнер не найден"
-// @Router /admin/partners/{id} [delete]
+//
+//	@Summary		Удаление партнера
+//	@Description	Удаляет партнера по ID с удалением всех связанных данных
+//	@Tags			admin-partners
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id		path		string					true	"ID партнера"
+//	@Param			confirm	query		boolean					false	"Подтверждение удаления (true/false)"
+//	@Success		200		{object}	map[string]interface{}	"Партнер удален"
+//	@Failure		400		{object}	map[string]interface{}	"Неверный ID или требуется подтверждение"
+//	@Failure		401		{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403		{object}	map[string]interface{}	"Нет прав доступа"
+//	@Failure		404		{object}	map[string]interface{}	"Партнер не найден"
+//	@Router			/admin/partners/{id} [delete]
 func (handler *AdminHandler) DeletePartner(c *fiber.Ctx) error {
 	partnerID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
@@ -564,17 +574,18 @@ func (handler *AdminHandler) DeletePartner(c *fiber.Ctx) error {
 }
 
 // GetPartnerStatistics возвращает статистику конкретного партнера
-// @Summary Статистика партнера
-// @Description Возвращает детальную статистику по конкретному партнеру
-// @Tags admin-partners
-// @Produce json
-// @Security BearerAuth
-// @Param id path string true "ID партнера"
-// @Success 200 {object} map[string]interface{} "Статистика партнера"
-// @Failure 400 {object} map[string]interface{} "Неверный ID"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Router /admin/partners/{id}/statistics [get]
+//
+//	@Summary		Статистика партнера
+//	@Description	Возвращает детальную статистику по конкретному партнеру
+//	@Tags			admin-partners
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path		string					true	"ID партнера"
+//	@Success		200	{object}	map[string]interface{}	"Статистика партнера"
+//	@Failure		400	{object}	map[string]interface{}	"Неверный ID"
+//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
+//	@Router			/admin/partners/{id}/statistics [get]
 func (handler *AdminHandler) GetPartnerStatistics(c *fiber.Ctx) error {
 	partnerID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
@@ -618,22 +629,23 @@ func (handler *AdminHandler) GetPartnerStatistics(c *fiber.Ctx) error {
 }
 
 // GetCoupons возвращает список купонов с поддержкой фильтрации
-// @Summary Список купонов
-// @Description Возвращает список всех купонов с возможностью фильтрации
-// @Tags admin-coupons
-// @Produce json
-// @Security BearerAuth
-// @Param search query string false "Поиск по номеру купона"
-// @Param partner_id query string false "ID партнера для фильтрации"
-// @Param status query string false "Статус для фильтрации (new/used)"
-// @Param size query string false "Размер для фильтрации"
-// @Param style query string false "Стиль для фильтрации"
-// @Param limit query int false "Количество записей на странице (по умолчанию 50)"
-// @Param offset query int false "Смещение для пагинации (по умолчанию 0)"
-// @Success 200 {object} map[string]interface{} "Список купонов"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Router /admin/coupons [get]
+//
+//	@Summary		Список купонов
+//	@Description	Возвращает список всех купонов с возможностью фильтрации
+//	@Tags			admin-coupons
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			search		query		string					false	"Поиск по номеру купона"
+//	@Param			partner_id	query		string					false	"ID партнера для фильтрации"
+//	@Param			status		query		string					false	"Статус для фильтрации (new/used)"
+//	@Param			size		query		string					false	"Размер для фильтрации"
+//	@Param			style		query		string					false	"Стиль для фильтрации"
+//	@Param			limit		query		int						false	"Количество записей на странице (по умолчанию 50)"
+//	@Param			offset		query		int						false	"Смещение для пагинации (по умолчанию 0)"
+//	@Success		200			{object}	map[string]interface{}	"Список купонов"
+//	@Failure		401			{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403			{object}	map[string]interface{}	"Нет прав доступа"
+//	@Router			/admin/coupons [get]
 func (handler *AdminHandler) GetCoupons(c *fiber.Ctx) error {
 	// Получаем параметры фильтрации
 	filters := map[string]any{}
@@ -704,28 +716,29 @@ func (handler *AdminHandler) GetCoupons(c *fiber.Ctx) error {
 }
 
 // GetCouponsPaginated возвращает купоны с пагинацией для админ панели
-// @Summary Список купонов с пагинацией для админа
-// @Description Возвращает список купонов с пагинацией и расширенной фильтрацией для административной панели
-// @Tags admin-coupons
-// @Produce json
-// @Security BearerAuth
-// @Param page query int false "Номер страницы (по умолчанию 1)"
-// @Param limit query int false "Количество элементов на странице (по умолчанию 20, максимум 100)"
-// @Param search query string false "Поиск по коду купона"
-// @Param partner_id query string false "ID партнера"
-// @Param status query string false "Статус купона (new, used)"
-// @Param size query string false "Размер купона"
-// @Param style query string false "Стиль купона"
-// @Param created_from query string false "Дата создания от (RFC3339)"
-// @Param created_to query string false "Дата создания до (RFC3339)"
-// @Param used_from query string false "Дата активации от (RFC3339)"
-// @Param used_to query string false "Дата активации до (RFC3339)"
-// @Success 200 {object} map[string]interface{} "Купоны с информацией о пагинации"
-// @Failure 400 {object} map[string]interface{} "Неверные параметры запроса"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
-// @Router /admin/coupons/paginated [get]
+//
+//	@Summary		Список купонов с пагинацией для админа
+//	@Description	Возвращает список купонов с пагинацией и расширенной фильтрацией для административной панели
+//	@Tags			admin-coupons
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			page			query		int						false	"Номер страницы (по умолчанию 1)"
+//	@Param			limit			query		int						false	"Количество элементов на странице (по умолчанию 20, максимум 100)"
+//	@Param			search			query		string					false	"Поиск по коду купона"
+//	@Param			partner_id		query		string					false	"ID партнера"
+//	@Param			status			query		string					false	"Статус купона (new, used)"
+//	@Param			size			query		string					false	"Размер купона"
+//	@Param			style			query		string					false	"Стиль купона"
+//	@Param			created_from	query		string					false	"Дата создания от (RFC3339)"
+//	@Param			created_to		query		string					false	"Дата создания до (RFC3339)"
+//	@Param			used_from		query		string					false	"Дата активации от (RFC3339)"
+//	@Param			used_to			query		string					false	"Дата активации до (RFC3339)"
+//	@Success		200				{object}	map[string]interface{}	"Купоны с информацией о пагинации"
+//	@Failure		400				{object}	map[string]interface{}	"Неверные параметры запроса"
+//	@Failure		401				{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403				{object}	map[string]interface{}	"Нет прав доступа"
+//	@Failure		500				{object}	map[string]interface{}	"Внутренняя ошибка сервера"
+//	@Router			/admin/coupons/paginated [get]
 func (handler *AdminHandler) GetCouponsPaginated(c *fiber.Ctx) error {
 	page := c.QueryInt("page", 1)
 	limit := c.QueryInt("limit", 20)
@@ -812,19 +825,20 @@ func (handler *AdminHandler) GetCouponsPaginated(c *fiber.Ctx) error {
 }
 
 // CreateCoupons создает новые купоны
-// @Summary Создание купонов
-// @Description Создает новые купоны в пакетном режиме
-// @Tags admin-coupons
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param request body CreateCouponsRequest true "Параметры создания купонов"
-// @Success 201 {object} map[string]interface{} "Купоны созданы"
-// @Failure 400 {object} map[string]interface{} "Ошибка в запросе"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
-// @Router /admin/coupons [post]
+//
+//	@Summary		Создание купонов
+//	@Description	Создает новые купоны в пакетном режиме
+//	@Tags			admin-coupons
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			request	body		coupon.CreateCouponRequest	true	"Параметры создания купонов"
+//	@Success		201		{object}	map[string]interface{}	"Купоны созданы"
+//	@Failure		400		{object}	map[string]interface{}	"Ошибка в запросе"
+//	@Failure		401		{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403		{object}	map[string]interface{}	"Нет прав доступа"
+//	@Failure		500		{object}	map[string]interface{}	"Внутренняя ошибка сервера"
+//	@Router			/admin/coupons [post]
 func (handler *AdminHandler) CreateCoupons(c *fiber.Ctx) error {
 	var req coupon.CreateCouponRequest
 
@@ -891,21 +905,22 @@ func (handler *AdminHandler) CreateCoupons(c *fiber.Ctx) error {
 }
 
 // ExportCoupons экспортирует список купонов в файл
-// @Summary Экспорт купонов
-// @Description Экспортирует список купонов в файл (поддерживаются форматы txt и csv)
-// @Tags admin-coupons
-// @Produce text/plain,text/csv
-// @Security BearerAuth
-// @Param format query string false "Формат экспорта (txt или csv)" default(txt)
-// @Param filename query string false "Имя файла (без расширения)"
-// @Param partner_id query string false "ID партнера для фильтрации"
-// @Param status query string false "Статус для фильтрации (new/used)"
-// @Param size query string false "Размер для фильтрации"
-// @Param style query string false "Стиль для фильтрации"
-// @Success 200 {string} string "Файл с купонами"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Router /admin/coupons/export [get]
+//
+//	@Summary		Экспорт купонов
+//	@Description	Экспортирует список купонов в файл (поддерживаются форматы txt и csv)
+//	@Tags			admin-coupons
+//	@Produce		text/plain,text/csv
+//	@Security		BearerAuth
+//	@Param			format		query		string					false	"Формат экспорта (txt или csv)"	default(txt)
+//	@Param			filename	query		string					false	"Имя файла (без расширения)"
+//	@Param			partner_id	query		string					false	"ID партнера для фильтрации"
+//	@Param			status		query		string					false	"Статус для фильтрации (new/used)"
+//	@Param			size		query		string					false	"Размер для фильтрации"
+//	@Param			style		query		string					false	"Стиль для фильтрации"
+//	@Success		200			{string}	string					"Файл с купонами"
+//	@Failure		401			{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403			{object}	map[string]interface{}	"Нет прав доступа"
+//	@Router			/admin/coupons/export [get]
 func (handler *AdminHandler) ExportCoupons(c *fiber.Ctx) error {
 	format := strings.ToLower(c.Query("format", "txt"))
 	if format != "txt" && format != "csv" {
@@ -1008,20 +1023,21 @@ func (handler *AdminHandler) ExportCoupons(c *fiber.Ctx) error {
 }
 
 // ExportPartnerCoupons экспортирует купоны конкретного партнера
-// @Summary Экспорт купонов партнера для админа
-// @Description Экспортирует купоны конкретного партнера со статусом "new" в формате .txt или .csv
-// @Tags admin-coupons
-// @Produce text/plain,text/csv
-// @Security BearerAuth
-// @Param id path string true "ID партнера"
-// @Param format query string false "Формат файла (txt или csv)" default(txt)
-// @Success 200 {string} string "Файл с купонами партнера"
-// @Failure 400 {object} map[string]interface{} "Неверный ID партнера"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Failure 404 {object} map[string]interface{} "Партнер не найден"
-// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
-// @Router /admin/coupons/export/partner/{id} [get]
+//
+//	@Summary		Экспорт купонов партнера для админа
+//	@Description	Экспортирует купоны конкретного партнера со статусом "new" в формате .txt или .csv
+//	@Tags			admin-coupons
+//	@Produce		text/plain,text/csv
+//	@Security		BearerAuth
+//	@Param			id		path		string					true	"ID партнера"
+//	@Param			format	query		string					false	"Формат файла (txt или csv)"	default(txt)
+//	@Success		200		{string}	string					"Файл с купонами партнера"
+//	@Failure		400		{object}	map[string]interface{}	"Неверный ID партнера"
+//	@Failure		401		{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403		{object}	map[string]interface{}	"Нет прав доступа"
+//	@Failure		404		{object}	map[string]interface{}	"Партнер не найден"
+//	@Failure		500		{object}	map[string]interface{}	"Внутренняя ошибка сервера"
+//	@Router			/admin/coupons/export/partner/{id} [get]
 func (handler *AdminHandler) ExportPartnerCoupons(c *fiber.Ctx) error {
 	partnerIDStr := c.Params("id")
 	partnerID, err := uuid.Parse(partnerIDStr)
@@ -1114,19 +1130,20 @@ func (handler *AdminHandler) ExportPartnerCoupons(c *fiber.Ctx) error {
 }
 
 // BatchDeleteCoupons массово удаляет купоны для админ панели
-// @Summary Массовое удаление купонов для админа
-// @Description Удаляет множество купонов по их ID в административной панели
-// @Tags admin-coupons
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param request body map[string][]string true "Список ID купонов для удаления"
-// @Success 200 {object} map[string]interface{} "Результат массового удаления"
-// @Failure 400 {object} map[string]interface{} "Ошибка в запросе"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
-// @Router /admin/coupons/batch-delete [post]
+//
+//	@Summary		Массовое удаление купонов для админа
+//	@Description	Удаляет множество купонов по их ID в административной панели
+//	@Tags			admin-coupons
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			request	body		map[string][]string		true	"Список ID купонов для удаления"
+//	@Success		200		{object}	map[string]interface{}	"Результат массового удаления"
+//	@Failure		400		{object}	map[string]interface{}	"Ошибка в запросе"
+//	@Failure		401		{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403		{object}	map[string]interface{}	"Нет прав доступа"
+//	@Failure		500		{object}	map[string]interface{}	"Внутренняя ошибка сервера"
+//	@Router			/admin/coupons/batch-delete [post]
 func (handler *AdminHandler) BatchDeleteCoupons(c *fiber.Ctx) error {
 	var req struct {
 		CouponIDs []string `json:"coupon_ids" validate:"required,min=1"`
@@ -1175,18 +1192,19 @@ func (handler *AdminHandler) BatchDeleteCoupons(c *fiber.Ctx) error {
 }
 
 // GetCoupon возвращает детальную информацию о купоне
-// @Summary Детальная информация о купоне
-// @Description Возвращает детальную информацию о купоне по ID
-// @Tags admin-coupons
-// @Produce json
-// @Security BearerAuth
-// @Param id path string true "ID купона"
-// @Success 200 {object} map[string]interface{} "Информация о купоне"
-// @Failure 400 {object} map[string]interface{} "Неверный ID"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Failure 404 {object} map[string]interface{} "Купон не найден"
-// @Router /admin/coupons/{id} [get]
+//
+//	@Summary		Детальная информация о купоне
+//	@Description	Возвращает детальную информацию о купоне по ID
+//	@Tags			admin-coupons
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path		string					true	"ID купона"
+//	@Success		200	{object}	map[string]interface{}	"Информация о купоне"
+//	@Failure		400	{object}	map[string]interface{}	"Неверный ID"
+//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
+//	@Failure		404	{object}	map[string]interface{}	"Купон не найден"
+//	@Router			/admin/coupons/{id} [get]
 func (handler *AdminHandler) GetCoupon(c *fiber.Ctx) error {
 	couponID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
@@ -1231,18 +1249,19 @@ func (handler *AdminHandler) GetCoupon(c *fiber.Ctx) error {
 }
 
 // ResetCoupon сбрасывает купон в статус "новый"
-// @Summary Сброс купона
-// @Description Сбрасывает купон в статус "новый" с удалением всех данных активации
-// @Tags admin-coupons
-// @Produce json
-// @Security BearerAuth
-// @Param id path string true "ID купона"
-// @Success 200 {object} map[string]interface{} "Купон сброшен"
-// @Failure 400 {object} map[string]interface{} "Неверный ID"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Failure 404 {object} map[string]interface{} "Купон не найден"
-// @Router /admin/coupons/{id}/reset [patch]
+//
+//	@Summary		Сброс купона
+//	@Description	Сбрасывает купон в статус "новый" с удалением всех данных активации
+//	@Tags			admin-coupons
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path		string					true	"ID купона"
+//	@Success		200	{object}	map[string]interface{}	"Купон сброшен"
+//	@Failure		400	{object}	map[string]interface{}	"Неверный ID"
+//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
+//	@Failure		404	{object}	map[string]interface{}	"Купон не найден"
+//	@Router			/admin/coupons/{id}/reset [patch]
 func (handler *AdminHandler) ResetCoupon(c *fiber.Ctx) error {
 	couponID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
@@ -1259,19 +1278,20 @@ func (handler *AdminHandler) ResetCoupon(c *fiber.Ctx) error {
 }
 
 // DeleteCoupon удаляет купон
-// @Summary Удаление купона
-// @Description Удаляет купон по ID с подтверждением
-// @Tags admin-coupons
-// @Produce json
-// @Security BearerAuth
-// @Param id path string true "ID купона"
-// @Param confirm query boolean false "Подтверждение удаления (true/false)"
-// @Success 200 {object} map[string]interface{} "Купон удален"
-// @Failure 400 {object} map[string]interface{} "Неверный ID или требуется подтверждение"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Failure 404 {object} map[string]interface{} "Купон не найден"
-// @Router /admin/coupons/{id} [delete]
+//
+//	@Summary		Удаление купона
+//	@Description	Удаляет купон по ID с подтверждением
+//	@Tags			admin-coupons
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id		path		string					true	"ID купона"
+//	@Param			confirm	query		boolean					false	"Подтверждение удаления (true/false)"
+//	@Success		200		{object}	map[string]interface{}	"Купон удален"
+//	@Failure		400		{object}	map[string]interface{}	"Неверный ID или требуется подтверждение"
+//	@Failure		401		{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403		{object}	map[string]interface{}	"Нет прав доступа"
+//	@Failure		404		{object}	map[string]interface{}	"Купон не найден"
+//	@Router			/admin/coupons/{id} [delete]
 func (handler *AdminHandler) DeleteCoupon(c *fiber.Ctx) error {
 	couponID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
@@ -1320,15 +1340,16 @@ func (handler *AdminHandler) DeleteCoupon(c *fiber.Ctx) error {
 }
 
 // GetStatistics возвращает общую статистику
-// @Summary Общая статистика
-// @Description Возвращает общую статистику по системе
-// @Tags admin-statistics
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {object} map[string]interface{} "Статистика"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Router /admin/statistics [get]
+//
+//	@Summary		Общая статистика
+//	@Description	Возвращает общую статистику по системе
+//	@Tags			admin-statistics
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	map[string]interface{}	"Статистика"
+//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
+//	@Router			/admin/statistics [get]
 func (handler *AdminHandler) GetStatistics(c *fiber.Ctx) error {
 	// Общее количество купонов
 	var totalCoupons int64
@@ -1371,15 +1392,16 @@ func (handler *AdminHandler) GetStatistics(c *fiber.Ctx) error {
 }
 
 // GetPartnersStatistics возвращает детальную статистику по всем партнерам
-// @Summary Статистика по партнерам
-// @Description Возвращает детальную статистику по всем партнерам
-// @Tags admin-statistics
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {object} map[string]interface{} "Статистика по партнерам"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Router /admin/statistics/partners [get]
+//
+//	@Summary		Статистика по партнерам
+//	@Description	Возвращает детальную статистику по всем партнерам
+//	@Tags			admin-statistics
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	map[string]interface{}	"Статистика по партнерам"
+//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
+//	@Router			/admin/statistics/partners [get]
 func (handler *AdminHandler) GetPartnersStatistics(c *fiber.Ctx) error {
 	partners, err := handler.deps.AdminService.deps.PartnerRepository.GetAll(context.Background())
 	if err != nil {
@@ -1416,19 +1438,20 @@ func (handler *AdminHandler) GetPartnersStatistics(c *fiber.Ctx) error {
 }
 
 // ChangePassword изменяет пароль администратора
-// @Summary Смена пароля
-// @Description Изменяет пароль текущего администратора
-// @Tags admin-profile
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param password body ChangePasswordRequest true "Данные для смены пароля"
-// @Success 200 {object} map[string]interface{} "Пароль изменен"
-// @Failure 400 {object} map[string]interface{} "Ошибка в запросе"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Неверный текущий пароль"
-// @Failure 500 {object} map[string]interface{} "Внутренняя ошибка сервера"
-// @Router /admin/profile/password [put]
+//
+//	@Summary		Смена пароля
+//	@Description	Изменяет пароль текущего администратора
+//	@Tags			admin-profile
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			password	body		ChangePasswordRequest	true	"Данные для смены пароля"
+//	@Success		200			{object}	map[string]interface{}	"Пароль изменен"
+//	@Failure		400			{object}	map[string]interface{}	"Ошибка в запросе"
+//	@Failure		401			{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403			{object}	map[string]interface{}	"Неверный текущий пароль"
+//	@Failure		500			{object}	map[string]interface{}	"Внутренняя ошибка сервера"
+//	@Router			/admin/profile/password [put]
 func (handler *AdminHandler) ChangePassword(c *fiber.Ctx) error {
 	var req ChangePasswordRequest
 
@@ -1462,15 +1485,16 @@ func (handler *AdminHandler) ChangePassword(c *fiber.Ctx) error {
 }
 
 // GetSystemStatistics возвращает системную статистику
-// @Summary Системная статистика
-// @Description Возвращает детальную статистику системы: производительность, нагрузка, состояние очереди
-// @Tags admin-statistics
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {object} map[string]interface{} "Системная статистика"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Router /admin/statistics/system [get]
+//
+//	@Summary		Системная статистика
+//	@Description	Возвращает детальную статистику системы: производительность, нагрузка, состояние очереди
+//	@Tags			admin-statistics
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	map[string]interface{}	"Системная статистика"
+//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
+//	@Router			/admin/statistics/system [get]
 func (handler *AdminHandler) GetSystemStatistics(c *fiber.Ctx) error {
 	// Здесь будет логика получения системной статистики:
 	// - Состояние очереди обработки изображений
@@ -1506,15 +1530,16 @@ func (handler *AdminHandler) GetSystemStatistics(c *fiber.Ctx) error {
 }
 
 // GetAnalytics возвращает аналитику
-// @Summary Аналитика
-// @Description Возвращает детальную аналитику по использованию системы
-// @Tags admin-statistics
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {object} map[string]interface{} "Аналитика"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Router /admin/statistics/analytics [get]
+//
+//	@Summary		Аналитика
+//	@Description	Возвращает детальную аналитику по использованию системы
+//	@Tags			admin-statistics
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	map[string]interface{}	"Аналитика"
+//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
+//	@Router			/admin/statistics/analytics [get]
 func (handler *AdminHandler) GetAnalytics(c *fiber.Ctx) error {
 	// Здесь будет логика получения аналитики:
 	// - Топ партнеры
@@ -1560,15 +1585,16 @@ func (handler *AdminHandler) GetAnalytics(c *fiber.Ctx) error {
 }
 
 // GetDashboardStatistics возвращает статистику для дашборда
-// @Summary Статистика дашборда
-// @Description Возвращает основную статистику для отображения на дашборде администратора
-// @Tags admin-statistics
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {object} map[string]interface{} "Статистика дашборда"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Router /admin/statistics/dashboard [get]
+//
+//	@Summary		Статистика дашборда
+//	@Description	Возвращает основную статистику для отображения на дашборде администратора
+//	@Tags			admin-statistics
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	map[string]interface{}	"Статистика дашборда"
+//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
+//	@Router			/admin/statistics/dashboard [get]
 func (handler *AdminHandler) GetDashboardStatistics(c *fiber.Ctx) error {
 	// Здесь будет логика получения статистики для дашборда:
 	// - Ключевые метрики
@@ -1615,19 +1641,20 @@ func (handler *AdminHandler) GetDashboardStatistics(c *fiber.Ctx) error {
 }
 
 // GetAllImages возвращает все задачи обработки изображений
-// @Summary Все задачи обработки изображений
-// @Description Возвращает список всех задач обработки изображений с фильтрацией
-// @Tags admin-images
-// @Produce json
-// @Security BearerAuth
-// @Param status query string false "Фильтр по статусу (queued, processing, completed, failed)"
-// @Param partner_id query string false "Фильтр по ID партнера"
-// @Param limit query int false "Лимит записей (по умолчанию 50)"
-// @Param offset query int false "Смещение (по умолчанию 0)"
-// @Success 200 {array} map[string]interface{} "Список задач обработки"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Router /admin/images [get]
+//
+//	@Summary		Все задачи обработки изображений
+//	@Description	Возвращает список всех задач обработки изображений с фильтрацией
+//	@Tags			admin-images
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			status		query		string					false	"Фильтр по статусу (queued, processing, completed, failed)"
+//	@Param			partner_id	query		string					false	"Фильтр по ID партнера"
+//	@Param			limit		query		int						false	"Лимит записей (по умолчанию 50)"
+//	@Param			offset		query		int						false	"Смещение (по умолчанию 0)"
+//	@Success		200			{array}		map[string]interface{}	"Список задач обработки"
+//	@Failure		401			{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403			{object}	map[string]interface{}	"Нет прав доступа"
+//	@Router			/admin/images [get]
 func (handler *AdminHandler) GetAllImages(c *fiber.Ctx) error {
 	status := c.Query("status")
 	partnerID := c.Query("partner_id")
@@ -1667,17 +1694,18 @@ func (handler *AdminHandler) GetAllImages(c *fiber.Ctx) error {
 }
 
 // GetImageDetails возвращает детальную информацию о задаче обработки
-// @Summary Детали задачи обработки
-// @Description Возвращает подробную информацию о задаче обработки изображения
-// @Tags admin-images
-// @Produce json
-// @Security BearerAuth
-// @Param id path string true "ID задачи"
-// @Success 200 {object} map[string]interface{} "Детали задачи"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Failure 404 {object} map[string]interface{} "Задача не найдена"
-// @Router /admin/images/{id} [get]
+//
+//	@Summary		Детали задачи обработки
+//	@Description	Возвращает подробную информацию о задаче обработки изображения
+//	@Tags			admin-images
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path		string					true	"ID задачи"
+//	@Success		200	{object}	map[string]interface{}	"Детали задачи"
+//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
+//	@Failure		404	{object}	map[string]interface{}	"Задача не найдена"
+//	@Router			/admin/images/{id} [get]
 func (handler *AdminHandler) GetImageDetails(c *fiber.Ctx) error {
 	imageID := c.Params("id")
 
@@ -1720,17 +1748,18 @@ func (handler *AdminHandler) GetImageDetails(c *fiber.Ctx) error {
 }
 
 // DeleteImageTask удаляет задачу обработки изображения
-// @Summary Удаление задачи обработки
-// @Description Удаляет задачу обработки изображения и связанные файлы
-// @Tags admin-images
-// @Produce json
-// @Security BearerAuth
-// @Param id path string true "ID задачи"
-// @Success 200 {object} map[string]interface{} "Задача удалена"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Failure 404 {object} map[string]interface{} "Задача не найдена"
-// @Router /admin/images/{id} [delete]
+//
+//	@Summary		Удаление задачи обработки
+//	@Description	Удаляет задачу обработки изображения и связанные файлы
+//	@Tags			admin-images
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path		string					true	"ID задачи"
+//	@Success		200	{object}	map[string]interface{}	"Задача удалена"
+//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
+//	@Failure		404	{object}	map[string]interface{}	"Задача не найдена"
+//	@Router			/admin/images/{id} [delete]
 func (handler *AdminHandler) DeleteImageTask(c *fiber.Ctx) error {
 	imageID := c.Params("id")
 
@@ -1752,18 +1781,19 @@ func (handler *AdminHandler) DeleteImageTask(c *fiber.Ctx) error {
 }
 
 // RetryImageTask повторно запускает обработку изображения
-// @Summary Повторная обработка изображения
-// @Description Перезапускает неудачную задачу обработки изображения
-// @Tags admin-images
-// @Produce json
-// @Security BearerAuth
-// @Param id path string true "ID задачи"
-// @Success 200 {object} map[string]interface{} "Задача поставлена на повтор"
-// @Failure 401 {object} map[string]interface{} "Не авторизован"
-// @Failure 403 {object} map[string]interface{} "Нет прав доступа"
-// @Failure 404 {object} map[string]interface{} "Задача не найдена"
-// @Failure 400 {object} map[string]interface{} "Задача не может быть повторена"
-// @Router /admin/images/{id}/retry [post]
+//
+//	@Summary		Повторная обработка изображения
+//	@Description	Перезапускает неудачную задачу обработки изображения
+//	@Tags			admin-images
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path		string					true	"ID задачи"
+//	@Success		200	{object}	map[string]interface{}	"Задача поставлена на повтор"
+//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
+//	@Failure		404	{object}	map[string]interface{}	"Задача не найдена"
+//	@Failure		400	{object}	map[string]interface{}	"Задача не может быть повторена"
+//	@Router			/admin/images/{id}/retry [post]
 func (handler *AdminHandler) RetryImageTask(c *fiber.Ctx) error {
 	imageID := c.Params("id")
 

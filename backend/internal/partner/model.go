@@ -51,5 +51,3 @@ func (p *Partner) CreateIndex() string {
 	CREATE INDEX IF NOT EXISTS idx_partners_updated_at ON partners(updated_at);
 	`
 }
-
-
