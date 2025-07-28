@@ -56,7 +56,7 @@ func (handler *ImageHandler) GetQueue(c *fiber.Ctx) error {
 
 	tasks, err := handler.deps.ImageService.GetQueue(status)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(ErrFailedToFetchQueue.Message)
+		handler.deps.Logger.Error().Err(err).Msg(ErrFailedToFetchQueue.Error())
 		return c.Status(ErrFailedToFetchQueue.HTTPStatus).JSON(fiber.Map{"error": ErrFailedToFetchQueue.Error()})
 	}
 

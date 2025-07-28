@@ -99,7 +99,7 @@ func (handler *CouponHandler) GetCouponByID(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidCouponID.Message)
+		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidCouponID.Error())
 		return c.Status(ErrInvalidCouponID.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidCouponID.Error()})
 	}
 
@@ -168,7 +168,7 @@ func (handler *CouponHandler) ActivateCoupon(c *fiber.Ctx) error {
 
 	// Парсим запрос
 	if err := c.BodyParser(&req); err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidRequestBody.Message)
+		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidRequestBody.Error())
 		return c.Status(ErrInvalidRequestBody.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidRequestBody.Error()})
 	}
 
@@ -200,7 +200,7 @@ func (handler *CouponHandler) ResetCoupon(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidCouponID.Message)
+		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidCouponID.Error())
 		return c.Status(ErrInvalidCouponID.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidCouponID.Error()})
 	}
 
@@ -234,7 +234,7 @@ func (handler *CouponHandler) SendSchema(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidCouponID.Message)
+		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidCouponID.Error())
 		return c.Status(ErrInvalidCouponID.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidCouponID.Error()})
 	}
 
@@ -242,7 +242,7 @@ func (handler *CouponHandler) SendSchema(c *fiber.Ctx) error {
 
 	// Парсим запрос
 	if err := c.BodyParser(&req); err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidRequestBody.Message)
+		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidRequestBody.Error())
 		return c.Status(ErrInvalidRequestBody.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidRequestBody.Error()})
 	}
 
@@ -276,7 +276,7 @@ func (handler *CouponHandler) MarkAsPurchased(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidCouponID.Message)
+		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidCouponID.Error())
 		return c.Status(ErrInvalidCouponID.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidCouponID.Error()})
 	}
 
@@ -284,7 +284,7 @@ func (handler *CouponHandler) MarkAsPurchased(c *fiber.Ctx) error {
 
 	// Парсим запрос
 	if err := c.BodyParser(&req); err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidRequestBody.Message)
+		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidRequestBody.Error())
 		return c.Status(ErrInvalidRequestBody.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidRequestBody.Error()})
 	}
 
@@ -427,7 +427,7 @@ func (handler *CouponHandler) DownloadMaterials(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidCouponID.Message)
+		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidCouponID.Error())
 		return c.Status(ErrInvalidCouponID.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidCouponID.Error()})
 	}
 
@@ -540,9 +540,9 @@ func (handler *CouponHandler) GetCouponsByPartner(c *fiber.Ctx) error {
 	partnerIDStr := c.Params("partner_id")
 	partnerID, err := uuid.Parse(partnerIDStr)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidPartnerID.Message)
+		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidPartnerID.Error())
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": ErrInvalidPartnerID.Message,
+			"error": ErrInvalidPartnerID.Error(),
 		})
 	}
 

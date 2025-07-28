@@ -89,7 +89,7 @@ func (s *ImageService) ApplyEditing(task *Image, req types.EditImageRequest) err
 
 	// Обновляем задачу в базе данных
 	if err := s.deps.ImageRepository.Update(context.Background(), task); err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrFailedToUpdateTaskWithEditedImagePath.Message)
+		s.deps.Logger.Error().Err(err).Msg(ErrFailedToUpdateTaskWithEditedImagePath.Error())
 		return ErrFailedToUpdateTaskWithEditedImagePath
 	}
 
@@ -139,7 +139,7 @@ func (s *ImageService) ApplyProcessing(task *Image, req types.ProcessImageReques
 
 	// Обновляем задачу в базе данных
 	if err := s.deps.ImageRepository.Update(context.Background(), task); err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrFailedToUpdateTaskWithProcessingParams.Message)
+		s.deps.Logger.Error().Err(err).Msg(ErrFailedToUpdateTaskWithProcessingParams.Error())
 		return ErrFailedToUpdateTaskWithProcessingParams
 	}
 
@@ -180,7 +180,7 @@ func (s *ImageService) GenerateSchema(task *Image, req types.GenerateSchemaReque
 
 	// Обновляем задачу в базе данных
 	if err := s.deps.ImageRepository.Update(context.Background(), task); err != nil {
-		s.deps.Logger.Error().Err(err).Msg(ErrFailedToUpdateTaskWithSchemaPath.Message)
+		s.deps.Logger.Error().Err(err).Msg(ErrFailedToUpdateTaskWithSchemaPath.Error())
 		return "", ErrFailedToUpdateTaskWithSchemaPath
 	}
 

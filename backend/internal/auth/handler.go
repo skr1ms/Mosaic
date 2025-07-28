@@ -88,14 +88,14 @@ func (handler *AuthHandler) RefreshAdminTokens(c *fiber.Ctx) error {
 
 	// Парсим запрос
 	if err := c.BodyParser(&req); err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidRequestBody.Message)
+		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidRequestBody.Error())
 		return c.Status(ErrInvalidRequestBody.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidRequestBody.Error()})
 	}
 
 	// Обновляем токены
 	tokens, err := handler.deps.AuthService.RefreshAdminTokens(req.RefreshToken)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(ErrAdminTokenRefreshFailed.Message)
+		handler.deps.Logger.Error().Err(err).Msg(ErrAdminTokenRefreshFailed.Error())
 		return c.Status(ErrAdminTokenRefreshFailed.HTTPStatus).JSON(fiber.Map{"error": ErrAdminTokenRefreshFailed.Error()})
 	}
 
@@ -127,15 +127,15 @@ func (handler *AuthHandler) PartnerLogin(c *fiber.Ctx) error {
 
 	// Парсим запрос
 	if err := c.BodyParser(&req); err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidRequestBody.Message)
+		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidRequestBody.Error())
 		return c.Status(ErrInvalidRequestBody.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidRequestBody.Error()})
 	}
 
 	// Валидируем запрос
 	if err := middleware.ValidateStruct(&req); err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(ErrValidationFailed.Message)
+		handler.deps.Logger.Error().Err(err).Msg(ErrValidationFailed.Error())
 		return c.Status(ErrValidationFailed.HTTPStatus).JSON(fiber.Map{
-			"error":   ErrValidationFailed.Message,
+			"error":   ErrValidationFailed.Error(),
 			"details": err.Error(),
 		})
 	}
@@ -143,7 +143,7 @@ func (handler *AuthHandler) PartnerLogin(c *fiber.Ctx) error {
 	// Авторизуем партнера
 	partner, tokens, err := handler.deps.AuthService.PartnerLogin(req.Login, req.Password)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(ErrPartnerLoginFailed.Message)
+		handler.deps.Logger.Error().Err(err).Msg(ErrPartnerLoginFailed.Error())
 		return c.Status(ErrPartnerLoginFailed.HTTPStatus).JSON(fiber.Map{"error": ErrPartnerLoginFailed.Error()})
 	}
 
@@ -180,14 +180,14 @@ func (handler *AuthHandler) RefreshPartnerTokens(c *fiber.Ctx) error {
 
 	// Парсим запрос
 	if err := c.BodyParser(&req); err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidRequestBody.Message)
+		handler.deps.Logger.Error().Err(err).Msg(ErrInvalidRequestBody.Error())
 		return c.Status(ErrInvalidRequestBody.HTTPStatus).JSON(fiber.Map{"error": ErrInvalidRequestBody.Error()})
 	}
 
 	// Обновляем токены
 	tokenPair, err := handler.deps.AuthService.RefreshPartnerTokens(req.RefreshToken)
 	if err != nil {
-		handler.deps.Logger.Error().Err(err).Msg(ErrPartnerTokenRefreshFailed.Message)
+		handler.deps.Logger.Error().Err(err).Msg(ErrPartnerTokenRefreshFailed.Error())
 		return c.Status(ErrPartnerTokenRefreshFailed.HTTPStatus).JSON(fiber.Map{"error": ErrPartnerTokenRefreshFailed.Error()})
 	}
 
