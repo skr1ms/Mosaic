@@ -1977,6 +1977,354 @@
                 }
             }
         },
+        "/admin/stats/coupons-by-size": {
+            "get": {
+                "description": "Возвращает количество купонов по размерам",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Stats"
+                ],
+                "summary": "Получить статистику купонов по размерам",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/stats.CouponsBySizeResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/stats/coupons-by-status": {
+            "get": {
+                "description": "Возвращает количество купонов в каждом статусе",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Stats"
+                ],
+                "summary": "Получить статистику купонов по статусам",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID партнера (опционально)",
+                        "name": "partner_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/stats.CouponsByStatusResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/stats/coupons-by-style": {
+            "get": {
+                "description": "Возвращает количество купонов по стилям обработки",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Stats"
+                ],
+                "summary": "Получить статистику купонов по стилям",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/stats.CouponsByStyleResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/stats/general": {
+            "get": {
+                "description": "Возвращает общую статистику системы: количество купонов, партнеров, процент активации",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Stats"
+                ],
+                "summary": "Получить общую статистику",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/stats.GeneralStatsResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/stats/partners": {
+            "get": {
+                "description": "Возвращает статистику по всем партнерам в системе",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Stats"
+                ],
+                "summary": "Получить статистику всех партнеров",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/stats.PartnerListStatsResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/stats/partners/{partner_id}": {
+            "get": {
+                "description": "Возвращает детальную статистику по конкретному партнеру",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Stats"
+                ],
+                "summary": "Получить статистику партнера",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID партнера",
+                        "name": "partner_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/stats.PartnerStatsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/stats/system-health": {
+            "get": {
+                "description": "Возвращает информацию о здоровье системы, статусе сервисов и метриках производительности",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Stats"
+                ],
+                "summary": "Получить состояние системы",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/stats.SystemHealthResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/stats/time-series": {
+            "get": {
+                "description": "Возвращает данные для построения временных графиков",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Stats"
+                ],
+                "summary": "Получить временную статистику",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID партнера (опционально)",
+                        "name": "partner_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Дата начала (YYYY-MM-DD)",
+                        "name": "date_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Дата окончания (YYYY-MM-DD)",
+                        "name": "date_to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Период группировки (day, week, month, year)",
+                        "name": "period",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/stats.TimeSeriesStatsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/stats/top-partners": {
+            "get": {
+                "description": "Возвращает список топ партнеров по активности",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin Stats"
+                ],
+                "summary": "Получить топ партнеров",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Количество партнеров (по умолчанию 10)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/stats.TopPartnersResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/coupons/purchase": {
             "post": {
                 "description": "Покупает новый купон с оплатой картой",
@@ -4320,6 +4668,149 @@
                     }
                 }
             }
+        },
+        "/partner/stats/my": {
+            "get": {
+                "description": "Возвращает статистику текущего авторизованного партнера",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Partner Stats"
+                ],
+                "summary": "Получить мою статистику (партнер)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/stats.PartnerStatsResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/partner/stats/my/coupons-by-status": {
+            "get": {
+                "description": "Возвращает статистику купонов текущего партнера по статусам",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Partner Stats"
+                ],
+                "summary": "Получить мою статистику купонов по статусам (партнер)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/stats.CouponsByStatusResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/partner/stats/my/time-series": {
+            "get": {
+                "description": "Возвращает временную статистику текущего партнера",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Partner Stats"
+                ],
+                "summary": "Получить мою временную статистику (партнер)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Дата начала (YYYY-MM-DD)",
+                        "name": "date_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Дата окончания (YYYY-MM-DD)",
+                        "name": "date_to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Период группировки (day, week, month)",
+                        "name": "period",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/stats.TimeSeriesStatsResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -4716,6 +5207,224 @@
             "properties": {
                 "email": {
                     "type": "string"
+                }
+            }
+        },
+        "stats.CouponsBySizeResponse": {
+            "type": "object",
+            "properties": {
+                "size_21x30": {
+                    "type": "integer"
+                },
+                "size_30x40": {
+                    "type": "integer"
+                },
+                "size_40x40": {
+                    "type": "integer"
+                },
+                "size_40x50": {
+                    "type": "integer"
+                },
+                "size_40x60": {
+                    "type": "integer"
+                },
+                "size_50x70": {
+                    "type": "integer"
+                }
+            }
+        },
+        "stats.CouponsByStatusResponse": {
+            "type": "object",
+            "properties": {
+                "activated": {
+                    "type": "integer"
+                },
+                "completed": {
+                    "type": "integer"
+                },
+                "new": {
+                    "type": "integer"
+                },
+                "used": {
+                    "type": "integer"
+                }
+            }
+        },
+        "stats.CouponsByStyleResponse": {
+            "type": "object",
+            "properties": {
+                "flesh": {
+                    "type": "integer"
+                },
+                "gray": {
+                    "type": "integer"
+                },
+                "max_color": {
+                    "type": "integer"
+                },
+                "pop_art": {
+                    "type": "integer"
+                }
+            }
+        },
+        "stats.GeneralStatsResponse": {
+            "type": "object",
+            "properties": {
+                "activation_rate": {
+                    "type": "number"
+                },
+                "active_partners_count": {
+                    "type": "integer"
+                },
+                "last_updated": {
+                    "type": "string"
+                },
+                "total_coupons_activated": {
+                    "type": "integer"
+                },
+                "total_coupons_created": {
+                    "type": "integer"
+                },
+                "total_partners_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "stats.PartnerListStatsResponse": {
+            "type": "object",
+            "properties": {
+                "partners": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/stats.PartnerStatsResponse"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "stats.PartnerStatsResponse": {
+            "type": "object",
+            "properties": {
+                "activated_coupons": {
+                    "type": "integer"
+                },
+                "activation_rate": {
+                    "type": "number"
+                },
+                "branded_site_purchases": {
+                    "type": "integer"
+                },
+                "last_activity": {
+                    "type": "string"
+                },
+                "partner_id": {
+                    "type": "string"
+                },
+                "partner_name": {
+                    "type": "string"
+                },
+                "total_coupons": {
+                    "type": "integer"
+                },
+                "unused_coupons": {
+                    "type": "integer"
+                }
+            }
+        },
+        "stats.SystemHealthResponse": {
+            "type": "object",
+            "properties": {
+                "average_processing_time": {
+                    "type": "number"
+                },
+                "database_status": {
+                    "type": "string"
+                },
+                "error_rate": {
+                    "type": "number"
+                },
+                "image_processing_queue": {
+                    "type": "integer"
+                },
+                "last_updated": {
+                    "type": "string"
+                },
+                "redis_status": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "healthy, warning, critical",
+                    "type": "string"
+                },
+                "uptime": {
+                    "type": "string"
+                }
+            }
+        },
+        "stats.TimeSeriesStatsPoint": {
+            "type": "object",
+            "properties": {
+                "coupons_activated": {
+                    "type": "integer"
+                },
+                "coupons_created": {
+                    "type": "integer"
+                },
+                "coupons_purchased": {
+                    "type": "integer"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "new_partners_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "stats.TimeSeriesStatsResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/stats.TimeSeriesStatsPoint"
+                    }
+                },
+                "period": {
+                    "type": "string"
+                }
+            }
+        },
+        "stats.TopPartnerItem": {
+            "type": "object",
+            "properties": {
+                "activated_coupons": {
+                    "type": "integer"
+                },
+                "activation_rate": {
+                    "type": "number"
+                },
+                "partner_id": {
+                    "type": "string"
+                },
+                "partner_name": {
+                    "type": "string"
+                },
+                "total_coupons": {
+                    "type": "integer"
+                }
+            }
+        },
+        "stats.TopPartnersResponse": {
+            "type": "object",
+            "properties": {
+                "partners": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/stats.TopPartnerItem"
+                    }
                 }
             }
         },

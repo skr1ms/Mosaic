@@ -276,6 +276,148 @@ definitions:
     required:
     - email
     type: object
+  stats.CouponsBySizeResponse:
+    properties:
+      size_21x30:
+        type: integer
+      size_30x40:
+        type: integer
+      size_40x40:
+        type: integer
+      size_40x50:
+        type: integer
+      size_40x60:
+        type: integer
+      size_50x70:
+        type: integer
+    type: object
+  stats.CouponsByStatusResponse:
+    properties:
+      activated:
+        type: integer
+      completed:
+        type: integer
+      new:
+        type: integer
+      used:
+        type: integer
+    type: object
+  stats.CouponsByStyleResponse:
+    properties:
+      flesh:
+        type: integer
+      gray:
+        type: integer
+      max_color:
+        type: integer
+      pop_art:
+        type: integer
+    type: object
+  stats.GeneralStatsResponse:
+    properties:
+      activation_rate:
+        type: number
+      active_partners_count:
+        type: integer
+      last_updated:
+        type: string
+      total_coupons_activated:
+        type: integer
+      total_coupons_created:
+        type: integer
+      total_partners_count:
+        type: integer
+    type: object
+  stats.PartnerListStatsResponse:
+    properties:
+      partners:
+        items:
+          $ref: '#/definitions/stats.PartnerStatsResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  stats.PartnerStatsResponse:
+    properties:
+      activated_coupons:
+        type: integer
+      activation_rate:
+        type: number
+      branded_site_purchases:
+        type: integer
+      last_activity:
+        type: string
+      partner_id:
+        type: string
+      partner_name:
+        type: string
+      total_coupons:
+        type: integer
+      unused_coupons:
+        type: integer
+    type: object
+  stats.SystemHealthResponse:
+    properties:
+      average_processing_time:
+        type: number
+      database_status:
+        type: string
+      error_rate:
+        type: number
+      image_processing_queue:
+        type: integer
+      last_updated:
+        type: string
+      redis_status:
+        type: string
+      status:
+        description: healthy, warning, critical
+        type: string
+      uptime:
+        type: string
+    type: object
+  stats.TimeSeriesStatsPoint:
+    properties:
+      coupons_activated:
+        type: integer
+      coupons_created:
+        type: integer
+      coupons_purchased:
+        type: integer
+      date:
+        type: string
+      new_partners_count:
+        type: integer
+    type: object
+  stats.TimeSeriesStatsResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/stats.TimeSeriesStatsPoint'
+        type: array
+      period:
+        type: string
+    type: object
+  stats.TopPartnerItem:
+    properties:
+      activated_coupons:
+        type: integer
+      activation_rate:
+        type: number
+      partner_id:
+        type: string
+      partner_name:
+        type: string
+      total_coupons:
+        type: integer
+    type: object
+  stats.TopPartnersResponse:
+    properties:
+      partners:
+        items:
+          $ref: '#/definitions/stats.TopPartnerItem'
+        type: array
+    type: object
   types.EditImageRequest:
     properties:
       crop_height:
@@ -1651,6 +1793,236 @@ paths:
       summary: Системная статистика
       tags:
       - admin-statistics
+  /admin/stats/coupons-by-size:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает количество купонов по размерам
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/stats.CouponsBySizeResponse'
+      summary: Получить статистику купонов по размерам
+      tags:
+      - Admin Stats
+  /admin/stats/coupons-by-status:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает количество купонов в каждом статусе
+      parameters:
+      - description: ID партнера (опционально)
+        in: query
+        name: partner_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/stats.CouponsByStatusResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить статистику купонов по статусам
+      tags:
+      - Admin Stats
+  /admin/stats/coupons-by-style:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает количество купонов по стилям обработки
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/stats.CouponsByStyleResponse'
+      summary: Получить статистику купонов по стилям
+      tags:
+      - Admin Stats
+  /admin/stats/general:
+    get:
+      consumes:
+      - application/json
+      description: 'Возвращает общую статистику системы: количество купонов, партнеров,
+        процент активации'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/stats.GeneralStatsResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить общую статистику
+      tags:
+      - Admin Stats
+  /admin/stats/partners:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает статистику по всем партнерам в системе
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/stats.PartnerListStatsResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить статистику всех партнеров
+      tags:
+      - Admin Stats
+  /admin/stats/partners/{partner_id}:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает детальную статистику по конкретному партнеру
+      parameters:
+      - description: ID партнера
+        in: path
+        name: partner_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/stats.PartnerStatsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить статистику партнера
+      tags:
+      - Admin Stats
+  /admin/stats/system-health:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает информацию о здоровье системы, статусе сервисов и метриках
+        производительности
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/stats.SystemHealthResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить состояние системы
+      tags:
+      - Admin Stats
+  /admin/stats/time-series:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает данные для построения временных графиков
+      parameters:
+      - description: ID партнера (опционально)
+        in: query
+        name: partner_id
+        type: string
+      - description: Дата начала (YYYY-MM-DD)
+        in: query
+        name: date_from
+        type: string
+      - description: Дата окончания (YYYY-MM-DD)
+        in: query
+        name: date_to
+        type: string
+      - description: Период группировки (day, week, month, year)
+        in: query
+        name: period
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/stats.TimeSeriesStatsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить временную статистику
+      tags:
+      - Admin Stats
+  /admin/stats/top-partners:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список топ партнеров по активности
+      parameters:
+      - description: Количество партнеров (по умолчанию 10)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/stats.TopPartnersResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить топ партнеров
+      tags:
+      - Admin Stats
   /api/coupons/{code}:
     get:
       description: Возвращает информацию о купоне для проверки его валидности
@@ -3237,6 +3609,100 @@ paths:
       summary: Статистика использования купонов
       tags:
       - partner-statistics
+  /partner/stats/my:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает статистику текущего авторизованного партнера
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/stats.PartnerStatsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить мою статистику (партнер)
+      tags:
+      - Partner Stats
+  /partner/stats/my/coupons-by-status:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает статистику купонов текущего партнера по статусам
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/stats.CouponsByStatusResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить мою статистику купонов по статусам (партнер)
+      tags:
+      - Partner Stats
+  /partner/stats/my/time-series:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает временную статистику текущего партнера
+      parameters:
+      - description: Дата начала (YYYY-MM-DD)
+        in: query
+        name: date_from
+        type: string
+      - description: Дата окончания (YYYY-MM-DD)
+        in: query
+        name: date_to
+        type: string
+      - description: Период группировки (day, week, month)
+        in: query
+        name: period
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/stats.TimeSeriesStatsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить мою временную статистику (партнер)
+      tags:
+      - Partner Stats
 schemes:
 - http
 - https
