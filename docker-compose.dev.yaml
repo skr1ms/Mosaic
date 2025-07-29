@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:15-alpine
+    image: postgres:17-alpine
     container_name: mosaic_postgres_dev
     environment:
       POSTGRES_DB: mosaic
@@ -16,13 +16,18 @@ services:
       timeout: 5s
       retries: 5
 
-  # redis:
-  #   image: redis:7-alpine
-  #   container_name: mosaic_redis_dev
-  #   ports:
-  #     - "6379:6379"
-  #   volumes:
-  #     - redis_dev_data:/data
+  redis:
+    image: redis:8-alpine
+    container_name: mosaic_redis_dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # minio:
   #   image: minio/minio:latest
@@ -35,7 +40,7 @@ services:
   #     - "9001:9001"
   #   volumes:
   #     - minio_dev_data:/data
-  #   command: server /data --console-address ":9001"
+  # command: server /data --console-address ":9001"
 
   backend:
     build:
@@ -44,15 +49,17 @@ services:
     container_name: mosaic_backend_dev
     environment:
       - DB_URL=postgres://postgres:53849462s@postgres:5432/mosaic?sslmode=disable
+      - REDIS_URL=redis://redis:6379
     ports:
       - "3000:3000"
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     volumes:
       - ./backend/.env:/app/.env
 
 volumes:
   postgres_dev_data:
-  # redis_dev_data:
-  # minio_dev_data: 
+  redis_dev_data: 

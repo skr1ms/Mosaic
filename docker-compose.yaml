@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:15-alpine
+    image: postgres:17-alpine
     container_name: mosaic_postgres
     environment:
       POSTGRES_DB: mosaic
@@ -16,13 +16,18 @@ services:
       timeout: 5s
       retries: 5
 
-  # redis:
-  #   image: redis:7-alpine
-  #   container_name: mosaic_redis
-  #   ports:
-  #     - "6379:6379"
-  #   volumes:
-  #     - redis_data:/data
+  redis:
+    image: redis:8-alpine
+    container_name: mosaic_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # minio:
   #   image: minio/minio:latest
@@ -55,9 +60,7 @@ services:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
-      minio:
-        condition: service_started
+        condition: service_healthy
     volumes:
       - ./backend:/app
     restart: unless-stopped
