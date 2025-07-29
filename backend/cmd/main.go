@@ -22,16 +22,10 @@ package main
 //	@description				Type "Bearer" followed by a space and JWT token.
 
 import (
-	"crypto/rand"
-	"encoding/hex"
-	"os"
-
-	"github.com/gofiber/contrib/fiberzerolog"
 	"github.com/gofiber/contrib/swagger"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/skr1ms/mosaic/config"
 	_ "github.com/skr1ms/mosaic/docs" // Swagger docs
@@ -41,19 +35,15 @@ import (
 	"github.com/skr1ms/mosaic/internal/image"
 	"github.com/skr1ms/mosaic/internal/partner"
 	"github.com/skr1ms/mosaic/internal/public"
+	"github.com/skr1ms/mosaic/internal/stats"
 	"github.com/skr1ms/mosaic/migrations"
 	"github.com/skr1ms/mosaic/pkg/db"
 	"github.com/skr1ms/mosaic/pkg/email"
 	"github.com/skr1ms/mosaic/pkg/jwt"
+	"github.com/skr1ms/mosaic/pkg/logger"
 	"github.com/skr1ms/mosaic/pkg/recaptcha"
+	"github.com/skr1ms/mosaic/pkg/redis"
 )
-
-// generateRequestID создает уникальный ID для запроса
-func generateRequestID() string {
-	bytes := make([]byte, 8)
-	rand.Read(bytes)
-	return hex.EncodeToString(bytes)
-}
 
 func main() {
 	cfg, err := config.NewConfig()
@@ -62,43 +52,20 @@ func main() {
 	}
 
 	migrations.Init(cfg)
-	database := db.NewDb(cfg)
-
-	// Настройка логгера с более детальной конфигурацией
-	logger := zerolog.New(os.Stdout).With().
-		Timestamp().
-		Str("service", "mosaic-api").
-		Caller().
-		Logger()
-
-	// Устанавливаем уровень логирования в зависимости от окружения
-	if os.Getenv("APP_MODE") == "development" {
-		zerolog.SetGlobalLevel(zerolog.DebugLevel)
-		logger = logger.Output(zerolog.ConsoleWriter{Out: os.Stdout})
-	} else {
-		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	database, err := db.NewDb(cfg)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to create database")
 	}
 
+	redisClient, err := redis.NewRedisClient(cfg)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to connect to Redis")
+	}
+
+	appLogger := logger.NewLogger()
+
 	app := fiber.New(fiber.Config{
-		ErrorHandler: func(c *fiber.Ctx, err error) error {
-			code := fiber.StatusInternalServerError
-			if e, ok := err.(*fiber.Error); ok {
-				code = e.Code
-			}
-
-			// Логируем все HTTP ошибки
-			logger.Error().
-				Err(err).
-				Int("status_code", code).
-				Str("method", c.Method()).
-				Str("path", c.Path()).
-				Str("ip", c.IP()).
-				Msg("HTTP Error")
-
-			return c.Status(code).JSON(fiber.Map{
-				"error": err.Error(),
-			})
-		},
+		ErrorHandler: appLogger.ErrorHandler(),
 	})
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
@@ -108,26 +75,11 @@ func main() {
 
 	app.Use(recover.New())
 
-	// Middleware для логирования запросов с дополнительной информацией
-	app.Use(fiberzerolog.New(fiberzerolog.Config{
-		Logger: &logger,
-		Fields: []string{"ip", "method", "url", "status", "latency", "user_agent"},
-	}))
+	// Middleware для логирования запросов
+	app.Use(appLogger.RequestLoggingMiddleware())
 
 	// Middleware для добавления request_id в контекст
-	app.Use(func(c *fiber.Ctx) error {
-		requestID := c.Get("X-Request-ID")
-		if requestID == "" {
-			requestID = generateRequestID()
-			c.Set("X-Request-ID", requestID)
-		}
-
-		// Добавляем логгер с request_id в контекст
-		loggerWithRequestID := logger.With().Str("request_id", requestID).Logger()
-		c.SetUserContext(loggerWithRequestID.WithContext(c.UserContext()))
-
-		return c.Next()
-	})
+	app.Use(appLogger.RequestIDMiddleware())
 
 	// swagger ui middleware
 	app.Use(swagger.New(swagger.Config{
@@ -147,7 +99,7 @@ func main() {
 	imageRepo := image.NewRepository(database.DB)
 
 	// service
-	mailSender := email.NewMailer(cfg, &logger)
+	mailSender := email.NewMailer(cfg, appLogger.GetZerologLogger())
 	recaptchService := recaptcha.NewVerifier(cfg.RecaptchaConfig.SecretKey, 0.5)
 	jwtService := jwt.NewJWT(cfg.AuthConfig.AccessTokenSecret, cfg.AuthConfig.RefreshTokenSecret)
 	authService := auth.NewAuthService(&auth.AuthServiceDeps{
@@ -187,6 +139,15 @@ func main() {
 		ImageService:      imageService,
 	})
 
+	statsService := stats.NewStatsService(&stats.StatsServiceDeps{
+		PartnerRepository: partnerRepo,
+		CouponRepository:  couponRepo,
+		RedisClient:       redisClient,
+	})
+
+	cronService := stats.NewCronService(statsService)
+	cronService.Start()
+
 	// handlers
 	admin.NewAdminHandler(api, &admin.AdminHandlerDeps{
 		AdminService: adminService,
@@ -216,6 +177,10 @@ func main() {
 
 	public.NewPublicHandler(app, &public.PublicHandlerDeps{
 		PublicService: publicService,
+	})
+
+	stats.NewStatsHandler(api, &stats.StatsHandlerDeps{
+		StatsService: statsService,
 	})
 
 	log.Info().Msg("Server is running on port 3000")

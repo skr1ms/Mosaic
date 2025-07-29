@@ -288,3 +288,38 @@ func (r *PartnerRepository) GetNextPartnerCode(ctx context.Context) (string, err
 	}
 	return fmt.Sprintf("%04d", nextCode), nil
 }
+
+// Методы для статистики
+
+// CountActive возвращает количество активных партнеров
+func (r *PartnerRepository) CountActive(ctx context.Context) (int64, error) {
+	count, err := r.db.NewSelect().Model((*Partner)(nil)).Where("is_blocked = ?", false).Count(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count active partners: %w", err)
+	}
+	return int64(count), nil
+}
+
+// CountTotal возвращает общее количество партнеров
+func (r *PartnerRepository) CountTotal(ctx context.Context) (int64, error) {
+	count, err := r.db.NewSelect().Model((*Partner)(nil)).Count(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count total partners: %w", err)
+	}
+	return int64(count), nil
+}
+
+// GetTopByActivity возвращает топ партнеров по активности
+func (r *PartnerRepository) GetTopByActivity(ctx context.Context, limit int) ([]*Partner, error) {
+	var partners []*Partner
+	err := r.db.NewSelect().
+		Model(&partners).
+		Where("is_blocked = ?", false).
+		Order("created_at DESC").
+		Limit(limit).
+		Scan(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get top partners: %w", err)
+	}
+	return partners, nil
+}

@@ -373,3 +373,172 @@ func (r *CouponRepository) CodeExists(ctx context.Context, code string) (bool, e
 	}
 	return count > 0, nil
 }
+
+// Методы для статистики
+
+// CountTotal возвращает общее количество купонов
+func (r *CouponRepository) CountTotal(ctx context.Context) (int64, error) {
+	count, err := r.db.NewSelect().Model((*Coupon)(nil)).Count(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count total coupons: %w", err)
+	}
+	return int64(count), nil
+}
+
+// CountByStatus возвращает количество купонов по статусу
+func (r *CouponRepository) CountByStatus(ctx context.Context, status string) (int64, error) {
+	count, err := r.db.NewSelect().Model((*Coupon)(nil)).Where("status = ?", status).Count(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count coupons by status: %w", err)
+	}
+	return int64(count), nil
+}
+
+// CountByPartner возвращает количество купонов партнера
+func (r *CouponRepository) CountByPartner(ctx context.Context, partnerID uuid.UUID) (int64, error) {
+	count, err := r.db.NewSelect().Model((*Coupon)(nil)).Where("partner_id = ?", partnerID).Count(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count coupons by partner: %w", err)
+	}
+	return int64(count), nil
+}
+
+// CountByPartnerAndStatus возвращает количество купонов партнера по статусу
+func (r *CouponRepository) CountByPartnerAndStatus(ctx context.Context, partnerID uuid.UUID, status string) (int64, error) {
+	count, err := r.db.NewSelect().Model((*Coupon)(nil)).
+		Where("partner_id = ? AND status = ?", partnerID, status).Count(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count coupons by partner and status: %w", err)
+	}
+	return int64(count), nil
+}
+
+// CountBrandedPurchasesByPartner возвращает количество купонов, купленных через брендированный сайт партнера
+func (r *CouponRepository) CountBrandedPurchasesByPartner(ctx context.Context, partnerID uuid.UUID) (int64, error) {
+	count, err := r.db.NewSelect().Model((*Coupon)(nil)).
+		Where("partner_id = ? AND is_purchased = ?", partnerID, true).Count(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count branded purchases by partner: %w", err)
+	}
+	return int64(count), nil
+}
+
+// GetLastActivityByPartner возвращает последнюю активность партнера (последний активированный купон)
+func (r *CouponRepository) GetLastActivityByPartner(ctx context.Context, partnerID uuid.UUID) (*time.Time, error) {
+	var lastActivity time.Time
+	err := r.db.NewSelect().Model((*Coupon)(nil)).
+		Column("used_at").
+		Where("partner_id = ? AND used_at IS NOT NULL", partnerID).
+		Order("used_at DESC").
+		Limit(1).
+		Scan(ctx, &lastActivity)
+
+	if err != nil {
+		return nil, nil // Нет активности
+	}
+	return &lastActivity, nil
+}
+
+// GetTimeSeriesData возвращает данные для временных графиков
+func (r *CouponRepository) GetTimeSeriesData(ctx context.Context, dateFrom, dateTo time.Time, period string, partnerID *uuid.UUID) ([]map[string]interface{}, error) {
+	var dateFormat string
+	switch period {
+	case "day":
+		dateFormat = "DATE(created_at)"
+	case "week":
+		dateFormat = "DATE_TRUNC('week', created_at)"
+	case "month":
+		dateFormat = "DATE_TRUNC('month', created_at)"
+	case "year":
+		dateFormat = "DATE_TRUNC('year', created_at)"
+	default:
+		dateFormat = "DATE(created_at)"
+	}
+
+	query := r.db.NewSelect().
+		ColumnExpr(dateFormat+" as date").
+		ColumnExpr("COUNT(*) as coupons_created").
+		ColumnExpr("COUNT(CASE WHEN status = 'activated' THEN 1 END) as coupons_activated").
+		ColumnExpr("COUNT(CASE WHEN is_purchased = true THEN 1 END) as coupons_purchased").
+		ColumnExpr("0 as new_partners_count").
+		Model((*Coupon)(nil)).
+		Where("created_at >= ? AND created_at <= ?", dateFrom, dateTo).
+		Group("date").
+		Order("date")
+
+	if partnerID != nil {
+		query = query.Where("partner_id = ?", *partnerID)
+	}
+
+	rows, err := query.Rows(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get time series data: %w", err)
+	}
+	defer rows.Close()
+
+	var results []map[string]interface{}
+	for rows.Next() {
+		var date string
+		var created, activated, purchased, partners int64
+
+		if err := rows.Scan(&date, &created, &activated, &purchased, &partners); err != nil {
+			return nil, fmt.Errorf("failed to scan time series data: %w", err)
+		}
+
+		results = append(results, map[string]interface{}{
+			"date":               date,
+			"coupons_created":    created,
+			"coupons_activated":  activated,
+			"coupons_purchased":  purchased,
+			"new_partners_count": partners,
+		})
+	}
+
+	return results, nil
+}
+
+// HealthCheck проверяет соединение с БД
+func (r *CouponRepository) HealthCheck(ctx context.Context) error {
+	return r.db.Ping()
+}
+
+// CountActivatedInTimeRange возвращает количество активированных купонов в временном диапазоне
+func (r *CouponRepository) CountActivatedInTimeRange(ctx context.Context, from, to time.Time) (int64, error) {
+	count, err := r.db.NewSelect().Model((*Coupon)(nil)).
+		Where("status = 'activated' AND used_at >= ? AND used_at <= ?", from, to).Count(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count activated coupons in time range: %w", err)
+	}
+	return int64(count), nil
+}
+
+// GetStatusCounts возвращает подсчет купонов по статусам
+func (r *CouponRepository) GetStatusCounts(ctx context.Context, partnerID *uuid.UUID) (map[string]int64, error) {
+	query := r.db.NewSelect().
+		ColumnExpr("status").
+		ColumnExpr("COUNT(*) as count").
+		Model((*Coupon)(nil)).
+		Group("status")
+
+	if partnerID != nil {
+		query = query.Where("partner_id = ?", *partnerID)
+	}
+
+	rows, err := query.Rows(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get status counts: %w", err)
+	}
+	defer rows.Close()
+
+	statusCounts := make(map[string]int64)
+	for rows.Next() {
+		var status string
+		var count int64
+		if err := rows.Scan(&status, &count); err != nil {
+			return nil, fmt.Errorf("failed to scan status counts: %w", err)
+		}
+		statusCounts[status] = count
+	}
+
+	return statusCounts, nil
+}

@@ -14,7 +14,10 @@ import (
 )
 
 func Init(cfg *config.Config) {
-	database := db.NewDb(cfg)
+	database, err := db.NewDb(cfg)
+	if err != nil {
+		panic("Failed to create database: " + err.Error())
+	}
 	ctx := context.Background()
 
 	if err := createEnumTypes(database.DB, ctx); err != nil {

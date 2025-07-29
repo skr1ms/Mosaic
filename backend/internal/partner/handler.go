@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/skr1ms/mosaic/pkg/middleware"
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog"
 	"github.com/skr1ms/mosaic/config"
 	"github.com/skr1ms/mosaic/internal/coupon"
 	"github.com/skr1ms/mosaic/pkg/email"
 	"github.com/skr1ms/mosaic/pkg/jwt"
-	"github.com/skr1ms/mosaic/pkg/middleware"
 )
 
 type PartnerHandlerDeps struct {

@@ -1,6 +1,8 @@
 package db
 
 import (
+	"fmt"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/skr1ms/mosaic/config"
@@ -13,12 +15,12 @@ type Db struct {
 	*bun.DB
 }
 
-func NewDb(config *config.Config) *Db {
-	db, err := pgx.ParseConfig(config.DatabaseConfig.URL)
+func NewDb(config *config.Config) (*Db, error) {
+	db, err := pgx.ParseConfig(config.PostgresConfig.URL)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to parse Postgres config: %w", err)
 	}
 	db.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
 	psqlDB := stdlib.OpenDB(*db)
-	return &Db{bun.NewDB(psqlDB, pgdialect.New())}
+	return &Db{bun.NewDB(psqlDB, pgdialect.New())}, nil
 }

@@ -11,7 +11,8 @@ import (
 
 type Config struct {
 	ServerConfig    ServerConfig
-	DatabaseConfig  DatabaseConfig
+	PostgresConfig  PostgresConfig
+	RedisConfig     RedisConfig
 	AuthConfig      AuthConfig
 	SMTPConfig      SMTPConfig
 	RecaptchaConfig RecaptchaConfig
@@ -22,7 +23,11 @@ type ServerConfig struct {
 	FrontendURL string
 }
 
-type DatabaseConfig struct {
+type PostgresConfig struct {
+	URL string
+}
+
+type RedisConfig struct {
 	URL string
 }
 
@@ -58,8 +63,11 @@ func NewConfig() (*Config, error) {
 			Port:        os.Getenv("SERVER_PORT"),
 			FrontendURL: os.Getenv("FRONTEND_URL"),
 		},
-		DatabaseConfig: DatabaseConfig{
+		PostgresConfig: PostgresConfig{
 			URL: os.Getenv("DATABASE_URL"),
+		},
+		RedisConfig: RedisConfig{
+			URL: os.Getenv("REDIS_URL"),
 		},
 		AuthConfig: AuthConfig{
 			AccessTokenSecret:     os.Getenv("ACCESS_TOKEN_SECRET"),
