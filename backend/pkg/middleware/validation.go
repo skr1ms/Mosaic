@@ -1,8 +1,11 @@
 package middleware
 
 import (
+	"time"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/rs/zerolog/log"
 	validatepartnerdata "github.com/skr1ms/mosaic/pkg/validatePartnerData"
 )
 
@@ -18,18 +21,26 @@ func ValidateStruct(s interface{}) error {
 	return validate.Struct(s)
 }
 
-// ValidationMiddleware middleware для автоматической валидации JSON payload
+// ValidationMiddleware middleware для автоматической валидации JSON payload с асинхронным логированием
 func ValidationMiddleware(structType interface{}) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		start := time.Now()
 		payload := structType
 
+		// Парсим JSON
 		if err := c.BodyParser(payload); err != nil {
+			// Асинхронно логируем ошибку парсинга
+			go func() {
+				logValidationError(c.IP(), c.Get("User-Agent"), c.Path(), "json_parse_error", err.Error(), time.Since(start))
+			}()
+
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"error":   "Invalid JSON",
 				"message": err.Error(),
 			})
 		}
 
+		// Валидируем структуру
 		if err := ValidateStruct(payload); err != nil {
 			validationErrors := make([]fiber.Map, 0)
 
@@ -44,11 +55,21 @@ func ValidationMiddleware(structType interface{}) fiber.Handler {
 				}
 			}
 
+			// Асинхронно логируем ошибки валидации
+			go func() {
+				logValidationError(c.IP(), c.Get("User-Agent"), c.Path(), "validation_error", err.Error(), time.Since(start))
+			}()
+
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"error":  "Validation failed",
 				"errors": validationErrors,
 			})
 		}
+
+		// Асинхронно логируем успешную валидацию
+		go func() {
+			logValidationSuccess(c.IP(), c.Get("User-Agent"), c.Path(), time.Since(start))
+		}()
 
 		c.Locals("validatedData", payload)
 		return c.Next()
@@ -83,4 +104,28 @@ func getErrorMessage(err validator.FieldError) string {
 	default:
 		return "Неверное значение поля"
 	}
+}
+
+// logValidationError асинхронно логирует ошибки валидации
+func logValidationError(ip, userAgent, path, errorType, errorMsg string, duration time.Duration) {
+	log.Warn().
+		Str("ip", ip).
+		Str("user_agent", userAgent).
+		Str("path", path).
+		Str("error_type", errorType).
+		Str("error_message", errorMsg).
+		Dur("duration", duration).
+		Str("event_type", "validation_error").
+		Msg("Validation failed")
+}
+
+// logValidationSuccess асинхронно логирует успешную валидацию
+func logValidationSuccess(ip, userAgent, path string, duration time.Duration) {
+	log.Debug().
+		Str("ip", ip).
+		Str("user_agent", userAgent).
+		Str("path", path).
+		Dur("duration", duration).
+		Str("event_type", "validation_success").
+		Msg("Validation successful")
 }

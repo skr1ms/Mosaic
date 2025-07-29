@@ -40,7 +40,7 @@ import (
 	"github.com/skr1ms/mosaic/pkg/db"
 	"github.com/skr1ms/mosaic/pkg/email"
 	"github.com/skr1ms/mosaic/pkg/jwt"
-	"github.com/skr1ms/mosaic/pkg/logger"
+	"github.com/skr1ms/mosaic/pkg/middleware"
 	"github.com/skr1ms/mosaic/pkg/recaptcha"
 	"github.com/skr1ms/mosaic/pkg/redis"
 )
@@ -62,7 +62,7 @@ func main() {
 		log.Fatal().Err(err).Msg("Failed to connect to Redis")
 	}
 
-	appLogger := logger.NewLogger()
+	appLogger := middleware.NewLogger()
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler: appLogger.ErrorHandler(),
@@ -75,11 +75,11 @@ func main() {
 
 	app.Use(recover.New())
 
-	// Middleware для логирования запросов
-	app.Use(appLogger.RequestLoggingMiddleware())
+	// Объединенный middleware для логирования и request ID (оптимизированный)
+	app.Use(appLogger.CombinedMiddleware())
 
-	// Middleware для добавления request_id в контекст
-	app.Use(appLogger.RequestIDMiddleware())
+	// Асинхронный middleware для аналитики и метрик
+	app.Use(appLogger.AnalyticsMiddleware())
 
 	// swagger ui middleware
 	app.Use(swagger.New(swagger.Config{

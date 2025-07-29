@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/rs/zerolog/log"
 )
 
 type MetricsCollector interface {
@@ -13,46 +14,102 @@ type MetricsCollector interface {
 	IncrementErrors(errorType, component string)
 }
 
-// MetricsMiddleware middleware для автоматического сбора метрик HTTP запросов
+// MetricsMiddleware middleware для автоматического сбора метрик HTTP запросов с асинхронными операциями
 func MetricsMiddleware(metricsCollector MetricsCollector) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		start := time.Now()
 
+		// Асинхронно логируем начало запроса
+		go func() {
+			logMetricsStart(c.Method(), c.Path(), c.IP())
+		}()
+
 		// Выполняем запрос
 		err := c.Next()
 
-		// Собираем метрики
+		// Собираем данные для метрик
 		duration := time.Since(start).Seconds()
 		method := c.Method()
 		path := c.Route().Path
 		status := strconv.Itoa(c.Response().StatusCode())
 
-		// Записываем метрики
-		metricsCollector.IncrementHTTPRequests(method, path, status)
-		metricsCollector.ObserveHTTPRequestDuration(method, path, duration)
+		// Асинхронно записываем метрики (неблокирующие операции)
+		go func() {
+			metricsCollector.IncrementHTTPRequests(method, path, status)
+			metricsCollector.ObserveHTTPRequestDuration(method, path, duration)
 
-		// Если произошла ошибка, записываем метрику ошибки
+			// Логируем метрики
+			logMetricsCompletion(method, path, status, duration)
+		}()
+
+		// Если произошла ошибка, асинхронно записываем метрику ошибки
 		if err != nil {
-			metricsCollector.IncrementErrors("http_error", "request_handler")
+			go func() {
+				metricsCollector.IncrementErrors("http_error", "request_handler")
+				logErrorMetrics(method, path, err.Error())
+			}()
 		}
 
 		return err
 	}
 }
 
-// ActiveUsersMiddleware middleware для отслеживания активных пользователей
+// ActiveUsersMiddleware middleware для отслеживания активных пользователей с асинхронными операциями
 func ActiveUsersMiddleware(redisClient interface{}) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		// Здесь можно добавить логику отслеживания активных пользователей
-		// Например, записывать IP адреса или user ID в Redis set с TTL
-
 		// Получаем IP пользователя
 		userIP := c.IP()
+
 		if userIP != "" {
-			// TODO: Добавить пользователя в Redis set активных пользователей
-			// с TTL например 5 минут
+			// Асинхронно добавляем пользователя в Redis set активных пользователей
+			go func() {
+				// TODO: Добавить пользователя в Redis set активных пользователей
+				// с TTL например 5 минут
+				logActiveUser(userIP, c.Get("User-Agent"), c.Path())
+			}()
 		}
 
 		return c.Next()
 	}
+}
+
+// logMetricsStart асинхронно логирует начало сбора метрик
+func logMetricsStart(method, path, ip string) {
+	log.Debug().
+		Str("method", method).
+		Str("path", path).
+		Str("ip", ip).
+		Str("event_type", "metrics_start").
+		Msg("Metrics collection started")
+}
+
+// logMetricsCompletion асинхронно логирует завершение сбора метрик
+func logMetricsCompletion(method, path, status string, duration float64) {
+	log.Debug().
+		Str("method", method).
+		Str("path", path).
+		Str("status", status).
+		Float64("duration_seconds", duration).
+		Str("event_type", "metrics_completion").
+		Msg("Metrics collection completed")
+}
+
+// logErrorMetrics асинхронно логирует ошибки метрик
+func logErrorMetrics(method, path, errorMsg string) {
+	log.Error().
+		Str("method", method).
+		Str("path", path).
+		Str("error", errorMsg).
+		Str("event_type", "metrics_error").
+		Msg("Error in metrics collection")
+}
+
+// logActiveUser асинхронно логирует активных пользователей
+func logActiveUser(ip, userAgent, path string) {
+	log.Debug().
+		Str("ip", ip).
+		Str("user_agent", userAgent).
+		Str("path", path).
+		Str("event_type", "active_user").
+		Msg("Active user tracked")
 }
