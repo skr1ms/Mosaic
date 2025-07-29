@@ -50,7 +50,7 @@ func (l *Logger) RequestLoggingMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		start := time.Now()
 
-		// Асинхронно собираем метрики 
+		// Асинхронно собираем метрики
 		go func() {
 			l.logRequestMetrics(c.Method(), c.Path(), c.IP(), c.Get("User-Agent"))
 		}()
@@ -144,18 +144,27 @@ func (l *Logger) CombinedMiddleware() fiber.Handler {
 		loggerWithRequestID := l.logger.With().Str("request_id", requestID).Logger()
 		c.SetUserContext(loggerWithRequestID.WithContext(c.UserContext()))
 
+		// Извлекаем значения из контекста ДО запуска горутин
+		method := c.Method()
+		path := c.Path()
+		ip := c.IP()
+		userAgent := c.Get("User-Agent")
+
 		// Асинхронно собираем начальные метрики
 		go func() {
-			l.logRequestStart(c.Method(), c.Path(), c.IP(), c.Get("User-Agent"), requestID)
+			l.logRequestStart(method, path, ip, userAgent, requestID)
 		}()
 
 		// Обрабатываем запрос
 		err := c.Next()
 
+		// Извлекаем значения для завершающего лога ДО запуска горутины
+		statusCode := c.Response().StatusCode()
+		duration := time.Since(start)
+
 		// Асинхронно логируем завершение
 		go func() {
-			duration := time.Since(start)
-			l.logRequestCompletion(c.Method(), c.Path(), c.Response().StatusCode(), duration, requestID)
+			l.logRequestCompletion(method, path, statusCode, duration, requestID)
 		}()
 
 		return err

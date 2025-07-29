@@ -7,27 +7,26 @@ import (
 	"net"
 	"net/smtp"
 
-	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/skr1ms/mosaic/config"
 )
 
 type Mailer struct {
-	cfg    *config.Config
-	Logger *zerolog.Logger
+	cfg *config.Config
 }
 
-func NewMailer(cfg *config.Config, logger *zerolog.Logger) *Mailer {
-	return &Mailer{cfg: cfg, Logger: logger}
+func NewMailer(cfg *config.Config) *Mailer {
+	return &Mailer{cfg: cfg}
 }
 
 func (m *Mailer) SendResetPasswordEmail(to, resetLink string) error {
-	m.Logger.Info().Msg("Sending reset password email to " + to)
+	log.Info().Msg("Sending reset password email to " + to)
 	auth := smtp.PlainAuth("",
 		m.cfg.SMTPConfig.Username,
 		m.cfg.SMTPConfig.Password,
 		m.cfg.SMTPConfig.Host,
 	)
-	m.Logger.Info().Msg("Authentication successful")
+	log.Info().Msg("Authentication successful")
 
 	msg := []byte(fmt.Sprintf(
 		"From: %s\r\n"+
@@ -47,64 +46,64 @@ func (m *Mailer) SendResetPasswordEmail(to, resetLink string) error {
 
 	conn, err := tls.Dial("tcp", net.JoinHostPort(m.cfg.SMTPConfig.Host, "465"), tlsConfig)
 	if err != nil {
-		m.Logger.Error().Err(err).Msg("Failed to connect to SMTP server")
+		log.Error().Err(err).Msg("Failed to connect to SMTP server")
 		return fmt.Errorf("connection failed: %w", err)
 	}
 	defer conn.Close()
 
-	m.Logger.Info().Msg("SMTP client creation successful")
+	log.Info().Msg("SMTP client creation successful")
 
 	client, err := smtp.NewClient(conn, m.cfg.SMTPConfig.Host)
 	if err != nil {
-		m.Logger.Error().Err(err).Msg("SMTP client creation failed")
+		log.Error().Err(err).Msg("SMTP client creation failed")
 		return fmt.Errorf("SMTP client creation failed: %w", err)
 	}
 	defer client.Close()
 
-	m.Logger.Info().Msg("SMTP client authentication successful")
+	log.Info().Msg("SMTP client authentication successful")
 
 	if err := client.Auth(auth); err != nil {
-		m.Logger.Error().Err(err).Msg("authentication failed")
+		log.Error().Err(err).Msg("authentication failed")
 		return fmt.Errorf("authentication failed: %w", err)
 	}
 
-	m.Logger.Info().Msg("SMTP client sender setup successful")
+	log.Info().Msg("SMTP client sender setup successful")
 
 	if err := client.Mail(m.cfg.SMTPConfig.From); err != nil {
-		m.Logger.Error().Err(err).Msg("sender setup failed")
+		log.Error().Err(err).Msg("sender setup failed")
 		return fmt.Errorf("sender setup failed: %w", err)
 	}
 
-	m.Logger.Info().Msg("SMTP client recipient setup successful")
+	log.Info().Msg("SMTP client recipient setup successful")
 
 	if err := client.Rcpt(to); err != nil {
-		m.Logger.Error().Err(err).Msg("recipient setup failed")
+		log.Error().Err(err).Msg("recipient setup failed")
 		return fmt.Errorf("recipient setup failed: %w", err)
 	}
 
-	m.Logger.Info().Msg("SMTP client data writer successful")
+	log.Info().Msg("SMTP client data writer successful")
 
 	w, err := client.Data()
 	if err != nil {
-		m.Logger.Error().Err(err).Msg("data writer failed")
+		log.Error().Err(err).Msg("data writer failed")
 		return fmt.Errorf("data writer failed: %w", err)
 	}
 
-	m.Logger.Info().Msg("SMTP client message writing successful")
+	log.Info().Msg("SMTP client message writing successful")
 
 	if _, err := w.Write(msg); err != nil {
-		m.Logger.Error().Err(err).Msg("message writing failed")
+		log.Error().Err(err).Msg("message writing failed")
 		return fmt.Errorf("message writing failed: %w", err)
 	}
 
-	m.Logger.Info().Msg("SMTP client writer close successful")
+	log.Info().Msg("SMTP client writer close successful")
 
 	if err := w.Close(); err != nil {
-		m.Logger.Error().Err(err).Msg("writer close failed")
+		log.Error().Err(err).Msg("writer close failed")
 		return fmt.Errorf("writer close failed: %w", err)
 	}
 
-	m.Logger.Info().Msg("SMTP client quit successful")
+	log.Info().Msg("SMTP client quit successful")
 
 	return client.Quit()
 }

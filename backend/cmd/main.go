@@ -34,6 +34,7 @@ import (
 	"github.com/skr1ms/mosaic/internal/coupon"
 	"github.com/skr1ms/mosaic/internal/image"
 	"github.com/skr1ms/mosaic/internal/partner"
+	"github.com/skr1ms/mosaic/internal/payment"
 	"github.com/skr1ms/mosaic/internal/public"
 	"github.com/skr1ms/mosaic/internal/stats"
 	"github.com/skr1ms/mosaic/migrations"
@@ -97,9 +98,10 @@ func main() {
 	couponRepo := coupon.NewCouponRepository(database.DB)
 	partnerRepo := partner.NewPartnerRepository(database.DB)
 	imageRepo := image.NewRepository(database.DB)
+	paymentRepo := payment.NewPaymentRepository(database.DB)
 
 	// service
-	mailSender := email.NewMailer(cfg, appLogger.GetZerologLogger())
+	mailSender := email.NewMailer(cfg)
 	recaptchService := recaptcha.NewVerifier(cfg.RecaptchaConfig.SecretKey, 0.5)
 	jwtService := jwt.NewJWT(cfg.AuthConfig.AccessTokenSecret, cfg.AuthConfig.RefreshTokenSecret)
 	authService := auth.NewAuthService(&auth.AuthServiceDeps{
@@ -132,11 +134,19 @@ func main() {
 		CouponRepository: couponRepo,
 	})
 
+	paymentService := payment.NewPaymentService(&payment.PaymentServiceDeps{
+		PaymentRepository: paymentRepo,
+		CouponRepository:  couponRepo,
+		PartnerRepository: partnerRepo,
+		Config:            cfg,
+	})
+
 	publicService := public.NewPublicService(&public.PublicServiceDeps{
 		CouponRepository:  couponRepo,
 		ImageRepository:   imageRepo,
 		PartnerRepository: partnerRepo,
 		ImageService:      imageService,
+		PaymentService:    paymentService,
 	})
 
 	statsService := stats.NewStatsService(&stats.StatsServiceDeps{
@@ -168,6 +178,11 @@ func main() {
 
 	coupon.NewCouponHandler(api, &coupon.CouponHandlerDeps{
 		CouponService: couponService,
+	})
+
+	payment.NewPaymentHandler(api, &payment.PaymentHandlerDeps{
+		PaymentService:   paymentService,
+		CouponRepository: couponRepo,
 	})
 
 	image.NewImageProcessingHandler(api, &image.ImageHandlerDeps{

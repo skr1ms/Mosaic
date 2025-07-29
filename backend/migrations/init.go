@@ -2,12 +2,15 @@ package migrations
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/rs/zerolog/log"
 	"github.com/skr1ms/mosaic/config"
 	"github.com/skr1ms/mosaic/internal/admin"
 	"github.com/skr1ms/mosaic/internal/coupon"
 	"github.com/skr1ms/mosaic/internal/image"
 	"github.com/skr1ms/mosaic/internal/partner"
+	"github.com/skr1ms/mosaic/internal/payment"
 	"github.com/skr1ms/mosaic/pkg/bcrypt"
 	"github.com/skr1ms/mosaic/pkg/db"
 	"github.com/uptrace/bun"
@@ -16,12 +19,12 @@ import (
 func Init(cfg *config.Config) {
 	database, err := db.NewDb(cfg)
 	if err != nil {
-		panic("Failed to create database: " + err.Error())
+		log.Fatal().Err(err).Msg("Failed to create database")
 	}
 	ctx := context.Background()
 
 	if err := createEnumTypes(database.DB, ctx); err != nil {
-		panic("Failed to create enum types: " + err.Error())
+		log.Fatal().Err(err).Msg("Failed to create enum types")
 	}
 
 	// Создаем таблицы
@@ -30,33 +33,34 @@ func Init(cfg *config.Config) {
 		(*admin.Admin)(nil),
 		(*coupon.Coupon)(nil),
 		(*image.Image)(nil),
+		(*payment.Order)(nil),
 	}
 
 	for _, model := range models {
 		_, err := database.NewCreateTable().Model(model).IfNotExists().Exec(ctx)
 		if err != nil {
-			panic("Failed to create table: " + err.Error())
+			log.Fatal().Err(err).Msg("Failed to create table")
 		}
 	}
 
 	// Создаем ограничения внешнего ключа с каскадным удалением
 	if err := createForeignKeys(database.DB, ctx); err != nil {
-		panic("Failed to create foreign keys: " + err.Error())
+		log.Fatal().Err(err).Msg("Failed to create foreign keys")
 	}
 
 	// Создаем индексы для таблиц
 	if err := createIndexes(database.DB, ctx); err != nil {
-		panic("Failed to create indexes: " + err.Error())
+		log.Fatal().Err(err).Msg("Failed to create indexes")
 	}
 
 	// Миграция кодов партнеров в строковый формат
 	if err := migratePartnerCodes(database.DB, ctx); err != nil {
-		panic("Failed to migrate partner codes: " + err.Error())
+		log.Fatal().Err(err).Msg("Failed to migrate partner codes")
 	}
 
 	// Создаем дефолтного администратора, если администраторов нет
 	if err := createDefaultAdmin(database.DB, ctx); err != nil {
-		panic("Failed to create default admin: " + err.Error())
+		log.Fatal().Err(err).Msg("Failed to create default admin")
 	}
 }
 
@@ -101,7 +105,7 @@ func createEnumTypes(db *bun.DB, ctx context.Context) error {
 	return db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
 		for _, query := range enumQueries {
 			if _, err := tx.Exec(query); err != nil {
-				return err
+				return fmt.Errorf("error creating enum type: %w", err)
 			}
 		}
 		return nil
@@ -135,7 +139,7 @@ func createForeignKeys(db *bun.DB, ctx context.Context) error {
 	return db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
 		for _, query := range foreignKeyQueries {
 			if _, err := tx.Exec(query); err != nil {
-				return err
+				return fmt.Errorf("error creating foreign key: %w", err)
 			}
 		}
 		return nil
@@ -146,22 +150,27 @@ func createForeignKeys(db *bun.DB, ctx context.Context) error {
 func createIndexes(db *bun.DB, ctx context.Context) error {
 	partnerModel := &partner.Partner{}
 	if _, err := db.ExecContext(ctx, partnerModel.CreateIndex()); err != nil {
-		return err
+		return fmt.Errorf("error creating index for partners: %w", err)
 	}
 
 	adminModel := &admin.Admin{}
 	if _, err := db.ExecContext(ctx, adminModel.CreateIndex()); err != nil {
-		return err
+		return fmt.Errorf("error creating index for admins: %w", err)
 	}
 
 	couponModel := &coupon.Coupon{}
 	if _, err := db.ExecContext(ctx, couponModel.CreateIndex()); err != nil {
-		return err
+		return fmt.Errorf("error creating index for coupons: %w", err)
 	}
 
 	imageModel := &image.Image{}
 	if _, err := db.ExecContext(ctx, imageModel.CreateIndex()); err != nil {
-		return err
+		return fmt.Errorf("error creating index for images: %w", err)
+	}
+
+	orderModel := &payment.Order{}
+	if _, err := db.ExecContext(ctx, orderModel.CreateIndex()); err != nil {
+		return fmt.Errorf("error creating index for orders: %w", err)
 	}
 
 	return nil
@@ -171,7 +180,7 @@ func createIndexes(db *bun.DB, ctx context.Context) error {
 func createDefaultAdmin(db *bun.DB, ctx context.Context) error {
 	count, err := db.NewSelect().Model((*admin.Admin)(nil)).Count(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("error getting admin count: %w", err)
 	}
 
 	if count > 0 {
@@ -181,7 +190,7 @@ func createDefaultAdmin(db *bun.DB, ctx context.Context) error {
 	defaultPassword := "admin123"
 	hashedPassword, err := bcrypt.HashPassword(defaultPassword)
 	if err != nil {
-		return err
+		return fmt.Errorf("error hashing password: %w", err)
 	}
 
 	defaultAdmin := &admin.Admin{
@@ -190,7 +199,10 @@ func createDefaultAdmin(db *bun.DB, ctx context.Context) error {
 	}
 
 	_, err = db.NewInsert().Model(defaultAdmin).Exec(ctx)
-	return err
+	if err != nil {
+		return fmt.Errorf("error creating default admin: %w", err)
+	}
+	return nil
 }
 
 // migratePartnerCodes мигрирует коды партнеров из int16 в строковый формат с ведущими нулями
@@ -203,7 +215,7 @@ func migratePartnerCodes(db *bun.DB, ctx context.Context) error {
 	`).Scan(ctx, &columnType)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error getting column type: %w", err)
 	}
 
 	if columnType == "character varying" {
@@ -212,30 +224,30 @@ func migratePartnerCodes(db *bun.DB, ctx context.Context) error {
 
 	return db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
 		if _, err := tx.Exec("ALTER TABLE partners ADD COLUMN partner_code_new VARCHAR(4)"); err != nil {
-			return err
+			return fmt.Errorf("error adding partner_code_new column: %w", err)
 		}
 
 		if _, err := tx.Exec(`
 			UPDATE partners 
 			SET partner_code_new = LPAD(CAST(partner_code AS TEXT), 4, '0')
 		`); err != nil {
-			return err
+			return fmt.Errorf("error updating partners table: %w", err)
 		}
 
 		if _, err := tx.Exec("ALTER TABLE partners DROP COLUMN partner_code"); err != nil {
-			return err
+			return fmt.Errorf("error dropping partner_code column: %w", err)
 		}
 
 		if _, err := tx.Exec("ALTER TABLE partners RENAME COLUMN partner_code_new TO partner_code"); err != nil {
-			return err
+			return fmt.Errorf("error renaming partner_code_new column: %w", err)
 		}
 
 		if _, err := tx.Exec("ALTER TABLE partners ALTER COLUMN partner_code SET NOT NULL"); err != nil {
-			return err
+			return fmt.Errorf("error setting partner_code column to not null: %w", err)
 		}
 
 		if _, err := tx.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_partners_partner_code ON partners(partner_code)"); err != nil {
-			return err
+			return fmt.Errorf("error creating unique index for partners: %w", err)
 		}
 
 		return nil

@@ -4813,6 +4813,113 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/payment/options": {
+            "get": {
+                "description": "Получение списка доступных размеров и стилей мозаики с ценами",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment"
+                ],
+                "summary": "Получение доступных опций",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/payment.AvailableOptionsResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/payment/orders/{orderNumber}/status": {
+            "get": {
+                "description": "Проверка статуса оплаты заказа",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment"
+                ],
+                "summary": "Получение статуса заказа",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Номер заказа",
+                        "name": "orderNumber",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/payment.OrderStatusResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/payment.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/payment.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/payment/purchase": {
+            "post": {
+                "description": "Создание заказа на покупку купона с оплатой картой через Альфа-Банк",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment"
+                ],
+                "summary": "Покупка купона онлайн",
+                "parameters": [
+                    {
+                        "description": "Данные для покупки купона",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/payment.PurchaseCouponRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/payment.PurchaseCouponResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/payment.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/payment.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -5148,6 +5255,168 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "new_password": {
+                    "type": "string"
+                }
+            }
+        },
+        "payment.AvailableOptionsResponse": {
+            "type": "object",
+            "properties": {
+                "sizes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/payment.SizeOption"
+                    }
+                },
+                "styles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/payment.StyleOption"
+                    }
+                }
+            }
+        },
+        "payment.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "payment.OrderStatusResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "coupon_code": {
+                    "description": "Код купона после успешной оплаты",
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "style": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "payment.PurchaseCouponRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "return_url",
+                "size",
+                "style"
+            ],
+            "properties": {
+                "domain": {
+                    "description": "Домен партнера для White Label",
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "fail_url": {
+                    "type": "string"
+                },
+                "language": {
+                    "type": "string",
+                    "enum": [
+                        "ru",
+                        "en",
+                        "es"
+                    ]
+                },
+                "return_url": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "string",
+                    "enum": [
+                        "21x30",
+                        "30x40",
+                        "40x40",
+                        "40x50",
+                        "40x60",
+                        "50x70"
+                    ]
+                },
+                "style": {
+                    "type": "string",
+                    "enum": [
+                        "grayscale",
+                        "skin_tone",
+                        "pop_art",
+                        "max_colors"
+                    ]
+                }
+            }
+        },
+        "payment.PurchaseCouponResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "string"
+                },
+                "payment_url": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "payment.SizeOption": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "price": {
+                    "description": "Цена в рублях",
+                    "type": "number"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "payment.StyleOption": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "value": {
                     "type": "string"
                 }
             }

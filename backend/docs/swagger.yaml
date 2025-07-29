@@ -233,6 +233,117 @@ definitions:
     - current_password
     - new_password
     type: object
+  payment.AvailableOptionsResponse:
+    properties:
+      sizes:
+        items:
+          $ref: '#/definitions/payment.SizeOption'
+        type: array
+      styles:
+        items:
+          $ref: '#/definitions/payment.StyleOption'
+        type: array
+    type: object
+  payment.ErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  payment.OrderStatusResponse:
+    properties:
+      amount:
+        type: number
+      coupon_code:
+        description: Код купона после успешной оплаты
+        type: string
+      currency:
+        type: string
+      message:
+        type: string
+      order_id:
+        type: string
+      size:
+        type: string
+      status:
+        type: string
+      style:
+        type: string
+      success:
+        type: boolean
+    type: object
+  payment.PurchaseCouponRequest:
+    properties:
+      domain:
+        description: Домен партнера для White Label
+        type: string
+      email:
+        type: string
+      fail_url:
+        type: string
+      language:
+        enum:
+        - ru
+        - en
+        - es
+        type: string
+      return_url:
+        type: string
+      size:
+        enum:
+        - 21x30
+        - 30x40
+        - 40x40
+        - 40x50
+        - 40x60
+        - 50x70
+        type: string
+      style:
+        enum:
+        - grayscale
+        - skin_tone
+        - pop_art
+        - max_colors
+        type: string
+    required:
+    - email
+    - return_url
+    - size
+    - style
+    type: object
+  payment.PurchaseCouponResponse:
+    properties:
+      message:
+        type: string
+      order_id:
+        type: string
+      payment_url:
+        type: string
+      success:
+        type: boolean
+    type: object
+  payment.SizeOption:
+    properties:
+      description:
+        type: string
+      label:
+        type: string
+      price:
+        description: Цена в рублях
+        type: number
+      value:
+        type: string
+    type: object
+  payment.StyleOption:
+    properties:
+      description:
+        type: string
+      label:
+        type: string
+      value:
+        type: string
+    type: object
   public.ActivateCouponRequest:
     properties:
       email:
@@ -3703,6 +3814,76 @@ paths:
       summary: Получить мою временную статистику (партнер)
       tags:
       - Partner Stats
+  /payment/options:
+    get:
+      description: Получение списка доступных размеров и стилей мозаики с ценами
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/payment.AvailableOptionsResponse'
+      summary: Получение доступных опций
+      tags:
+      - payment
+  /payment/orders/{orderNumber}/status:
+    get:
+      description: Проверка статуса оплаты заказа
+      parameters:
+      - description: Номер заказа
+        in: path
+        name: orderNumber
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/payment.OrderStatusResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/payment.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/payment.ErrorResponse'
+      summary: Получение статуса заказа
+      tags:
+      - payment
+  /payment/purchase:
+    post:
+      consumes:
+      - application/json
+      description: Создание заказа на покупку купона с оплатой картой через Альфа-Банк
+      parameters:
+      - description: Данные для покупки купона
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/payment.PurchaseCouponRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/payment.PurchaseCouponResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/payment.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/payment.ErrorResponse'
+      summary: Покупка купона онлайн
+      tags:
+      - payment
 schemes:
 - http
 - https

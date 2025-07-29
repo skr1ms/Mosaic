@@ -16,6 +16,7 @@ type Config struct {
 	AuthConfig      AuthConfig
 	SMTPConfig      SMTPConfig
 	RecaptchaConfig RecaptchaConfig
+	AlphaBankConfig AlphaBankConfig
 }
 
 type ServerConfig struct {
@@ -52,6 +53,12 @@ type RecaptchaConfig struct {
 	Environment string
 }
 
+type AlphaBankConfig struct {
+	Url      string
+	Username string
+	Password string
+}
+
 func NewConfig() (*Config, error) {
 	err := godotenv.Load()
 	if err != nil {
@@ -86,6 +93,11 @@ func NewConfig() (*Config, error) {
 			SecretKey:   os.Getenv("RECAPTCHA_SECRET_KEY"),
 			SiteKey:     os.Getenv("RECAPTCHA_SITE_KEY"),
 			Environment: os.Getenv("ENVIRONMENT"),
+		},
+		AlphaBankConfig: AlphaBankConfig{
+			Url:      os.Getenv("ALFA_BANK_PROD_URL"),
+			Username: os.Getenv("ALFA_BANK_USERNAME"),
+			Password: os.Getenv("ALFA_BANK_PASSWORD"),
 		},
 	}, nil
 }

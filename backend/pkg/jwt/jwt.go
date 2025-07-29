@@ -1,7 +1,7 @@
 package jwt
 
 import (
-	"errors"
+	"fmt"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -108,12 +108,12 @@ func (j *JWT) CreateRefreshToken(userID uuid.UUID, login, role string) (string, 
 func (j *JWT) CreateTokenPair(userID uuid.UUID, login, role string) (*TokenPair, error) {
 	accessToken, err := j.CreateAccessToken(userID, login, role)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error creating access token: %w", err)
 	}
 
 	refreshToken, err := j.CreateRefreshToken(userID, login, role)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error creating refresh token: %w", err)
 	}
 
 	var accessDuration time.Duration
@@ -134,53 +134,53 @@ func (j *JWT) CreateTokenPair(userID uuid.UUID, login, role string) (*TokenPair,
 func (j *JWT) ValidateAccessToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("unexpected signing method")
+			return nil, fmt.Errorf("unexpected signing method")
 		}
 		return []byte(j.SecretKey), nil
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error validating access token: %w", err)
 	}
 
 	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
 		if claims.TokenType != "access" {
-			return nil, errors.New("invalid token type")
+			return nil, fmt.Errorf("invalid token type")
 		}
 		return claims, nil
 	}
 
-	return nil, errors.New("invalid token")
+	return nil, fmt.Errorf("invalid token")
 }
 
 // ValidateRefreshToken проверяет refresh токен
 func (j *JWT) ValidateRefreshToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("unexpected signing method")
+			return nil, fmt.Errorf("unexpected signing method")
 		}
 		return []byte(j.RefreshSecretKey), nil
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error validating refresh token: %w", err)
 	}
 
 	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
 		if claims.TokenType != "refresh" {
-			return nil, errors.New("invalid token type")
+			return nil, fmt.Errorf("invalid token type")
 		}
 		return claims, nil
 	}
 
-	return nil, errors.New("invalid token")
+	return nil, fmt.Errorf("invalid token")
 }
 
 // RefreshTokens обновляет токены используя refresh токен
 func (j *JWT) RefreshTokens(refreshTokenString string) (*TokenPair, error) {
 	claims, err := j.ValidateRefreshToken(refreshTokenString)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error refreshing tokens: %w", err)
 	}
 
 	return j.CreateTokenPair(claims.UserID, claims.Login, claims.Role)
@@ -195,37 +195,37 @@ func (j *JWT) GetSecretKey() []byte {
 func GetClaimsFromFiberContext(c *fiber.Ctx) (*Claims, error) {
 	user := c.Locals("user").(*jwt.Token)
 	if user == nil {
-		return nil, errors.New("token not found in context")
+		return nil, fmt.Errorf("token not found in context")
 	}
 
 	claims, ok := user.Claims.(jwt.MapClaims)
 	if !ok {
-		return nil, errors.New("invalid token claims")
+		return nil, fmt.Errorf("invalid token claims")
 	}
 
 	userIDStr, ok := claims["user_id"].(string)
 	if !ok {
-		return nil, errors.New("user_id not found in claims")
+		return nil, fmt.Errorf("user_id not found in claims")
 	}
 
 	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
-		return nil, errors.New("invalid user_id format")
+		return nil, fmt.Errorf("invalid user_id format")
 	}
 
 	login, ok := claims["login"].(string)
 	if !ok {
-		return nil, errors.New("login not found in claims")
+		return nil, fmt.Errorf("login not found in claims")
 	}
 
 	role, ok := claims["role"].(string)
 	if !ok {
-		return nil, errors.New("role not found in claims")
+		return nil, fmt.Errorf("role not found in claims")
 	}
 
 	tokenType, ok := claims["token_type"].(string)
 	if !ok {
-		return nil, errors.New("token_type not found in claims")
+		return nil, fmt.Errorf("token_type not found in claims")
 	}
 
 	return &Claims{
@@ -259,21 +259,21 @@ func (j *JWT) CreatePasswordResetToken(userID uuid.UUID, email string) (string, 
 func (j *JWT) ValidatePasswordResetToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("unexpected signing method")
+			return nil, fmt.Errorf("unexpected signing method")
 		}
 		return []byte(j.SecretKey), nil
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error validating password reset token: %w", err)
 	}
 
 	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
 		if claims.TokenType != "password_reset" {
-			return nil, errors.New("invalid token type")
+			return nil, fmt.Errorf("invalid token type")
 		}
 		return claims, nil
 	}
 
-	return nil, errors.New("invalid token")
+	return nil, fmt.Errorf("invalid token")
 }

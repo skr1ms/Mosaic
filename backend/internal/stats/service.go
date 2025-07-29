@@ -377,7 +377,7 @@ func (s *StatsService) getImageProcessingQueueSize(ctx context.Context) (int64, 
 	// Получаем размер очереди из Redis
 	queueSize, err := s.deps.RedisClient.LLen(ctx, "image_processing_queue").Result()
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to get image processing queue size: %w", err)
 	}
 	return queueSize, nil
 }

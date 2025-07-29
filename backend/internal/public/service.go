@@ -12,6 +12,7 @@ import (
 	"github.com/skr1ms/mosaic/internal/coupon"
 	"github.com/skr1ms/mosaic/internal/image"
 	"github.com/skr1ms/mosaic/internal/partner"
+	"github.com/skr1ms/mosaic/internal/payment"
 	"github.com/skr1ms/mosaic/internal/types"
 	"github.com/skr1ms/mosaic/pkg/randomCouponCode"
 )
@@ -21,6 +22,7 @@ type PublicServiceDeps struct {
 	ImageRepository   *image.ImageRepository
 	PartnerRepository *partner.PartnerRepository
 	ImageService      *image.ImageService
+	PaymentService    *payment.PaymentService
 }
 
 type PublicService struct {
@@ -375,24 +377,44 @@ func (s *PublicService) PurchaseCoupon(req PurchaseCouponRequest) (map[string]in
 		return nil, fmt.Errorf("failed to create coupon: %w", err)
 	}
 
-	// TODO: Интеграция с платежной системой
+	// Используем PaymentService для создания заказа и получения URL оплаты
+	paymentReq := &payment.PurchaseCouponRequest{
+		Size:      req.Size,
+		Style:     req.Style,
+		Email:     req.Email,
+		ReturnURL: "http://localhost:3000/payment/success", // TODO: получать из конфига
+		Language:  "ru",
+	}
+
+	response, err := s.deps.PaymentService.PurchaseCoupon(context.Background(), paymentReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create payment order: %w", err)
+	}
+
+	if !response.Success {
+		return map[string]interface{}{
+			"success": false,
+			"message": response.Message,
+		}, nil
+	}
 
 	return map[string]interface{}{
-		"message":     "Купон успешно куплен",
-		"coupon_code": newCoupon.Code,
-		"coupon_id":   newCoupon.ID,
+		"success":     true,
+		"order_id":    response.OrderID,
+		"payment_url": response.PaymentURL,
+		"message":     "Заказ создан, переходите по ссылке для оплаты",
 	}, nil
 }
 
 // GetAvailableSizes возвращает доступные размеры
 func (s *PublicService) GetAvailableSizes() []map[string]interface{} {
 	return []map[string]interface{}{
-		{"size": "21x30", "title": "21×30 см", "price": 1500},
-		{"size": "30x40", "title": "30×40 см", "price": 2000},
-		{"size": "40x40", "title": "40×40 см", "price": 2200},
-		{"size": "40x50", "title": "40×50 см", "price": 2500},
-		{"size": "40x60", "title": "40×60 см", "price": 2800},
-		{"size": "50x70", "title": "50×70 см", "price": 3500},
+		{"size": "21x30", "title": "21×30 см", "price": int(payment.FixedPriceRub)},
+		{"size": "30x40", "title": "30×40 см", "price": int(payment.FixedPriceRub)},
+		{"size": "40x40", "title": "40×40 см", "price": int(payment.FixedPriceRub)},
+		{"size": "40x50", "title": "40×50 см", "price": int(payment.FixedPriceRub)},
+		{"size": "40x60", "title": "40×60 см", "price": int(payment.FixedPriceRub)},
+		{"size": "50x70", "title": "50×70 см", "price": int(payment.FixedPriceRub)},
 	}
 }
 

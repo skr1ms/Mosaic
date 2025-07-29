@@ -22,7 +22,7 @@ func GenerateUniqueCouponCode(partnerCode string, repo CouponRepository) (string
 		prefix := partnerCode
 		suffix, err := generateUniqueSuffix(prefix, repo)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("error generating unique coupon code: %w", err)
 		}
 		return prefix + suffix, nil
 	}
@@ -34,7 +34,7 @@ func GenerateUniqueCouponCode(partnerCode string, repo CouponRepository) (string
 	prefix := fmt.Sprintf("%04d", code)
 	suffix, err := generateUniqueSuffix(prefix, repo)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error generating unique coupon code: %w", err)
 	}
 	return prefix + suffix, nil
 }
@@ -74,7 +74,7 @@ func generateUniqueSuffix(prefix string, repo CouponRepository) (string, error) 
 		// Проверяем, существует ли такой код
 		exists, err := repo.CodeExists(context.Background(), fullCode)
 		if err != nil {
-			return "", fmt.Errorf("ошибка проверки существования кода: %v", err)
+			return "", fmt.Errorf("error checking code existence: %w", err)
 		}
 
 		if !exists {
@@ -82,7 +82,7 @@ func generateUniqueSuffix(prefix string, repo CouponRepository) (string, error) 
 		}
 	}
 
-	return "", fmt.Errorf("не удалось сгенерировать уникальный код после %d попыток", maxAttempts)
+	return "", fmt.Errorf("failed to generate unique code after %d attempts", maxAttempts)
 }
 
 // generateRandomDigits генерирует строку из случайных цифр заданной длины
