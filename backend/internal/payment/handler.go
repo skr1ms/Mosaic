@@ -23,7 +23,7 @@ func NewPaymentHandler(router fiber.Router, deps *PaymentHandlerDeps) {
 	}
 
 	// Публичные маршруты для покупки купонов
-	paymentGroup := router.Group("/payment")
+	paymentGroup := router.Group("/payment") 
 
 	// Покупка купона онлайн
 	paymentGroup.Post("/purchase", handler.PurchaseCoupon)
@@ -150,8 +150,52 @@ func (h *PaymentHandler) PaymentReturn(c *fiber.Ctx) error {
 }
 
 // PaymentNotification - обработка уведомлений от платежной системы
+// @Summary Обработка webhook уведомлений от Альфа-Банка
+// @Description Обрабатывает уведомления о смене статуса заказа от платежной системы Альфа-Банк
+// @Tags payment
+// @Accept json,application/x-www-form-urlencoded
+// @Produce json
+// @Param notification body PaymentNotificationRequest true "Данные уведомления от Альфа-Банка"
+// @Success 200 {object} SuccessResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /payment/notification [post]
 func (h *PaymentHandler) PaymentNotification(c *fiber.Ctx) error {
-	// TODO: Обработка webhook уведомлений от Альфа-Банка
+	log := zerolog.Ctx(c.UserContext())
+
+	// Получаем данные webhook'а
+	var notification PaymentNotificationRequest
+	if err := c.BodyParser(&notification); err != nil {
+		log.Error().Err(err).Msg("Error parsing webhook notification")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"error":   "Invalid request format",
+		})
+	}
+
+	// Логируем получение webhook
+	log.Info().
+		Str("order_number", notification.OrderNumber).
+		Int("order_status", notification.OrderStatus).
+		Msg("Received payment webhook notification")
+
+	// Обрабатываем уведомление
+	err := h.deps.PaymentService.ProcessWebhookNotification(c.Context(), &notification)
+	if err != nil {
+		log.Error().Err(err).
+			Str("order_number", notification.OrderNumber).
+			Msg("Error processing webhook notification")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"error":   "Error processing notification",
+		})
+	}
+
+	log.Info().
+		Str("order_number", notification.OrderNumber).
+		Msg("Successfully processed payment webhook")
+
+	// Альфа-Банк ожидает статус 200 для подтверждения получения webhook'а
 	return c.JSON(fiber.Map{
 		"success": true,
 	})

@@ -2,9 +2,11 @@ package payment
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/big"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -282,26 +284,18 @@ func (s *PaymentService) GetOrderStatus(ctx context.Context, orderNumber string)
 	if order.Status == OrderStatusPending && order.AlfaBankOrderID != nil {
 		alfaResp, err := s.alfaClient.GetOrderStatus(ctx, *order.AlfaBankOrderID)
 		if err == nil && alfaResp.ErrorCode == "" {
-			// Обновляем статус заказа в зависимости от ответа банка
-			switch alfaResp.OrderStatus {
-			case 2: // Оплачено
-				err = s.deps.PaymentRepository.UpdateOrderStatus(ctx, orderNumber, OrderStatusPaid, nil)
-				if err == nil {
-					order.Status = OrderStatusPaid
-					err = s.createCouponForOrder(ctx, order)
-					if err != nil {
-						return &OrderStatusResponse{
-							Success: false,
-							Message: fmt.Sprintf("Error creating coupon for order %s: %v", orderNumber, err),
-						}, nil
-					}
-				}
-			case 0, 3, 4, 6: // Отклонено/отменено
-				err = s.deps.PaymentRepository.UpdateOrderStatus(ctx, orderNumber, OrderStatusFailed, nil)
-				if err == nil {
-					order.Status = OrderStatusFailed
-				}
-				// case 1, 5: статусы ожидания - оставляем pending
+			// Обрабатываем изменение статуса через webhook логику
+			notification := &PaymentNotificationRequest{
+				OrderNumber:     orderNumber,
+				OrderStatus:     alfaResp.OrderStatus,
+				AlfaBankOrderID: *order.AlfaBankOrderID,
+			}
+
+			// Обновляем статус заказа
+			err = s.ProcessWebhookNotification(ctx, notification)
+			if err == nil {
+				// Обновляем объект заказа для корректного ответа
+				order, _ = s.deps.PaymentRepository.GetOrderByNumber(ctx, orderNumber)
 			}
 		}
 	}
@@ -359,7 +353,8 @@ func (s *PaymentService) ProcessPaymentReturn(ctx context.Context, orderNumber s
 	}
 
 	if order.Status != OrderStatusPending {
-		return fmt.Errorf("order is not in pending status")
+		// Заказ уже обработан
+		return nil
 	}
 
 	// Проверяем статус в Альфа-Банке
@@ -369,48 +364,40 @@ func (s *PaymentService) ProcessPaymentReturn(ctx context.Context, orderNumber s
 			return fmt.Errorf("error checking status in AlfaBank: %w", err)
 		}
 
-		switch alfaResp.OrderStatus {
-		case 2: // Оплачено
-			err = s.deps.PaymentRepository.UpdateOrderStatus(ctx, orderNumber, OrderStatusPaid, nil)
-			if err != nil {
-				return fmt.Errorf("error updating order status: %w", err)
-			}
+		// Используем ту же логику, что и в webhook
+		notification := &PaymentNotificationRequest{
+			OrderNumber:     orderNumber,
+			OrderStatus:     alfaResp.OrderStatus,
+			AlfaBankOrderID: *order.AlfaBankOrderID,
+		}
 
-			// Создаем купон
-			err = s.createCouponForOrder(ctx, order)
-			if err != nil {
-				return fmt.Errorf("error creating coupon: %w", err)
-			}
-		case 0: // Заказ отклонен
-			err = s.deps.PaymentRepository.UpdateOrderStatus(ctx, orderNumber, OrderStatusFailed, nil)
-			if err != nil {
-				return fmt.Errorf("error updating order status: %w", err)
-			}
+		err = s.ProcessWebhookNotification(ctx, notification)
+		if err != nil {
+			return fmt.Errorf("error processing payment status: %w", err)
 		}
 	}
 
 	return nil
 }
 
-// Приватные методы
-
 func (s *PaymentService) createCouponForOrder(ctx context.Context, order *Order) error {
-	// Генерируем код купона согласно ТЗ
-	var partnerCode string
+	var partnerCode string = "0000" 
+
 	if order.PartnerID != nil {
 		partner, err := s.deps.PartnerRepository.GetByID(ctx, *order.PartnerID)
-		if err == nil {
-			// Генерируем 4-значный код партнера из ID
-			partnerCode = fmt.Sprintf("%04d", partner.ID.ID())
+		if err == nil && partner != nil {
+			partnerCode = partner.PartnerCode
 		}
 	}
-	if partnerCode == "" {
-		partnerCode = "0000" // Собственные купоны
+
+	// Используем существующий пакет для генерации уникального кода
+	couponCode, err := s.generateUniqueCouponCode(partnerCode)
+	if err != nil {
+		return fmt.Errorf("error generating coupon code: %w", err)
 	}
 
-	couponCode := fmt.Sprintf("%s-%08d", partnerCode, time.Now().UnixNano()%100000000)
-
 	// Создаем купон
+	now := time.Now()
 	newCoupon := &coupon.Coupon{
 		Code:          couponCode,
 		Size:          order.Size,
@@ -418,16 +405,14 @@ func (s *PaymentService) createCouponForOrder(ctx context.Context, order *Order)
 		Status:        "new",
 		IsPurchased:   true,
 		PurchaseEmail: &order.UserEmail,
-		PurchasedAt:   &time.Time{},
+		PurchasedAt:   &now,
 	}
 
 	if order.PartnerID != nil {
 		newCoupon.PartnerID = *order.PartnerID
 	}
 
-	*newCoupon.PurchasedAt = time.Now()
-
-	err := s.deps.CouponRepository.Create(ctx, newCoupon)
+	err = s.deps.CouponRepository.Create(ctx, newCoupon)
 	if err != nil {
 		return fmt.Errorf("error creating coupon: %w", err)
 	}
@@ -439,4 +424,107 @@ func (s *PaymentService) createCouponForOrder(ctx context.Context, order *Order)
 	}
 
 	return nil
+}
+
+// generateUniqueCouponCode генерирует уникальный код купона
+func (s *PaymentService) generateUniqueCouponCode(partnerCode string) (string, error) {
+	maxAttempts := 10
+
+	for attempts := 0; attempts < maxAttempts; attempts++ {
+		// Генерируем 8 случайных цифр для второй части кода
+		randomSuffix := ""
+		for i := 0; i < 8; i++ {
+			digit, err := rand.Int(rand.Reader, big.NewInt(10))
+			if err != nil {
+				return "", fmt.Errorf("error generating random digit: %w", err)
+			}
+			randomSuffix += digit.String()
+		}
+
+		// Формируем код в формате XXXX-XXXX-XXXX
+		code := fmt.Sprintf("%s-%s-%s",
+			partnerCode,
+			randomSuffix[:4],
+			randomSuffix[4:8])
+
+		// Проверяем уникальность
+		exists, err := s.deps.CouponRepository.CodeExists(context.Background(), code)
+		if err != nil {
+			return "", fmt.Errorf("error checking code uniqueness: %w", err)
+		}
+
+		if !exists {
+			return code, nil
+		}
+	}
+
+	return "", fmt.Errorf("failed to generate unique coupon code after %d attempts", maxAttempts)
+}
+
+// ProcessWebhookNotification - обработка webhook уведомлений от Альфа-Банка
+func (s *PaymentService) ProcessWebhookNotification(ctx context.Context, notification *PaymentNotificationRequest) error {
+	// Получаем заказ по номеру
+	order, err := s.deps.PaymentRepository.GetOrderByNumber(ctx, notification.OrderNumber)
+	if err != nil {
+		return fmt.Errorf("order not found: %w", err)
+	}
+
+	// Проверяем, что заказ в состоянии ожидания оплаты
+	if order.Status != OrderStatusPending {
+		// Заказ уже обработан, возвращаем успех
+		return nil
+	}
+
+	// Обрабатываем статус платежа согласно документации Альфа-Банка
+	switch notification.OrderStatus {
+	case 0: // Заказ зарегистрирован, но не оплачен
+		// Оставляем статус pending
+		return nil
+
+	case 1: // Предавторизованная сумма захолдирована (для двухстадийных платежей)
+		return nil
+
+	case 2: // Проведена полная авторизация суммы заказа
+		// Платеж успешно завершен
+		err = s.deps.PaymentRepository.UpdateOrderStatus(ctx, notification.OrderNumber, OrderStatusPaid, &notification.AlfaBankOrderID)
+		if err != nil {
+			return fmt.Errorf("error updating order status to paid: %w", err)
+		}
+
+		// Создаем купон автоматически
+		err = s.createCouponForOrder(ctx, order)
+		if err != nil {
+			return fmt.Errorf("error creating coupon for order: %w", err)
+		}
+
+		return nil
+
+	case 3: // Авторизация отменена
+		err = s.deps.PaymentRepository.UpdateOrderStatus(ctx, notification.OrderNumber, OrderStatusCancelled, &notification.AlfaBankOrderID)
+		if err != nil {
+			return fmt.Errorf("error updating order status to cancelled: %w", err)
+		}
+		return nil
+
+	case 4: // По транзакции была проведена операция возврата
+		err = s.deps.PaymentRepository.UpdateOrderStatus(ctx, notification.OrderNumber, OrderStatusFailed, &notification.AlfaBankOrderID)
+		if err != nil {
+			return fmt.Errorf("error updating order status to failed: %w", err)
+		}
+		return nil
+
+	case 5: // Инициирована авторизация через ACS банка-эмитента 
+		// Оставляем статус pending, ждем финального результата
+		return nil
+
+	case 6: // Авторизация отклонена
+		err = s.deps.PaymentRepository.UpdateOrderStatus(ctx, notification.OrderNumber, OrderStatusFailed, &notification.AlfaBankOrderID)
+		if err != nil {
+			return fmt.Errorf("error updating order status to failed: %w", err)
+		}
+		return nil
+
+	default:
+		return fmt.Errorf("unknown order status: %d", notification.OrderStatus)
+	}
 }

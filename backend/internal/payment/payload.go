@@ -92,6 +92,22 @@ type AlfaBankStatusResponse struct {
 	OrderDescription      string `json:"orderDescription"`
 }
 
+// Структуры для webhook уведомлений от Альфа-Банка
+type PaymentNotificationRequest struct {
+	OrderNumber           string `json:"orderNumber" form:"orderNumber"`
+	OrderStatus           int    `json:"orderStatus" form:"orderStatus"`
+	AlfaBankOrderID       string `json:"orderId" form:"orderId"`
+	Amount                int64  `json:"amount" form:"amount"`
+	Currency              string `json:"currency" form:"currency"`
+	ActionCode            int    `json:"actionCode" form:"actionCode"`
+	ActionCodeDescription string `json:"actionCodeDescription" form:"actionCodeDescription"`
+	Date                  int64  `json:"date" form:"date"`
+	IP                    string `json:"ip" form:"ip"`
+	OrderDescription      string `json:"orderDescription" form:"orderDescription"`
+	// Дополнительные поля для валидации
+	Checksum string `json:"checksum" form:"checksum"`
+}
+
 // Структуры для Swagger документации
 type ErrorResponse struct {
 	Error   string `json:"error"`
