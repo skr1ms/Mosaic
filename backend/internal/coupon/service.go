@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -40,7 +41,10 @@ func (s *CouponService) SearchCoupons(code, status, size, style string, partnerI
 func (s *CouponService) GetCouponByID(id uuid.UUID) (*Coupon, error) {
 	coupon, err := s.deps.CouponRepository.GetByID(context.Background(), id)
 	if err != nil {
-		return nil, fmt.Errorf("coupon not found: %w", err)
+		if strings.Contains(err.Error(), "not found") {
+			return nil, errors.New("not found")
+		}
+		return nil, fmt.Errorf("failed to get coupon: %w", err)
 	}
 	return coupon, nil
 }
@@ -49,7 +53,10 @@ func (s *CouponService) GetCouponByID(id uuid.UUID) (*Coupon, error) {
 func (s *CouponService) GetCouponByCode(code string) (*Coupon, error) {
 	coupon, err := s.deps.CouponRepository.GetByCode(context.Background(), code)
 	if err != nil {
-		return nil, fmt.Errorf("coupon not found: %w", err)
+		if strings.Contains(err.Error(), "not found") {
+			return nil, errors.New("not found")
+		}
+		return nil, fmt.Errorf("failed to get coupon: %w", err)
 	}
 	return coupon, nil
 }

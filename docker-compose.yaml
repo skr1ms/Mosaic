@@ -56,6 +56,9 @@ services:
       - JWT_SECRET=your-secret-key
     ports:
       - "3000:3000"
+    dns:
+      - 8.8.8.8  
+      - 1.1.1.1
     depends_on:
       postgres:
         condition: service_healthy

@@ -25,19 +25,19 @@ func NewCouponHandler(router fiber.Router, deps *CouponHandlerDeps) {
 	}
 
 	api := handler.Group("/coupons")
-	api.Get("/", handler.GetCoupons)                              // Получение списка купонов с фильтрацией
-	api.Get("/paginated", handler.GetCouponsPaginated)            // Пагинация списка купонов
-	api.Get("/:id", handler.GetCouponByID)                        // Получение купона по ID
+	api.Get("/", handler.GetCoupons)                              // Получение всех купонов
+	api.Get("/paginated", handler.GetCouponsPaginated)            // Получение купонов с пагинацией
+	api.Get("/export", handler.ExportCoupons)                     // Экспорт купонов в zip файл
+	api.Get("/statistics", handler.GetStatistics)                 // Получение статистики по купонам
+	api.Get("/partner/:partner_id", handler.GetCouponsByPartner)  // Получение купонов по ID партнера
 	api.Get("/code/:code", handler.GetCouponByCode)               // Получение купона по коду
 	api.Post("/code/:code/validate", handler.ValidateCoupon)      // Валидация купона по коду
+	api.Get("/:id", handler.GetCouponByID)                        // Получение купона по ID
 	api.Put("/:id/activate", handler.ActivateCoupon)              // Активация купона
 	api.Put("/:id/reset", handler.ResetCoupon)                    // Сброс купона в исходное состояние
 	api.Put("/:id/send-schema", handler.SendSchema)               // Отправка схемы купона на email
 	api.Put("/:id/purchase", handler.MarkAsPurchased)             // Пометка купона как купленного
-	api.Get("/export", handler.ExportCoupons)                     // Экспорт купонов в zip файл
-	api.Get("/statistics", handler.GetStatistics)                 // Получение статистики по купонам
 	api.Get("/:id/download-materials", handler.DownloadMaterials) // Скачивание материалов купона
-	api.Get("/partner/:partner_id", handler.GetCouponsByPartner)  // Получение купонов по ID партнера
 }
 
 // GetCoupons возвращает список купонов с фильтрацией
@@ -105,6 +105,9 @@ func (handler *CouponHandler) GetCouponByID(c *fiber.Ctx) error {
 	// Получаем купон
 	coupon, err := handler.deps.CouponService.GetCouponByID(id)
 	if err != nil {
+		if err.Error() == "not found" {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Coupon not found"})
+		}
 		log.Error().Err(err).Msg("Failed to get coupon by ID")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
 	}
@@ -130,6 +133,9 @@ func (handler *CouponHandler) GetCouponByCode(c *fiber.Ctx) error {
 	// Получаем купон
 	coupon, err := handler.deps.CouponService.GetCouponByCode(code)
 	if err != nil {
+		if err.Error() == "not found" {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Coupon not found"})
+		}
 		log.Error().Err(err).Msg("Failed to get coupon by code")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
 	}
@@ -166,6 +172,13 @@ func (handler *CouponHandler) ActivateCoupon(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		log.Error().Err(err).Msg("Invalid request body")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+	}
+
+	if req.OriginalImageURL == nil || req.PreviewURL == nil || req.SchemaURL == nil {
+		log.Error().Msg("Missing required fields: original_image_url, preview_url, schema_url")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Missing required fields: original_image_url, preview_url, schema_url",
+		})
 	}
 
 	// Активируем купон

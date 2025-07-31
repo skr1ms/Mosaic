@@ -175,7 +175,7 @@ func (s *PaymentService) getWebhookURL() string {
 	if s.deps.Config.AlphaBankConfig.WebhookURL != "" {
 		return s.deps.Config.AlphaBankConfig.WebhookURL
 	}
-	
+
 	baseURL := s.deps.Config.ServerConfig.FrontendURL
 	if baseURL == "" {
 		baseURL = "https://yourdomain.com" // Замените на ваш реальный домен

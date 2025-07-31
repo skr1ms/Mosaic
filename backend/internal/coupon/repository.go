@@ -2,6 +2,7 @@ package coupon
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -40,6 +41,9 @@ func (r *CouponRepository) GetByCode(ctx context.Context, code string) (*Coupon,
 	coupon := new(Coupon)
 	err := r.db.NewSelect().Model(coupon).Where("code = ?", code).Scan(ctx)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("not found")
+		}
 		return nil, fmt.Errorf("failed to find coupon by code: %w", err)
 	}
 	return coupon, nil
@@ -50,6 +54,9 @@ func (r *CouponRepository) GetByID(ctx context.Context, id uuid.UUID) (*Coupon, 
 	coupon := new(Coupon)
 	err := r.db.NewSelect().Model(coupon).Where("id = ?", id).Scan(ctx)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("not found")
+		}
 		return nil, fmt.Errorf("failed to find coupon by ID: %w", err)
 	}
 	return coupon, nil

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Скрипт для тестирования всех admin эндпоинтов
+# Скрипт для тестирования всех admin эндпоинтов ((всегда нужно обновлять токен после логина в админке))
 TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiZWVhMjQ1ODItMTU3OS00NDAzLWJhOWUtODk2NDY4MWQ1ZGY5IiwibG9naW4iOiJhZG1pbiIsInJvbGUiOiJhZG1pbiIsInRva2VuX3R5cGUiOiJhY2Nlc3MiLCJzdWIiOiJlZWEyNDU4Mi0xNTc5LTQ0MDMtYmE5ZS04OTY0NjgxZDVkZjkiLCJleHAiOjE3NTM5NTk5NDYsIm5iZiI6MTc1Mzk1NjM0NiwiaWF0IjoxNzUzOTU2MzQ2fQ.SCdFG3nGmwYv8CEaHr68Bm8vWP0IGK3mK328aiZFhlo"
 BASE_URL="http://localhost:3000/api"
 HEADER="Authorization: Bearer $TOKEN"
