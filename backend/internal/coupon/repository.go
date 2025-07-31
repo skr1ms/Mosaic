@@ -306,7 +306,7 @@ func (r *CouponRepository) CountByPartnerID(ctx context.Context, partnerID uuid.
 
 // CountActivatedByPartnerID возвращает количество активированных купонов партнёра
 func (r *CouponRepository) CountActivatedByPartnerID(ctx context.Context, partnerID uuid.UUID) (int, error) {
-	count, err := r.db.NewSelect().Model((*Coupon)(nil)).Where("partner_id = ? AND status = ?", partnerID, "used").Count(ctx)
+	count, err := r.db.NewSelect().Model((*Coupon)(nil)).Where("partner_id = ? AND activated_at IS NOT NULL", partnerID).Count(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count activated coupons: %w", err)
 	}
@@ -458,7 +458,7 @@ func (r *CouponRepository) GetTimeSeriesData(ctx context.Context, dateFrom, date
 	query := r.db.NewSelect().
 		ColumnExpr(dateFormat+" as date").
 		ColumnExpr("COUNT(*) as coupons_created").
-		ColumnExpr("COUNT(CASE WHEN status = 'activated' THEN 1 END) as coupons_activated").
+		ColumnExpr("COUNT(CASE WHEN activated_at IS NOT NULL THEN 1 END) as coupons_activated").
 		ColumnExpr("COUNT(CASE WHEN is_purchased = true THEN 1 END) as coupons_purchased").
 		ColumnExpr("0 as new_partners_count").
 		Model((*Coupon)(nil)).
@@ -505,7 +505,7 @@ func (r *CouponRepository) HealthCheck(ctx context.Context) error {
 // CountActivatedInTimeRange возвращает количество активированных купонов в временном диапазоне
 func (r *CouponRepository) CountActivatedInTimeRange(ctx context.Context, from, to time.Time) (int64, error) {
 	count, err := r.db.NewSelect().Model((*Coupon)(nil)).
-		Where("status = 'activated' AND used_at >= ? AND used_at <= ?", from, to).Count(ctx)
+		Where("activated_at IS NOT NULL AND activated_at >= ? AND activated_at <= ?", from, to).Count(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count activated coupons in time range: %w", err)
 	}
@@ -539,6 +539,135 @@ func (r *CouponRepository) GetStatusCounts(ctx context.Context, partnerID *uuid.
 		}
 		statusCounts[status] = count
 	}
+
+	return statusCounts, nil
+}
+
+// GetSizeCounts возвращает подсчет купонов по размерам
+func (r *CouponRepository) GetSizeCounts(ctx context.Context, partnerID *uuid.UUID) (map[string]int64, error) {
+	query := r.db.NewSelect().
+		ColumnExpr("size").
+		ColumnExpr("COUNT(*) as count").
+		Model((*Coupon)(nil)).
+		Group("size")
+
+	if partnerID != nil {
+		query = query.Where("partner_id = ?", *partnerID)
+	}
+
+	rows, err := query.Rows(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get size counts: %w", err)
+	}
+	defer rows.Close()
+
+	sizeCounts := make(map[string]int64)
+	for rows.Next() {
+		var size string
+		var count int64
+		if err := rows.Scan(&size, &count); err != nil {
+			return nil, fmt.Errorf("failed to scan size counts: %w", err)
+		}
+		sizeCounts[size] = count
+	}
+
+	return sizeCounts, nil
+}
+
+// GetStyleCounts возвращает подсчет купонов по стилям
+func (r *CouponRepository) GetStyleCounts(ctx context.Context, partnerID *uuid.UUID) (map[string]int64, error) {
+	query := r.db.NewSelect().
+		ColumnExpr("style").
+		ColumnExpr("COUNT(*) as count").
+		Model((*Coupon)(nil)).
+		Group("style")
+
+	if partnerID != nil {
+		query = query.Where("partner_id = ?", *partnerID)
+	}
+
+	rows, err := query.Rows(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get style counts: %w", err)
+	}
+	defer rows.Close()
+
+	styleCounts := make(map[string]int64)
+	for rows.Next() {
+		var style string
+		var count int64
+		if err := rows.Scan(&style, &count); err != nil {
+			return nil, fmt.Errorf("failed to scan style counts: %w", err)
+		}
+		styleCounts[style] = count
+	}
+
+	return styleCounts, nil
+}
+
+// CountActivated возвращает количество активированных купонов (где activated_at IS NOT NULL)
+func (r *CouponRepository) CountActivated(ctx context.Context) (int64, error) {
+	count, err := r.db.NewSelect().Model((*Coupon)(nil)).Where("activated_at IS NOT NULL").Count(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count activated coupons: %w", err)
+	}
+	return int64(count), nil
+}
+
+// CountActivatedByPartner возвращает количество активированных купонов партнера
+func (r *CouponRepository) CountActivatedByPartner(ctx context.Context, partnerID uuid.UUID) (int64, error) {
+	count, err := r.db.NewSelect().Model((*Coupon)(nil)).
+		Where("partner_id = ? AND activated_at IS NOT NULL", partnerID).Count(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count activated coupons by partner: %w", err)
+	}
+	return int64(count), nil
+}
+
+// GetExtendedStatusCounts возвращает подсчет купонов по расширенным статусам
+func (r *CouponRepository) GetExtendedStatusCounts(ctx context.Context, partnerID *uuid.UUID) (map[string]int64, error) {
+	baseQuery := r.db.NewSelect().Model((*Coupon)(nil))
+	if partnerID != nil {
+		baseQuery = baseQuery.Where("partner_id = ?", *partnerID)
+	}
+
+	statusCounts := make(map[string]int64)
+
+	// Подсчет new (status = 'new' AND activated_at IS NULL)
+	newCount, err := baseQuery.
+		Where("status = ? AND activated_at IS NULL", "new").
+		Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count new coupons: %w", err)
+	}
+	statusCounts["new"] = int64(newCount)
+
+	// Подсчет activated (activated_at IS NOT NULL AND used_at IS NULL)
+	activatedCount, err := baseQuery.
+		Where("activated_at IS NOT NULL AND used_at IS NULL").
+		Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count activated coupons: %w", err)
+	}
+	statusCounts["activated"] = int64(activatedCount)
+
+	// Подсчет used (status = 'used' OR used_at IS NOT NULL)
+	usedCount, err := baseQuery.
+		Where("status = ? OR used_at IS NOT NULL", "used").
+		Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count used coupons: %w", err)
+	}
+	statusCounts["used"] = int64(usedCount)
+
+	// Подсчет completed (completed_at IS NOT NULL)
+	completedCount, err := baseQuery.
+		Where("completed_at IS NOT NULL").
+		Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count completed coupons: %w", err)
+	}
+	statusCounts["completed"] = int64(completedCount)
 
 	return statusCounts, nil
 }

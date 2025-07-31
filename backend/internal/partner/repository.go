@@ -293,7 +293,7 @@ func (r *PartnerRepository) GetNextPartnerCode(ctx context.Context) (string, err
 
 // CountActive возвращает количество активных партнеров
 func (r *PartnerRepository) CountActive(ctx context.Context) (int64, error) {
-	count, err := r.db.NewSelect().Model((*Partner)(nil)).Where("is_blocked = ?", false).Count(ctx)
+	count, err := r.db.NewSelect().Model((*Partner)(nil)).Where("status = ?", "active").Count(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count active partners: %w", err)
 	}
@@ -314,7 +314,7 @@ func (r *PartnerRepository) GetTopByActivity(ctx context.Context, limit int) ([]
 	var partners []*Partner
 	err := r.db.NewSelect().
 		Model(&partners).
-		Where("is_blocked = ?", false).
+		Where("status = ?", "active").
 		Order("created_at DESC").
 		Limit(limit).
 		Scan(ctx)

@@ -22,10 +22,12 @@ package main
 //	@description				Type "Bearer" followed by a space and JWT token.
 
 import (
+	adaptor "github.com/gofiber/adaptor/v2"
 	"github.com/gofiber/contrib/swagger"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog/log"
 	"github.com/skr1ms/mosaic/config"
 	_ "github.com/skr1ms/mosaic/docs" // Swagger docs
@@ -197,6 +199,17 @@ func main() {
 	stats.NewStatsHandler(api, &stats.StatsHandlerDeps{
 		StatsService: statsService,
 	})
+
+	// Prometheus metrics endpoint
+	app.Get("/metrics", adaptor.HTTPHandler(promhttp.Handler()))
+
+	// Запускаем метрики сервер на отдельном порту
+	go func() {
+		metricsApp := fiber.New()
+		metricsApp.Get("/metrics", adaptor.HTTPHandler(promhttp.Handler()))
+		log.Info().Msg("Metrics server is running on port 9091")
+		metricsApp.Listen(":9091")
+	}()
 
 	log.Info().Msg("Server is running on port 3000")
 	app.Listen(":3000")

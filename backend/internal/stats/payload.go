@@ -98,10 +98,10 @@ type CouponsBySizeResponse struct {
 
 // CouponsByStyleResponse статистика купонов по стилям
 type CouponsByStyleResponse struct {
-	Gray     int64 `json:"gray"`
-	Flesh    int64 `json:"flesh"`
-	PopArt   int64 `json:"pop_art"`
-	MaxColor int64 `json:"max_color"`
+	Grayscale int64 `json:"grayscale"`
+	SkinTones int64 `json:"skin_tones"`
+	PopArt    int64 `json:"pop_art"`
+	MaxColors int64 `json:"max_colors"`
 }
 
 // TopPartnersResponse топ партнеры по активности

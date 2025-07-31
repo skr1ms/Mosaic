@@ -1,0 +1,53 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: mosaic-backend
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: mosaic-backend
+          __path__: /app/logs/*.log
+    pipeline_stages:
+      - match:
+          selector: '{job="mosaic-backend"}'
+          stages:
+            - json:
+                expressions:
+                  level:
+                  time:
+                  message:
+                  caller:
+            - labels:
+                level:
+            - timestamp:
+                source: time
+                format: RFC3339
+
+  - job_name: system
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: varlogs
+          __path__: /var/log/*log
+    pipeline_stages:
+      - match:
+          selector: '{job="varlogs"}'
+          stages:
+            - regex:
+                expression: '^(?P<timestamp>\S+\s+\S+\s+\S+)\s+(?P<hostname>\S+)\s+(?P<service>\S+):\s+(?P<message>.*)$'
+            - labels:
+                hostname:
+                service:
+            - timestamp:
+                source: timestamp
+                format: Jan 02 15:04:05

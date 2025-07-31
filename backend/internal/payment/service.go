@@ -2,7 +2,10 @@ package payment
 
 import (
 	"context"
+	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -85,6 +89,12 @@ func (c *AlfaBankClient) RegisterOrder(ctx context.Context, req *AlfaBankRegiste
 	if req.SessionTimeoutSecs > 0 {
 		data.Set("sessionTimeoutSecs", strconv.Itoa(req.SessionTimeoutSecs))
 	}
+	if req.BindingId != "" {
+		data.Set("bindingId", req.BindingId)
+	}
+	if req.Features != "" {
+		data.Set("features", req.Features)
+	}
 
 	url := c.config.AlphaBankConfig.Url + "/payment/rest/register.do"
 
@@ -136,6 +146,43 @@ func (c *AlfaBankClient) GetOrderStatus(ctx context.Context, orderID string) (*A
 }
 
 // PurchaseCoupon - покупка купона онлайн с оплатой картой
+func (s *PaymentService) validateWebhookSignature(notification *PaymentNotificationRequest) bool {
+	if s.deps.Config.AlphaBankConfig.WebhookSecret == "" {
+		// Если секрет не настроен, пропускаем валидацию (для разработки)
+		return true
+	}
+
+	// Создаем строку для подписи из основных параметров
+	data := fmt.Sprintf("%s;%d;%s;%d;%s",
+		notification.OrderNumber,
+		notification.OrderStatus,
+		notification.AlfaBankOrderID,
+		notification.Amount,
+		notification.Currency,
+	)
+
+	// Вычисляем HMAC-SHA256
+	h := hmac.New(sha256.New, []byte(s.deps.Config.AlphaBankConfig.WebhookSecret))
+	h.Write([]byte(data))
+	expectedSignature := hex.EncodeToString(h.Sum(nil))
+
+	// Сравниваем с полученной подписью
+	return strings.EqualFold(expectedSignature, notification.Checksum)
+}
+
+func (s *PaymentService) getWebhookURL() string {
+	// Приоритет: специальный webhook URL > FrontendURL + путь > fallback
+	if s.deps.Config.AlphaBankConfig.WebhookURL != "" {
+		return s.deps.Config.AlphaBankConfig.WebhookURL
+	}
+	
+	baseURL := s.deps.Config.ServerConfig.FrontendURL
+	if baseURL == "" {
+		baseURL = "https://yourdomain.com" // Замените на ваш реальный домен
+	}
+	return baseURL + "/api/payment/notification"
+}
+
 func (s *PaymentService) PurchaseCoupon(ctx context.Context, req *PurchaseCouponRequest) (*PurchaseCouponResponse, error) {
 	// Проверяем, что размер поддерживается
 	supportedSizes := map[string]bool{
@@ -204,6 +251,10 @@ func (s *PaymentService) PurchaseCoupon(ctx context.Context, req *PurchaseCoupon
 		language = req.Language
 	}
 
+	// Подготавливаем webhook URL и параметры для jsonParams
+	webhookURL := s.getWebhookURL()
+	jsonParams := fmt.Sprintf(`{"callbackUrl":"%s"}`, webhookURL)
+
 	alfaReq := &AlfaBankRegisterRequest{
 		OrderNumber:        orderNumber,
 		Amount:             order.Amount,
@@ -213,6 +264,7 @@ func (s *PaymentService) PurchaseCoupon(ctx context.Context, req *PurchaseCoupon
 		Description:        order.Description,
 		Language:           language,
 		ClientId:           req.Email,
+		JsonParams:         jsonParams,
 		SessionTimeoutSecs: 1200,
 	}
 
@@ -381,7 +433,7 @@ func (s *PaymentService) ProcessPaymentReturn(ctx context.Context, orderNumber s
 }
 
 func (s *PaymentService) createCouponForOrder(ctx context.Context, order *Order) error {
-	var partnerCode string = "0000" 
+	var partnerCode string = "0000"
 
 	if order.PartnerID != nil {
 		partner, err := s.deps.PartnerRepository.GetByID(ctx, *order.PartnerID)
@@ -463,6 +515,11 @@ func (s *PaymentService) generateUniqueCouponCode(partnerCode string) (string, e
 
 // ProcessWebhookNotification - обработка webhook уведомлений от Альфа-Банка
 func (s *PaymentService) ProcessWebhookNotification(ctx context.Context, notification *PaymentNotificationRequest) error {
+	// Валидируем подпись webhook'а
+	if !s.validateWebhookSignature(notification) {
+		return fmt.Errorf("invalid webhook signature")
+	}
+
 	// Получаем заказ по номеру
 	order, err := s.deps.PaymentRepository.GetOrderByNumber(ctx, notification.OrderNumber)
 	if err != nil {
@@ -513,7 +570,7 @@ func (s *PaymentService) ProcessWebhookNotification(ctx context.Context, notific
 		}
 		return nil
 
-	case 5: // Инициирована авторизация через ACS банка-эмитента 
+	case 5: // Инициирована авторизация через ACS банка-эмитента
 		// Оставляем статус pending, ждем финального результата
 		return nil
 

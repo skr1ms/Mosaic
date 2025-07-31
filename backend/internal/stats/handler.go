@@ -238,42 +238,62 @@ func (h *StatsHandler) GetCouponsByStatus(c *fiber.Ctx) error {
 	return c.JSON(stats)
 }
 
-// GetCouponsBySizes возвращает статистику купонов по размерам (заглушка)
+// GetCouponsBySizes возвращает статистику купонов по размерам
 // @Summary Получить статистику купонов по размерам
 // @Description Возвращает количество купонов по размерам
 // @Tags Admin Stats
 // @Accept json
 // @Produce json
+// @Param partner_id query string false "ID партнера (опционально)"
 // @Success 200 {object} CouponsBySizeResponse
 // @Router /admin/stats/coupons-by-size [get]
 func (h *StatsHandler) GetCouponsBySizes(c *fiber.Ctx) error {
-	// Заглушка - можно реализовать позже
-	return c.JSON(&CouponsBySizeResponse{
-		Size21x30: 0,
-		Size30x40: 0,
-		Size40x40: 0,
-		Size40x50: 0,
-		Size40x60: 0,
-		Size50x70: 0,
-	})
+	log := zerolog.Ctx(c.UserContext())
+	var partnerID *uuid.UUID
+	if partnerIDStr := c.Query("partner_id"); partnerIDStr != "" {
+		if parsed, err := uuid.Parse(partnerIDStr); err == nil {
+			partnerID = &parsed
+		}
+	}
+
+	stats, err := h.deps.StatsService.GetCouponsBySize(c.Context(), partnerID)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to get coupons by size stats")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to get coupons by size statistics",
+		})
+	}
+
+	return c.JSON(stats)
 }
 
-// GetCouponsByStyles возвращает статистику купонов по стилям (заглушка)
+// GetCouponsByStyles возвращает статистику купонов по стилям
 // @Summary Получить статистику купонов по стилям
 // @Description Возвращает количество купонов по стилям обработки
 // @Tags Admin Stats
 // @Accept json
 // @Produce json
+// @Param partner_id query string false "ID партнера (опционально)"
 // @Success 200 {object} CouponsByStyleResponse
 // @Router /admin/stats/coupons-by-style [get]
 func (h *StatsHandler) GetCouponsByStyles(c *fiber.Ctx) error {
-	// Заглушка - можно реализовать позже
-	return c.JSON(&CouponsByStyleResponse{
-		Gray:     0,
-		Flesh:    0,
-		PopArt:   0,
-		MaxColor: 0,
-	})
+	log := zerolog.Ctx(c.UserContext())
+	var partnerID *uuid.UUID
+	if partnerIDStr := c.Query("partner_id"); partnerIDStr != "" {
+		if parsed, err := uuid.Parse(partnerIDStr); err == nil {
+			partnerID = &parsed
+		}
+	}
+
+	stats, err := h.deps.StatsService.GetCouponsByStyle(c.Context(), partnerID)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to get coupons by style stats")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to get coupons by style statistics",
+		})
+	}
+
+	return c.JSON(stats)
 }
 
 // GetTopPartners возвращает топ партнеров по активности

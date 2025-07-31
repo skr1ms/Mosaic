@@ -17,7 +17,6 @@ type PurchaseCouponResponse struct {
 	PaymentURL string `json:"payment_url"`
 	Success    bool   `json:"success"`
 	Message    string `json:"message,omitempty"`
-	Error      error  `json:"error,omitempty"` // Ошибка, если есть
 }
 
 // Request для получения статуса заказа
@@ -69,6 +68,8 @@ type AlfaBankRegisterRequest struct {
 	ClientId           string `json:"clientId,omitempty"`
 	JsonParams         string `json:"jsonParams,omitempty"`
 	SessionTimeoutSecs int    `json:"sessionTimeoutSecs,omitempty"`
+	BindingId          string `json:"bindingId,omitempty"`
+	Features           string `json:"features,omitempty"`
 }
 
 type AlfaBankRegisterResponse struct {

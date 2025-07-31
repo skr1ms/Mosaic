@@ -3,7 +3,6 @@ package admin
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -256,6 +255,12 @@ func (s *AdminService) CreatePartner(req partner.CreatePartnerRequest) (*partner
 		return nil, fmt.Errorf("partner already exists: %w", err)
 	}
 
+	// Проверяем уникальность кода партнера
+	if _, err := s.deps.PartnerRepository.GetByPartnerCode(context.Background(), req.PartnerCode); err == nil {
+		log.Error().Str("partner_code", req.PartnerCode).Msg("Partner code already exists")
+		return nil, fmt.Errorf("partner code already exists")
+	}
+
 	// Хешируем пароль
 	hashedPassword, err := bcrypt.HashPassword(req.Password)
 	if err != nil {
@@ -263,19 +268,15 @@ func (s *AdminService) CreatePartner(req partner.CreatePartnerRequest) (*partner
 		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
 
-	// Генерируем уникальный код партнера
-	partnerCode, err := s.generateUniquePartnerCode()
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to generate partner code")
-		return nil, fmt.Errorf("failed to generate partner code: %w", err)
+	// Устанавливаем статус по умолчанию, если не указан
+	status := req.Status
+	if status == "" {
+		status = "active"
 	}
-
-	// Обрабатываем ссылки на социальные сети
-	telegramLink, whatsappLink := s.processSocialLinks(req.Telegram, req.Whatsapp)
 
 	// Создаем партнера
 	newPartner := &partner.Partner{
-		PartnerCode:     partnerCode,
+		PartnerCode:     req.PartnerCode,
 		Login:           req.Login,
 		Password:        hashedPassword,
 		Domain:          req.Domain,
@@ -288,10 +289,11 @@ func (s *AdminService) CreatePartner(req partner.CreatePartnerRequest) (*partner
 		Phone:           req.Phone,
 		Telegram:        req.Telegram,
 		Whatsapp:        req.Whatsapp,
-		TelegramLink:    telegramLink,
-		WhatsappLink:    whatsappLink,
+		TelegramLink:    req.TelegramLink,
+		WhatsappLink:    req.WhatsappLink,
 		AllowSales:      req.AllowSales,
-		Status:          req.Status,
+		AllowPurchases:  req.AllowPurchases,
+		Status:          status,
 	}
 
 	if err := s.deps.PartnerRepository.Create(context.Background(), newPartner); err != nil {
@@ -300,36 +302,6 @@ func (s *AdminService) CreatePartner(req partner.CreatePartnerRequest) (*partner
 	}
 
 	return newPartner, nil
-}
-
-// generateUniquePartnerCode генерирует уникальный 4-значный код партнера
-func (s *AdminService) generateUniquePartnerCode() (string, error) {
-	log := zerolog.Ctx(context.Background())
-	// Получаем всех партнеров и находим максимальный код
-	partners, err := s.deps.PartnerRepository.GetAll(context.Background())
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to find all partners")
-		return "", fmt.Errorf("failed to find all partners: %w", err)
-	}
-
-	maxCode := 0
-	for _, p := range partners {
-		var code int
-		if _, err := strconv.Atoi(p.PartnerCode); err == nil {
-			if code > maxCode {
-				maxCode = code
-			}
-		}
-	}
-
-	// Если максимальный код равен 9999, возвращаем ошибку, иначе инкрементируем на 1
-	newCode := maxCode + 1
-	if newCode > 9999 {
-		log.Error().Msg("Max partner code reached")
-		return "", fmt.Errorf("max partner code reached")
-	}
-
-	return fmt.Sprintf("%04d", newCode), nil
 }
 
 // GetPartner возвращает партнера по ID

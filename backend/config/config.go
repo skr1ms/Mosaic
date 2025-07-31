@@ -54,9 +54,14 @@ type RecaptchaConfig struct {
 }
 
 type AlphaBankConfig struct {
-	Url      string
-	Username string
-	Password string
+	Url           string
+	Username      string
+	Password      string
+	WebhookURL    string // URL для получения webhook уведомлений
+	WebhookSecret string // Секретный ключ для валидации webhook'ов
+}
+
+type S3MinioConfig struct {
 }
 
 func NewConfig() (*Config, error) {
@@ -95,11 +100,26 @@ func NewConfig() (*Config, error) {
 			Environment: os.Getenv("ENVIRONMENT"),
 		},
 		AlphaBankConfig: AlphaBankConfig{
-			Url:      os.Getenv("ALFA_BANK_PROD_URL"),
-			Username: os.Getenv("ALFA_BANK_USERNAME"),
-			Password: os.Getenv("ALFA_BANK_PASSWORD"),
+			Url:           getAlphaBankUrl(),
+			Username:      os.Getenv("ALFA_BANK_USERNAME"),
+			Password:      os.Getenv("ALFA_BANK_PASSWORD"),
+			WebhookURL:    os.Getenv("ALFA_BANK_WEBHOOK_URL"),
+			WebhookSecret: os.Getenv("ALFA_BANK_WEBHOOK_SECRET"),
 		},
 	}, nil
+}
+
+func getAlphaBankUrl() string {
+	environment := os.Getenv("ENVIRONMENT")
+	if environment == "production" {
+		return os.Getenv("ALFA_BANK_PROD_URL")
+	}
+	// Для тестовой среды
+	testUrl := os.Getenv("ALFA_BANK_TEST_URL")
+	if testUrl == "" {
+		testUrl = "https://alfa.rbsuat.com" // URL тестовой среды по умолчанию
+	}
+	return testUrl
 }
 
 func getEnvAsInt(key string, defaultValue int) int {

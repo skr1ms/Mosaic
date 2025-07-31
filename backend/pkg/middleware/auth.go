@@ -12,9 +12,15 @@ func JWTMiddleware(jwtService *jwt.JWT) fiber.Handler {
 	return jwtware.New(jwtware.Config{
 		SigningKey: jwtware.SigningKey{Key: jwtService.GetSecretKey()},
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			// Сохраняем данные для логирования перед горутиной
+			ip := c.IP()
+			userAgent := c.Get("User-Agent")
+			path := c.Path()
+			errMsg := err.Error()
+
 			// Асинхронно логируем неудачные попытки аутентификации
 			go func() {
-				logAuthFailure(c.IP(), c.Get("User-Agent"), c.Path(), err.Error())
+				logAuthFailure(ip, userAgent, path, errMsg)
 			}()
 
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -24,9 +30,14 @@ func JWTMiddleware(jwtService *jwt.JWT) fiber.Handler {
 		SuccessHandler: func(c *fiber.Ctx) error {
 			token := c.Locals("user")
 			if token == nil {
+				// Сохраняем данные для логирования перед горутиной
+				ip := c.IP()
+				userAgent := c.Get("User-Agent")
+				path := c.Path()
+
 				// Асинхронно логируем отсутствие токена
 				go func() {
-					logAuthFailure(c.IP(), c.Get("User-Agent"), c.Path(), "Token not found in context")
+					logAuthFailure(ip, userAgent, path, "Token not found in context")
 				}()
 
 				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -34,9 +45,14 @@ func JWTMiddleware(jwtService *jwt.JWT) fiber.Handler {
 				})
 			}
 
+			// Сохраняем данные для логирования перед горутиной
+			ip := c.IP()
+			userAgent := c.Get("User-Agent")
+			path := c.Path()
+
 			// Асинхронно логируем успешную аутентификацию
 			go func() {
-				logAuthSuccess(c.IP(), c.Get("User-Agent"), c.Path())
+				logAuthSuccess(ip, userAgent, path)
 			}()
 
 			return c.Next()
@@ -49,9 +65,14 @@ func AdminOnly() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		token := c.Locals("user")
 		if token == nil {
+			// Сохраняем данные для логирования перед горутиной
+			ip := c.IP()
+			userAgent := c.Get("User-Agent")
+			path := c.Path()
+
 			// Асинхронно логируем неудачу авторизации
 			go func() {
-				logAuthorizationFailure(c.IP(), c.Get("User-Agent"), c.Path(), "Token not found", "admin")
+				logAuthorizationFailure(ip, userAgent, path, "Token not found", "admin")
 			}()
 
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -61,9 +82,15 @@ func AdminOnly() fiber.Handler {
 
 		claims, err := jwt.GetClaimsFromFiberContext(c)
 		if err != nil {
+			// Сохраняем данные для логирования перед горутиной
+			ip := c.IP()
+			userAgent := c.Get("User-Agent")
+			path := c.Path()
+			errMsg := err.Error()
+
 			// Асинхронно логируем ошибку получения claims
 			go func() {
-				logAuthorizationFailure(c.IP(), c.Get("User-Agent"), c.Path(), err.Error(), "admin")
+				logAuthorizationFailure(ip, userAgent, path, errMsg, "admin")
 			}()
 
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -72,9 +99,14 @@ func AdminOnly() fiber.Handler {
 		}
 
 		if claims.Role != "admin" {
+			// Сохраняем данные для логирования перед горутиной
+			ip := c.IP()
+			userAgent := c.Get("User-Agent")
+			path := c.Path()
+
 			// Асинхронно логируем права
 			go func() {
-				logAuthorizationFailure(c.IP(), c.Get("User-Agent"), c.Path(), "insufficient_privileges", "admin")
+				logAuthorizationFailure(ip, userAgent, path, "insufficient_privileges", "admin")
 			}()
 
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
@@ -82,9 +114,15 @@ func AdminOnly() fiber.Handler {
 			})
 		}
 
+		// Сохраняем данные для логирования перед горутиной
+		ip := c.IP()
+		userAgent := c.Get("User-Agent")
+		path := c.Path()
+		role := claims.Role
+
 		// Асинхронно логируем успешную авторизацию
 		go func() {
-			logAuthorizationSuccess(c.IP(), c.Get("User-Agent"), c.Path(), claims.Role, "admin")
+			logAuthorizationSuccess(ip, userAgent, path, role, "admin")
 		}()
 
 		return c.Next()
@@ -96,9 +134,14 @@ func PartnerOnly() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		token := c.Locals("user")
 		if token == nil {
+			// Сохраняем данные для логирования перед горутиной
+			ip := c.IP()
+			userAgent := c.Get("User-Agent")
+			path := c.Path()
+
 			// Асинхронно логируем неудачу авторизации
 			go func() {
-				logAuthorizationFailure(c.IP(), c.Get("User-Agent"), c.Path(), "Token not found", "partner")
+				logAuthorizationFailure(ip, userAgent, path, "Token not found", "partner")
 			}()
 
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -108,9 +151,15 @@ func PartnerOnly() fiber.Handler {
 
 		claims, err := jwt.GetClaimsFromFiberContext(c)
 		if err != nil {
+			// Сохраняем данные для логирования перед горутиной
+			ip := c.IP()
+			userAgent := c.Get("User-Agent")
+			path := c.Path()
+			errMsg := err.Error()
+
 			// Асинхронно логируем ошибку получения claims
 			go func() {
-				logAuthorizationFailure(c.IP(), c.Get("User-Agent"), c.Path(), err.Error(), "partner")
+				logAuthorizationFailure(ip, userAgent, path, errMsg, "partner")
 			}()
 
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -119,9 +168,14 @@ func PartnerOnly() fiber.Handler {
 		}
 
 		if claims.Role != "partner" {
+			// Сохраняем данные для логирования перед горутиной
+			ip := c.IP()
+			userAgent := c.Get("User-Agent")
+			path := c.Path()
+
 			// Асинхронно логируем права
 			go func() {
-				logAuthorizationFailure(c.IP(), c.Get("User-Agent"), c.Path(), "insufficient_privileges", "partner")
+				logAuthorizationFailure(ip, userAgent, path, "insufficient_privileges", "partner")
 			}()
 
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
@@ -129,9 +183,15 @@ func PartnerOnly() fiber.Handler {
 			})
 		}
 
+		// Сохраняем данные для логирования перед горутиной
+		ip := c.IP()
+		userAgent := c.Get("User-Agent")
+		path := c.Path()
+		role := claims.Role
+
 		// Асинхронно логируем успешную авторизацию
 		go func() {
-			logAuthorizationSuccess(c.IP(), c.Get("User-Agent"), c.Path(), claims.Role, "partner")
+			logAuthorizationSuccess(ip, userAgent, path, role, "partner")
 		}()
 
 		return c.Next()
@@ -143,9 +203,14 @@ func AdminOrPartner() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		token := c.Locals("user")
 		if token == nil {
+			// Сохраняем данные для логирования перед горутиной
+			ip := c.IP()
+			userAgent := c.Get("User-Agent")
+			path := c.Path()
+
 			// Асинхронно логируем неудачу авторизации
 			go func() {
-				logAuthorizationFailure(c.IP(), c.Get("User-Agent"), c.Path(), "Token not found", "admin_or_partner")
+				logAuthorizationFailure(ip, userAgent, path, "Token not found", "admin_or_partner")
 			}()
 
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -155,9 +220,15 @@ func AdminOrPartner() fiber.Handler {
 
 		claims, err := jwt.GetClaimsFromFiberContext(c)
 		if err != nil {
+			// Сохраняем данные для логирования перед горутиной
+			ip := c.IP()
+			userAgent := c.Get("User-Agent")
+			path := c.Path()
+			errMsg := err.Error()
+
 			// Асинхронно логируем ошибку получения claims
 			go func() {
-				logAuthorizationFailure(c.IP(), c.Get("User-Agent"), c.Path(), err.Error(), "admin_or_partner")
+				logAuthorizationFailure(ip, userAgent, path, errMsg, "admin_or_partner")
 			}()
 
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -166,9 +237,14 @@ func AdminOrPartner() fiber.Handler {
 		}
 
 		if claims.Role != "admin" && claims.Role != "partner" {
+			// Сохраняем данные для логирования перед горутиной
+			ip := c.IP()
+			userAgent := c.Get("User-Agent")
+			path := c.Path()
+
 			// Асинхронно логируем права
 			go func() {
-				logAuthorizationFailure(c.IP(), c.Get("User-Agent"), c.Path(), "insufficient_privileges", "admin_or_partner")
+				logAuthorizationFailure(ip, userAgent, path, "insufficient_privileges", "admin_or_partner")
 			}()
 
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
@@ -176,9 +252,15 @@ func AdminOrPartner() fiber.Handler {
 			})
 		}
 
+		// Сохраняем данные для логирования перед горутиной
+		ip := c.IP()
+		userAgent := c.Get("User-Agent")
+		path := c.Path()
+		role := claims.Role
+
 		// Асинхронно логируем успешную авторизацию
 		go func() {
-			logAuthorizationSuccess(c.IP(), c.Get("User-Agent"), c.Path(), claims.Role, "admin_or_partner")
+			logAuthorizationSuccess(ip, userAgent, path, role, "admin_or_partner")
 		}()
 
 		return c.Next()
