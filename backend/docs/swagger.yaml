@@ -1,4 +1,3 @@
-basePath: /api
 definitions:
   admin.ChangePasswordRequest:
     properties:
@@ -169,6 +168,8 @@ definitions:
     properties:
       address:
         type: string
+      allow_purchases:
+        type: boolean
       allow_sales:
         type: boolean
       brand_name:
@@ -183,6 +184,8 @@ definitions:
         type: string
       ozon_link:
         type: string
+      partner_code:
+        type: string
       password:
         type: string
       phone:
@@ -190,21 +193,34 @@ definitions:
       status:
         enum:
         - active
-        - inactive
-        - pending
+        - blocked
         type: string
       telegram:
         type: string
+      telegram_link:
+        type: string
       whatsapp:
+        type: string
+      whatsapp_link:
         type: string
       wildberries_link:
         type: string
     required:
+    - address
     - brand_name
     - domain
+    - email
     - login
+    - logo_url
+    - ozon_link
+    - partner_code
     - password
     - phone
+    - telegram
+    - telegram_link
+    - whatsapp
+    - whatsapp_link
+    - wildberries_link
     type: object
   partner.ForgotPasswordRequest:
     properties:
@@ -272,6 +288,32 @@ definitions:
         type: string
       success:
         type: boolean
+    type: object
+  payment.PaymentNotificationRequest:
+    properties:
+      actionCode:
+        type: integer
+      actionCodeDescription:
+        type: string
+      amount:
+        type: integer
+      checksum:
+        description: Дополнительные поля для валидации
+        type: string
+      currency:
+        type: string
+      date:
+        type: integer
+      ip:
+        type: string
+      orderDescription:
+        type: string
+      orderId:
+        type: string
+      orderNumber:
+        type: string
+      orderStatus:
+        type: integer
     type: object
   payment.PurchaseCouponRequest:
     properties:
@@ -344,6 +386,13 @@ definitions:
       value:
         type: string
     type: object
+  payment.SuccessResponse:
+    properties:
+      message:
+        type: string
+      success:
+        type: boolean
+    type: object
   public.ActivateCouponRequest:
     properties:
       email:
@@ -415,13 +464,13 @@ definitions:
     type: object
   stats.CouponsByStyleResponse:
     properties:
-      flesh:
+      grayscale:
         type: integer
-      gray:
-        type: integer
-      max_color:
+      max_colors:
         type: integer
       pop_art:
+        type: integer
+      skin_tones:
         type: integer
     type: object
   stats.GeneralStatsResponse:
@@ -589,19 +638,8 @@ definitions:
     required:
     - style
     type: object
-host: localhost:3000
 info:
-  contact:
-    email: support@swagger.io
-    name: API Support
-    url: http://www.swagger.io/support
-  description: API для системы мозаичных купонов
-  license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
-  termsOfService: http://swagger.io/terms/
-  title: Mosaic API
-  version: "1.0"
+  contact: {}
 paths:
   /admin/admins:
     get:
@@ -1909,6 +1947,11 @@ paths:
       consumes:
       - application/json
       description: Возвращает количество купонов по размерам
+      parameters:
+      - description: ID партнера (опционально)
+        in: query
+        name: partner_id
+        type: string
       produces:
       - application/json
       responses:
@@ -1950,6 +1993,11 @@ paths:
       consumes:
       - application/json
       description: Возвращает количество купонов по стилям обработки
+      parameters:
+      - description: ID партнера (опционально)
+        in: query
+        name: partner_id
+        type: string
       produces:
       - application/json
       responses:
@@ -3814,6 +3862,38 @@ paths:
       summary: Получить мою временную статистику (партнер)
       tags:
       - Partner Stats
+  /payment/notification:
+    post:
+      consumes:
+      - application/json
+      - application/x-www-form-urlencoded
+      description: Обрабатывает уведомления о смене статуса заказа от платежной системы
+        Альфа-Банк
+      parameters:
+      - description: Данные уведомления от Альфа-Банка
+        in: body
+        name: notification
+        required: true
+        schema:
+          $ref: '#/definitions/payment.PaymentNotificationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/payment.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/payment.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/payment.ErrorResponse'
+      summary: Обработка webhook уведомлений от Альфа-Банка
+      tags:
+      - payment
   /payment/options:
     get:
       description: Получение списка доступных размеров и стилей мозаики с ценами
@@ -3884,13 +3964,4 @@ paths:
       summary: Покупка купона онлайн
       tags:
       - payment
-schemes:
-- http
-- https
-securityDefinitions:
-  BearerAuth:
-    description: Type "Bearer" followed by a space and JWT token.
-    in: header
-    name: Authorization
-    type: apiKey
 swagger: "2.0"

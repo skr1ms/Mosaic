@@ -9,16 +9,7 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "termsOfService": "http://swagger.io/terms/",
-        "contact": {
-            "name": "API Support",
-            "url": "http://www.swagger.io/support",
-            "email": "support@swagger.io"
-        },
-        "license": {
-            "name": "MIT",
-            "url": "https://opensource.org/licenses/MIT"
-        },
+        "contact": {},
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -1992,6 +1983,14 @@ const docTemplate = `{
                     "Admin Stats"
                 ],
                 "summary": "Получить статистику купонов по размерам",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID партнера (опционально)",
+                        "name": "partner_id",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2055,6 +2054,14 @@ const docTemplate = `{
                     "Admin Stats"
                 ],
                 "summary": "Получить статистику купонов по стилям",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID партнера (опционально)",
+                        "name": "partner_id",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -4814,6 +4821,53 @@ const docTemplate = `{
                 }
             }
         },
+        "/payment/notification": {
+            "post": {
+                "description": "Обрабатывает уведомления о смене статуса заказа от платежной системы Альфа-Банк",
+                "consumes": [
+                    "application/json",
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment"
+                ],
+                "summary": "Обработка webhook уведомлений от Альфа-Банка",
+                "parameters": [
+                    {
+                        "description": "Данные уведомления от Альфа-Банка",
+                        "name": "notification",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/payment.PaymentNotificationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/payment.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/payment.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/payment.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/payment/options": {
             "get": {
                 "description": "Получение списка доступных размеров и стилей мозаики с ценами",
@@ -5162,15 +5216,28 @@ const docTemplate = `{
         "partner.CreatePartnerRequest": {
             "type": "object",
             "required": [
+                "address",
                 "brand_name",
                 "domain",
+                "email",
                 "login",
+                "logo_url",
+                "ozon_link",
+                "partner_code",
                 "password",
-                "phone"
+                "phone",
+                "telegram",
+                "telegram_link",
+                "whatsapp",
+                "whatsapp_link",
+                "wildberries_link"
             ],
             "properties": {
                 "address": {
                     "type": "string"
+                },
+                "allow_purchases": {
+                    "type": "boolean"
                 },
                 "allow_sales": {
                     "type": "boolean"
@@ -5193,6 +5260,9 @@ const docTemplate = `{
                 "ozon_link": {
                     "type": "string"
                 },
+                "partner_code": {
+                    "type": "string"
+                },
                 "password": {
                     "type": "string"
                 },
@@ -5203,14 +5273,19 @@ const docTemplate = `{
                     "type": "string",
                     "enum": [
                         "active",
-                        "inactive",
-                        "pending"
+                        "blocked"
                     ]
                 },
                 "telegram": {
                     "type": "string"
                 },
+                "telegram_link": {
+                    "type": "string"
+                },
                 "whatsapp": {
+                    "type": "string"
+                },
+                "whatsapp_link": {
                     "type": "string"
                 },
                 "wildberries_link": {
@@ -5320,6 +5395,45 @@ const docTemplate = `{
                 }
             }
         },
+        "payment.PaymentNotificationRequest": {
+            "type": "object",
+            "properties": {
+                "actionCode": {
+                    "type": "integer"
+                },
+                "actionCodeDescription": {
+                    "type": "string"
+                },
+                "amount": {
+                    "type": "integer"
+                },
+                "checksum": {
+                    "description": "Дополнительные поля для валидации",
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "date": {
+                    "type": "integer"
+                },
+                "ip": {
+                    "type": "string"
+                },
+                "orderDescription": {
+                    "type": "string"
+                },
+                "orderId": {
+                    "type": "string"
+                },
+                "orderNumber": {
+                    "type": "string"
+                },
+                "orderStatus": {
+                    "type": "integer"
+                }
+            }
+        },
         "payment.PurchaseCouponRequest": {
             "type": "object",
             "required": [
@@ -5418,6 +5532,17 @@ const docTemplate = `{
                 },
                 "value": {
                     "type": "string"
+                }
+            }
+        },
+        "payment.SuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
                 }
             }
         },
@@ -5524,16 +5649,16 @@ const docTemplate = `{
         "stats.CouponsByStyleResponse": {
             "type": "object",
             "properties": {
-                "flesh": {
+                "grayscale": {
                     "type": "integer"
                 },
-                "gray": {
-                    "type": "integer"
-                },
-                "max_color": {
+                "max_colors": {
                     "type": "integer"
                 },
                 "pop_art": {
+                    "type": "integer"
+                },
+                "skin_tones": {
                     "type": "integer"
                 }
             }
@@ -5782,25 +5907,17 @@ const docTemplate = `{
                 }
             }
         }
-    },
-    "securityDefinitions": {
-        "BearerAuth": {
-            "description": "Type \"Bearer\" followed by a space and JWT token.",
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header"
-        }
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.0",
-	Host:             "localhost:3000",
-	BasePath:         "/api",
-	Schemes:          []string{"http", "https"},
-	Title:            "Mosaic API",
-	Description:      "API для системы мозаичных купонов",
+	Version:          "",
+	Host:             "",
+	BasePath:         "",
+	Schemes:          []string{},
+	Title:            "",
+	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",
