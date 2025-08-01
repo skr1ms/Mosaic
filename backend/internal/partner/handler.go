@@ -64,6 +64,7 @@ func NewPartnerHandler(router fiber.Router, deps *PartnerHandlerDeps) {
 //	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
 //	@Router			/partner/dashboard [get]
 func (handler *PartnerHandler) GetDashboard(c *fiber.Ctx) error {
+	// TODO: Реализовать дашборд партнера
 	return c.JSON(fiber.Map{"message": "Partner dashboard"})
 }
 
@@ -125,6 +126,7 @@ func (handler *PartnerHandler) GetProfile(c *fiber.Ctx) error {
 //	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
 //	@Router			/partner/profile [put]
 func (handler *PartnerHandler) UpdateProfile(c *fiber.Ctx) error {
+	// TODO: Реализовать обновление профиля партнера
 	return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
 }
 
@@ -293,6 +295,7 @@ func (handler *PartnerHandler) GetMyStatistics(c *fiber.Ctx) error {
 //	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
 //	@Router			/partner/statistics/sales [get]
 func (handler *PartnerHandler) GetSalesStatistics(c *fiber.Ctx) error {
+	// TODO: Реализовать статистику продаж партнера
 	return c.JSON(fiber.Map{"message": "Sales statistics"})
 }
 

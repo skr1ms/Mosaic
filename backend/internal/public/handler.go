@@ -443,6 +443,7 @@ func (handler *PublicHandler) PurchaseCoupon(c *fiber.Ctx) error {
 //	@Success		200	{array}	map[string]interface{}	"Доступные размеры"
 //	@Router			/api/sizes [get]
 func (handler *PublicHandler) GetAvailableSizes(c *fiber.Ctx) error {
+	// TODO: Реализовать получение доступных размеров
 	sizes := handler.deps.PublicService.GetAvailableSizes()
 	return c.JSON(sizes)
 }
@@ -456,6 +457,7 @@ func (handler *PublicHandler) GetAvailableSizes(c *fiber.Ctx) error {
 //	@Success		200	{array}	map[string]interface{}	"Доступные стили"
 //	@Router			/api/styles [get]
 func (handler *PublicHandler) GetAvailableStyles(c *fiber.Ctx) error {
+	// TODO: Реализовать получение доступных стилей
 	styles := handler.deps.PublicService.GetAvailableStyles()
 	return c.JSON(styles)
 }

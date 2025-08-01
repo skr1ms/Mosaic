@@ -1514,6 +1514,7 @@ func (handler *AdminHandler) ChangePassword(c *fiber.Ctx) error {
 //	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
 //	@Router			/admin/statistics/system [get]
 func (handler *AdminHandler) GetSystemStatistics(c *fiber.Ctx) error {
+	// TODO: Реализовать системную статистику
 	// Здесь будет логика получения системной статистики:
 	// - Состояние очереди обработки изображений
 	// - Производительность системы
@@ -1559,6 +1560,7 @@ func (handler *AdminHandler) GetSystemStatistics(c *fiber.Ctx) error {
 //	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
 //	@Router			/admin/statistics/analytics [get]
 func (handler *AdminHandler) GetAnalytics(c *fiber.Ctx) error {
+	// TODO: Реализовать аналитику
 	// Здесь будет логика получения аналитики:
 	// - Топ партнеры
 	// - Тренды использования
@@ -1614,6 +1616,7 @@ func (handler *AdminHandler) GetAnalytics(c *fiber.Ctx) error {
 //	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
 //	@Router			/admin/statistics/dashboard [get]
 func (handler *AdminHandler) GetDashboardStatistics(c *fiber.Ctx) error {
+	// TODO: Реализовать статистику для дашборда
 	// Здесь будет логика получения статистики для дашборда:
 	// - Ключевые метрики
 	// - Последние активности
