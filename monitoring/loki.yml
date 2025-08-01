@@ -2,7 +2,7 @@ auth_enabled: false
 
 server:
   http_listen_port: 3100
-  grpc_listen_port: 9096
+  grpc_listen_port: 3101
 
 common:
   path_prefix: /loki
@@ -37,7 +37,7 @@ schema_config:
         period: 24h
 
 ruler:
-  alertmanager_url: http://localhost:9093
+  alertmanager_url: http://localhost:3100
 
 analytics:
   reporting_enabled: false

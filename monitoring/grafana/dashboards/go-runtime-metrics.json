@@ -1,0 +1,131 @@
+{
+  "id": null,
+  "title": "Go Runtime Metrics",
+  "tags": [
+    "go",
+    "runtime",
+    "system"
+  ],
+  "timezone": "browser",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Go Goroutines",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "go_goroutines",
+          "legendFormat": "Goroutines"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": 2,
+      "title": "Go Memory Usage",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "go_memstats_alloc_bytes",
+          "legendFormat": "Allocated Memory"
+        },
+        {
+          "expr": "go_memstats_heap_alloc_bytes",
+          "legendFormat": "Heap Allocated"
+        },
+        {
+          "expr": "go_memstats_sys_bytes",
+          "legendFormat": "System Memory"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      }
+    },
+    {
+      "id": 3,
+      "title": "GC Duration",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "go_gc_duration_seconds",
+          "legendFormat": "GC Duration ({{quantile}})"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      }
+    },
+    {
+      "id": 4,
+      "title": "GC Cycles",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "rate(go_gc_cycles_automatic_gc_cycles_total[5m])",
+          "legendFormat": "Automatic GC"
+        },
+        {
+          "expr": "rate(go_gc_cycles_forced_gc_cycles_total[5m])",
+          "legendFormat": "Forced GC"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      }
+    },
+    {
+      "id": 5,
+      "title": "Go Threads",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(go_threads) by (instance)",
+          "legendFormat": "Threads ({{instance}})"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      }
+    },
+    {
+      "id": 6,
+      "title": "Heap Objects",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(go_memstats_heap_objects) by (instance)",
+          "legendFormat": "Heap Objects ({{instance}})"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      }
+    }
+  ],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "refresh": "5s"
+}

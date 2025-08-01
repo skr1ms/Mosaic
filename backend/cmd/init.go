@@ -12,7 +12,7 @@ package main
 //	@license.name	MIT
 //	@license.url	https://opensource.org/licenses/MIT
 
-//	@host		localhost:3000
+//	@host		localhost:8080
 //	@BasePath	/api
 //	@schemes	http https
 
@@ -207,11 +207,12 @@ func InitializeApp() *fiber.App {
 	go func() {
 		metricsApp := fiber.New()
 		metricsApp.Get("/metrics", adaptor.HTTPHandler(promhttp.Handler()))
-		log.Info().Msg("Metrics server is running on port 9091")
-		metricsApp.Listen(":9091")
+
+		log.Info().Msgf("Metrics server is running on port %s", cfg.MetricsConfig.Port)
+		metricsApp.Listen(":" + cfg.MetricsConfig.Port)
 	}()
 
-	log.Info().Msg("Server is running on port 3000")
+	log.Info().Msgf("Server is running on port %s", cfg.ServerConfig.Port)
 
 	return app
 }

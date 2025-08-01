@@ -1,242 +1,262 @@
 {
-  "dashboard": {
-    "id": null,
-    "title": "Mosaic System Overview",
-    "tags": ["mosaic"],
-    "style": "dark",
-    "timezone": "browser",
-    "editable": true,
-    "graphTooltip": 0,
-    "time": {
-      "from": "now-6h",
-      "to": "now"
-    },
-    "timepicker": {},
-    "templating": {
-      "list": []
-    },
-    "panels": [
-      {
-        "title": "Coupons Created Total",
-        "type": "stat",
-        "targets": [
-          {
-            "expr": "increase(mosaic_coupons_created_total[1h])",
-            "refId": "A"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "thresholds": {
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 100
-                }
-              ]
-            }
-          }
-        },
-        "gridPos": {
-          "h": 8,
-          "w": 6,
-          "x": 0,
-          "y": 0
-        },
-        "id": 1
-      },
-      {
-        "title": "Coupons Activated Total",
-        "type": "stat",
-        "targets": [
-          {
-            "expr": "increase(mosaic_coupons_activated_total[1h])",
-            "refId": "A"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "thresholds": {
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            }
-          }
-        },
-        "gridPos": {
-          "h": 8,
-          "w": 6,
-          "x": 6,
-          "y": 0
-        },
-        "id": 2
-      },
-      {
-        "title": "HTTP Request Rate",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "rate(mosaic_http_requests_total[5m])",
-            "refId": "A"
-          }
-        ],
-        "gridPos": {
-          "h": 8,
-          "w": 12,
-          "x": 12,
-          "y": 0
-        },
-        "id": 3
-      },
-      {
-        "title": "Image Processing Queue Size",
-        "type": "stat",
-        "targets": [
-          {
-            "expr": "mosaic_image_processing_queue_size",
-            "refId": "A"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "thresholds": {
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "yellow",
-                  "value": 50
-                },
-                {
-                  "color": "red",
-                  "value": 100
-                }
-              ]
-            }
-          }
-        },
-        "gridPos": {
-          "h": 8,
-          "w": 6,
-          "x": 0,
-          "y": 8
-        },
-        "id": 4
-      },
-      {
-        "title": "Response Time",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "histogram_quantile(0.95, rate(mosaic_http_request_duration_seconds_bucket[5m]))",
-            "refId": "A",
-            "legendFormat": "95th percentile"
+  "id": null,
+  "title": "Mosaic System Overview",
+  "tags": ["mosaic"],
+  "style": "dark",
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 0,
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "templating": {
+    "list": []
+  },
+  "panels": [
+    {
+      "title": "Goroutines",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "go_goroutines",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
           },
-          {
-            "expr": "histogram_quantile(0.50, rate(mosaic_http_request_duration_seconds_bucket[5m]))",
-            "refId": "B",
-            "legendFormat": "50th percentile"
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 100
+              }
+            ]
           }
-        ],
-        "gridPos": {
-          "h": 8,
-          "w": 18,
-          "x": 6,
-          "y": 8
-        },
-        "id": 5
+        }
       },
-      {
-        "title": "Error Rate",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "rate(mosaic_http_requests_total{status=~\"4..|5..\"}[5m]) / rate(mosaic_http_requests_total[5m]) * 100",
-            "refId": "A"
-          }
-        ],
-        "gridPos": {
-          "h": 8,
-          "w": 12,
-          "x": 0,
-          "y": 16
-        },
-        "id": 6
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 0
       },
-      {
-        "title": "Active Partners",
-        "type": "stat",
-        "targets": [
-          {
-            "expr": "mosaic_active_partners_count",
-            "refId": "A"
+      "id": 1
+    },
+    {
+      "title": "Heap Objects",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "go_memstats_heap_objects",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50000
+              },
+              {
+                "color": "red",
+                "value": 100000
+              }
+            ]
           }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "thresholds": {
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                }
-              ]
-            }
-          }
-        },
-        "gridPos": {
-          "h": 8,
-          "w": 6,
-          "x": 12,
-          "y": 16
-        },
-        "id": 7
+        }
       },
-      {
-        "title": "Memory Usage",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "go_memstats_alloc_bytes",
-            "refId": "A"
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "id": 2
+    },
+    {
+      "title": "GC Duration",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "go_gc_duration_seconds{quantile=\"0.5\"}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.001
+              },
+              {
+                "color": "red",
+                "value": 0.01
+              }
+            ]
+          },
+          "unit": "s"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "id": 4
+    },
+    {
+      "title": "Process Info",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "go_info",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
           }
-        ],
-        "gridPos": {
-          "h": 8,
-          "w": 6,
-          "x": 18,
-          "y": 16
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "id": 7
+    },
+    {
+      "title": "Goroutines Over Time",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "go_goroutines",
+          "refId": "A",
+          "legendFormat": "Active Goroutines"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "id": 5
+    },
+    {
+      "title": "Heap Allocations",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "rate(go_memstats_mallocs_total[5m])",
+          "refId": "A",
+          "legendFormat": "Allocations/sec"
         },
-        "id": 8
-      }
-    ],
-    "refresh": "5s",
-    "schemaVersion": 30,
-    "version": 1
-  }
+        {
+          "expr": "rate(go_memstats_frees_total[5m])",
+          "refId": "B",
+          "legendFormat": "Frees/sec"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "id": 8
+    },
+    {
+      "title": "GC and Memory Stats",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "go_memstats_gc_sys_bytes",
+          "refId": "A",
+          "legendFormat": "GC System Bytes"
+        },
+        {
+          "expr": "go_memstats_next_gc_bytes",
+          "refId": "B",
+          "legendFormat": "Next GC Bytes"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
+      "id": 6
+    },
+    {
+      "title": "Memory Usage",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "go_memstats_alloc_bytes",
+          "refId": "A",
+          "legendFormat": "Allocated Memory"
+        },
+        {
+          "expr": "go_memstats_sys_bytes",
+          "refId": "B", 
+          "legendFormat": "System Memory"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      },
+      "id": 3
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 30,
+  "version": 1
 }

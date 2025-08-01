@@ -17,6 +17,7 @@ type Config struct {
 	SMTPConfig      SMTPConfig
 	RecaptchaConfig RecaptchaConfig
 	AlphaBankConfig AlphaBankConfig
+	MetricsConfig   MetricsConfig
 }
 
 type ServerConfig struct {
@@ -64,6 +65,10 @@ type AlphaBankConfig struct {
 type S3MinioConfig struct {
 }
 
+type MetricsConfig struct {
+	Port string
+}
+
 func NewConfig() (*Config, error) {
 	err := godotenv.Load()
 	if err != nil {
@@ -105,6 +110,9 @@ func NewConfig() (*Config, error) {
 			Password:      os.Getenv("ALFA_BANK_PASSWORD"),
 			WebhookURL:    os.Getenv("ALFA_BANK_WEBHOOK_URL"),
 			WebhookSecret: os.Getenv("ALFA_BANK_WEBHOOK_SECRET"),
+		},
+		MetricsConfig: MetricsConfig{
+			Port: os.Getenv("METRICS_PORT"),
 		},
 	}, nil
 }

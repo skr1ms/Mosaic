@@ -5,7 +5,7 @@ services:
     environment:
       POSTGRES_DB: mosaic
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 53849462s 
+      POSTGRES_PASSWORD: 53849462s
     ports:
       - "5433:5432"
     volumes:
@@ -29,7 +29,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # Prometheus для метрик
   prometheus:
     image: prom/prometheus:latest
     container_name: mosaic_prometheus_dev
@@ -39,22 +38,21 @@ services:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_dev_data:/prometheus
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=200h'
-      - '--web.enable-lifecycle'
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+    depends_on:
+      - backend
 
-  # Grafana для дашбордов
   grafana:
     image: grafana/grafana:latest
     container_name: mosaic_grafana_dev
     ports:
-      - "3001:3000"
+      - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_DEFAULT_THEME=dark
     volumes:
       - grafana_dev_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
@@ -62,7 +60,6 @@ services:
     depends_on:
       - prometheus
 
-  # Loki для логов
   loki:
     image: grafana/loki:latest
     container_name: mosaic_loki_dev
@@ -71,9 +68,9 @@ services:
     volumes:
       - ./monitoring/loki.yml:/etc/loki/local-config.yaml
       - loki_dev_data:/loki
-    command: -config.file=/etc/loki/local-config.yaml
+    command: 
+      - "-config.file=/etc/loki/local-config.yaml"
 
-  # Promtail для сбора логов
   promtail:
     image: grafana/promtail:latest
     container_name: mosaic_promtail_dev
@@ -81,7 +78,9 @@ services:
       - ./monitoring/promtail.yml:/etc/promtail/config.yml
       - /var/log:/var/log:ro
       - ./backend/logs:/app/logs:ro
-    command: -config.file=/etc/promtail/config.yml
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: 
+      - "-config.file=/etc/promtail/config.yml"
     depends_on:
       - loki
 
@@ -93,13 +92,10 @@ services:
     environment:
       - DB_URL=postgres://postgres:53849462s@postgres:5432/mosaic?sslmode=disable
       - REDIS_URL=redis://redis:6379
-      - METRICS_PORT=9091
+      - METRICS_PORT=8091
     ports:
-      - "3000:3000"
-      - "9091:9091"  # Порт для Prometheus метрик
-    dns:
-      - 8.8.8.8  
-      - 1.1.1.1
+      - "8080:8080"
+      - "8091:8091"  # Метрики Prometheus
     depends_on:
       postgres:
         condition: service_healthy
