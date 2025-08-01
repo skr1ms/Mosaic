@@ -295,7 +295,7 @@ func (handler *PartnerHandler) GetMyStatistics(c *fiber.Ctx) error {
 //	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
 //	@Router			/partner/statistics/sales [get]
 func (handler *PartnerHandler) GetSalesStatistics(c *fiber.Ctx) error {
-	// TODO: Реализовать статистику продаж партнера
+	// TODO: Реализовать статистику продаж купонов
 	return c.JSON(fiber.Map{"message": "Sales statistics"})
 }
 
@@ -311,6 +311,7 @@ func (handler *PartnerHandler) GetSalesStatistics(c *fiber.Ctx) error {
 //	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
 //	@Router			/partner/statistics/usage [get]
 func (handler *PartnerHandler) GetUsageStatistics(c *fiber.Ctx) error {
+	// TODO: Реализовать 
 	return c.JSON(fiber.Map{"message": "Usage statistics"})
 }
 
