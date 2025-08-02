@@ -64,7 +64,7 @@ services:
     image: grafana/loki:latest
     container_name: mosaic_loki_dev
     ports:
-      - "31aaaaaaadadwswsaawwadswaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa00:3100"
+      - "3100:3100"
     volumes:
       - ./monitoring/loki.yml:/etc/loki/local-config.yaml
       - loki_dev_data:/loki
