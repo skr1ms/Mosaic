@@ -64,7 +64,7 @@ services:
     image: grafana/loki:latest
     container_name: mosaic_loki_dev
     ports:
-      - "31aaaaaaadadwswsaawwadswaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa00:3100"
+      - "3100:3100"
     volumes:
       - ./monitoring/loki.yml:/etc/loki/local-config.yaml
       - loki_dev_data:/loki
@@ -84,6 +84,24 @@ services:
     depends_on:
       - loki
 
+  minio:
+    image: minio/minio:latest
+    container_name: mosaic_minio_dev
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin123
+    volumes:
+      - minio_dev_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
   backend:
     build:
       context: ./backend
@@ -93,6 +111,12 @@ services:
       - DB_URL=postgres://postgres:53849462s@postgres:5432/mosaic?sslmode=disable
       - REDIS_URL=redis://redis:6379
       - METRICS_PORT=8091
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin123
+      - MINIO_USE_SSL=false
+      - MINIO_BUCKET=mosaic-images
+      - STABLE_DIFFUSION_URL=http://ai.doyoupaint.com:7860
     ports:
       - "8080:8080"
       - "8091:8091"  # Метрики Prometheus
@@ -100,6 +124,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     volumes:
       - ./backend/.env:/app/.env
@@ -111,3 +137,4 @@ volumes:
   prometheus_dev_data:
   grafana_dev_data:
   loki_dev_data:
+  minio_dev_data:

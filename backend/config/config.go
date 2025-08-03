@@ -10,14 +10,16 @@ import (
 )
 
 type Config struct {
-	ServerConfig    ServerConfig
-	PostgresConfig  PostgresConfig
-	RedisConfig     RedisConfig
-	AuthConfig      AuthConfig
-	SMTPConfig      SMTPConfig
-	RecaptchaConfig RecaptchaConfig
-	AlphaBankConfig AlphaBankConfig
-	MetricsConfig   MetricsConfig
+	ServerConfig          ServerConfig
+	PostgresConfig        PostgresConfig
+	RedisConfig           RedisConfig
+	AuthConfig            AuthConfig
+	SMTPConfig            SMTPConfig
+	RecaptchaConfig       RecaptchaConfig
+	AlphaBankConfig       AlphaBankConfig
+	MetricsConfig         MetricsConfig
+	S3MinioConfig         S3MinioConfig
+	StableDiffusionConfig StableDiffusionConfig
 }
 
 type ServerConfig struct {
@@ -63,6 +65,16 @@ type AlphaBankConfig struct {
 }
 
 type S3MinioConfig struct {
+	Endpoint        string
+	AccessKeyID     string
+	SecretAccessKey string
+	UseSSL          bool
+	BucketName      string
+	Region          string
+}
+
+type StableDiffusionConfig struct {
+	BaseURL string
 }
 
 type MetricsConfig struct {
@@ -114,6 +126,17 @@ func NewConfig() (*Config, error) {
 		MetricsConfig: MetricsConfig{
 			Port: os.Getenv("METRICS_PORT"),
 		},
+		S3MinioConfig: S3MinioConfig{
+			Endpoint:        os.Getenv("MINIO_ENDPOINT"),
+			AccessKeyID:     os.Getenv("MINIO_ACCESS_KEY"),
+			SecretAccessKey: os.Getenv("MINIO_SECRET_KEY"),
+			UseSSL:          getEnvAsBool("MINIO_USE_SSL", false),
+			BucketName:      getEnvOrDefault("MINIO_BUCKET", "mosaic-images"),
+			Region:          getEnvOrDefault("MINIO_REGION", "us-east-1"),
+		},
+		StableDiffusionConfig: StableDiffusionConfig{
+			BaseURL: getEnvOrDefault("STABLE_DIFFUSION_URL", "http://ai.doyoupaint.com:7860"),
+		},
 	}, nil
 }
 
@@ -144,6 +167,13 @@ func getEnvAsBool(key string, defaultValue bool) bool {
 		if boolValue, err := strconv.ParseBool(value); err == nil {
 			return boolValue
 		}
+	}
+	return defaultValue
+}
+
+func getEnvOrDefault(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
 	}
 	return defaultValue
 }

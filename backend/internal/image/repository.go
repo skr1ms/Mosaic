@@ -2,6 +2,7 @@ package image
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -55,6 +56,9 @@ func (r *ImageRepository) GetNextInQueue(ctx context.Context) (*Image, error) {
 		Limit(1).
 		Scan(ctx)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("no tasks in queue")
+		}
 		return nil, fmt.Errorf("failed to find next in queue: %w", err)
 	}
 	return task, nil

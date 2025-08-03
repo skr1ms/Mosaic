@@ -12,8 +12,13 @@ import (
 
 // ProcessingParams содержит параметры обработки изображения
 type ProcessingParams struct {
-	Style    string                 `json:"style" validate:"required,oneof=grayscale skin_tones pop_art max_colors"`
-	Settings map[string]interface{} `json:"settings" validate:"required"`
+	Style      string                 `json:"style" validate:"required,oneof=grayscale skin_tones pop_art max_colors"`
+	UseAI      bool                   `json:"use_ai"`                                                       // Использовать AI обработку
+	Lighting   string                 `json:"lighting,omitempty" validate:"omitempty,oneof=sun moon venus"` // Освещение
+	Contrast   string                 `json:"contrast,omitempty" validate:"omitempty,oneof=low high"`       // Контрастность
+	Brightness float64                `json:"brightness,omitempty" validate:"omitempty,min=-100,max=100"`   // Яркость (-100 до 100)
+	Saturation float64                `json:"saturation,omitempty" validate:"omitempty,min=-100,max=100"`   // Насыщенность (-100 до 100)
+	Settings   map[string]interface{} `json:"settings,omitempty"`                                           // Дополнительные настройки
 }
 
 // Value реализует интерфейс driver.Valuer для хранения JSON в БД
@@ -38,23 +43,24 @@ func (p *ProcessingParams) Scan(value interface{}) error {
 type Image struct {
 	bun.BaseModel `bun:"table:images,alias:i"`
 
-	ID                uuid.UUID        `bun:"id,pk,type:uuid,default:gen_random_uuid()" json:"id"`
-	CouponID          uuid.UUID        `bun:"coupon_id,type:uuid,notnull" json:"coupon_id"`
-	OriginalImagePath string           `bun:"original_image_path,notnull" json:"original_image_path"`
-	EditedImagePath   *string          `bun:"edited_image_path" json:"edited_image_path"`           // Путь к отредактированному изображению
-	PreviewPath       *string          `bun:"preview_path" json:"preview_path"`                     // Путь к превью изображения
-	ResultPath        *string          `bun:"result_path" json:"result_path"`                       // Путь к готовой схеме
-	ProcessingParams  ProcessingParams `bun:"processing_params,type:json" json:"processing_params"` // Параметры обработки
-	UserEmail         string           `bun:"user_email,notnull" json:"user_email"`
-	Status            string           `bun:"status,type:processing_status,default:'queued'" json:"status"`
-	Priority          int              `bun:"priority,default:0" json:"priority"`
-	StartedAt         *time.Time       `bun:"started_at" json:"started_at"`
-	CompletedAt       *time.Time       `bun:"completed_at" json:"completed_at"`
-	ErrorMessage      *string          `bun:"error_message,type:text" json:"error_message"`
-	RetryCount        int              `bun:"retry_count,default:0" json:"retry_count"`
-	MaxRetries        int              `bun:"max_retries,default:3" json:"max_retries"`
-	CreatedAt         time.Time        `bun:"created_at,nullzero,notnull,default:current_timestamp" json:"created_at"`
-	UpdatedAt         time.Time        `bun:"updated_at,nullzero,notnull,default:current_timestamp" json:"updated_at"`
+	ID                  uuid.UUID        `bun:"id,pk,type:uuid,default:gen_random_uuid()" json:"id"`
+	CouponID            uuid.UUID        `bun:"coupon_id,type:uuid,notnull" json:"coupon_id"`
+	OriginalImageS3Key  string           `bun:"original_image_s3_key,notnull" json:"original_image_s3_key"` // S3 ключ оригинального изображения
+	EditedImageS3Key    *string          `bun:"edited_image_s3_key" json:"edited_image_s3_key"`             // S3 ключ отредактированного изображения
+	ProcessedImageS3Key *string          `bun:"processed_image_s3_key" json:"processed_image_s3_key"`       // S3 ключ обработанного через AI изображения
+	PreviewS3Key        *string          `bun:"preview_s3_key" json:"preview_s3_key"`                       // S3 ключ превью изображения
+	SchemaS3Key         *string          `bun:"schema_s3_key" json:"schema_s3_key"`                         // S3 ключ готовой схемы (ZIP архив)
+	ProcessingParams    ProcessingParams `bun:"processing_params,type:json" json:"processing_params"`       // Параметры обработки
+	UserEmail           string           `bun:"user_email,notnull" json:"user_email"`
+	Status              string           `bun:"status,type:processing_status,default:'queued'" json:"status"` // queued, processing, completed, failed
+	Priority            int              `bun:"priority,default:0" json:"priority"`
+	StartedAt           *time.Time       `bun:"started_at" json:"started_at"`
+	CompletedAt         *time.Time       `bun:"completed_at" json:"completed_at"`
+	ErrorMessage        *string          `bun:"error_message,type:text" json:"error_message"`
+	RetryCount          int              `bun:"retry_count,default:0" json:"retry_count"`
+	MaxRetries          int              `bun:"max_retries,default:3" json:"max_retries"`
+	CreatedAt           time.Time        `bun:"created_at,nullzero,notnull,default:current_timestamp" json:"created_at"`
+	UpdatedAt           time.Time        `bun:"updated_at,nullzero,notnull,default:current_timestamp" json:"updated_at"`
 }
 
 // - idx_image_coupon_id: быстрый поиск задач по купону
@@ -79,4 +85,14 @@ func (i *Image) CreateIndex() string {
 	CREATE INDEX IF NOT EXISTS idx_images_created_at ON images(created_at);
 	CREATE INDEX IF NOT EXISTS idx_images_updated_at ON images(updated_at);
 	`
+}
+
+// ImageEditParams параметры редактирования изображения
+type ImageEditParams struct {
+	CropX      int     `json:"crop_x" validate:"min=0"`                // X координата начала кадрирования
+	CropY      int     `json:"crop_y" validate:"min=0"`                // Y координата начала кадрирования
+	CropWidth  int     `json:"crop_width" validate:"min=1"`            // Ширина области кадрирования
+	CropHeight int     `json:"crop_height" validate:"min=1"`           // Высота области кадрирования
+	Rotation   int     `json:"rotation" validate:"oneof=0 90 180 270"` // Поворот в градусах
+	Scale      float64 `json:"scale" validate:"min=0.1,max=5.0"`       // Масштаб
 }

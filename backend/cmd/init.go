@@ -46,6 +46,8 @@ import (
 	"github.com/skr1ms/mosaic/pkg/middleware"
 	"github.com/skr1ms/mosaic/pkg/recaptcha"
 	"github.com/skr1ms/mosaic/pkg/redis"
+	"github.com/skr1ms/mosaic/pkg/s3"
+	"github.com/skr1ms/mosaic/pkg/stablediffusion"
 )
 
 func InitializeApp() *fiber.App {
@@ -65,6 +67,13 @@ func InitializeApp() *fiber.App {
 		log.Fatal().Err(err).Msg("Failed to connect to Redis")
 	}
 
+	s3Client, err := s3.NewS3Client(cfg.S3MinioConfig)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to create S3 client")
+	}
+
+	stableDiffusionClient := stablediffusion.NewStableDiffusionClient(cfg.StableDiffusionConfig)
+
 	appLogger := middleware.NewLogger()
 
 	app := fiber.New(fiber.Config{
@@ -78,10 +87,8 @@ func InitializeApp() *fiber.App {
 
 	app.Use(recover.New())
 
-	// Объединенный middleware для логирования и request ID (оптимизированный)
 	app.Use(appLogger.CombinedMiddleware())
 
-	// Асинхронный middleware для аналитики и метрик
 	app.Use(appLogger.AnalyticsMiddleware())
 
 	// swagger ui middleware
@@ -132,8 +139,11 @@ func InitializeApp() *fiber.App {
 	})
 
 	imageService := image.NewImageService(&image.ImageServiceDeps{
-		ImageRepository:  imageRepo,
-		CouponRepository: couponRepo,
+		ImageRepository:       imageRepo,
+		CouponRepository:      couponRepo,
+		S3Client:              s3Client,
+		StableDiffusionClient: stableDiffusionClient,
+		EmailService:          mailSender,
 	})
 
 	paymentService := payment.NewPaymentService(&payment.PaymentServiceDeps{
@@ -149,6 +159,7 @@ func InitializeApp() *fiber.App {
 		PartnerRepository: partnerRepo,
 		ImageService:      imageService,
 		PaymentService:    paymentService,
+		EmailService:      mailSender,
 	})
 
 	statsService := stats.NewStatsService(&stats.StatsServiceDeps{
@@ -188,8 +199,9 @@ func InitializeApp() *fiber.App {
 	})
 
 	image.NewImageProcessingHandler(api, &image.ImageHandlerDeps{
-		ImageRepository:  imageRepo,
 		CouponRepository: couponRepo,
+		ImageService:     imageService,
+		ImageRepository:  imageRepo,
 	})
 
 	public.NewPublicHandler(app, &public.PublicHandlerDeps{

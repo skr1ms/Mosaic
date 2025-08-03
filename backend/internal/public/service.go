@@ -14,6 +14,7 @@ import (
 	"github.com/skr1ms/mosaic/internal/partner"
 	"github.com/skr1ms/mosaic/internal/payment"
 	"github.com/skr1ms/mosaic/internal/types"
+	"github.com/skr1ms/mosaic/pkg/email"
 	"github.com/skr1ms/mosaic/pkg/randomCouponCode"
 )
 
@@ -23,6 +24,7 @@ type PublicServiceDeps struct {
 	PartnerRepository *partner.PartnerRepository
 	ImageService      *image.ImageService
 	PaymentService    *payment.PaymentService
+	EmailService      *email.Mailer
 }
 
 type PublicService struct {
@@ -108,138 +110,122 @@ func (s *PublicService) ActivateCoupon(code string, req ActivateCouponRequest) (
 	}, nil
 }
 
-// UploadImage загружает изображение для обработки
+// UploadImage загружает изображение для обработки (устаревший метод, используйте ImageService)
+// Оставлен для обратной совместимости
 func (s *PublicService) UploadImage(couponID string, file *multipart.FileHeader) (map[string]interface{}, error) {
 	couponUUID, err := uuid.Parse(couponID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid coupon id: %w", err)
 	}
 
-	// Проверяем купон
+	// Получаем купон для получения email пользователя
 	coupon, err := s.deps.CouponRepository.GetByID(context.Background(), couponUUID)
 	if err != nil {
 		return nil, fmt.Errorf("coupon not found: %w", err)
 	}
 
-	if coupon.Status != "activated" {
-		return nil, fmt.Errorf("coupon not activated")
-	}
-
-	// Проверяем тип файла
-	if !isValidImageType(file) {
-		return nil, fmt.Errorf("invalid image type")
-	}
-
-	// Проверяем размер файла (макс. 10MB)
-	if file.Size > 10<<20 {
-		return nil, fmt.Errorf("file too large")
-	}
-
-	// Сохраняем файл и создаем задачу на обработку
-	imagePath, err := s.saveUploadedFile(file, couponUUID)
+	// Используем новый ImageService для загрузки
+	imageRecord, err := s.deps.ImageService.UploadImage(context.Background(), couponUUID, file, *coupon.UserEmail)
 	if err != nil {
-		return nil, fmt.Errorf("failed to save file: %w", err)
-	}
-
-	// Создаем задачу на обработку
-	task := &image.Image{
-		CouponID:          couponUUID,
-		OriginalImagePath: imagePath,
-		UserEmail:         *coupon.UserEmail,
-		Status:            "queued",
-		Priority:          1, // Высокий приоритет для пользовательских задач
-	}
-
-	if err := s.deps.ImageRepository.Create(context.Background(), task); err != nil {
-		return nil, fmt.Errorf("failed to create image task: %w", err)
+		return nil, err
 	}
 
 	return map[string]interface{}{
-		"message":   "Изображение успешно загружено",
-		"image_id":  task.ID,
-		"next_step": "edit_image",
+		"message":      "Изображение успешно загружено",
+		"image_id":     imageRecord.ID,
+		"next_step":    "edit_image",
+		"coupon_size":  coupon.Size,
+		"coupon_style": coupon.Style,
 	}, nil
 }
 
-// EditImage применяет редактирование к изображению
+// EditImage применяет редактирование к изображению (устаревший метод, используйте ImageService)
+// Оставлен для обратной совместимости
 func (s *PublicService) EditImage(imageID string, req types.EditImageRequest) (map[string]interface{}, error) {
 	imageUUID, err := uuid.Parse(imageID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid image id: %w", err)
 	}
 
-	// Получаем задачу
-	task, err := s.deps.ImageRepository.GetByID(context.Background(), imageUUID)
-	if err != nil {
-		return nil, fmt.Errorf("image not found: %w", err)
+	// Конвертируем в новый формат параметров
+	editParams := image.ImageEditParams{
+		CropX:      req.CropX,
+		CropY:      req.CropY,
+		CropWidth:  req.CropWidth,
+		CropHeight: req.CropHeight,
+		Rotation:   req.Rotation,
+		Scale:      req.Scale,
 	}
 
-	// Применяем редактирование через сервис
-	if err := s.deps.ImageService.ApplyEditing(task, req); err != nil {
+	// Используем новый ImageService для редактирования
+	if err := s.deps.ImageService.EditImage(context.Background(), imageUUID, editParams); err != nil {
 		return nil, fmt.Errorf("failed to edit image: %w", err)
 	}
 
+	// Получаем статус для возврата URL превью
+	status, err := s.deps.ImageService.GetImageStatus(context.Background(), imageUUID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get image status: %w", err)
+	}
+
+	previewURL := ""
+	if status.EditedURL != nil {
+		previewURL = *status.EditedURL
+	}
+
 	return map[string]interface{}{
-		"message":   "Изображение успешно отредактировано",
-		"next_step": "choose_style",
+		"message":     "Изображение успешно отредактировано",
+		"next_step":   "choose_style",
+		"preview_url": previewURL,
 	}, nil
 }
 
-// ProcessImage применяет стиль обработки к изображению
+// ProcessImage применяет стиль обработки к изображению (устаревший метод, используйте ImageService)
+// Оставлен для обратной совместимости
 func (s *PublicService) ProcessImage(imageID string, req types.ProcessImageRequest) (map[string]interface{}, error) {
 	imageUUID, err := uuid.Parse(imageID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid image id: %w", err)
 	}
 
-	// Получаем задачу
-	task, err := s.deps.ImageRepository.GetByID(context.Background(), imageUUID)
-	if err != nil {
-		return nil, fmt.Errorf("image not found: %w", err)
+	// Конвертируем в новый формат параметров
+	processParams := image.ProcessingParams{
+		Style:      req.Style,
+		UseAI:      req.UseAI,
+		Lighting:   req.Lighting,
+		Contrast:   req.Contrast,
+		Brightness: req.Brightness,
+		Saturation: req.Saturation,
 	}
 
-	// Применяем обработку через сервис
-	if err := s.deps.ImageService.ApplyProcessing(task, req); err != nil {
-		return nil, fmt.Errorf("failed to process image: %w", err)
+	// Запускаем обработку асинхронно
+	go func() {
+		if err := s.deps.ImageService.ProcessImage(context.Background(), imageUUID, processParams); err != nil {
+			// Логируем ошибку, но не прерываем выполнение
+			fmt.Printf("Failed to process image %s: %v\n", imageUUID.String(), err)
+		}
+	}()
+
+	// Получаем статус для возврата URL
+	status, err := s.deps.ImageService.GetImageStatus(context.Background(), imageUUID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get image status: %w", err)
+	}
+
+	previewURL := ""
+	originalURL := ""
+	if status.PreviewURL != nil {
+		previewURL = *status.PreviewURL
+	}
+	if status.OriginalURL != nil {
+		originalURL = *status.OriginalURL
 	}
 
 	return map[string]interface{}{
-		"message":   "Обработка начата",
-		"next_step": "generate_schema",
-	}, nil
-}
-
-// GenerateSchema создает финальную схему мозаики
-func (s *PublicService) GenerateSchema(imageID string, req types.GenerateSchemaRequest) (map[string]interface{}, error) {
-	imageUUID, err := uuid.Parse(imageID)
-	if err != nil {
-		return nil, fmt.Errorf("invalid image id: %w", err)
-	}
-
-	// Получаем задачу
-	task, err := s.deps.ImageRepository.GetByID(context.Background(), imageUUID)
-	if err != nil {
-		return nil, fmt.Errorf("image not found: %w", err)
-	}
-
-	// Генерируем схему через сервис
-	schemaPath, err := s.deps.ImageService.GenerateSchema(task, req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate schema: %w", err)
-	}
-
-	// Обновляем купон как использованный
-	coupon, _ := s.deps.CouponRepository.GetByID(context.Background(), task.CouponID)
-	coupon.Status = "used"
-	coupon.SchemaURL = &schemaPath
-	completedAt := time.Now()
-	coupon.CompletedAt = &completedAt
-	s.deps.CouponRepository.Update(context.Background(), coupon)
-
-	return map[string]interface{}{
-		"message":    "Схема успешно создана",
-		"schema_url": schemaPath,
-		"actions":    []string{"download", "send_email"},
+		"message":      "Обработка запущена",
+		"next_step":    "generate_schema",
+		"preview_url":  previewURL,
+		"original_url": originalURL,
 	}, nil
 }
 
@@ -256,16 +242,17 @@ func (s *PublicService) GetImagePreview(imageID string) (map[string]interface{},
 		return nil, fmt.Errorf("image not found: %w", err)
 	}
 
-	var previewURL *string
-	if task.PreviewPath != nil {
-		previewURL = task.PreviewPath
+	// Используем новый ImageService для получения статуса с URL
+	status, err := s.deps.ImageService.GetImageStatus(context.Background(), imageUUID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get image status: %w", err)
 	}
 
 	return map[string]interface{}{
 		"id":           task.ID,
 		"status":       task.Status,
-		"preview_url":  previewURL,
-		"original_url": task.OriginalImagePath,
+		"preview_url":  status.PreviewURL,
+		"original_url": status.OriginalURL,
 	}, nil
 }
 
@@ -321,8 +308,13 @@ func (s *PublicService) GetImageForDownload(imageID string) (*image.Image, error
 		return nil, fmt.Errorf("schema not ready")
 	}
 
-	// Проверяем наличие результата
-	if task.ResultPath == nil {
+	// Проверяем наличие результата через ImageService
+	status, err := s.deps.ImageService.GetImageStatus(context.Background(), imageUUID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get image status: %w", err)
+	}
+
+	if status.SchemaURL == nil {
 		return nil, fmt.Errorf("schema file not found")
 	}
 
@@ -346,13 +338,34 @@ func (s *PublicService) SendSchemaToEmail(imageID string, req SendEmailRequest) 
 		return nil, fmt.Errorf("schema not ready")
 	}
 
-	// TODO: Отправляем email через сервис
-	// if err := s.EmailService.SendSchemaEmail(req.Email, task); err != nil {
-	// 	return nil, ErrFailedToSendEmail
-	// }
+	if task.SchemaS3Key == nil {
+		return nil, fmt.Errorf("schema file not found")
+	}
+
+	// Получаем информацию о купоне для кода купона
+	coupon, err := s.deps.CouponRepository.GetByID(context.Background(), task.CouponID)
+	if err != nil {
+		return nil, fmt.Errorf("coupon not found: %w", err)
+	}
+
+	// Генерируем presigned URL для скачивания схемы
+	schemaURL, err := s.deps.ImageService.GetImageStatus(context.Background(), imageUUID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get schema URL: %w", err)
+	}
+
+	if schemaURL.SchemaURL == nil {
+		return nil, fmt.Errorf("schema URL not available")
+	}
+
+	// Отправляем email
+	err = s.deps.EmailService.SendSchemaEmail(req.Email, *schemaURL.SchemaURL, coupon.Code)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send email: %w", err)
+	}
 
 	return map[string]interface{}{
-		"message": "Схема успешно отправлена на email",
+		"message": "Schema successfully sent to email",
 	}, nil
 }
 

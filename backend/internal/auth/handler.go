@@ -28,18 +28,17 @@ func NewAuthHandler(router fiber.Router, AuthHandlerDeps *AuthHandlerDeps) {
 }
 
 // Login обрабатывает авторизацию администратора и генерирует JWT токены
-//
-//	@Summary		Авторизация администратора
-//	@Description	Авторизация администратора по логину и паролю
-//	@Tags			admin-auth
-//	@Accept			json
-//	@Produce		json
-//	@Param			credentials	body		LoginRequest			true	"Учетные данные для входа"
-//	@Success		200			{object}	map[string]interface{}	"Успешная авторизация"
-//	@Failure		400			{object}	map[string]interface{}	"Ошибка в запросе"
-//	@Failure		401			{object}	map[string]interface{}	"Неверные учетные данные"
-//	@Failure		500			{object}	map[string]interface{}	"Внутренняя ошибка сервера"
-//	@Router			/admin/login [post]
+// @Summary		Авторизация администратора
+// @Description	Авторизация администратора по логину и паролю
+// @Tags		admin-auth
+// @Accept		json
+// @Produce		json
+// @Param		credentials	body		LoginRequest			true	"Учетные данные для входа"
+// @Success		200		{object}	map[string]interface{}		"Успешная авторизация"
+// @Failure		400		{object}	map[string]interface{}		"Ошибка в запросе"
+// @Failure		401		{object}	map[string]interface{}		"Неверные учетные данные"
+// @Failure		500		{object}	map[string]interface{}		"Внутренняя ошибка сервера"
+// @Router		/admin/login [post]
 func (handler *AuthHandler) AdminLogin(c *fiber.Ctx) error {
 	log := zerolog.Ctx(c.UserContext())
 	var req LoginRequest
@@ -72,17 +71,16 @@ func (handler *AuthHandler) AdminLogin(c *fiber.Ctx) error {
 }
 
 // RefreshToken обновляет токены используя refresh токен
-//
-//	@Summary		Обновление токенов
-//	@Description	Обновляет access и refresh токены используя refresh токен
-//	@Tags			admin-auth
-//	@Accept			json
-//	@Produce		json
-//	@Param			refresh	body		RefreshTokenRequest		true	"Refresh токен"
-//	@Success		200		{object}	map[string]interface{}	"Новые токены"
-//	@Failure		400		{object}	map[string]interface{}	"Ошибка в запросе"
-//	@Failure		401		{object}	map[string]interface{}	"Неверный или истекший refresh токен"
-//	@Router			/admin/refresh [post]
+// @Summary		Обновление токенов
+// @Description	Обновляет access и refresh токены используя refresh токен
+// @Tags		admin-auth
+// @Accept		json
+// @Produce		json
+// @Param		refresh		body		RefreshTokenRequest		true	"Refresh токен"
+// @Success		200		{object}	map[string]interface{}		"Новые токены"
+// @Failure		400		{object}	map[string]interface{}		"Ошибка в запросе"
+// @Failure		401		{object}	map[string]interface{}		"Неверный или истекший refresh токен"
+// @Router		/admin/refresh [post]
 func (handler *AuthHandler) RefreshAdminTokens(c *fiber.Ctx) error {
 	log := zerolog.Ctx(c.UserContext())
 	var req RefreshTokenRequest
@@ -110,19 +108,18 @@ func (handler *AuthHandler) RefreshAdminTokens(c *fiber.Ctx) error {
 }
 
 // Login обрабатывает авторизацию партнера и генерирует JWT токены
-//
-//	@Summary		Авторизация партнера
-//	@Description	Авторизация партнера по логину и паролю
-//	@Tags			partner-auth
-//	@Accept			json
-//	@Produce		json
-//	@Param			credentials	body		LoginRequest			true	"Учетные данные для входа"
-//	@Success		200			{object}	map[string]interface{}	"Успешная авторизация"
-//	@Failure		400			{object}	map[string]interface{}	"Ошибка в запросе"
-//	@Failure		401			{object}	map[string]interface{}	"Неверные учетные данные"
-//	@Failure		403			{object}	map[string]interface{}	"Аккаунт заблокирован"
-//	@Failure		500			{object}	map[string]interface{}	"Внутренняя ошибка сервера"
-//	@Router			/partner/login [post]
+// @Summary		Авторизация партнера
+// @Description	Авторизация партнера по логину и паролю
+// @Tags		partner-auth
+// @Accept		json
+// @Produce		json
+// @Param		credentials	body		LoginRequest			true	"Учетные данные для входа"
+// @Success		200		{object}	map[string]interface{}		"Успешная авторизация"
+// @Failure		400		{object}	map[string]interface{}		"Ошибка в запросе"
+// @Failure		401		{object}	map[string]interface{}		"Неверные учетные данные"
+// @Failure		403		{object}	map[string]interface{}		"Аккаунт заблокирован"
+// @Failure		500		{object}	map[string]interface{}		"Внутренняя ошибка сервера"
+// @Router		/partner/login [post]
 func (handler *AuthHandler) PartnerLogin(c *fiber.Ctx) error {
 	log := zerolog.Ctx(c.UserContext())
 	var req LoginRequest
@@ -166,17 +163,16 @@ func (handler *AuthHandler) PartnerLogin(c *fiber.Ctx) error {
 }
 
 // RefreshToken обновляет токены используя refresh токен
-//
-//	@Summary		Обновление токенов партнера
-//	@Description	Обновляет access и refresh токены используя refresh токен
-//	@Tags			partner-auth
-//	@Accept			json
-//	@Produce		json
-//	@Param			refresh	body		RefreshTokenRequest		true	"Refresh токен"
-//	@Success		200		{object}	map[string]interface{}	"Новые токены"
-//	@Failure		400		{object}	map[string]interface{}	"Ошибка в запросе"
-//	@Failure		401		{object}	map[string]interface{}	"Неверный или истекший refresh токен"
-//	@Router			/partner/refresh [post]
+// @Summary		Обновление токенов партнера
+// @Description	Обновляет access и refresh токены используя refresh токен
+// @Tags		partner-auth
+// @Accept		json
+// @Produce		json
+// @Param		refresh		body		RefreshTokenRequest		true	"Refresh токен"
+// @Success		200		{object}	map[string]interface{}		"Новые токены"
+// @Failure		400		{object}	map[string]interface{}		"Ошибка в запросе"
+// @Failure		401		{object}	map[string]interface{}		"Неверный или истекший refresh токен"
+// @Router		/partner/refresh [post]
 func (handler *AuthHandler) RefreshPartnerTokens(c *fiber.Ctx) error {
 	log := zerolog.Ctx(c.UserContext())
 	var req RefreshTokenRequest

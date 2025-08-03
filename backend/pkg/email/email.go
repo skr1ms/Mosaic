@@ -107,3 +107,87 @@ func (m *Mailer) SendResetPasswordEmail(to, resetLink string) error {
 
 	return client.Quit()
 }
+
+// SendSchemaEmail отправляет готовую схему мозаики на email пользователя
+func (m *Mailer) SendSchemaEmail(to, schemaURL, couponCode string) error {
+	log.Info().Msg("Sending schema email to " + to)
+	auth := smtp.PlainAuth("",
+		m.cfg.SMTPConfig.Username,
+		m.cfg.SMTPConfig.Password,
+		m.cfg.SMTPConfig.Host,
+	)
+
+	msg := []byte(fmt.Sprintf(
+		"From: %s\r\n"+
+			"To: %s\r\n"+
+			"Subject: Ваша схема алмазной мозаики готова!\r\n"+
+			"Content-Type: text/html; charset=UTF-8\r\n\r\n"+
+			"<h2>🎨 Ваша схема алмазной мозаики готова!</h2>"+
+			"<p>Здравствуйте!</p>"+
+			"<p>Ваша персональная схема алмазной мозаики по купону <strong>%s</strong> успешно создана и готова к скачиванию.</p>"+
+			"<p><a href=\"%s\" style=\"background-color: #4CAF50; color: white; padding: 14px 20px; text-decoration: none; display: inline-block; border-radius: 4px;\">📥 Скачать схему</a></p>"+
+			"<p><strong>Что входит в схему:</strong></p>"+
+			"<ul>"+
+			"<li>Подробная инструкция по сборке</li>"+
+			"<li>Цветовая карта с номерами страз</li>"+
+			"<li>Схема с разметкой по секторам</li>"+
+			"<li>Список необходимых материалов</li>"+
+			"</ul>"+
+			"<p><em>Приятного творчества! 🎨✨</em></p>"+
+			"<hr>"+
+			"<p><small>Ссылка для скачивания действительна в течение 30 дней. Если у вас возникли вопросы, свяжитесь с нашей службой поддержки.</small></p>",
+		m.cfg.SMTPConfig.From, to, couponCode, schemaURL,
+	))
+
+	tlsConfig := &tls.Config{
+		ServerName: m.cfg.SMTPConfig.Host,
+	}
+
+	conn, err := tls.Dial("tcp", net.JoinHostPort(m.cfg.SMTPConfig.Host, "465"), tlsConfig)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to connect to SMTP server")
+		return fmt.Errorf("connection failed: %w", err)
+	}
+	defer conn.Close()
+
+	client, err := smtp.NewClient(conn, m.cfg.SMTPConfig.Host)
+	if err != nil {
+		log.Error().Err(err).Msg("SMTP client creation failed")
+		return fmt.Errorf("SMTP client creation failed: %w", err)
+	}
+	defer client.Close()
+
+	if err := client.Auth(auth); err != nil {
+		log.Error().Err(err).Msg("authentication failed")
+		return fmt.Errorf("authentication failed: %w", err)
+	}
+
+	if err := client.Mail(m.cfg.SMTPConfig.From); err != nil {
+		log.Error().Err(err).Msg("sender setup failed")
+		return fmt.Errorf("sender setup failed: %w", err)
+	}
+
+	if err := client.Rcpt(to); err != nil {
+		log.Error().Err(err).Msg("recipient setup failed")
+		return fmt.Errorf("recipient setup failed: %w", err)
+	}
+
+	w, err := client.Data()
+	if err != nil {
+		log.Error().Err(err).Msg("data writer failed")
+		return fmt.Errorf("data writer failed: %w", err)
+	}
+
+	if _, err := w.Write(msg); err != nil {
+		log.Error().Err(err).Msg("message writing failed")
+		return fmt.Errorf("message writing failed: %w", err)
+	}
+
+	if err := w.Close(); err != nil {
+		log.Error().Err(err).Msg("writer close failed")
+		return fmt.Errorf("writer close failed: %w", err)
+	}
+
+	log.Info().Msg("Schema email sent successfully to " + to)
+	return client.Quit()
+}

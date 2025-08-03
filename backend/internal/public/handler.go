@@ -2,8 +2,10 @@ package public
 
 import (
 	"context"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"github.com/skr1ms/mosaic/internal/types"
 	"github.com/skr1ms/mosaic/pkg/utils"
@@ -51,15 +53,14 @@ func NewPublicHandler(router fiber.Router, deps *PublicHandlerDeps) {
 }
 
 // GetPartnerByDomain возвращает информацию о партнере по домену
-//
-//	@Summary		Информация о партнере по домену
-//	@Description	Возвращает брендинг и контактную информацию партнера для White Label
-//	@Tags			public
-//	@Produce		json
-//	@Param			domain	path		string					true	"Доменное имя партнера"
-//	@Success		200		{object}	map[string]interface{}	"Информация о партнере"
-//	@Failure		404		{object}	map[string]interface{}	"Партнер не найден"
-//	@Router			/api/partners/{domain}/info [get]
+// @Summary		Информация о партнере по домену
+// @Description	Возвращает брендинг и контактную информацию партнера для White Label
+// @Tags		public
+// @Produce		json
+// @Param		domain		path		string					true	"Доменное имя партнера"
+// @Success		200		{object}	map[string]interface{}		"Информация о партнере"
+// @Failure		404		{object}	map[string]interface{}		"Партнер не найден"
+// @Router		/api/partners/{domain}/info [get]
 func (handler *PublicHandler) GetPartnerByDomain(c *fiber.Ctx) error {
 	log := zerolog.Ctx(c.UserContext())
 	domain := c.Params("domain")
@@ -76,16 +77,15 @@ func (handler *PublicHandler) GetPartnerByDomain(c *fiber.Ctx) error {
 }
 
 // GetCouponByCode возвращает информацию о купоне по коду
-//
-//	@Summary		Информация о купоне
-//	@Description	Возвращает информацию о купоне для проверки его валидности
-//	@Tags			coupons
-//	@Produce		json
-//	@Param			code	path		string					true	"Код купона (12 цифр)"
-//	@Success		200		{object}	map[string]interface{}	"Информация о купоне"
-//	@Failure		400		{object}	map[string]interface{}	"Неверный формат кода"
-//	@Failure		404		{object}	map[string]interface{}	"Купон не найден"
-//	@Router			/api/coupons/{code} [get]
+// @Summary		Информация о купоне
+// @Description	Возвращает информацию о купоне для проверки его валидности
+// @Tags		coupons
+// @Produce		json
+// @Param		code		path		string					true	"Код купона (12 цифр)"
+// @Success		200		{object}	map[string]interface{}		"Информация о купоне"
+// @Failure		400		{object}	map[string]interface{}		"Неверный формат кода"
+// @Failure		404		{object}	map[string]interface{}		"Купон не найден"
+// @Router		/api/coupons/{code} [get]
 func (handler *PublicHandler) GetCouponByCode(c *fiber.Ctx) error {
 	code := c.Params("code")
 
@@ -272,6 +272,15 @@ func (handler *PublicHandler) GenerateSchema(c *fiber.Ctx) error {
 	log := zerolog.Ctx(c.UserContext())
 	imageID := c.Params("id")
 
+	// Парсим ID изображения
+	imageUUID, err := uuid.Parse(imageID)
+	if err != nil {
+		log.Error().Err(err).Msg("Invalid image ID format")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid image ID format",
+		})
+	}
+
 	var req types.GenerateSchemaRequest
 	if err := c.BodyParser(&req); err != nil {
 		log.Error().Err(err).Msg("Failed to parse request body")
@@ -280,15 +289,40 @@ func (handler *PublicHandler) GenerateSchema(c *fiber.Ctx) error {
 		})
 	}
 
-	result, err := handler.deps.PublicService.GenerateSchema(imageID, req)
+	// Получаем задачу для получения CouponID (для обновления купона после создания схемы)
+	task, err := handler.deps.PublicService.deps.ImageRepository.GetByID(context.Background(), imageUUID)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to generate schema")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to generate schema",
+		log.Error().Err(err).Msg("Image not found")
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Image not found",
 		})
 	}
 
-	return c.JSON(result)
+	// Запускаем создание схемы асинхронно через ImageService
+	go func() {
+		if err := handler.deps.PublicService.deps.ImageService.GenerateSchema(context.Background(), imageUUID, req.Confirmed); err != nil {
+			log.Error().Err(err).Str("image_id", imageUUID.String()).Msg("Failed to generate schema")
+			return
+		}
+
+		// Обновляем купон как использованный после успешного создания схемы
+		if coupon, err := handler.deps.PublicService.deps.CouponRepository.GetByID(context.Background(), task.CouponID); err == nil {
+			coupon.Status = "used"
+			// Получаем актуальный статус изображения для URL схемы
+			if status, err := handler.deps.PublicService.deps.ImageService.GetImageStatus(context.Background(), imageUUID); err == nil && status.SchemaURL != nil {
+				coupon.SchemaURL = status.SchemaURL
+			}
+			completedAt := time.Now()
+			coupon.CompletedAt = &completedAt
+			handler.deps.PublicService.deps.CouponRepository.Update(context.Background(), coupon)
+		}
+	}()
+
+	return c.JSON(fiber.Map{
+		"message":    "Schema generation started",
+		"actions":    []string{"download"},
+		"email_sent": true, // Email будет отправлен автоматически после создания схемы
+	})
 }
 
 // DownloadSchema позволяет скачать готовую схему
@@ -304,16 +338,32 @@ func (handler *PublicHandler) GenerateSchema(c *fiber.Ctx) error {
 func (handler *PublicHandler) DownloadSchema(c *fiber.Ctx) error {
 	log := zerolog.Ctx(c.UserContext())
 	imageID := c.Params("id")
-	task, err := handler.deps.PublicService.GetImageForDownload(imageID)
+
+	// Парсим ID изображения
+	imageUUID, err := uuid.Parse(imageID)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get image for download")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to download schema",
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid image ID",
 		})
 	}
 
-	// Возвращаем файл для скачивания
-	return c.SendFile(*task.ResultPath, true)
+	// Получаем статус изображения для получения URL схемы
+	status, err := handler.deps.PublicService.deps.ImageService.GetImageStatus(c.UserContext(), imageUUID)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get image status")
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Image not found",
+		})
+	}
+
+	if status.Status != "completed" || status.SchemaURL == nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Schema not ready",
+		})
+	}
+
+	// Перенаправляем на URL схемы (presigned URL от S3)
+	return c.Redirect(*status.SchemaURL)
 }
 
 // SendSchemaToEmail отправляет схему на email

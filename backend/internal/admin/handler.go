@@ -83,20 +83,19 @@ func NewAdminHandler(router fiber.Router, deps *AdminHandlerDeps) {
 }
 
 // CreateAdmin создает нового администратора
-//
-//	@Summary		Создание администратора
-//	@Description	Создает нового администратора (только для существующих администраторов)
-//	@Tags			admin-management
-//	@Accept			json
-//	@Produce		json
-//	@Security		BearerAuth
-//	@Param			admin	body		CreateAdminRequest		true	"Данные нового администратора"
-//	@Success		201		{object}	map[string]interface{}	"Администратор создан"
-//	@Failure		400		{object}	map[string]interface{}	"Ошибка в запросе"
-//	@Failure		401		{object}	map[string]interface{}	"Не авторизован"
-//	@Failure		403		{object}	map[string]interface{}	"Нет прав доступа"
-//	@Failure		500		{object}	map[string]interface{}	"Внутренняя ошибка сервера"
-//	@Router			/admin/admins [post]
+// @Summary		Создание администратора
+// @Description	Создает нового администратора (только для существующих администраторов)
+// @Tags		admin-management
+// @Accept		json
+// @Produce		json
+// @Security		BearerAuth
+// @Param		admin		body		CreateAdminRequest		true	"Данные нового администратора"
+// @Success		201		{object}	map[string]interface{}		"Администратор создан"
+// @Failure		400		{object}	map[string]interface{}		"Ошибка в запросе"
+// @Failure		401		{object}	map[string]interface{}		"Не авторизован"
+// @Failure		403		{object}	map[string]interface{}		"Нет прав доступа"
+// @Failure		500		{object}	map[string]interface{}		"Внутренняя ошибка сервера"
+// @Router		/admin/admins [post]
 func (handler *AdminHandler) CreateAdmin(c *fiber.Ctx) error {
 	log := zerolog.Ctx(c.UserContext())
 
@@ -127,17 +126,16 @@ func (handler *AdminHandler) CreateAdmin(c *fiber.Ctx) error {
 }
 
 // GetAdmins возвращает список всех администраторов
-//
-//	@Summary		Список администраторов
-//	@Description	Возвращает список всех администраторов
-//	@Tags			admin-management
-//	@Produce		json
-//	@Security		BearerAuth
-//	@Success		200	{array}		map[string]interface{}	"Список администраторов"
-//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
-//	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
-//	@Failure		500	{object}	map[string]interface{}	"Внутренняя ошибка сервера"
-//	@Router			/admin/admins [get]
+// @Summary		Список администраторов
+// @Description	Возвращает список всех администраторов
+// @Tags		admin-management
+// @Produce		json
+// @Security		BearerAuth
+// @Success		200		{array}		map[string]interface{}		"Список администраторов"
+// @Failure		401		{object}	map[string]interface{}		"Не авторизован"
+// @Failure		403		{object}	map[string]interface{}		"Нет прав доступа"
+// @Failure		500		{object}	map[string]interface{}		"Внутренняя ошибка сервера"
+// @Router		/admin/admins [get]
 func (handler *AdminHandler) GetAdmins(c *fiber.Ctx) error {
 	log := zerolog.Ctx(c.UserContext())
 	admins, err := handler.deps.AdminService.GetAdmins()
