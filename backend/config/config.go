@@ -135,7 +135,7 @@ func NewConfig() (*Config, error) {
 			Region:          getEnvOrDefault("MINIO_REGION", "us-east-1"),
 		},
 		StableDiffusionConfig: StableDiffusionConfig{
-			BaseURL: getEnvOrDefault("STABLE_DIFFUSION_URL", "http://ai.doyoupaint.com:7860"),
+			BaseURL: os.Getenv("STABLE_DIFFUSION_URL"),
 		},
 	}, nil
 }

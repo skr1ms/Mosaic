@@ -126,12 +126,12 @@ func (m *Mailer) SendSchemaEmail(to, schemaURL, couponCode string) error {
 			"<p>Здравствуйте!</p>"+
 			"<p>Ваша персональная схема алмазной мозаики по купону <strong>%s</strong> успешно создана и готова к скачиванию.</p>"+
 			"<p><a href=\"%s\" style=\"background-color: #4CAF50; color: white; padding: 14px 20px; text-decoration: none; display: inline-block; border-radius: 4px;\">📥 Скачать схему</a></p>"+
-			"<p><strong>Что входит в схему:</strong></p>"+
+			"<p><strong>Что входит в ZIP-архив:</strong></p>"+
 			"<ul>"+
-			"<li>Подробная инструкция по сборке</li>"+
-			"<li>Цветовая карта с номерами страз</li>"+
-			"<li>Схема с разметкой по секторам</li>"+
-			"<li>Список необходимых материалов</li>"+
+			"<li>📄 <strong>schema.pdf</strong> - Подробная схема алмазной мозаики с цветовой картой</li>"+
+			"<li>🖼️ <strong>original.jpg</strong> - Ваше оригинальное изображение</li>"+
+			"<li>👁️ <strong>preview.jpg</strong> - Превью готовой мозаики</li>"+
+			"<li>📋 <strong>README.txt</strong> - Инструкция по использованию файлов</li>"+
 			"</ul>"+
 			"<p><em>Приятного творчества! 🎨✨</em></p>"+
 			"<hr>"+

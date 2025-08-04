@@ -48,6 +48,7 @@ import (
 	"github.com/skr1ms/mosaic/pkg/redis"
 	"github.com/skr1ms/mosaic/pkg/s3"
 	"github.com/skr1ms/mosaic/pkg/stablediffusion"
+	"github.com/skr1ms/mosaic/pkg/zip"
 )
 
 func InitializeApp() *fiber.App {
@@ -138,12 +139,16 @@ func InitializeApp() *fiber.App {
 		CouponRepository: couponRepo,
 	})
 
+	// Инициализируем ZipService
+	zipService := zip.NewZipService()
+
 	imageService := image.NewImageService(&image.ImageServiceDeps{
 		ImageRepository:       imageRepo,
 		CouponRepository:      couponRepo,
 		S3Client:              s3Client,
 		StableDiffusionClient: stableDiffusionClient,
 		EmailService:          mailSender,
+		ZipService:            zipService,
 	})
 
 	paymentService := payment.NewPaymentService(&payment.PaymentServiceDeps{
