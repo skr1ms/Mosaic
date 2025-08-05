@@ -7,7 +7,6 @@ import (
 	"io"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -22,7 +21,7 @@ func NewZipService() *ZipService {
 type FileData struct {
 	Name    string    // Имя файла в архиве
 	Content io.Reader // Содержимое файла
-	Size    int64     // Размер файла 
+	Size    int64     // Размер файла
 }
 
 // CreateSchemaArchive создает ZIP архив с файлами схемы алмазной мозаики
@@ -33,7 +32,7 @@ func (z *ZipService) CreateSchemaArchive(schemaID uuid.UUID, files []FileData) (
 	// Создаем структуру архива:
 	// {schema_uuid}/
 	// ├── original.jpg     - оригинальное изображение
-	// ├── preview.jpg      - превью
+	// ├── preview.jpg      - превью мозаики
 	// └── schema.pdf       - схема алмазной мозаики
 
 	baseDir := schemaID.String()
@@ -55,48 +54,12 @@ func (z *ZipService) CreateSchemaArchive(schemaID uuid.UUID, files []FileData) (
 		}
 	}
 
-	// Добавляем файл README с информацией о схеме
-	readmeContent := z.generateReadmeContent(schemaID)
-	readmeWriter, err := zipWriter.Create(filepath.Join(baseDir, "README.txt"))
-	if err != nil {
-		zipWriter.Close()
-		return nil, fmt.Errorf("failed to create README.txt: %w", err)
-	}
-	_, err = readmeWriter.Write([]byte(readmeContent))
-	if err != nil {
-		zipWriter.Close()
-		return nil, fmt.Errorf("failed to write README.txt: %w", err)
-	}
-
-	err = zipWriter.Close()
+	err := zipWriter.Close()
 	if err != nil {
 		return nil, fmt.Errorf("failed to close zip writer: %w", err)
 	}
 
 	return buf, nil
-}
-
-// generateReadmeContent генерирует содержимое README файла
-func (z *ZipService) generateReadmeContent(schemaID uuid.UUID) string {
-	return fmt.Sprintf(`СХЕМА АЛМАЗНОЙ МОЗАИКИ
-======================
-
-ID схемы: %s
-
-Содержимое архива:
-- original.jpg  - Ваше оригинальное изображение
-- preview.jpg   - Превью готовой мозаики
-- schema.pdf    - Схема для выкладки алмазных камней
-
-Инструкция по использованию:
-1. Откройте файл schema.pdf
-2. Следуйте цветовой схеме для размещения камней
-3. Используйте preview.jpg как референс готового результата
-
-Поддержка: support@mosaic.com
-
-Дата создания: %s
-`, schemaID.String(), time.Now().Format("2006-01-02 15:04:05"))
 }
 
 // ValidateArchiveName проверяет, что имя архива соответствует UUID формату
