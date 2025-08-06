@@ -3,11 +3,10 @@ package partner
 import (
 	"context"
 	"fmt"
-	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/skr1ms/mosaic/config"
+	"github.com/skr1ms/mosaic/internal/coupon"
 	"github.com/skr1ms/mosaic/pkg/bcrypt"
 	"github.com/skr1ms/mosaic/pkg/email"
 	"github.com/skr1ms/mosaic/pkg/jwt"
@@ -16,6 +15,7 @@ import (
 
 type PartnerServiceDeps struct {
 	PartnerRepository *PartnerRepository
+	CouponService     *coupon.CouponService
 	Recaptcha         *recaptcha.Verifier
 	JwtService        *jwt.JWT
 	MailSender        *email.Mailer
@@ -32,51 +32,24 @@ func NewPartnerService(deps *PartnerServiceDeps) *PartnerService {
 	}
 }
 
-func (s *PartnerService) ExportCoupons(partnerID uuid.UUID, status, format string) (string, string, error) {
-	// Получаем купоны партнера со статусом "new"
-	coupons, err := s.deps.PartnerRepository.GetPartnerCouponsForExport(context.Background(), partnerID, "new")
+func (s *PartnerService) ExportCoupons(partnerID uuid.UUID, status, format string) ([]byte, string, string, error) {
+	// Создаем запрос для экспорта
+	partnerIDStr := partnerID.String()
+	options := coupon.ExportOptionsRequest{
+		Format:        coupon.ExportFormatCodes, // Только коды купонов
+		PartnerID:     &partnerIDStr,
+		Status:        status,
+		FileFormat:    format,
+		IncludeHeader: false,
+	}
+
+	// Используем новый продвинутый метод экспорта
+	content, filename, contentType, err := s.deps.CouponService.ExportCouponsAdvanced(options)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to fetch coupons: %w", err)
+		return nil, "", "", fmt.Errorf("failed to export coupons: %w", err)
 	}
 
-	// Если нет купонов, возвращаем ошибку
-	if len(coupons) == 0 {
-		return "", "", fmt.Errorf("no coupons found")
-	}
-
-	// Генерируем содержимое файла
-	var content strings.Builder
-	filename := fmt.Sprintf("partner_coupons_%s.%s", time.Now().Format("20060102_150405"), format)
-
-	// Если CSV формат, то генерируем CSV
-	if format == "csv" {
-		content.WriteString("Coupon Code,Partner Status,Coupon Status,Size,Style,Created At\n")
-		for _, coupon := range coupons {
-			content.WriteString(fmt.Sprintf("%s,%s,%s,%s,%s,%s\n",
-				coupon.CouponCode,
-				coupon.PartnerStatus,
-				coupon.CouponStatus,
-				coupon.Size,
-				coupon.Style,
-				coupon.CreatedAt.Format("2006-01-02 15:04:05"),
-			))
-		}
-	} else {
-		// Если TXT формат, то генерируем TXT
-		content.WriteString("Partner Coupons Export\n")
-		content.WriteString("======================\n\n")
-		for _, coupon := range coupons {
-			content.WriteString(fmt.Sprintf("Code: %s\n", coupon.CouponCode))
-			content.WriteString(fmt.Sprintf("Partner Status: %s\n", coupon.PartnerStatus))
-			content.WriteString(fmt.Sprintf("Coupon Status: %s\n", coupon.CouponStatus))
-			content.WriteString(fmt.Sprintf("Size: %s\n", coupon.Size))
-			content.WriteString(fmt.Sprintf("Style: %s\n", coupon.Style))
-			content.WriteString(fmt.Sprintf("Created: %s\n", coupon.CreatedAt.Format("2006-01-02 15:04:05")))
-			content.WriteString("---\n")
-		}
-	}
-
-	return content.String(), filename, nil
+	return content, filename, contentType, nil
 }
 
 func (s *PartnerService) UpdatePassword(partnerID uuid.UUID, currentPassword, newPassword string) error {

@@ -155,7 +155,7 @@ func (s *StatsService) GetPartnerStats(ctx context.Context, partnerID uuid.UUID)
 
 // GetAllPartnersStats возвращает статистику по всем партнерам
 func (s *StatsService) GetAllPartnersStats(ctx context.Context) (*PartnerListStatsResponse, error) {
-	partners, err := s.deps.PartnerRepository.GetAll(ctx)
+	partners, err := s.deps.PartnerRepository.GetAll(ctx, "created_at", "desc")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get partners: %w", err)
 	}
@@ -329,7 +329,7 @@ func (s *StatsService) GetTopPartners(ctx context.Context, limit int, sortBy ...
 		limit = 10
 	}
 
-	partners, err := s.deps.PartnerRepository.GetAll(ctx)
+	partners, err := s.deps.PartnerRepository.GetAll(ctx, "created_at", "desc")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get partners: %w", err)
 	}

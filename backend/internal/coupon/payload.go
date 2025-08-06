@@ -112,3 +112,85 @@ type SendSchemaRequest struct {
 type MarkAsPurchasedRequest struct {
 	PurchaseEmail string `json:"purchase_email" validate:"required,email"`
 }
+
+// BatchResetRequest для пакетного сброса купонов
+type BatchResetRequest struct {
+	CouponIDs []string `json:"coupon_ids" validate:"required,min=1,max=1000"`
+}
+
+// BatchResetResponse возвращает результат пакетного сброса
+type BatchResetResponse struct {
+	Success      []string `json:"success"`
+	Failed       []string `json:"failed"`
+	SuccessCount int      `json:"success_count"`
+	FailedCount  int      `json:"failed_count"`
+	Errors       []string `json:"errors,omitempty"`
+}
+
+// BatchDeleteConfirmRequest для пакетного удаления с подтверждением
+type BatchDeleteConfirmRequest struct {
+	CouponIDs       []string `json:"coupon_ids" validate:"required,min=1,max=1000"`
+	ConfirmationKey string   `json:"confirmation_key" validate:"required"`
+	AdminComment    string   `json:"admin_comment,omitempty"`
+}
+
+// BatchDeletePreviewResponse возвращает предпросмотр удаления
+type BatchDeletePreviewResponse struct {
+	TotalCount      int                    `json:"total_count"`
+	UsedCount       int                    `json:"used_count"`
+	NewCount        int                    `json:"new_count"`
+	Coupons         []*CouponDeletePreview `json:"coupons"`
+	ConfirmationKey string                 `json:"confirmation_key"`
+	ExpiresAt       time.Time              `json:"expires_at"`
+}
+
+// CouponDeletePreview информация о купоне для предпросмотра удаления
+type CouponDeletePreview struct {
+	ID          string     `json:"id"`
+	Code        string     `json:"code"`
+	Status      string     `json:"status"`
+	PartnerName string     `json:"partner_name"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UsedAt      *time.Time `json:"used_at,omitempty"`
+}
+
+// BatchDeleteResponse результат пакетного удаления
+type BatchDeleteResponse struct {
+	DeletedCount int      `json:"deleted_count"`
+	FailedCount  int      `json:"failed_count"`
+	Deleted      []string `json:"deleted"`
+	Failed       []string `json:"failed"`
+	Errors       []string `json:"errors,omitempty"`
+}
+
+// ExportFormatType определяет тип формата экспорта
+type ExportFormatType string
+
+const (
+	ExportFormatCodes    ExportFormatType = "codes"    // только коды
+	ExportFormatBasic    ExportFormatType = "basic"    // базовая информация
+	ExportFormatFull     ExportFormatType = "full"     // полная информация (все купоны)
+	ExportFormatAdmin    ExportFormatType = "admin"    // админ формат (новые купоны)
+	ExportFormatPartner  ExportFormatType = "partner"  // с информацией о партнере
+	ExportFormatActivity ExportFormatType = "activity" // с активностью пользователей
+)
+
+// ExportOptionsRequest настройки экспорта
+type ExportOptionsRequest struct {
+	Format    ExportFormatType `json:"format" validate:"required,oneof=codes basic full admin partner activity"`
+	PartnerID *string          `json:"partner_id,omitempty"`
+	Status    string           `json:"status,omitempty"`
+	Size      string           `json:"size,omitempty"`
+	Style     string           `json:"style,omitempty"`
+
+	// Фильтры по датам
+	CreatedFrom   *time.Time `json:"created_from,omitempty"`
+	CreatedTo     *time.Time `json:"created_to,omitempty"`
+	ActivatedFrom *time.Time `json:"activated_from,omitempty"`
+	ActivatedTo   *time.Time `json:"activated_to,omitempty"`
+
+	// Настройки файла
+	FileFormat    string `json:"file_format" validate:"oneof=txt csv xlsx"`
+	Delimiter     string `json:"delimiter,omitempty"` // для CSV
+	IncludeHeader bool   `json:"include_header"`      // включать заголовки
+}

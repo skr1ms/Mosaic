@@ -28,6 +28,7 @@ func NewCouponHandler(router fiber.Router, deps *CouponHandlerDeps) {
 	api.Get("/", handler.GetCoupons)                              // Получение всех купонов
 	api.Get("/paginated", handler.GetCouponsPaginated)            // Получение купонов с пагинацией
 	api.Get("/export", handler.ExportCoupons)                     // Экспорт купонов в zip файл
+	api.Get("/export-advanced", handler.ExportCouponsAdvanced)    // Экспорт купонов с настраиваемыми форматами
 	api.Get("/statistics", handler.GetStatistics)                 // Получение статистики по купонам
 	api.Get("/partner/:partner_id", handler.GetCouponsByPartner)  // Получение купонов по ID партнера
 	api.Get("/code/:code", handler.GetCouponByCode)               // Получение купона по коду
@@ -38,6 +39,9 @@ func NewCouponHandler(router fiber.Router, deps *CouponHandlerDeps) {
 	api.Put("/:id/send-schema", handler.SendSchema)               // Отправка схемы купона на email
 	api.Put("/:id/purchase", handler.MarkAsPurchased)             // Пометка купона как купленного
 	api.Get("/:id/download-materials", handler.DownloadMaterials) // Скачивание материалов купона
+	api.Post("/batch/reset", handler.BatchResetCoupons)           // Пакетный сброс купонов
+	api.Post("/batch/delete/preview", handler.PreviewBatchDelete) // Предпросмотр пакетного удаления
+	api.Post("/batch/delete/confirm", handler.ExecuteBatchDelete) // Подтверждение пакетного удаления
 }
 
 // GetCoupons возвращает список купонов с фильтрацией
@@ -555,4 +559,164 @@ func (handler *CouponHandler) GetCouponsByPartner(c *fiber.Ctx) error {
 		"coupons":    coupons,
 		"count":      len(coupons),
 	})
+}
+
+// BatchResetCoupons выполняет пакетный сброс купонов
+//
+//	@Summary		Пакетный сброс купонов
+//	@Description	Сбрасывает множество купонов в исходное состояние
+//	@Tags			coupons
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		coupon.BatchResetRequest		true	"Список ID купонов для сброса"
+//	@Success		200		{object}	coupon.BatchResetResponse		"Результат пакетного сброса"
+//	@Failure		400		{object}	map[string]interface{}			"Неверный запрос"
+//	@Failure		500		{object}	map[string]interface{}			"Внутренняя ошибка сервера"
+//	@Router			/coupons/batch/reset [post]
+func (handler *CouponHandler) BatchResetCoupons(c *fiber.Ctx) error {
+	log := zerolog.Ctx(c.UserContext())
+
+	var req BatchResetRequest
+	if err := c.BodyParser(&req); err != nil {
+		log.Error().Err(err).Msg("Invalid request body")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+	}
+
+	// Валидация
+	if len(req.CouponIDs) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Coupon IDs required"})
+	}
+
+	if len(req.CouponIDs) > 1000 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Too many coupon IDs (maximum 1000)"})
+	}
+
+	// Выполняем пакетный сброс
+	response, err := handler.deps.CouponService.BatchResetCoupons(req.CouponIDs)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to batch reset coupons")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
+	}
+
+	return c.JSON(response)
+}
+
+// PreviewBatchDelete возвращает предпросмотр пакетного удаления
+//
+//	@Summary		Предпросмотр пакетного удаления
+//	@Description	Показывает информацию о купонах перед удалением и генерирует ключ подтверждения
+//	@Tags			coupons
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		coupon.BatchDeleteRequest			true	"Список ID купонов для удаления"
+//	@Success		200		{object}	coupon.BatchDeletePreviewResponse	"Предпросмотр удаления"
+//	@Failure		400		{object}	map[string]interface{}				"Неверный запрос"
+//	@Failure		500		{object}	map[string]interface{}				"Внутренняя ошибка сервера"
+//	@Router			/coupons/batch/delete/preview [post]
+func (handler *CouponHandler) PreviewBatchDelete(c *fiber.Ctx) error {
+	log := zerolog.Ctx(c.UserContext())
+
+	var req BatchDeleteRequest
+	if err := c.BodyParser(&req); err != nil {
+		log.Error().Err(err).Msg("Invalid request body")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+	}
+
+	// Валидация
+	if len(req.CouponIDs) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Coupon IDs required"})
+	}
+
+	if len(req.CouponIDs) > 1000 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Too many coupon IDs (maximum 1000)"})
+	}
+
+	// Получаем предпросмотр
+	response, err := handler.deps.CouponService.PreviewBatchDelete(req.CouponIDs)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get batch delete preview")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
+	}
+
+	return c.JSON(response)
+}
+
+// ExecuteBatchDelete выполняет подтвержденное пакетное удаление
+//
+//	@Summary		Подтвержденное пакетное удаление
+//	@Description	Удаляет купоны после подтверждения с использованием ключа
+//	@Tags			coupons
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		coupon.BatchDeleteConfirmRequest	true	"Подтверждение удаления с ключом"
+//	@Success		200		{object}	coupon.BatchDeleteResponse			"Результат удаления"
+//	@Failure		400		{object}	map[string]interface{}				"Неверный запрос"
+//	@Failure		500		{object}	map[string]interface{}				"Внутренняя ошибка сервера"
+//	@Router			/coupons/batch/delete/confirm [post]
+func (handler *CouponHandler) ExecuteBatchDelete(c *fiber.Ctx) error {
+	log := zerolog.Ctx(c.UserContext())
+
+	var req BatchDeleteConfirmRequest
+	if err := c.BodyParser(&req); err != nil {
+		log.Error().Err(err).Msg("Invalid request body")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+	}
+
+	// Валидация
+	if len(req.CouponIDs) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Coupon IDs required"})
+	}
+
+	if req.ConfirmationKey == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Confirmation key required"})
+	}
+
+	// Выполняем удаление
+	response, err := handler.deps.CouponService.ExecuteBatchDelete(req)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to execute batch delete")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
+	}
+
+	return c.JSON(response)
+}
+
+// ExportCouponsAdvanced экспортирует купоны с настраиваемыми форматами
+//
+//	@Summary		Продвинутый экспорт купонов
+//	@Description	Экспортирует купоны в различных форматах (TXT, CSV, XLSX) с настраиваемыми опциями
+//	@Tags			coupons
+//	@Accept			json
+//	@Produce		application/octet-stream
+//	@Param			request	body		coupon.ExportOptionsRequest	true	"Опции экспорта"
+//	@Success		200		{string}	string						"Файл экспорта"
+//	@Failure		400		{object}	map[string]interface{}		"Неверный запрос"
+//	@Failure		500		{object}	map[string]interface{}		"Внутренняя ошибка сервера"
+//	@Router			/coupons/export-advanced [post]
+func (handler *CouponHandler) ExportCouponsAdvanced(c *fiber.Ctx) error {
+	log := zerolog.Ctx(c.UserContext())
+
+	var req ExportOptionsRequest
+	if err := c.BodyParser(&req); err != nil {
+		log.Error().Err(err).Msg("Invalid request body")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+	}
+
+	// Валидация
+	if req.Format == "" {
+		req.Format = ExportFormatType("codes")
+	}
+
+	// Выполняем экспорт
+	content, filename, contentType, err := handler.deps.CouponService.ExportCouponsAdvanced(req)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to export coupons")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
+	}
+
+	// Устанавливаем заголовки для скачивания файла
+	c.Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+	c.Set("Content-Type", contentType)
+
+	return c.Send(content)
 }

@@ -89,3 +89,86 @@ func (r *AdminRepository) UpdatePassword(id uuid.UUID, hashedPassword string) er
 	}
 	return nil
 }
+
+// CreateProfileChangeLog создает запись об изменении профиля партнера
+func (r *AdminRepository) CreateProfileChangeLog(log *ProfileChangeLog) error {
+	ctx := context.Background()
+	_, err := r.db.NewInsert().Model(log).Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to create profile change log: %w", err)
+	}
+	return nil
+}
+
+// GetProfileChangesByPartnerID возвращает историю изменений профиля партнера
+func (r *AdminRepository) GetProfileChangesByPartnerID(partnerID uuid.UUID) ([]*ProfileChangeLog, error) {
+	ctx := context.Background()
+	var changes []*ProfileChangeLog
+	err := r.db.NewSelect().Model(&changes).
+		Where("partner_id = ?", partnerID).
+		Order("changed_at DESC").
+		Scan(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get profile changes: %w", err)
+	}
+	return changes, nil
+}
+
+// CreateUserFilter создает новый пользовательский фильтр
+func (r *AdminRepository) CreateUserFilter(filter *UserFilterDB) error {
+	ctx := context.Background()
+	_, err := r.db.NewInsert().Model(filter).Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to create user filter: %w", err)
+	}
+	return nil
+}
+
+// GetUserFiltersByAdminID возвращает все фильтры администратора
+func (r *AdminRepository) GetUserFiltersByAdminID(adminID uuid.UUID, filterType string) ([]*UserFilterDB, error) {
+	ctx := context.Background()
+	var filters []*UserFilterDB
+	query := r.db.NewSelect().Model(&filters).Where("admin_id = ?", adminID)
+
+	if filterType != "" {
+		query = query.Where("filter_type = ?", filterType)
+	}
+
+	err := query.Order("is_default DESC, created_at DESC").Scan(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user filters: %w", err)
+	}
+	return filters, nil
+}
+
+// GetUserFilterByID возвращает фильтр по ID
+func (r *AdminRepository) GetUserFilterByID(filterID uuid.UUID) (*UserFilterDB, error) {
+	ctx := context.Background()
+	filter := new(UserFilterDB)
+	err := r.db.NewSelect().Model(filter).Where("id = ?", filterID).Scan(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user filter: %w", err)
+	}
+	return filter, nil
+}
+
+// UpdateUserFilter обновляет пользовательский фильтр
+func (r *AdminRepository) UpdateUserFilter(filter *UserFilterDB) error {
+	ctx := context.Background()
+	filter.UpdatedAt = time.Now()
+	_, err := r.db.NewUpdate().Model(filter).WherePK().Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to update user filter: %w", err)
+	}
+	return nil
+}
+
+// DeleteUserFilter удаляет пользовательский фильтр
+func (r *AdminRepository) DeleteUserFilter(filterID uuid.UUID) error {
+	ctx := context.Background()
+	_, err := r.db.NewDelete().Model((*UserFilterDB)(nil)).Where("id = ?", filterID).Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to delete user filter: %w", err)
+	}
+	return nil
+}

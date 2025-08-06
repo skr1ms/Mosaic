@@ -20,6 +20,7 @@ type Config struct {
 	MetricsConfig         MetricsConfig
 	S3MinioConfig         S3MinioConfig
 	StableDiffusionConfig StableDiffusionConfig
+	BrandingConfig        BrandingConfig
 }
 
 type ServerConfig struct {
@@ -81,6 +82,20 @@ type MetricsConfig struct {
 	Port string
 }
 
+type BrandingConfig struct {
+	DefaultBrandName       string
+	DefaultLogoURL         string
+	DefaultContactEmail    string
+	DefaultContactAddress  string
+	DefaultContactPhone    string
+	DefaultContactTelegram string
+	DefaultContactWhatsapp string
+	DefaultTelegramLink    string
+	DefaultWhatsappLink    string
+	DefaultOzonLink        string
+	DefaultWildberriesLink string
+}
+
 func NewConfig() (*Config, error) {
 	err := godotenv.Load()
 	if err != nil {
@@ -136,6 +151,19 @@ func NewConfig() (*Config, error) {
 		},
 		StableDiffusionConfig: StableDiffusionConfig{
 			BaseURL: os.Getenv("STABLE_DIFFUSION_URL"),
+		},
+		BrandingConfig: BrandingConfig{
+			DefaultBrandName:       getEnvOrDefault("DEFAULT_BRAND_NAME", "Мозаика"),
+			DefaultLogoURL:         getEnvOrDefault("DEFAULT_LOGO_URL", ""),
+			DefaultContactEmail:    getEnvOrDefault("DEFAULT_CONTACT_EMAIL", "info@mosaic.ru"),
+			DefaultContactAddress:  getEnvOrDefault("DEFAULT_CONTACT_ADDRESS", ""),
+			DefaultContactPhone:    getEnvOrDefault("DEFAULT_CONTACT_PHONE", ""),
+			DefaultContactTelegram: getEnvOrDefault("DEFAULT_CONTACT_TELEGRAM", ""),
+			DefaultContactWhatsapp: getEnvOrDefault("DEFAULT_CONTACT_WHATSAPP", ""),
+			DefaultTelegramLink:    getEnvOrDefault("DEFAULT_TELEGRAM_LINK", ""),
+			DefaultWhatsappLink:    getEnvOrDefault("DEFAULT_WHATSAPP_LINK", ""),
+			DefaultOzonLink:        getEnvOrDefault("DEFAULT_OZON_LINK", ""),
+			DefaultWildberriesLink: getEnvOrDefault("DEFAULT_WILDBERRIES_LINK", ""),
 		},
 	}, nil
 }

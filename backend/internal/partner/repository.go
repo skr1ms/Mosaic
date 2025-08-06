@@ -76,10 +76,31 @@ func (r *PartnerRepository) GetByEmail(ctx context.Context, email string) (*Part
 	return partner, nil
 }
 
-// GetAll возвращает всех партнёров
-func (r *PartnerRepository) GetAll(ctx context.Context) ([]*Partner, error) {
+// GetAll возвращает всех партнёров с поддержкой сортировки
+func (r *PartnerRepository) GetAll(ctx context.Context, sortBy string, order string) ([]*Partner, error) {
 	var partners []*Partner
-	err := r.db.NewSelect().Model(&partners).Scan(ctx)
+	query := r.db.NewSelect().Model(&partners)
+
+	// Добавляем сортировку
+	if sortBy != "" {
+		// Проверяем валидность поля для сортировки
+		switch sortBy {
+		case "created_at", "brand_name", "domain", "email", "status":
+			if order == "asc" {
+				query = query.Order(sortBy + " ASC")
+			} else {
+				query = query.Order(sortBy + " DESC")
+			}
+		default:
+			// По умолчанию сортируем по дате создания
+			query = query.Order("created_at DESC")
+		}
+	} else {
+		// По умолчанию сортируем по дате создания
+		query = query.Order("created_at DESC")
+	}
+
+	err := query.Scan(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find all partners: %w", err)
 	}
@@ -152,8 +173,8 @@ func (r *PartnerRepository) DeleteWithCoupons(ctx context.Context, id uuid.UUID)
 	})
 }
 
-// Search выполняет поиск партнёров по различным критериям
-func (r *PartnerRepository) Search(ctx context.Context, queryStr string, status string) ([]*Partner, error) {
+// Search выполняет поиск партнёров по различным критериям с поддержкой сортировки
+func (r *PartnerRepository) Search(ctx context.Context, queryStr string, status string, sortBy string, order string) ([]*Partner, error) {
 	query := r.db.NewSelect().Model((*Partner)(nil))
 
 	if queryStr != "" {
@@ -161,6 +182,25 @@ func (r *PartnerRepository) Search(ctx context.Context, queryStr string, status 
 	}
 	if status != "" {
 		query = query.Where("status = ?", status)
+	}
+
+	// Добавляем сортировку
+	if sortBy != "" {
+		// Проверяем валидность поля для сортировки
+		switch sortBy {
+		case "created_at", "brand_name", "domain", "email", "status":
+			if order == "asc" {
+				query = query.Order(sortBy + " ASC")
+			} else {
+				query = query.Order(sortBy + " DESC")
+			}
+		default:
+			// По умолчанию сортируем по дате создания
+			query = query.Order("created_at DESC")
+		}
+	} else {
+		// По умолчанию сортируем по дате создания
+		query = query.Order("created_at DESC")
 	}
 
 	var partners []*Partner

@@ -1,9 +1,12 @@
 package admin
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
@@ -12,6 +15,7 @@ import (
 	"github.com/skr1ms/mosaic/internal/partner"
 	"github.com/skr1ms/mosaic/pkg/bcrypt"
 	"github.com/skr1ms/mosaic/pkg/randomCouponCode"
+	"github.com/skr1ms/mosaic/pkg/s3"
 	"github.com/skr1ms/mosaic/pkg/updatePartnerData"
 )
 
@@ -21,6 +25,7 @@ type AdminServiceDeps struct {
 	PartnerRepository *partner.PartnerRepository
 	CouponRepository  *coupon.CouponRepository
 	ImageRepository   *image.ImageRepository
+	S3Client          *s3.S3Client
 }
 
 // AdminService содержит бизнес-логику для админской части
@@ -166,7 +171,7 @@ func (s *AdminService) GetDashboardData() (map[string]interface{}, error) {
 	}
 
 	// Статистика по партнерам
-	allPartners, err := s.deps.PartnerRepository.GetAll(context.Background())
+	allPartners, err := s.deps.PartnerRepository.GetAll(context.Background(), "created_at", "desc")
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to find all partners")
 		return nil, fmt.Errorf("failed to find all partners: %w", err)
@@ -220,24 +225,224 @@ func (s *AdminService) GetDashboardData() (map[string]interface{}, error) {
 }
 
 // GetPartners возвращает список партнеров с фильтрацией и поиском
-func (s *AdminService) GetPartners(search, status string) ([]*partner.Partner, error) {
+func (s *AdminService) GetPartners(search, status, sortBy, order string) ([]*partner.Partner, error) {
 	log := zerolog.Ctx(context.Background())
 	var partners []*partner.Partner
 	var err error
 
 	if search == "" && status == "" {
-		partners, err = s.deps.PartnerRepository.GetAll(context.Background())
+		partners, err = s.deps.PartnerRepository.GetAll(context.Background(), sortBy, order)
 	} else {
 		// Если есть поисковые фильтры, используем поиск
-		partners, err = s.deps.PartnerRepository.Search(context.Background(), search, status)
+		partners, err = s.deps.PartnerRepository.Search(context.Background(), search, status, sortBy, order)
 	}
 
 	if err != nil {
-		log.Error().Err(err).Str("search", search).Str("status", status).Msg("Failed to find all partners")
+		log.Error().Err(err).Str("search", search).Str("status", status).Str("sort_by", sortBy).Str("order", order).Msg("Failed to find all partners")
 		return nil, fmt.Errorf("failed to find all partners: %w", err)
 	}
 
 	return partners, nil
+}
+
+// GetPartnerDetail возвращает детальную информацию о партнере включая статистику и историю изменений
+func (s *AdminService) GetPartnerDetail(partnerID uuid.UUID) (*PartnerDetailResponse, error) {
+	log := zerolog.Ctx(context.Background())
+
+	// Получаем основную информацию о партнере
+	partner, err := s.deps.PartnerRepository.GetByID(context.Background(), partnerID)
+	if err != nil {
+		log.Error().Err(err).Str("partner_id", partnerID.String()).Msg("Failed to get partner")
+		return nil, fmt.Errorf("failed to get partner: %w", err)
+	}
+
+	// Получаем статистику по купонам
+	totalCoupons, err := s.deps.CouponRepository.CountByPartnerID(context.Background(), partnerID)
+	if err != nil {
+		log.Error().Err(err).Str("partner_id", partnerID.String()).Msg("Failed to count total coupons")
+		totalCoupons = 0 // Устанавливаем значение по умолчанию при ошибке
+	}
+
+	activatedCoupons, err := s.deps.CouponRepository.CountActivatedByPartnerID(context.Background(), partnerID)
+	if err != nil {
+		log.Error().Err(err).Str("partner_id", partnerID.String()).Msg("Failed to count activated coupons")
+		activatedCoupons = 0 // Устанавливаем значение по умолчанию при ошибке
+	}
+
+	unusedCoupons := totalCoupons - activatedCoupons
+
+	// Получаем последнюю активность
+	lastActivity, err := s.deps.CouponRepository.GetLastActivityByPartner(context.Background(), partnerID)
+	if err != nil {
+		log.Debug().Err(err).Str("partner_id", partnerID.String()).Msg("No last activity found")
+		lastActivity = nil // Нет активности - нормальная ситуация
+	}
+
+	// Получаем историю изменений профиля
+	profileChangesLogs, err := s.deps.AdminRepository.GetProfileChangesByPartnerID(partnerID)
+	if err != nil {
+		log.Error().Err(err).Str("partner_id", partnerID.String()).Msg("Failed to get profile changes")
+		profileChangesLogs = []*ProfileChangeLog{} // Устанавливаем пустой слайс при ошибке
+	}
+
+	profileChanges := make([]ProfileChange, len(profileChangesLogs))
+	for i, changeLog := range profileChangesLogs {
+		profileChanges[i] = ProfileChange{
+			ID:        changeLog.ID,
+			PartnerID: changeLog.PartnerID,
+			Field:     changeLog.Field,
+			OldValue:  changeLog.OldValue,
+			NewValue:  changeLog.NewValue,
+			ChangedBy: changeLog.ChangedBy,
+			ChangedAt: changeLog.ChangedAt,
+			Reason:    changeLog.Reason,
+		}
+	}
+
+	response := &PartnerDetailResponse{
+		ID:               partner.ID,
+		Login:            partner.Login,
+		BrandName:        partner.BrandName,
+		Domain:           partner.Domain,
+		Email:            partner.Email,
+		Phone:            partner.Phone,
+		TelegramLink:     partner.TelegramLink,
+		WhatsAppLink:     partner.WhatsappLink,
+		WildberriesLink:  partner.WildberriesLink,
+		OzonLink:         partner.OzonLink,
+		Status:           partner.Status,
+		CreatedAt:        partner.CreatedAt,
+		LastLogin:        partner.LastLogin,
+		TotalCoupons:     totalCoupons,
+		ActivatedCoupons: activatedCoupons,
+		UnusedCoupons:    unusedCoupons,
+		LastActivity:     lastActivity,
+		ProfileChanges:   profileChanges,
+	}
+
+	return response, nil
+}
+
+// GetCouponsWithFilter возвращает список купонов с продвинутой фильтрацией
+func (s *AdminService) GetCouponsWithFilter(filter coupon.CouponFilterRequest) (*CouponFilterResponse, error) {
+	log := zerolog.Ctx(context.Background())
+
+	coupons, total, err := s.deps.CouponRepository.GetCouponsWithAdvancedFilter(context.Background(), filter)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get coupons with filter")
+		return nil, fmt.Errorf("failed to get coupons with filter: %w", err)
+	}
+
+	// Рассчитываем пагинацию
+	pageSize := filter.PageSize
+	if pageSize <= 0 {
+		pageSize = 20
+	}
+
+	page := filter.Page
+	if page <= 0 {
+		page = 1
+	}
+
+	totalPages := (total + pageSize - 1) / pageSize
+
+	return &CouponFilterResponse{
+		Coupons:    coupons,
+		Total:      total,
+		Page:       page,
+		PageSize:   pageSize,
+		TotalPages: totalPages,
+	}, nil
+}
+
+// SaveUserFilter сохраняет пользовательский фильтр
+func (s *AdminService) SaveUserFilter(adminID uuid.UUID, filterType, name, description, filterData string, isDefault bool) error {
+	log := zerolog.Ctx(context.Background())
+
+	// Если устанавливается как дефолтный, сбрасываем дефолтность у других фильтров того же типа
+	if isDefault {
+		if err := s.clearDefaultFilters(adminID, filterType); err != nil {
+			log.Error().Err(err).Msg("Failed to clear default filters")
+			return fmt.Errorf("failed to clear default filters: %w", err)
+		}
+	}
+
+	filter := &UserFilterDB{
+		AdminID:     adminID,
+		Name:        name,
+		Description: description,
+		FilterType:  filterType,
+		FilterData:  filterData,
+		IsDefault:   isDefault,
+	}
+
+	err := s.deps.AdminRepository.CreateUserFilter(filter)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to save user filter")
+		return fmt.Errorf("failed to save user filter: %w", err)
+	}
+
+	return nil
+}
+
+// GetUserFilters возвращает сохраненные фильтры пользователя
+func (s *AdminService) GetUserFilters(adminID uuid.UUID, filterType string) ([]*UserFilter, error) {
+	log := zerolog.Ctx(context.Background())
+
+	filters, err := s.deps.AdminRepository.GetUserFiltersByAdminID(adminID, filterType)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get user filters")
+		return nil, fmt.Errorf("failed to get user filters: %w", err)
+	}
+
+	result := make([]*UserFilter, len(filters))
+	for i, filter := range filters {
+		result[i] = &UserFilter{
+			ID:          filter.ID,
+			AdminID:     filter.AdminID,
+			Name:        filter.Name,
+			Description: filter.Description,
+			FilterType:  filter.FilterType,
+			FilterData:  filter.FilterData,
+			IsDefault:   filter.IsDefault,
+			CreatedAt:   filter.CreatedAt,
+			UpdatedAt:   filter.UpdatedAt,
+		}
+	}
+
+	return result, nil
+}
+
+// DeleteUserFilter удаляет пользовательский фильтр
+func (s *AdminService) DeleteUserFilter(filterID uuid.UUID) error {
+	log := zerolog.Ctx(context.Background())
+
+	err := s.deps.AdminRepository.DeleteUserFilter(filterID)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to delete user filter")
+		return fmt.Errorf("failed to delete user filter: %w", err)
+	}
+
+	return nil
+}
+
+// clearDefaultFilters сбрасывает флаг is_default у всех фильтров админа определенного типа
+func (s *AdminService) clearDefaultFilters(adminID uuid.UUID, filterType string) error {
+	filters, err := s.deps.AdminRepository.GetUserFiltersByAdminID(adminID, filterType)
+	if err != nil {
+		return err
+	}
+
+	for _, filter := range filters {
+		if filter.IsDefault {
+			filter.IsDefault = false
+			if err := s.deps.AdminRepository.UpdateUserFilter(filter); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 // CreatePartner создает нового партнера
@@ -255,10 +460,11 @@ func (s *AdminService) CreatePartner(req partner.CreatePartnerRequest) (*partner
 		return nil, fmt.Errorf("partner already exists: %w", err)
 	}
 
-	// Проверяем уникальность кода партнера
-	if _, err := s.deps.PartnerRepository.GetByPartnerCode(context.Background(), req.PartnerCode); err == nil {
-		log.Error().Str("partner_code", req.PartnerCode).Msg("Partner code already exists")
-		return nil, fmt.Errorf("partner code already exists")
+	// Генерируем следующий доступный код партнера
+	partnerCode, err := s.deps.PartnerRepository.GetNextPartnerCode(context.Background())
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to generate partner code")
+		return nil, fmt.Errorf("failed to generate partner code: %w", err)
 	}
 
 	// Хешируем пароль
@@ -276,7 +482,7 @@ func (s *AdminService) CreatePartner(req partner.CreatePartnerRequest) (*partner
 
 	// Создаем партнера
 	newPartner := &partner.Partner{
-		PartnerCode:     req.PartnerCode,
+		PartnerCode:     partnerCode,
 		Login:           req.Login,
 		Password:        hashedPassword,
 		Domain:          req.Domain,
@@ -302,6 +508,82 @@ func (s *AdminService) CreatePartner(req partner.CreatePartnerRequest) (*partner
 	}
 
 	return newPartner, nil
+}
+
+// UpdatePartnerWithHistory обновляет партнера и записывает историю изменений
+func (s *AdminService) UpdatePartnerWithHistory(partnerID uuid.UUID, req partner.UpdatePartnerRequest, adminLogin string, reason string) (*partner.Partner, error) {
+	log := zerolog.Ctx(context.Background())
+
+	// Получаем текущие данные партнера
+	oldPartner, err := s.deps.PartnerRepository.GetByID(context.Background(), partnerID)
+	if err != nil {
+		log.Error().Err(err).Str("partner_id", partnerID.String()).Msg("Partner not found")
+		return nil, fmt.Errorf("partner not found: %w", err)
+	}
+
+	// Сохраняем старые значения для истории
+	oldValues := map[string]string{
+		"brand_name":       oldPartner.BrandName,
+		"domain":           oldPartner.Domain,
+		"email":            oldPartner.Email,
+		"phone":            oldPartner.Phone,
+		"telegram":         oldPartner.Telegram,
+		"whatsapp":         oldPartner.Whatsapp,
+		"telegram_link":    oldPartner.TelegramLink,
+		"whatsapp_link":    oldPartner.WhatsappLink,
+		"ozon_link":        oldPartner.OzonLink,
+		"wildberries_link": oldPartner.WildberriesLink,
+		"address":          oldPartner.Address,
+		"logo_url":         oldPartner.LogoURL,
+		"allow_sales":      fmt.Sprintf("%t", oldPartner.AllowSales),
+	}
+
+	// Обновляем данные партнера
+	updatePartnerData.UpdatePartnerData(oldPartner, &req)
+
+	// Сохраняем изменения
+	if err := s.deps.PartnerRepository.Update(context.Background(), oldPartner); err != nil {
+		log.Error().Err(err).Str("partner_id", partnerID.String()).Msg("Failed to update partner")
+		return nil, fmt.Errorf("failed to update partner: %w", err)
+	}
+
+	// Записываем историю изменений
+	newValues := map[string]string{
+		"brand_name":       oldPartner.BrandName,
+		"domain":           oldPartner.Domain,
+		"email":            oldPartner.Email,
+		"phone":            oldPartner.Phone,
+		"telegram":         oldPartner.Telegram,
+		"whatsapp":         oldPartner.Whatsapp,
+		"telegram_link":    oldPartner.TelegramLink,
+		"whatsapp_link":    oldPartner.WhatsappLink,
+		"ozon_link":        oldPartner.OzonLink,
+		"wildberries_link": oldPartner.WildberriesLink,
+		"address":          oldPartner.Address,
+		"logo_url":         oldPartner.LogoURL,
+		"allow_sales":      fmt.Sprintf("%t", oldPartner.AllowSales),
+	}
+
+	// Создаем записи об изменениях для каждого поля
+	for field, oldValue := range oldValues {
+		newValue := newValues[field]
+		if oldValue != newValue {
+			changeLog := &ProfileChangeLog{
+				PartnerID: partnerID,
+				Field:     field,
+				OldValue:  oldValue,
+				NewValue:  newValue,
+				ChangedBy: adminLogin,
+				Reason:    reason,
+			}
+
+			if err := s.deps.AdminRepository.CreateProfileChangeLog(changeLog); err != nil {
+				log.Error().Err(err).Str("field", field).Msg("Failed to create profile change log")
+			}
+		}
+	}
+
+	return oldPartner, nil
 }
 
 // GetPartner возвращает партнера по ID
@@ -644,7 +926,7 @@ func (s *AdminService) GetStatistics() (map[string]interface{}, error) {
 // GetPartnersStatistics возвращает статистику по партнерам
 func (s *AdminService) GetPartnersStatistics() (map[string]interface{}, error) {
 	log := zerolog.Ctx(context.Background())
-	partners, err := s.deps.PartnerRepository.GetAll(context.Background())
+	partners, err := s.deps.PartnerRepository.GetAll(context.Background(), "created_at", "desc")
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get partners")
 		return nil, fmt.Errorf("failed to get partners: %w", err)
@@ -683,7 +965,7 @@ func (s *AdminService) GetSystemStatistics() (map[string]interface{}, error) {
 	}
 
 	// Статистика по партнерам
-	partners, err := s.deps.PartnerRepository.GetAll(context.Background())
+	partners, err := s.deps.PartnerRepository.GetAll(context.Background(), "created_at", "desc")
 	if err == nil {
 		activePartners := 0
 		for _, p := range partners {
@@ -820,4 +1102,223 @@ func (s *AdminService) RetryImageTask(id uuid.UUID) error {
 	}
 
 	return nil
+}
+
+// BatchResetCoupons выполняет пакетный сброс купонов через CouponService
+func (s *AdminService) BatchResetCoupons(couponIDs []string) (*coupon.BatchResetResponse, error) {
+	log := zerolog.Ctx(context.Background())
+
+	// Создаем временный CouponService для выполнения операции
+	couponService := coupon.NewCouponService(&coupon.CouponServiceDeps{
+		CouponRepository: s.deps.CouponRepository,
+	})
+
+	response, err := couponService.BatchResetCoupons(couponIDs)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to batch reset coupons")
+		return nil, fmt.Errorf("failed to batch reset coupons: %w", err)
+	}
+
+	return response, nil
+}
+
+// PreviewBatchDelete возвращает предпросмотр пакетного удаления через CouponService
+func (s *AdminService) PreviewBatchDelete(couponIDs []string) (*coupon.BatchDeletePreviewResponse, error) {
+	log := zerolog.Ctx(context.Background())
+
+	// Создаем временный CouponService для выполнения операции
+	couponService := coupon.NewCouponService(&coupon.CouponServiceDeps{
+		CouponRepository: s.deps.CouponRepository,
+	})
+
+	response, err := couponService.PreviewBatchDelete(couponIDs)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get batch delete preview")
+		return nil, fmt.Errorf("failed to get batch delete preview: %w", err)
+	}
+
+	return response, nil
+}
+
+// ExecuteBatchDelete выполняет подтвержденное пакетное удаление через CouponService
+func (s *AdminService) ExecuteBatchDelete(req coupon.BatchDeleteConfirmRequest) (*coupon.BatchDeleteResponse, error) {
+	log := zerolog.Ctx(context.Background())
+
+	// Создаем временный CouponService для выполнения операции
+	couponService := coupon.NewCouponService(&coupon.CouponServiceDeps{
+		CouponRepository: s.deps.CouponRepository,
+	})
+
+	response, err := couponService.ExecuteBatchDelete(req)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to execute batch delete")
+		return nil, fmt.Errorf("failed to execute batch delete: %w", err)
+	}
+
+	return response, nil
+}
+
+// ExportCouponsAdvanced экспортирует купоны с настраиваемыми форматами через CouponService
+func (s *AdminService) ExportCouponsAdvanced(options coupon.ExportOptionsRequest) ([]byte, string, string, error) {
+	log := zerolog.Ctx(context.Background())
+
+	// Создаем временный CouponService для выполнения операции
+	couponService := coupon.NewCouponService(&coupon.CouponServiceDeps{
+		CouponRepository: s.deps.CouponRepository,
+	})
+
+	content, filename, contentType, err := couponService.ExportCouponsAdvanced(options)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to export coupons advanced")
+		return nil, "", "", fmt.Errorf("failed to export coupons advanced: %w", err)
+	}
+
+	return content, filename, contentType, nil
+}
+
+// DownloadCouponMaterials скачивает материалы погашенного купона из S3
+func (s *AdminService) DownloadCouponMaterials(id uuid.UUID) ([]byte, string, error) {
+	log := zerolog.Ctx(context.Background())
+
+	// Получаем информацию о купоне
+	coupon, err := s.deps.CouponRepository.GetByID(context.Background(), id)
+	if err != nil {
+		log.Error().Err(err).Str("coupon_id", id.String()).Msg("Failed to get coupon")
+		return nil, "", fmt.Errorf("coupon not found: %w", err)
+	}
+
+	// Проверяем, что купон использован
+	if coupon.Status != "used" {
+		log.Error().Str("coupon_id", id.String()).Str("status", coupon.Status).Msg("Coupon must be used to download materials")
+		return nil, "", fmt.Errorf("coupon must be used to download materials")
+	}
+
+	// Получаем информацию об изображении для доступа к ZIP-архиву
+	imageRecord, err := s.deps.ImageRepository.GetByCouponID(context.Background(), id)
+	if err != nil {
+		log.Error().Err(err).Str("coupon_id", id.String()).Msg("Failed to get image for coupon")
+		return nil, "", fmt.Errorf("failed to get image for coupon: %w", err)
+	}
+
+	// Проверяем, есть ли ZIP-архив схемы
+	if imageRecord.SchemaS3Key == nil {
+		log.Error().Str("coupon_id", id.String()).Str("image_id", imageRecord.ID.String()).Msg("No schema ZIP archive found")
+		return nil, "", fmt.Errorf("no schema ZIP archive found for coupon")
+	}
+
+	// Скачиваем ZIP-архив из S3
+	reader, err := s.deps.S3Client.DownloadFile(context.Background(), *imageRecord.SchemaS3Key)
+	if err != nil {
+		log.Error().Err(err).Str("s3_key", *imageRecord.SchemaS3Key).Msg("Failed to download ZIP archive from S3")
+		return nil, "", fmt.Errorf("failed to download ZIP archive: %w", err)
+	}
+	defer reader.Close()
+
+	// Читаем содержимое архива
+	archiveData := make([]byte, 0)
+	buffer := make([]byte, 32*1024) // 32KB buffer
+	for {
+		n, err := reader.Read(buffer)
+		if n > 0 {
+			archiveData = append(archiveData, buffer[:n]...)
+		}
+		if err != nil {
+			if err.Error() == "EOF" {
+				break
+			}
+			log.Error().Err(err).Msg("Failed to read ZIP archive data")
+			return nil, "", fmt.Errorf("failed to read ZIP archive: %w", err)
+		}
+	}
+
+	filename := fmt.Sprintf("coupon_%s_materials.zip", coupon.Code)
+
+	log.Info().
+		Str("coupon_id", id.String()).
+		Str("coupon_code", coupon.Code).
+		Str("filename", filename).
+		Int("size_bytes", len(archiveData)).
+		Msg("Coupon materials downloaded successfully")
+
+	return archiveData, filename, nil
+}
+
+// BatchDownloadMaterials скачивает материалы множественных купонов в одном архиве
+func (s *AdminService) BatchDownloadMaterials(couponIDs []uuid.UUID) ([]byte, string, error) {
+	log := zerolog.Ctx(context.Background())
+
+	if len(couponIDs) == 0 {
+		return nil, "", fmt.Errorf("no coupon IDs provided")
+	}
+
+	if len(couponIDs) > 100 {
+		return nil, "", fmt.Errorf("too many coupons (maximum 100)")
+	}
+
+	// Проверяем все купоны и собираем их материалы
+	validCoupons := make([]*coupon.Coupon, 0)
+	couponArchives := make(map[string][]byte)
+
+	for _, couponID := range couponIDs {
+		couponData, err := s.deps.CouponRepository.GetByID(context.Background(), couponID)
+		if err != nil {
+			log.Warn().Err(err).Str("coupon_id", couponID.String()).Msg("Failed to get coupon, skipping")
+			continue
+		}
+
+		// Пропускаем неиспользованные купоны
+		if couponData.Status != "used" {
+			log.Warn().Str("coupon_id", couponID.String()).Str("status", couponData.Status).Msg("Coupon not used, skipping")
+			continue
+		}
+
+		// Получаем ZIP-архив для купона
+		archiveData, _, err := s.DownloadCouponMaterials(couponID)
+		if err != nil {
+			log.Warn().Err(err).Str("coupon_id", couponID.String()).Msg("Failed to download coupon materials, skipping")
+			continue
+		}
+
+		validCoupons = append(validCoupons, couponData)
+		couponArchives[couponData.Code] = archiveData
+	}
+
+	if len(validCoupons) == 0 {
+		return nil, "", fmt.Errorf("no valid coupons found for download")
+	}
+
+	// Создаем ZIP-архив с архивами всех купонов
+	return s.createBatchArchive(couponArchives)
+}
+
+// createBatchArchive создает ZIP-архив содержащий архивы материалов купонов
+func (s *AdminService) createBatchArchive(couponArchives map[string][]byte) ([]byte, string, error) {
+	buf := new(bytes.Buffer)
+	zipWriter := zip.NewWriter(buf)
+
+	for couponCode, archiveData := range couponArchives {
+		// Создаем файл для каждого купона
+		fileName := fmt.Sprintf("coupon_%s_materials.zip", couponCode)
+		fileWriter, err := zipWriter.Create(fileName)
+		if err != nil {
+			zipWriter.Close()
+			return nil, "", fmt.Errorf("failed to create file %s in batch archive: %w", fileName, err)
+		}
+
+		_, err = fileWriter.Write(archiveData)
+		if err != nil {
+			zipWriter.Close()
+			return nil, "", fmt.Errorf("failed to write data for %s: %w", fileName, err)
+		}
+	}
+
+	err := zipWriter.Close()
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to close batch archive: %w", err)
+	}
+
+	timestamp := time.Now().Format("20060102_150405")
+	filename := fmt.Sprintf("batch_coupon_materials_%s.zip", timestamp)
+
+	return buf.Bytes(), filename, nil
 }

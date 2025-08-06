@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"github.com/skr1ms/mosaic/internal/types"
+	"github.com/skr1ms/mosaic/pkg/middleware"
 	"github.com/skr1ms/mosaic/pkg/utils"
 )
 
@@ -28,6 +29,9 @@ func NewPublicHandler(router fiber.Router, deps *PublicHandlerDeps) {
 
 	// Публичные эндпоинты (без авторизации)
 	api := handler.Group("/api")
+
+	// Получение данных брендинга (White Label)
+	api.Get("/branding", handler.GetBrandingInfo)
 
 	// Получение информации о партнере по домену (White Label)
 	api.Get("/partners/:domain/info", handler.GetPartnerByDomain)
@@ -50,6 +54,20 @@ func NewPublicHandler(router fiber.Router, deps *PublicHandlerDeps) {
 	// Дополнительные эндпоинты
 	api.Get("/sizes", handler.GetAvailableSizes)   // получение доступных размеров
 	api.Get("/styles", handler.GetAvailableStyles) // получение доступных стилей
+}
+
+// GetBrandingInfo возвращает данные брендинга для текущего домена
+// @Summary		Информация о брендинге
+// @Description	Возвращает данные брендинга (логотип, контакты, ссылки) для текущего домена
+// @Tags		public
+// @Produce		json
+// @Success		200		{object}	map[string]interface{}		"Данные брендинга"
+// @Router		/api/branding [get]
+func (handler *PublicHandler) GetBrandingInfo(c *fiber.Ctx) error {
+	// Получаем данные брендинга из middleware
+	brandingResponse := middleware.BrandingResponse(c)
+
+	return c.JSON(brandingResponse)
 }
 
 // GetPartnerByDomain возвращает информацию о партнере по домену
@@ -465,12 +483,30 @@ func (handler *PublicHandler) GetProcessingStatus(c *fiber.Ctx) error {
 //	@Router			/api/coupons/purchase [post]
 func (handler *PublicHandler) PurchaseCoupon(c *fiber.Ctx) error {
 	log := zerolog.Ctx(c.UserContext())
+
+	// Проверяем, разрешена ли покупка в текущем контексте брендинга
+	branding := middleware.GetBrandingFromContext(c)
+	if branding != nil && !branding.AllowPurchases {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "Purchase not allowed for this partner",
+		})
+	}
+
 	var req PurchaseCouponRequest
 	if err := c.BodyParser(&req); err != nil {
 		log.Error().Err(err).Msg("Failed to parse request body")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Bad request",
 		})
+	}
+
+	// Если есть партнер в контексте, добавляем его ID к запросу покупки
+	if branding != nil && branding.Partner != nil {
+		// Здесь можно добавить логику для привязки купона к партнеру
+		log.Info().
+			Str("partner_code", branding.Partner.PartnerCode).
+			Str("domain", branding.Partner.Domain).
+			Msg("Purchase coupon through partner domain")
 	}
 
 	result, err := handler.deps.PublicService.PurchaseCoupon(req)
@@ -481,7 +517,11 @@ func (handler *PublicHandler) PurchaseCoupon(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(result)
+	// Добавляем данные брендинга к ответу
+	resultWithBranding := middleware.BrandingResponse(c)
+	resultWithBranding["purchase_result"] = result
+
+	return c.Status(fiber.StatusCreated).JSON(resultWithBranding)
 }
 
 // GetAvailableSizes возвращает доступные размеры

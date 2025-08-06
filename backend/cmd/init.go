@@ -92,6 +92,22 @@ func InitializeApp() *fiber.App {
 
 	app.Use(appLogger.AnalyticsMiddleware())
 
+	// Branding middleware - определяет партнера по домену
+	brandingMiddleware := middleware.BrandingMiddleware(database.DB, middleware.DefaultBranding{
+		BrandName:       cfg.BrandingConfig.DefaultBrandName,
+		LogoURL:         cfg.BrandingConfig.DefaultLogoURL,
+		ContactEmail:    cfg.BrandingConfig.DefaultContactEmail,
+		ContactAddress:  cfg.BrandingConfig.DefaultContactAddress,
+		ContactPhone:    cfg.BrandingConfig.DefaultContactPhone,
+		ContactTelegram: cfg.BrandingConfig.DefaultContactTelegram,
+		ContactWhatsapp: cfg.BrandingConfig.DefaultContactWhatsapp,
+		TelegramLink:    cfg.BrandingConfig.DefaultTelegramLink,
+		WhatsappLink:    cfg.BrandingConfig.DefaultWhatsappLink,
+		OzonLink:        cfg.BrandingConfig.DefaultOzonLink,
+		WildberriesLink: cfg.BrandingConfig.DefaultWildberriesLink,
+	})
+	app.Use(brandingMiddleware)
+
 	// swagger ui middleware
 	app.Use(swagger.New(swagger.Config{
 		BasePath: "/",
@@ -114,6 +130,7 @@ func InitializeApp() *fiber.App {
 	mailSender := email.NewMailer(cfg)
 	recaptchService := recaptcha.NewVerifier(cfg.RecaptchaConfig.SecretKey, 0.5)
 	jwtService := jwt.NewJWT(cfg.AuthConfig.AccessTokenSecret, cfg.AuthConfig.RefreshTokenSecret)
+	zipService := zip.NewZipService()
 	authService := auth.NewAuthService(&auth.AuthServiceDeps{
 		PartnerRepository: partnerRepo,
 		AdminRepository:   adminRepo,
@@ -125,6 +142,7 @@ func InitializeApp() *fiber.App {
 		PartnerRepository: partnerRepo,
 		CouponRepository:  couponRepo,
 		ImageRepository:   imageRepo,
+		S3Client:          s3Client,
 	})
 
 	partnerService := partner.NewPartnerService(&partner.PartnerServiceDeps{
@@ -138,9 +156,6 @@ func InitializeApp() *fiber.App {
 	couponService := coupon.NewCouponService(&coupon.CouponServiceDeps{
 		CouponRepository: couponRepo,
 	})
-
-	// Инициализируем ZipService
-	zipService := zip.NewZipService()
 
 	imageService := image.NewImageService(&image.ImageServiceDeps{
 		ImageRepository:       imageRepo,
@@ -204,9 +219,8 @@ func InitializeApp() *fiber.App {
 	})
 
 	image.NewImageProcessingHandler(api, &image.ImageHandlerDeps{
-		CouponRepository: couponRepo,
-		ImageService:     imageService,
-		ImageRepository:  imageRepo,
+		ImageService:    imageService,
+		ImageRepository: imageRepo,
 	})
 
 	public.NewPublicHandler(app, &public.PublicHandlerDeps{

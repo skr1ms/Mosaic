@@ -56,3 +56,43 @@ func (c *Coupon) CreateIndex() string {
 	CREATE INDEX IF NOT EXISTS idx_coupons_used_at ON coupons(used_at);
 	`
 }
+
+// CouponFilterRequest содержит параметры для продвинутой фильтрации купонов
+type CouponFilterRequest struct {
+	// Базовые фильтры
+	PartnerID *uuid.UUID `json:"partner_id" query:"partner_id"`
+	Status    string     `json:"status" query:"status"`
+	Size      string     `json:"size" query:"size"`
+	Style     string     `json:"style" query:"style"`
+
+	// Фильтры по датам
+	CreatedFrom   *time.Time `json:"created_from" query:"created_from"`
+	CreatedTo     *time.Time `json:"created_to" query:"created_to"`
+	ActivatedFrom *time.Time `json:"activated_from" query:"activated_from"`
+	ActivatedTo   *time.Time `json:"activated_to" query:"activated_to"`
+
+	// Поиск
+	Search string `json:"search" query:"search"` // поиск по коду купона
+
+	// Сортировка
+	SortBy string `json:"sort_by" query:"sort_by"` // created_at, activated_at, code
+	Order  string `json:"order" query:"order"`     // asc, desc
+
+	// Пагинация
+	Page     int `json:"page" query:"page"`
+	PageSize int `json:"page_size" query:"page_size"`
+}
+
+// CouponInfo содержит информацию о купоне для списка
+type CouponInfo struct {
+	ID          uuid.UUID  `json:"id"`
+	Code        string     `json:"code"`
+	PartnerID   uuid.UUID  `json:"partner_id"`
+	PartnerName string     `json:"partner_name"`
+	Status      string     `json:"status"`
+	Size        string     `json:"size"`
+	Style       string     `json:"style"`
+	CreatedAt   time.Time  `json:"created_at"`
+	ActivatedAt *time.Time `json:"activated_at"`
+	UsedAt      *time.Time `json:"used_at"`
+}

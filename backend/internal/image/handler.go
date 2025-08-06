@@ -6,12 +6,10 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
-	"github.com/skr1ms/mosaic/internal/coupon"
 	"github.com/skr1ms/mosaic/internal/types"
 )
 
 type ImageHandlerDeps struct {
-	CouponRepository *coupon.CouponRepository
 	ImageService     *ImageService
 	ImageRepository  *ImageRepository
 }
@@ -73,7 +71,7 @@ func (h *ImageHandler) UploadImage(c *fiber.Ctx) error {
 	}
 
 	// Получаем купон по коду
-	coupon, err := h.deps.CouponRepository.GetByCode(context.Background(), couponCode)
+	coupon, err := h.deps.ImageService.deps.CouponRepository.GetByCode(context.Background(), couponCode)
 	if err != nil {
 		if err.Error() == "not found" {
 			log.Error().Msg("Coupon not found")

@@ -678,3 +678,863 @@ func (r *CouponRepository) GetExtendedStatusCounts(ctx context.Context, partnerI
 
 	return statusCounts, nil
 }
+
+// GetCouponsWithAdvancedFilter возвращает купоны с продвинутой фильтрацией и пагинацией
+func (r *CouponRepository) GetCouponsWithAdvancedFilter(ctx context.Context, filter CouponFilterRequest) ([]*CouponInfo, int, error) {
+	// Базовый запрос с JOIN для получения имени партнера
+	query := r.db.NewSelect().
+		Model((*Coupon)(nil)).
+		Join("LEFT JOIN partners p ON p.id = coupon.partner_id")
+
+	// Применяем фильтры
+	if filter.PartnerID != nil {
+		query = query.Where("coupon.partner_id = ?", *filter.PartnerID)
+	}
+
+	if filter.Status != "" {
+		query = query.Where("coupon.status = ?", filter.Status)
+	}
+
+	if filter.Size != "" {
+		query = query.Where("coupon.size = ?", filter.Size)
+	}
+
+	if filter.Style != "" {
+		query = query.Where("coupon.style = ?", filter.Style)
+	}
+
+	if filter.Search != "" {
+		query = query.Where("coupon.code ILIKE ?", "%"+filter.Search+"%")
+	}
+
+	// Фильтры по датам
+	if filter.CreatedFrom != nil {
+		query = query.Where("coupon.created_at >= ?", *filter.CreatedFrom)
+	}
+
+	if filter.CreatedTo != nil {
+		query = query.Where("coupon.created_at <= ?", *filter.CreatedTo)
+	}
+
+	if filter.ActivatedFrom != nil {
+		query = query.Where("coupon.activated_at >= ?", *filter.ActivatedFrom)
+	}
+
+	if filter.ActivatedTo != nil {
+		query = query.Where("coupon.activated_at <= ?", *filter.ActivatedTo)
+	}
+
+	// Подсчет общего количества записей для пагинации
+	totalQuery := query.Clone()
+	total, err := totalQuery.Count(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to count coupons: %w", err)
+	}
+
+	// Сортировка
+	sortBy := "coupon.created_at"
+	order := "DESC"
+
+	if filter.SortBy != "" {
+		switch filter.SortBy {
+		case "created_at":
+			sortBy = "coupon.created_at"
+		case "activated_at":
+			sortBy = "coupon.activated_at"
+		case "code":
+			sortBy = "coupon.code"
+		case "partner_name":
+			sortBy = "p.brand_name"
+		default:
+			sortBy = "coupon.created_at"
+		}
+	}
+
+	if filter.Order == "asc" {
+		order = "ASC"
+	}
+
+	query = query.Order(sortBy + " " + order)
+
+	// Пагинация
+	pageSize := 20
+	if filter.PageSize > 0 && filter.PageSize <= 100 {
+		pageSize = filter.PageSize
+	}
+
+	page := 1
+	if filter.Page > 0 {
+		page = filter.Page
+	}
+
+	offset := (page - 1) * pageSize
+	query = query.Offset(offset).Limit(pageSize)
+
+	rows, err := query.
+		Column("coupon.*", "p.brand_name").
+		Rows(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get coupons: %w", err)
+	}
+	defer rows.Close()
+
+	var coupons []*CouponInfo
+	for rows.Next() {
+		var coupon Coupon
+		var partnerName string
+
+		err := r.db.ScanRow(ctx, rows, &coupon, &partnerName)
+		if err != nil {
+			return nil, 0, fmt.Errorf("failed to scan coupon row: %w", err)
+		}
+
+		coupons = append(coupons, &CouponInfo{
+			ID:          coupon.ID,
+			Code:        coupon.Code,
+			PartnerID:   coupon.PartnerID,
+			PartnerName: partnerName,
+			Status:      coupon.Status,
+			Size:        coupon.Size,
+			Style:       coupon.Style,
+			CreatedAt:   coupon.CreatedAt,
+			ActivatedAt: coupon.ActivatedAt,
+			UsedAt:      coupon.UsedAt,
+		})
+	}
+
+	return coupons, total, nil
+}
+
+// BatchReset сбрасывает купоны пакетно
+func (r *CouponRepository) BatchReset(ctx context.Context, ids []uuid.UUID) ([]uuid.UUID, []uuid.UUID, error) {
+	var success []uuid.UUID
+	var failed []uuid.UUID
+
+	// Проверяем какие купоны существуют и можно ли их сбросить
+	var existingCoupons []*Coupon
+	err := r.db.NewSelect().Model(&existingCoupons).Where("id IN (?)", bun.In(ids)).Scan(ctx)
+	if err != nil {
+		return nil, ids, fmt.Errorf("failed to check existing coupons: %w", err)
+	}
+
+	// Создаем мапу для проверки существования
+	existingMap := make(map[uuid.UUID]*Coupon)
+	for _, coupon := range existingCoupons {
+		existingMap[coupon.ID] = coupon
+	}
+
+	// Разделяем на существующие и несуществующие
+	var validIDs []uuid.UUID
+	for _, id := range ids {
+		if _, exists := existingMap[id]; exists {
+			validIDs = append(validIDs, id)
+		} else {
+			failed = append(failed, id)
+		}
+	}
+
+	if len(validIDs) == 0 {
+		return success, failed, nil
+	}
+
+	// Выполняем пакетный сброс
+	result, err := r.db.NewUpdate().Model((*Coupon)(nil)).
+		Set("status = ?", "new").
+		Set("used_at = NULL").
+		Set("is_blocked = ?", false).
+		Set("is_purchased = ?", false).
+		Set("purchase_email = NULL").
+		Set("purchased_at = NULL").
+		Set("original_image_url = NULL").
+		Set("preview_url = NULL").
+		Set("schema_url = NULL").
+		Set("schema_sent_email = NULL").
+		Set("schema_sent_at = NULL").
+		Set("activated_at = NULL").
+		Set("user_email = NULL").
+		Set("completed_at = NULL").
+		Where("id IN (?)", bun.In(validIDs)).
+		Exec(ctx)
+
+	if err != nil {
+		return success, ids, fmt.Errorf("failed to batch reset coupons: %w", err)
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+
+	// Если все купоны успешно сброшены
+	if rowsAffected == int64(len(validIDs)) {
+		success = validIDs
+	} else {
+		// Если не все купоны сброшены, проверяем какие именно
+		var resetCoupons []*Coupon
+		err := r.db.NewSelect().Model(&resetCoupons).
+			Column("id").
+			Where("id IN (?) AND status = ? AND used_at IS NULL", bun.In(validIDs), "new").
+			Scan(ctx)
+
+		if err == nil {
+			resetMap := make(map[uuid.UUID]bool)
+			for _, coupon := range resetCoupons {
+				resetMap[coupon.ID] = true
+				success = append(success, coupon.ID)
+			}
+
+			// Остальные считаем неуспешными
+			for _, id := range validIDs {
+				if !resetMap[id] {
+					failed = append(failed, id)
+				}
+			}
+		} else {
+			// В случае ошибки проверки считаем все неуспешными
+			failed = append(failed, validIDs...)
+		}
+	}
+
+	return success, failed, nil
+}
+
+// GetCouponsForDeletion возвращает информацию о купонах для предпросмотра удаления
+func (r *CouponRepository) GetCouponsForDeletion(ctx context.Context, ids []uuid.UUID) ([]*CouponDeletePreview, error) {
+	var previews []*CouponDeletePreview
+
+	rows, err := r.db.NewSelect().
+		Model((*Coupon)(nil)).
+		Column("coupon.id", "coupon.code", "coupon.status", "coupon.created_at", "coupon.used_at", "p.brand_name").
+		Join("LEFT JOIN partners p ON p.id = coupon.partner_id").
+		Where("coupon.id IN (?)", bun.In(ids)).
+		Order("coupon.created_at DESC").
+		Rows(ctx)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get coupons for deletion preview: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var preview CouponDeletePreview
+		var id uuid.UUID
+		var brandName sql.NullString
+		var usedAt sql.NullTime
+
+		err := rows.Scan(&id, &preview.Code, &preview.Status, &preview.CreatedAt, &usedAt, &brandName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan coupon preview: %w", err)
+		}
+
+		preview.ID = id.String()
+		if brandName.Valid {
+			preview.PartnerName = brandName.String
+		} else {
+			preview.PartnerName = "Unknown"
+		}
+		if usedAt.Valid {
+			preview.UsedAt = &usedAt.Time
+		}
+
+		previews = append(previews, &preview)
+	}
+
+	return previews, nil
+}
+
+// GetCouponsForExport возвращает купоны для экспорта с расширенной информацией
+func (r *CouponRepository) GetCouponsForExport(ctx context.Context, options ExportOptionsRequest) (interface{}, error) {
+	query := r.db.NewSelect().Model((*Coupon)(nil))
+
+	// Применяем фильтры
+	if options.PartnerID != nil {
+		partnerID, err := uuid.Parse(*options.PartnerID)
+		if err == nil {
+			query = query.Where("coupon.partner_id = ?", partnerID)
+		}
+	}
+
+	if options.Status != "" {
+		query = query.Where("coupon.status = ?", options.Status)
+	}
+
+	if options.Size != "" {
+		query = query.Where("coupon.size = ?", options.Size)
+	}
+
+	if options.Style != "" {
+		query = query.Where("coupon.style = ?", options.Style)
+	}
+
+	// Фильтры по датам
+	if options.CreatedFrom != nil {
+		query = query.Where("coupon.created_at >= ?", *options.CreatedFrom)
+	}
+
+	if options.CreatedTo != nil {
+		query = query.Where("coupon.created_at <= ?", *options.CreatedTo)
+	}
+
+	if options.ActivatedFrom != nil {
+		query = query.Where("coupon.activated_at >= ?", *options.ActivatedFrom)
+	}
+
+	if options.ActivatedTo != nil {
+		query = query.Where("coupon.activated_at <= ?", *options.ActivatedTo)
+	}
+
+	switch options.Format {
+	case ExportFormatType("codes"):
+		var codes []string
+		err := query.Column("code").Order("coupon.partner_id ASC, coupon.created_at DESC").Scan(ctx, &codes)
+		return codes, err
+
+	case ExportFormatType("basic"):
+		type BasicExport struct {
+			Code      string    `json:"code"`
+			Status    string    `json:"status"`
+			Size      string    `json:"size"`
+			Style     string    `json:"style"`
+			CreatedAt time.Time `json:"created_at"`
+		}
+		var exports []BasicExport
+		err := query.Column("code", "status", "size", "style", "created_at").
+			Order("coupon.partner_id ASC, coupon.created_at DESC").Scan(ctx, &exports)
+		return exports, err
+
+	case ExportFormatType("partner"):
+		// Для партнеров: Coupon Code, Partner Status, Coupon Status, Size, Style, Created At
+		type PartnerExport struct {
+			Code          string    `json:"code"`
+			PartnerStatus string    `json:"partner_status"`
+			CouponStatus  string    `json:"coupon_status"`
+			Size          string    `json:"size"`
+			Style         string    `json:"style"`
+			CreatedAt     time.Time `json:"created_at"`
+		}
+
+		rows, err := query.
+			Column("coupon.code", "coupon.status", "coupon.size", "coupon.style",
+				"coupon.created_at", "p.status").
+			Join("LEFT JOIN partners p ON p.id = coupon.partner_id").
+			Order("coupon.partner_id ASC, coupon.created_at DESC").
+			Rows(ctx)
+
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+
+		var exports []PartnerExport
+		for rows.Next() {
+			var export PartnerExport
+			var partnerStatus sql.NullString
+
+			err := rows.Scan(&export.Code, &export.CouponStatus, &export.Size, &export.Style,
+				&export.CreatedAt, &partnerStatus)
+			if err != nil {
+				return nil, err
+			}
+
+			if partnerStatus.Valid {
+				export.PartnerStatus = partnerStatus.String
+			} else {
+				export.PartnerStatus = "unknown"
+			}
+
+			exports = append(exports, export)
+		}
+		return exports, nil
+
+	case ExportFormatType("admin"):
+		// Для админа (новые купоны): Coupon Code, Partner ID, Partner Status, Coupon Status, Size, Style, Brand Name, Email, Created At
+		type AdminExport struct {
+			Code          string    `json:"code"`
+			PartnerID     string    `json:"partner_id"`
+			PartnerStatus string    `json:"partner_status"`
+			CouponStatus  string    `json:"coupon_status"`
+			Size          string    `json:"size"`
+			Style         string    `json:"style"`
+			BrandName     string    `json:"brand_name"`
+			Email         string    `json:"email"`
+			CreatedAt     time.Time `json:"created_at"`
+		}
+
+		rows, err := query.
+			Column("coupon.code", "coupon.partner_id", "coupon.status", "coupon.size", "coupon.style",
+				"coupon.created_at", "p.status", "p.brand_name", "p.email").
+			Join("LEFT JOIN partners p ON p.id = coupon.partner_id").
+			Order("coupon.partner_id ASC, coupon.created_at DESC").
+			Rows(ctx)
+
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+
+		var exports []AdminExport
+		for rows.Next() {
+			var export AdminExport
+			var partnerStatus, brandName, email sql.NullString
+
+			err := rows.Scan(&export.Code, &export.PartnerID, &export.CouponStatus, &export.Size, &export.Style,
+				&export.CreatedAt, &partnerStatus, &brandName, &email)
+			if err != nil {
+				return nil, err
+			}
+
+			if partnerStatus.Valid {
+				export.PartnerStatus = partnerStatus.String
+			} else {
+				export.PartnerStatus = "unknown"
+			}
+
+			if brandName.Valid {
+				export.BrandName = brandName.String
+			} else {
+				export.BrandName = "Unknown"
+			}
+
+			if email.Valid {
+				export.Email = email.String
+			} else {
+				export.Email = "unknown"
+			}
+
+			exports = append(exports, export)
+		}
+		return exports, nil
+
+	case ExportFormatType("activity"):
+		type ActivityExport struct {
+			Code            string     `json:"code"`
+			PartnerName     string     `json:"partner_name"`
+			Status          string     `json:"status"`
+			Size            string     `json:"size"`
+			Style           string     `json:"style"`
+			CreatedAt       time.Time  `json:"created_at"`
+			ActivatedAt     *time.Time `json:"activated_at"`
+			UsedAt          *time.Time `json:"used_at"`
+			CompletedAt     *time.Time `json:"completed_at"`
+			UserEmail       *string    `json:"user_email"`
+			PurchaseEmail   *string    `json:"purchase_email"`
+			PurchasedAt     *time.Time `json:"purchased_at"`
+			SchemaSentEmail *string    `json:"schema_sent_email"`
+			SchemaSentAt    *time.Time `json:"schema_sent_at"`
+		}
+
+		rows, err := query.
+			Column("coupon.*", "p.brand_name").
+			Join("LEFT JOIN partners p ON p.id = coupon.partner_id").
+			Order("coupon.partner_id ASC, coupon.created_at DESC").
+			Rows(ctx)
+
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+
+		var exports []ActivityExport
+		for rows.Next() {
+			var coupon Coupon
+			var brandName sql.NullString
+
+			err := r.db.ScanRow(ctx, rows, &coupon, &brandName)
+			if err != nil {
+				return nil, err
+			}
+
+			export := ActivityExport{
+				Code:            coupon.Code,
+				Status:          coupon.Status,
+				Size:            coupon.Size,
+				Style:           coupon.Style,
+				CreatedAt:       coupon.CreatedAt,
+				ActivatedAt:     coupon.ActivatedAt,
+				UsedAt:          coupon.UsedAt,
+				CompletedAt:     coupon.CompletedAt,
+				UserEmail:       coupon.UserEmail,
+				PurchaseEmail:   coupon.PurchaseEmail,
+				PurchasedAt:     coupon.PurchasedAt,
+				SchemaSentEmail: coupon.SchemaSentEmail,
+				SchemaSentAt:    coupon.SchemaSentAt,
+			}
+
+			if brandName.Valid {
+				export.PartnerName = brandName.String
+			} else {
+				export.PartnerName = "Unknown"
+			}
+
+			exports = append(exports, export)
+		}
+		return exports, nil
+
+	default: // ExportFormatFull
+		// Для админа (все купоны): Coupon Code, Partner ID, Partner Status, Coupon Status, Size, Style, Brand Name, Email, Created At, Used At
+		type FullExport struct {
+			Code          string     `json:"code"`
+			PartnerID     string     `json:"partner_id"`
+			PartnerStatus string     `json:"partner_status"`
+			CouponStatus  string     `json:"coupon_status"`
+			Size          string     `json:"size"`
+			Style         string     `json:"style"`
+			BrandName     string     `json:"brand_name"`
+			Email         string     `json:"email"`
+			CreatedAt     time.Time  `json:"created_at"`
+			UsedAt        *time.Time `json:"used_at"`
+		}
+
+		rows, err := query.
+			Column("coupon.code", "coupon.partner_id", "coupon.status", "coupon.size", "coupon.style",
+				"coupon.created_at", "coupon.used_at", "p.status", "p.brand_name", "p.email").
+			Join("LEFT JOIN partners p ON p.id = coupon.partner_id").
+			Order("coupon.partner_id ASC, coupon.created_at DESC").
+			Rows(ctx)
+
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+
+		var exports []FullExport
+		for rows.Next() {
+			var export FullExport
+			var partnerStatus, brandName, email sql.NullString
+
+			err := rows.Scan(&export.Code, &export.PartnerID, &export.CouponStatus, &export.Size, &export.Style,
+				&export.CreatedAt, &export.UsedAt, &partnerStatus, &brandName, &email)
+			if err != nil {
+				return nil, err
+			}
+
+			if partnerStatus.Valid {
+				export.PartnerStatus = partnerStatus.String
+			} else {
+				export.PartnerStatus = "unknown"
+			}
+
+			if brandName.Valid {
+				export.BrandName = brandName.String
+			} else {
+				export.BrandName = "Unknown"
+			}
+
+			if email.Valid {
+				export.Email = email.String
+			} else {
+				export.Email = "unknown"
+			}
+
+			exports = append(exports, export)
+		}
+		return exports, nil
+	}
+}
+
+// GetPartnerCouponsWithFilter возвращает купоны партнера с фильтрацией и пагинацией
+func (r *CouponRepository) GetPartnerCouponsWithFilter(ctx context.Context, partnerID uuid.UUID, filters map[string]interface{}, page, limit int, sortBy, order string) ([]*Coupon, int, error) {
+	query := r.db.NewSelect().Model((*Coupon)(nil)).Where("partner_id = ?", partnerID)
+
+	// Применяем фильтры
+	for key, value := range filters {
+		switch key {
+		case "status":
+			query = query.Where("status = ?", value)
+		case "size":
+			query = query.Where("size = ?", value)
+		case "style":
+			query = query.Where("style = ?", value)
+		case "search":
+			query = query.Where("code ILIKE ?", "%"+value.(string)+"%")
+		case "created_from":
+			query = query.Where("created_at >= ?", value)
+		case "created_to":
+			query = query.Where("created_at <= ?", value)
+		case "activated_from":
+			query = query.Where("activated_at >= ?", value)
+		case "activated_to":
+			query = query.Where("activated_at <= ?", value)
+		}
+	}
+
+	// Подсчет общего количества
+	total, err := query.Count(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to count partner coupons: %w", err)
+	}
+
+	// Сортировка
+	sortColumn := "created_at"
+	sortOrder := "DESC"
+
+	switch sortBy {
+	case "created_at", "activated_at", "used_at", "code", "status":
+		sortColumn = sortBy
+	}
+
+	if order == "asc" {
+		sortOrder = "ASC"
+	}
+
+	query = query.Order(sortColumn + " " + sortOrder)
+
+	// Пагинация
+	offset := (page - 1) * limit
+	query = query.Offset(offset).Limit(limit)
+
+	var coupons []*Coupon
+	err = query.Scan(ctx, &coupons)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get partner coupons: %w", err)
+	}
+
+	return coupons, total, nil
+}
+
+// GetPartnerCouponByCode возвращает купон партнера по коду
+func (r *CouponRepository) GetPartnerCouponByCode(ctx context.Context, partnerID uuid.UUID, code string) (*Coupon, error) {
+	coupon := new(Coupon)
+	err := r.db.NewSelect().Model(coupon).
+		Where("partner_id = ? AND code = ?", partnerID, code).
+		Scan(ctx)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("coupon not found")
+		}
+		return nil, fmt.Errorf("failed to find partner coupon by code: %w", err)
+	}
+	return coupon, nil
+}
+
+// GetPartnerCouponDetail возвращает детальную информацию о купоне партнера
+func (r *CouponRepository) GetPartnerCouponDetail(ctx context.Context, partnerID uuid.UUID, couponID uuid.UUID) (*Coupon, error) {
+	coupon := new(Coupon)
+	err := r.db.NewSelect().Model(coupon).
+		Where("partner_id = ? AND id = ?", partnerID, couponID).
+		Scan(ctx)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("coupon not found")
+		}
+		return nil, fmt.Errorf("failed to find partner coupon detail: %w", err)
+	}
+	return coupon, nil
+}
+
+// GetPartnerRecentActivity возвращает последние активированные купоны партнера
+func (r *CouponRepository) GetPartnerRecentActivity(ctx context.Context, partnerID uuid.UUID, limit int) ([]*Coupon, error) {
+	var coupons []*Coupon
+	err := r.db.NewSelect().Model(&coupons).
+		Where("partner_id = ? AND activated_at IS NOT NULL", partnerID).
+		Order("activated_at DESC").
+		Limit(limit).
+		Scan(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get partner recent activity: %w", err)
+	}
+	return coupons, nil
+}
+
+// GetPartnerStatistics возвращает детальную статистику партнера
+func (r *CouponRepository) GetPartnerStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]interface{}, error) {
+	stats := make(map[string]interface{})
+
+	// Общее количество купонов
+	totalCount, err := r.db.NewSelect().Model((*Coupon)(nil)).
+		Where("partner_id = ?", partnerID).
+		Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count total coupons: %w", err)
+	}
+	stats["total_coupons"] = int64(totalCount)
+
+	// Активированные купоны
+	activatedCount, err := r.db.NewSelect().Model((*Coupon)(nil)).
+		Where("partner_id = ? AND activated_at IS NOT NULL", partnerID).
+		Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count activated coupons: %w", err)
+	}
+	stats["activated_coupons"] = int64(activatedCount)
+
+	// Использованные купоны
+	usedCount, err := r.db.NewSelect().Model((*Coupon)(nil)).
+		Where("partner_id = ? AND used_at IS NOT NULL", partnerID).
+		Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count used coupons: %w", err)
+	}
+	stats["used_coupons"] = int64(usedCount)
+
+	// Завершенные купоны
+	completedCount, err := r.db.NewSelect().Model((*Coupon)(nil)).
+		Where("partner_id = ? AND completed_at IS NOT NULL", partnerID).
+		Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count completed coupons: %w", err)
+	}
+	stats["completed_coupons"] = int64(completedCount)
+
+	// Купленные онлайн купоны
+	purchasedCount, err := r.db.NewSelect().Model((*Coupon)(nil)).
+		Where("partner_id = ? AND is_purchased = true", partnerID).
+		Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count purchased coupons: %w", err)
+	}
+	stats["purchased_coupons"] = int64(purchasedCount)
+
+	// Последняя активность
+	var lastActivity time.Time
+	err = r.db.NewSelect().Model((*Coupon)(nil)).
+		Column("activated_at").
+		Where("partner_id = ? AND activated_at IS NOT NULL", partnerID).
+		Order("activated_at DESC").
+		Limit(1).
+		Scan(ctx, &lastActivity)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, fmt.Errorf("failed to get last activity: %w", err)
+	}
+	if err != sql.ErrNoRows {
+		stats["last_activity"] = &lastActivity
+	} else {
+		stats["last_activity"] = nil
+	}
+
+	return stats, nil
+}
+
+// GetPartnerSalesStatistics возвращает статистику продаж партнера
+func (r *CouponRepository) GetPartnerSalesStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]interface{}, error) {
+	stats := make(map[string]interface{})
+
+	// Общие продажи (купленные онлайн)
+	totalSales, err := r.db.NewSelect().Model((*Coupon)(nil)).
+		Where("partner_id = ? AND is_purchased = true", partnerID).
+		Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count total sales: %w", err)
+	}
+	stats["total_sales"] = int64(totalSales)
+
+	// Продажи в этом месяце
+	now := time.Now()
+	startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+
+	salesThisMonth, err := r.db.NewSelect().Model((*Coupon)(nil)).
+		Where("partner_id = ? AND is_purchased = true AND purchased_at >= ?", partnerID, startOfMonth).
+		Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count sales this month: %w", err)
+	}
+	stats["sales_this_month"] = int64(salesThisMonth)
+
+	// Продажи на этой неделе
+	startOfWeek := now.AddDate(0, 0, -int(now.Weekday()))
+	startOfWeek = time.Date(startOfWeek.Year(), startOfWeek.Month(), startOfWeek.Day(), 0, 0, 0, 0, startOfWeek.Location())
+
+	salesThisWeek, err := r.db.NewSelect().Model((*Coupon)(nil)).
+		Where("partner_id = ? AND is_purchased = true AND purchased_at >= ?", partnerID, startOfWeek).
+		Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count sales this week: %w", err)
+	}
+	stats["sales_this_week"] = int64(salesThisWeek)
+
+	// Статистика по размерам
+	sizeCounts, err := r.GetSizeCounts(ctx, &partnerID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get size counts: %w", err)
+	}
+	stats["top_sizes"] = sizeCounts
+
+	// Статистика по стилям
+	styleCounts, err := r.GetStyleCounts(ctx, &partnerID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get style counts: %w", err)
+	}
+	stats["top_styles"] = styleCounts
+
+	return stats, nil
+}
+
+// GetPartnerUsageStatistics возвращает статистику использования купонов партнера
+func (r *CouponRepository) GetPartnerUsageStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]interface{}, error) {
+	stats := make(map[string]interface{})
+
+	// Использование в этом месяце
+	now := time.Now()
+	startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+
+	usageThisMonth, err := r.db.NewSelect().Model((*Coupon)(nil)).
+		Where("partner_id = ? AND used_at IS NOT NULL AND used_at >= ?", partnerID, startOfMonth).
+		Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count usage this month: %w", err)
+	}
+	stats["usage_this_month"] = int64(usageThisMonth)
+
+	// Использование на этой неделе
+	startOfWeek := now.AddDate(0, 0, -int(now.Weekday()))
+	startOfWeek = time.Date(startOfWeek.Year(), startOfWeek.Month(), startOfWeek.Day(), 0, 0, 0, 0, startOfWeek.Location())
+
+	usageThisWeek, err := r.db.NewSelect().Model((*Coupon)(nil)).
+		Where("partner_id = ? AND used_at IS NOT NULL AND used_at >= ?", partnerID, startOfWeek).
+		Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count usage this week: %w", err)
+	}
+	stats["usage_this_week"] = int64(usageThisWeek)
+
+	// Общая статистика для расчета коэффициентов
+	totalCoupons, err := r.db.NewSelect().Model((*Coupon)(nil)).
+		Where("partner_id = ?", partnerID).
+		Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count total coupons: %w", err)
+	}
+
+	activatedCoupons, err := r.db.NewSelect().Model((*Coupon)(nil)).
+		Where("partner_id = ? AND activated_at IS NOT NULL", partnerID).
+		Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count activated coupons: %w", err)
+	}
+
+	completedCoupons, err := r.db.NewSelect().Model((*Coupon)(nil)).
+		Where("partner_id = ? AND completed_at IS NOT NULL", partnerID).
+		Count(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count completed coupons: %w", err)
+	}
+
+	// Коэффициент конверсии (активированные от общего числа)
+	var conversionRate float64
+	if totalCoupons > 0 {
+		conversionRate = float64(activatedCoupons) / float64(totalCoupons) * 100
+	}
+	stats["conversion_rate"] = conversionRate
+
+	// Коэффициент завершения (завершенные от активированных)
+	var completionRate float64
+	if activatedCoupons > 0 {
+		completionRate = float64(completedCoupons) / float64(activatedCoupons) * 100
+	}
+	stats["completion_rate"] = completionRate
+
+	// Среднее время от создания до использования
+	var avgTimeToUse sql.NullFloat64
+	err = r.db.NewSelect().Model((*Coupon)(nil)).
+		ColumnExpr("AVG(EXTRACT(EPOCH FROM (used_at - created_at))/3600)").
+		Where("partner_id = ? AND used_at IS NOT NULL", partnerID).
+		Scan(ctx, &avgTimeToUse)
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate average time to use: %w", err)
+	}
+	if avgTimeToUse.Valid {
+		hours := int64(avgTimeToUse.Float64)
+		stats["average_time_to_use"] = &hours
+	} else {
+		stats["average_time_to_use"] = nil
+	}
+
+	return stats, nil
+}

@@ -2,9 +2,9 @@ package admin
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -15,7 +15,6 @@ import (
 	"github.com/skr1ms/mosaic/pkg/jwt"
 	"github.com/skr1ms/mosaic/pkg/middleware"
 	"github.com/skr1ms/mosaic/pkg/randomCouponCode"
-	"github.com/skr1ms/mosaic/pkg/updatePartnerData"
 )
 
 type AdminHandlerDeps struct {
@@ -47,6 +46,7 @@ func NewAdminHandler(router fiber.Router, deps *AdminHandlerDeps) {
 	protected.Get("/partners", handler.GetPartners)                         // получение списка партнеров
 	protected.Post("/partners", handler.CreatePartner)                      // создание партнера
 	protected.Get("/partners/:id", handler.GetPartner)                      // получение информации о партнере
+	protected.Get("/partners/:id/detail", handler.GetPartnerDetail)         // детальная информация о партнере (статистика + история изменений)
 	protected.Put("/partners/:id", handler.UpdatePartner)                   // обновление информации о партнере
 	protected.Patch("/partners/:id/block", handler.BlockPartner)            // блокировка партнера
 	protected.Patch("/partners/:id/unblock", handler.UnblockPartner)        // разблокировка партнера
@@ -54,16 +54,28 @@ func NewAdminHandler(router fiber.Router, deps *AdminHandlerDeps) {
 	protected.Get("/partners/:id/statistics", handler.GetPartnerStatistics) // получение статистики партнера
 
 	// Управление купонами
-	protected.Get("/coupons", handler.GetCoupons)                              // получение списка купонов
-	protected.Get("/coupons/paginated", handler.GetCouponsPaginated)           // получение купонов с пагинацией
-	protected.Post("/coupons", handler.CreateCoupons)                          // создание купонов
-	protected.Get("/coupons/export", handler.ExportCoupons)                    // экспорт купонов
-	protected.Get("/coupons/export/partner/:id", handler.ExportPartnerCoupons) // экспорт купонов партнера
-	protected.Post("/coupons/batch-delete", handler.BatchDeleteCoupons)        // массовое удаление купонов
-	protected.Get("/coupons/:id", handler.GetCoupon)                           // получение информации о купоне
-	protected.Patch("/coupons/:id/reset", handler.ResetCoupon)                 // сброс купона
-	protected.Delete("/coupons/:id", handler.DeleteCoupon)                     // удаление купона
-	protected.Post("/batch-delete", handler.BatchDeleteCoupons)                // Пакетное удаление купонов
+	protected.Get("/coupons", handler.GetCoupons)                               // получение списка купонов
+	protected.Get("/coupons/paginated", handler.GetCouponsPaginated)            // получение купонов с пагинацией
+	protected.Get("/coupons/filtered", handler.GetCouponsFiltered)              // получение купонов с продвинутой фильтрацией
+	protected.Post("/coupons", handler.CreateCoupons)                           // создание купонов
+	protected.Get("/coupons/export", handler.ExportCoupons)                     // экспорт купонов
+	protected.Post("/coupons/export-advanced", handler.ExportCouponsAdvanced)   // продвинутый экспорт купонов
+	protected.Get("/coupons/export/partner/:id", handler.ExportPartnerCoupons)  // экспорт купонов партнера
+	protected.Post("/coupons/batch-delete", handler.BatchDeleteCoupons)         // массовое удаление купонов
+	protected.Post("/coupons/batch/reset", handler.BatchResetCoupons)           // пакетный сброс купонов
+	protected.Post("/coupons/batch/delete/preview", handler.PreviewBatchDelete) // предпросмотр пакетного удаления
+	protected.Post("/coupons/batch/delete/confirm", handler.ExecuteBatchDelete) // подтверждение пакетного удаления
+	protected.Post("/batch-delete", handler.BatchDeleteCoupons)                 // Пакетное удаление купонов
+	protected.Get("/coupons/:id", handler.GetCoupon)                            // получение информации о купоне
+	protected.Get("/coupons/:id/download-materials", handler.DownloadCouponMaterials) // скачивание материалов купона
+	protected.Post("/coupons/batch/download-materials", handler.BatchDownloadMaterials) // массовое скачивание материалов
+	protected.Patch("/coupons/:id/reset", handler.ResetCoupon)                  // сброс купона
+	protected.Delete("/coupons/:id", handler.DeleteCoupon)                      // удаление купона
+
+	// Пользовательские фильтры
+	protected.Get("/filters", handler.GetUserFilters)          // получение сохраненных фильтров
+	protected.Post("/filters", handler.SaveUserFilter)         // сохранение пользовательского фильтра
+	protected.Delete("/filters/:id", handler.DeleteUserFilter) // удаление пользовательского фильтра
 
 	// Статистика и аналитика
 	protected.Get("/statistics", handler.GetStatistics)                    // получение общей статистики
@@ -77,9 +89,6 @@ func NewAdminHandler(router fiber.Router, deps *AdminHandlerDeps) {
 	protected.Get("/images/:id", handler.GetImageDetails)       // получение деталей задачи обработки
 	protected.Delete("/images/:id", handler.DeleteImageTask)    // удаление задачи обработки
 	protected.Post("/images/:id/retry", handler.RetryImageTask) // повторная обработка изображения
-
-	// Профиль администратора
-	protected.Put("/profile/password", handler.ChangePassword) // изменение пароля администратора
 }
 
 // CreateAdmin создает нового администратора
@@ -179,15 +188,17 @@ func (handler *AdminHandler) GetDashboard(c *fiber.Ctx) error {
 	return c.JSON(dashboardData)
 }
 
-// GetPartners возвращает список партнеров с поддержкой фильтрации
+// GetPartners возвращает список партнеров с поддержкой фильтрации и сортировки
 //
 //	@Summary		Список партнеров
-//	@Description	Возвращает список всех партнеров с возможностью фильтрации и поиска
+//	@Description	Возвращает список всех партнеров с возможностью фильтрации, поиска и сортировки
 //	@Tags			admin-partners
 //	@Produce		json
 //	@Security		BearerAuth
 //	@Param			search	query		string					false	"Поиск по названию бренда, домену или email"
 //	@Param			status	query		string					false	"Фильтр по статусу (active/blocked)"
+//	@Param			sort_by	query		string					false	"Поле сортировки (created_at/brand_name)"
+//	@Param			order	query		string					false	"Порядок сортировки (asc/desc, по умолчанию desc)"
 //	@Success		200		{object}	map[string]interface{}	"Список партнеров"
 //	@Failure		401		{object}	map[string]interface{}	"Не авторизован"
 //	@Failure		403		{object}	map[string]interface{}	"Нет прав доступа"
@@ -196,8 +207,10 @@ func (handler *AdminHandler) GetPartners(c *fiber.Ctx) error {
 	log := zerolog.Ctx(c.UserContext())
 	search := c.Query("search")
 	status := c.Query("status")
+	sortBy := c.Query("sort_by", "created_at") // По умолчанию сортировка по дате создания
+	order := c.Query("order", "desc")          // По умолчанию по убыванию
 
-	partners, err := handler.deps.AdminService.GetPartners(search, status)
+	partners, err := handler.deps.AdminService.GetPartners(search, status, sortBy, order)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get partners")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get partners"})
@@ -388,6 +401,40 @@ func (handler *AdminHandler) GetPartner(c *fiber.Ctx) error {
 	})
 }
 
+// GetPartnerDetail возвращает детальную информацию о партнере включая статистику и историю изменений
+//
+//	@Summary		Детальная информация о партнере
+//	@Description	Возвращает подробную информацию о партнере включая статистику купонов, последнюю активность и историю изменений профиля
+//	@Tags			admin-partners
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path		string					true	"ID партнера"
+//	@Success		200	{object}	admin.PartnerDetailResponse	"Детальная информация о партнере"
+//	@Failure		400	{object}	map[string]interface{}		"Неверный ID"
+//	@Failure		404	{object}	map[string]interface{}		"Партнер не найден"
+//	@Failure		401	{object}	map[string]interface{}		"Не авторизован"
+//	@Failure		403	{object}	map[string]interface{}		"Нет прав доступа"
+//	@Router			/admin/partners/{id}/detail [get]
+func (handler *AdminHandler) GetPartnerDetail(c *fiber.Ctx) error {
+	log := zerolog.Ctx(c.UserContext())
+	partnerID, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		log.Error().Err(err).Str("id", c.Params("id")).Msg("Invalid partner ID")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid partner ID"})
+	}
+
+	partnerDetail, err := handler.deps.AdminService.GetPartnerDetail(partnerID)
+	if err != nil {
+		log.Error().Err(err).Str("partner_id", partnerID.String()).Msg("Failed to get partner detail")
+		if strings.Contains(err.Error(), "not found") {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Partner not found"})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get partner detail"})
+	}
+
+	return c.JSON(partnerDetail)
+}
+
 // UpdatePartner обновляет партнера
 //
 //	@Summary		Обновление партнера
@@ -416,16 +463,23 @@ func (handler *AdminHandler) UpdatePartner(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid ID"})
 	}
 
-	partner, err := handler.deps.AdminService.deps.PartnerRepository.GetByID(context.Background(), partnerID)
+	// Получаем информацию о текущем админе
+	claims, err := jwt.GetClaimsFromFiberContext(c)
 	if err != nil {
-		log.Error().Err(err).Str("partner_id", partnerID.String()).Msg("Partner not found")
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Partner not found"})
+		log.Error().Err(err).Msg("Failed to get admin claims")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
-	updatePartnerData.UpdatePartnerData(partner, &req)
+	// Получаем причину изменения из query параметра или устанавливаем по умолчанию
+	reason := c.Query("reason", "Admin update")
 
-	if err := handler.deps.AdminService.deps.PartnerRepository.Update(context.Background(), partner); err != nil {
+	// Обновляем партнера с записью истории изменений
+	partner, err := handler.deps.AdminService.UpdatePartnerWithHistory(partnerID, req, claims.Login, reason)
+	if err != nil {
 		log.Error().Err(err).Str("partner_id", partnerID.String()).Msg("Failed to update partner")
+		if strings.Contains(err.Error(), "not found") {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Partner not found"})
+		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to update partner"})
 	}
 
@@ -941,99 +995,25 @@ func (handler *AdminHandler) ExportCoupons(c *fiber.Ctx) error {
 		format = "txt"
 	}
 
-	// Получаем все купоны с данными партнеров
-	coupons, err := handler.deps.AdminService.deps.PartnerRepository.GetAllCouponsForExport(context.Background())
+	options := coupon.ExportOptionsRequest{
+		Format:        coupon.ExportFormatFull, // Полная информация для админа
+		FileFormat:    format,
+		IncludeHeader: true,
+	}
+
+	content, filename, contentType, err := handler.deps.AdminService.ExportCouponsAdvanced(options)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to fetch coupons")
+		log.Error().Err(err).Msg("Failed to export coupons")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to fetch coupons",
+			"error": "Failed to export coupons",
 		})
 	}
 
-	if len(coupons) == 0 {
-		log.Error().Msg("No coupons found for export")
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "No coupons found for export",
-		})
-	}
-
-	var content strings.Builder
-	filename := fmt.Sprintf("all_coupons_%s.%s", time.Now().Format("20060102_150405"), format)
-
-	if format == "csv" {
-		// CSV формат с полными данными для админа и группировкой по партнерам
-		content.WriteString("Coupon Code,Partner ID,Partner Status,Coupon Status,Size,Style,Brand Name,Email,Created At,Used At\n")
-
-		var currentPartnerID uuid.UUID
-		for _, coupon := range coupons {
-			// Если это новый партнер, добавляем разделительную строку
-			if coupon.PartnerID != currentPartnerID {
-				currentPartnerID = coupon.PartnerID
-				if content.Len() > len("Coupon Code,Partner ID,Partner Status,Coupon Status,Size,Style,Brand Name,Email,Created At,Used At\n") {
-					// Добавляем пустую строку между партнерами (кроме первого)
-					content.WriteString(",,,,,,,,,,\n")
-				}
-				// Добавляем строку с информацией о партнере
-				content.WriteString(fmt.Sprintf("=== PARTNER: %s ===,,%s,,,,%s,%s,,\n",
-					coupon.BrandName,
-					coupon.PartnerStatus,
-					coupon.BrandName,
-					coupon.Email,
-				))
-			}
-
-			usedAt := ""
-			if coupon.UsedAt != nil {
-				usedAt = coupon.UsedAt.Format("2006-01-02 15:04:05")
-			}
-			content.WriteString(fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
-				coupon.CouponCode,
-				coupon.PartnerID.String(),
-				coupon.PartnerStatus,
-				coupon.CouponStatus,
-				coupon.Size,
-				coupon.Style,
-				coupon.BrandName,
-				coupon.Email,
-				coupon.CreatedAt.Format("2006-01-02 15:04:05"),
-				usedAt,
-			))
-		}
-		c.Set("Content-Type", "text/csv")
-	} else {
-		// TXT формат с группировкой по партнерам
-		content.WriteString("All Coupons Export\n")
-		content.WriteString("==================\n\n")
-
-		var currentPartnerID uuid.UUID
-		for _, coupon := range coupons {
-			// Если это новый партнер, добавляем заголовок
-			if coupon.PartnerID != currentPartnerID {
-				currentPartnerID = coupon.PartnerID
-				content.WriteString(fmt.Sprintf("\n=== Partner: %s ===\n", coupon.BrandName))
-				content.WriteString(fmt.Sprintf("Partner ID: %s\n", coupon.PartnerID.String()))
-				content.WriteString(fmt.Sprintf("Email: %s\n", coupon.Email))
-				content.WriteString(fmt.Sprintf("Status: %s\n\n", coupon.PartnerStatus))
-			}
-
-			content.WriteString(fmt.Sprintf("Code: %s\n", coupon.CouponCode))
-			content.WriteString(fmt.Sprintf("Coupon Status: %s\n", coupon.CouponStatus))
-			content.WriteString(fmt.Sprintf("Size: %s\n", coupon.Size))
-			content.WriteString(fmt.Sprintf("Style: %s\n", coupon.Style))
-			content.WriteString(fmt.Sprintf("Created: %s\n", coupon.CreatedAt.Format("2006-01-02 15:04:05")))
-			if coupon.UsedAt != nil {
-				content.WriteString(fmt.Sprintf("Used: %s\n", coupon.UsedAt.Format("2006-01-02 15:04:05")))
-			}
-			content.WriteString("---\n")
-		}
-		c.Set("Content-Type", "text/plain")
-	}
-
-	// Устанавливаем заголовки для автоматического скачивания
+	c.Set("Content-Type", contentType)
 	c.Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
 	c.Set("Cache-Control", "no-cache")
 
-	return c.SendString(content.String())
+	return c.Send(content)
 }
 
 // ExportPartnerCoupons экспортирует купоны конкретного партнера
@@ -1069,7 +1049,7 @@ func (handler *AdminHandler) ExportPartnerCoupons(c *fiber.Ctx) error {
 	}
 
 	// Проверяем существование партнера
-	partner, err := handler.deps.AdminService.deps.PartnerRepository.GetByID(context.Background(), partnerID)
+	_, err = handler.deps.AdminService.deps.PartnerRepository.GetByID(context.Background(), partnerID)
 	if err != nil {
 		log.Error().Err(err).Str("partner_id", partnerID.String()).Msg("Partner not found")
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -1077,71 +1057,27 @@ func (handler *AdminHandler) ExportPartnerCoupons(c *fiber.Ctx) error {
 		})
 	}
 
-	// Получаем купоны партнера со статусом "new"
-	coupons, err := handler.deps.AdminService.deps.PartnerRepository.GetPartnerCouponsForExport(context.Background(), partnerID, "new")
+	options := coupon.ExportOptionsRequest{
+		Format:        coupon.ExportFormatAdmin, // Админ формат без Used At
+		PartnerID:     &partnerIDStr,
+		Status:        "new", // Только новые купоны
+		FileFormat:    format,
+		IncludeHeader: true,
+	}
+
+	content, filename, contentType, err := handler.deps.AdminService.ExportCouponsAdvanced(options)
 	if err != nil {
-		log.Error().Err(err).Str("partner_id", partnerID.String()).Msg("Failed to export coupons")
+		log.Error().Err(err).Msg("Failed to export partner coupons")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to export coupons",
+			"error": "Failed to export partner coupons",
 		})
 	}
 
-	if len(coupons) == 0 {
-		log.Error().Str("partner_id", partnerID.String()).Msg("No coupons found for export")
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "No coupons found for export",
-		})
-	}
-
-	// Генерируем содержимое файла
-	var content strings.Builder
-	filename := fmt.Sprintf("partner_%s_coupons_%s.%s",
-		partner.BrandName,
-		time.Now().Format("20060102_150405"),
-		format)
-
-	if format == "csv" {
-		// CSV формат с расширенными данными для админа
-		content.WriteString("Coupon Code,Partner ID,Partner Status,Coupon Status,Size,Style,Brand Name,Email,Created At\n")
-		for _, coupon := range coupons {
-			content.WriteString(fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
-				coupon.CouponCode,
-				coupon.PartnerID.String(),
-				coupon.PartnerStatus,
-				coupon.CouponStatus,
-				coupon.Size,
-				coupon.Style,
-				coupon.BrandName,
-				coupon.Email,
-				coupon.CreatedAt.Format("2006-01-02 15:04:05"),
-			))
-		}
-		c.Set("Content-Type", "text/csv")
-	} else {
-		// TXT формат с расширенными данными для админа
-		content.WriteString(fmt.Sprintf("Partner Coupons Export - %s\n", partner.BrandName))
-		content.WriteString("=====================================\n\n")
-		content.WriteString(fmt.Sprintf("Partner ID: %s\n", partnerID.String()))
-		content.WriteString(fmt.Sprintf("Brand Name: %s\n", partner.BrandName))
-		content.WriteString(fmt.Sprintf("Email: %s\n", partner.Email))
-		content.WriteString(fmt.Sprintf("Partner Status: %s\n\n", partner.Status))
-
-		for _, coupon := range coupons {
-			content.WriteString(fmt.Sprintf("Code: %s\n", coupon.CouponCode))
-			content.WriteString(fmt.Sprintf("Coupon Status: %s\n", coupon.CouponStatus))
-			content.WriteString(fmt.Sprintf("Size: %s\n", coupon.Size))
-			content.WriteString(fmt.Sprintf("Style: %s\n", coupon.Style))
-			content.WriteString(fmt.Sprintf("Created: %s\n", coupon.CreatedAt.Format("2006-01-02 15:04:05")))
-			content.WriteString("---\n")
-		}
-		c.Set("Content-Type", "text/plain")
-	}
-
-	// Устанавливаем заголовки для автоматического скачивания
+	c.Set("Content-Type", contentType)
 	c.Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
 	c.Set("Cache-Control", "no-cache")
 
-	return c.SendString(content.String())
+	return c.Send(content)
 }
 
 // BatchDeleteCoupons массово удаляет купоны для админ панели
@@ -1358,6 +1294,99 @@ func (handler *AdminHandler) DeleteCoupon(c *fiber.Ctx) error {
 	})
 }
 
+// DownloadCouponMaterials скачивает материалы погашенного купона
+//
+//	@Summary		Скачивание материалов купона
+//	@Description	Скачивает архив с материалами погашенного купона (оригинал, превью, схема)
+//	@Tags			admin-coupons
+//	@Produce		application/zip
+//	@Security		BearerAuth
+//	@Param			id	path		string					true	"ID купона"
+//	@Success		200	{string}	string					"ZIP архив с материалами"
+//	@Failure		400	{object}	map[string]interface{}	"Неверный ID купона"
+//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
+//	@Failure		404	{object}	map[string]interface{}	"Купон не найден или не использован"
+//	@Failure		500	{object}	map[string]interface{}	"Внутренняя ошибка сервера"
+//	@Router			/admin/coupons/{id}/download-materials [get]
+func (handler *AdminHandler) DownloadCouponMaterials(c *fiber.Ctx) error {
+	log := zerolog.Ctx(c.UserContext())
+	
+	// Получаем ID купона
+	idStr := c.Params("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		log.Error().Err(err).Msg("Invalid coupon ID")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid coupon ID"})
+	}
+
+	// Скачиваем материалы
+	archiveData, filename, err := handler.deps.AdminService.DownloadCouponMaterials(id)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to download materials")
+		if strings.Contains(err.Error(), "not found") {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Coupon not found"})
+		}
+		if strings.Contains(err.Error(), "must be used") {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Coupon must be used to download materials"})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
+	}
+
+	// Устанавливаем заголовки для скачивания
+	c.Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+	c.Set("Content-Type", "application/zip")
+
+	return c.Send(archiveData)
+}
+
+// BatchDownloadMaterials скачивает материалы множественных купонов в одном архиве
+//
+//	@Summary		Массовое скачивание материалов купонов
+//	@Description	Скачивает архив с материалами множественных погашенных купонов
+//	@Tags			admin-coupons
+//	@Accept			json
+//	@Produce		application/zip
+//	@Security		BearerAuth
+//	@Param			request	body		admin.BatchDownloadMaterialsRequest	true	"Список ID купонов для скачивания"
+//	@Success		200		{string}	string								"ZIP архив с материалами"
+//	@Failure		400		{object}	map[string]interface{}				"Неверный запрос"
+//	@Failure		401		{object}	map[string]interface{}				"Не авторизован"
+//	@Failure		403		{object}	map[string]interface{}				"Нет прав доступа"
+//	@Failure		500		{object}	map[string]interface{}				"Внутренняя ошибка сервера"
+//	@Router			/admin/coupons/batch/download-materials [post]
+func (handler *AdminHandler) BatchDownloadMaterials(c *fiber.Ctx) error {
+	log := zerolog.Ctx(c.UserContext())
+
+	var req BatchDownloadMaterialsRequest
+	if err := c.BodyParser(&req); err != nil {
+		log.Error().Err(err).Msg("Invalid request body")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+	}
+
+	// Валидация
+	if len(req.CouponIDs) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Coupon IDs required"})
+	}
+
+	if len(req.CouponIDs) > 100 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Too many coupon IDs (maximum 100)"})
+	}
+
+	// Скачиваем материалы
+	archiveData, filename, err := handler.deps.AdminService.BatchDownloadMaterials(req.CouponIDs)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to batch download materials")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
+	}
+
+	// Устанавливаем заголовки для скачивания
+	c.Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+	c.Set("Content-Type", "application/zip")
+
+	return c.Send(archiveData)
+}
+
 // GetStatistics возвращает общую статистику
 //
 //	@Summary		Общая статистика
@@ -1391,7 +1420,7 @@ func (handler *AdminHandler) GetStatistics(c *fiber.Ctx) error {
 
 	// Всего партнеров
 	var totalPartners int64
-	if partners, err := handler.deps.AdminService.deps.PartnerRepository.GetAll(context.Background()); err == nil {
+	if partners, err := handler.deps.AdminService.deps.PartnerRepository.GetAll(context.Background(), "created_at", "desc"); err == nil {
 		totalPartners = int64(len(partners))
 	}
 
@@ -1423,7 +1452,7 @@ func (handler *AdminHandler) GetStatistics(c *fiber.Ctx) error {
 //	@Router			/admin/statistics/partners [get]
 func (handler *AdminHandler) GetPartnersStatistics(c *fiber.Ctx) error {
 	log := zerolog.Ctx(c.UserContext())
-	partners, err := handler.deps.AdminService.deps.PartnerRepository.GetAll(context.Background())
+	partners, err := handler.deps.AdminService.deps.PartnerRepository.GetAll(context.Background(), "created_at", "desc")
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to fetch partners")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to fetch partners"})
@@ -1832,4 +1861,353 @@ func (handler *AdminHandler) RetryImageTask(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"message": "Задача поставлена на повторную обработку",
 	})
+}
+
+// GetCouponsFiltered возвращает купоны с продвинутой фильтрацией
+//
+//	@Summary		Продвинутая фильтрация купонов
+//	@Description	Возвращает список купонов с применением продвинутых фильтров (даты, комбинированные фильтры)
+//	@Tags			admin-coupons
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			request	body		coupon.CouponFilterRequest	true	"Параметры фильтрации"
+//	@Success		200		{object}	CouponFilterResponse		"Отфильтрованные купоны"
+//	@Failure		400		{object}	map[string]interface{}		"Ошибка в запросе"
+//	@Failure		401		{object}	map[string]interface{}		"Не авторизован"
+//	@Failure		403		{object}	map[string]interface{}		"Нет прав доступа"
+//	@Failure		500		{object}	map[string]interface{}		"Внутренняя ошибка сервера"
+//	@Router			/admin/coupons/filtered [post]
+func (handler *AdminHandler) GetCouponsFiltered(c *fiber.Ctx) error {
+	log := zerolog.Ctx(c.UserContext())
+
+	var req coupon.CouponFilterRequest
+	if err := c.BodyParser(&req); err != nil {
+		log.Error().Err(err).Msg("Failed to parse request body")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Failed to parse request body"})
+	}
+
+	// Валидация пагинации
+	if req.Page < 1 {
+		req.Page = 1
+	}
+	if req.PageSize < 1 || req.PageSize > 100 {
+		req.PageSize = 20
+	}
+
+	// Получаем отфильтрованные купоны
+	response, err := handler.deps.AdminService.GetCouponsWithFilter(req)
+	if err != nil {
+		log.Error().Err(err).Interface("filter", req).Msg("Failed to get filtered coupons")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get filtered coupons"})
+	}
+
+	return c.JSON(response)
+}
+
+// GetUserFilters возвращает сохраненные фильтры пользователя
+//
+//	@Summary		Получение пользовательских фильтров
+//	@Description	Возвращает список сохраненных фильтров текущего пользователя
+//	@Tags			admin-filters
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	map[string]interface{}	"Список фильтров пользователя"
+//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		500	{object}	map[string]interface{}	"Внутренняя ошибка сервера"
+//	@Router			/admin/filters [get]
+func (handler *AdminHandler) GetUserFilters(c *fiber.Ctx) error {
+	log := zerolog.Ctx(c.UserContext())
+
+	claims, err := jwt.GetClaimsFromFiberContext(c)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get claims")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	userID := claims.UserID
+	filters, err := handler.deps.AdminService.GetUserFilters(userID, "coupon") // фильтры для купонов
+	if err != nil {
+		log.Error().Err(err).Str("user_id", userID.String()).Msg("Failed to get user filters")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get user filters"})
+	}
+
+	return c.JSON(fiber.Map{
+		"filters": filters,
+		"success": true,
+	})
+}
+
+// SaveUserFilter сохраняет пользовательский фильтр
+//
+//	@Summary		Сохранение пользовательского фильтра
+//	@Description	Сохраняет фильтр для повторного использования
+//	@Tags			admin-filters
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			filter	body		UserFilter				true	"Данные фильтра"
+//	@Success		200		{object}	map[string]interface{}	"Фильтр сохранен"
+//	@Failure		400		{object}	map[string]interface{}	"Ошибка в запросе"
+//	@Failure		401		{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		500		{object}	map[string]interface{}	"Внутренняя ошибка сервера"
+//	@Router			/admin/filters [post]
+func (handler *AdminHandler) SaveUserFilter(c *fiber.Ctx) error {
+	log := zerolog.Ctx(c.UserContext())
+
+	claims, err := jwt.GetClaimsFromFiberContext(c)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get claims")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	var filter UserFilter
+	if err := c.BodyParser(&filter); err != nil {
+		log.Error().Err(err).Msg("Failed to parse request body")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Failed to parse request body"})
+	}
+
+	// Преобразуем фильтр в строку JSON для сохранения
+	filterData, err := json.Marshal(filter.FilterData)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to marshal filter data")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid filter data"})
+	}
+
+	err = handler.deps.AdminService.SaveUserFilter(
+		claims.UserID,
+		filter.FilterType,
+		filter.Name,
+		filter.Description,
+		string(filterData),
+		filter.IsDefault,
+	)
+	if err != nil {
+		log.Error().Err(err).Interface("filter", filter).Msg("Failed to save user filter")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to save user filter"})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Filter saved successfully",
+		"success": true,
+	})
+}
+
+// DeleteUserFilter удаляет пользовательский фильтр
+//
+//	@Summary		Удаление пользовательского фильтра
+//	@Description	Удаляет сохраненный фильтр пользователя
+//	@Tags			admin-filters
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path		string					true	"ID фильтра"
+//	@Success		200	{object}	map[string]interface{}	"Фильтр удален"
+//	@Failure		400	{object}	map[string]interface{}	"Неверный ID"
+//	@Failure		401	{object}	map[string]interface{}	"Не авторизован"
+//	@Failure		404	{object}	map[string]interface{}	"Фильтр не найден"
+//	@Failure		500	{object}	map[string]interface{}	"Внутренняя ошибка сервера"
+//	@Router			/admin/filters/{id} [delete]
+func (handler *AdminHandler) DeleteUserFilter(c *fiber.Ctx) error {
+	log := zerolog.Ctx(c.UserContext())
+
+	claims, err := jwt.GetClaimsFromFiberContext(c)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get claims")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	filterIDStr := c.Params("id")
+	filterID, err := uuid.Parse(filterIDStr)
+	if err != nil {
+		log.Error().Err(err).Str("filter_id", filterIDStr).Msg("Invalid filter ID")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid filter ID"})
+	}
+
+	userID := claims.UserID.String()
+	err = handler.deps.AdminService.DeleteUserFilter(filterID)
+	if err != nil {
+		log.Error().Err(err).Str("filter_id", filterID.String()).Str("user_id", userID).Msg("Failed to delete user filter")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to delete user filter"})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Filter deleted successfully",
+		"success": true,
+	})
+}
+
+// BatchResetCoupons выполняет пакетный сброс купонов в админ панели
+//
+//	@Summary		Пакетный сброс купонов (админ)
+//	@Description	Сбрасывает множество купонов в исходное состояние через административную панель
+//	@Tags			admin-coupons
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			request	body		coupon.BatchResetRequest		true	"Список ID купонов для сброса"
+//	@Success		200		{object}	coupon.BatchResetResponse		"Результат пакетного сброса"
+//	@Failure		400		{object}	map[string]interface{}			"Неверный запрос"
+//	@Failure		401		{object}	map[string]interface{}			"Не авторизован"
+//	@Failure		403		{object}	map[string]interface{}			"Нет прав доступа"
+//	@Failure		500		{object}	map[string]interface{}			"Внутренняя ошибка сервера"
+//	@Router			/admin/coupons/batch/reset [post]
+func (handler *AdminHandler) BatchResetCoupons(c *fiber.Ctx) error {
+	log := zerolog.Ctx(c.UserContext())
+
+	var req coupon.BatchResetRequest
+	if err := c.BodyParser(&req); err != nil {
+		log.Error().Err(err).Msg("Invalid request body")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+	}
+
+	// Валидация
+	if len(req.CouponIDs) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Coupon IDs required"})
+	}
+
+	if len(req.CouponIDs) > 1000 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Too many coupon IDs (maximum 1000)"})
+	}
+
+	// Выполняем пакетный сброс через сервис купонов
+	response, err := handler.deps.AdminService.BatchResetCoupons(req.CouponIDs)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to batch reset coupons")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
+	}
+
+	return c.JSON(response)
+}
+
+// PreviewBatchDelete возвращает предпросмотр пакетного удаления в админ панели
+//
+//	@Summary		Предпросмотр пакетного удаления (админ)
+//	@Description	Показывает информацию о купонах перед удалением и генерирует ключ подтверждения
+//	@Tags			admin-coupons
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			request	body		coupon.BatchDeleteRequest			true	"Список ID купонов для удаления"
+//	@Success		200		{object}	coupon.BatchDeletePreviewResponse	"Предпросмотр удаления"
+//	@Failure		400		{object}	map[string]interface{}				"Неверный запрос"
+//	@Failure		401		{object}	map[string]interface{}				"Не авторизован"
+//	@Failure		403		{object}	map[string]interface{}				"Нет прав доступа"
+//	@Failure		500		{object}	map[string]interface{}				"Внутренняя ошибка сервера"
+//	@Router			/admin/coupons/batch/delete/preview [post]
+func (handler *AdminHandler) PreviewBatchDelete(c *fiber.Ctx) error {
+	log := zerolog.Ctx(c.UserContext())
+
+	var req coupon.BatchDeleteRequest
+	if err := c.BodyParser(&req); err != nil {
+		log.Error().Err(err).Msg("Invalid request body")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+	}
+
+	// Валидация
+	if len(req.CouponIDs) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Coupon IDs required"})
+	}
+
+	if len(req.CouponIDs) > 1000 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Too many coupon IDs (maximum 1000)"})
+	}
+
+	// Получаем предпросмотр через сервис купонов
+	response, err := handler.deps.AdminService.PreviewBatchDelete(req.CouponIDs)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get batch delete preview")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
+	}
+
+	return c.JSON(response)
+}
+
+// ExecuteBatchDelete выполняет подтвержденное пакетное удаление в админ панели
+//
+//	@Summary		Подтвержденное пакетное удаление (админ)
+//	@Description	Удаляет купоны после подтверждения с использованием ключа
+//	@Tags			admin-coupons
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			request	body		coupon.BatchDeleteConfirmRequest	true	"Подтверждение удаления с ключом"
+//	@Success		200		{object}	coupon.BatchDeleteResponse			"Результат удаления"
+//	@Failure		400		{object}	map[string]interface{}				"Неверный запрос"
+//	@Failure		401		{object}	map[string]interface{}				"Не авторизован"
+//	@Failure		403		{object}	map[string]interface{}				"Нет прав доступа"
+//	@Failure		500		{object}	map[string]interface{}				"Внутренняя ошибка сервера"
+//	@Router			/admin/coupons/batch/delete/confirm [post]
+func (handler *AdminHandler) ExecuteBatchDelete(c *fiber.Ctx) error {
+	log := zerolog.Ctx(c.UserContext())
+
+	var req coupon.BatchDeleteConfirmRequest
+	if err := c.BodyParser(&req); err != nil {
+		log.Error().Err(err).Msg("Invalid request body")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+	}
+
+	// Валидация
+	if len(req.CouponIDs) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Coupon IDs required"})
+	}
+
+	if req.ConfirmationKey == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Confirmation key required"})
+	}
+
+	// Выполняем удаление через сервис купонов
+	response, err := handler.deps.AdminService.ExecuteBatchDelete(req)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to execute batch delete")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
+	}
+
+	return c.JSON(response)
+}
+
+// ExportCouponsAdvanced экспортирует купоны с настраиваемыми форматами в админ панели
+//
+//	@Summary		Продвинутый экспорт купонов (админ)
+//	@Description	Экспортирует купоны в различных форматах (TXT, CSV, XLSX) с настраиваемыми опциями
+//	@Tags			admin-coupons
+//	@Accept			json
+//	@Produce		application/octet-stream
+//	@Security		BearerAuth
+//	@Param			request	body		coupon.ExportOptionsRequest	true	"Опции экспорта"
+//	@Success		200		{string}	string						"Файл экспорта"
+//	@Failure		400		{object}	map[string]interface{}		"Неверный запрос"
+//	@Failure		401		{object}	map[string]interface{}		"Не авторизован"
+//	@Failure		403		{object}	map[string]interface{}		"Нет прав доступа"
+//	@Failure		500		{object}	map[string]interface{}		"Внутренняя ошибка сервера"
+//	@Router			/admin/coupons/export-advanced [post]
+func (handler *AdminHandler) ExportCouponsAdvanced(c *fiber.Ctx) error {
+	log := zerolog.Ctx(c.UserContext())
+
+	var req coupon.ExportOptionsRequest
+	if err := c.BodyParser(&req); err != nil {
+		log.Error().Err(err).Msg("Invalid request body")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+	}
+
+	// Валидация
+	if req.Format == "" {
+		req.Format = coupon.ExportFormatCodes
+	}
+
+	if req.FileFormat == "" {
+		req.FileFormat = "txt"
+	}
+
+	// Выполняем экспорт через сервис купонов
+	content, filename, contentType, err := handler.deps.AdminService.ExportCouponsAdvanced(req)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to export coupons")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal server error"})
+	}
+
+	// Устанавливаем заголовки для скачивания файла
+	c.Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+	c.Set("Content-Type", contentType)
+
+	return c.Send(content)
 }
