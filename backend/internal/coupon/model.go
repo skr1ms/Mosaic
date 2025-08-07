@@ -39,9 +39,10 @@ type Coupon struct {
 // - idx_coupons_partner_status: составной индекс для фильтрации купонов партнера по статусу
 // - idx_coupons_status: фильтрация по статусу (new/used)
 // - idx_coupons_filters: составной индекс для комбинированной фильтрации (size, style, status)
-// - idx_coupans_purchased: фильтрация купленных купонов
+// - idx_coupons_purchased: фильтрация купленных купонов
 // - idx_coupons_created_at: сортировка по дате создания
 // - idx_coupons_purchased_at: аналитика по датам покупки
+// - idx_coupons_activated_at: аналитика по датам активации
 // - idx_coupons_used_at: аналитика по датам использования
 
 func (c *Coupon) CreateIndex() string {
@@ -53,6 +54,7 @@ func (c *Coupon) CreateIndex() string {
 	CREATE INDEX IF NOT EXISTS idx_coupons_purchased ON coupons(is_purchased);
 	CREATE INDEX IF NOT EXISTS idx_coupons_created_at ON coupons(created_at);
 	CREATE INDEX IF NOT EXISTS idx_coupons_purchased_at ON coupons(purchased_at);
+	CREATE INDEX IF NOT EXISTS idx_coupons_activated_at ON coupons(activated_at);
 	CREATE INDEX IF NOT EXISTS idx_coupons_used_at ON coupons(used_at);
 	`
 }

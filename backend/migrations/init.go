@@ -32,6 +32,7 @@ func Init(cfg *config.Config) {
 		(*partner.Partner)(nil),
 		(*admin.Admin)(nil),
 		(*admin.ProfileChangeLog)(nil),
+		(*admin.UserFilterDB)(nil),
 		(*coupon.Coupon)(nil),
 		(*image.Image)(nil),
 		(*payment.Order)(nil),
@@ -145,6 +146,16 @@ func createForeignKeys(db *bun.DB, ctx context.Context) error {
 		EXCEPTION
 			WHEN duplicate_object THEN null;
 		END $$;`,
+
+		// Ограничение между user_filters и admins
+		`DO $$ BEGIN
+			ALTER TABLE user_filters 
+			ADD CONSTRAINT fk_user_filters_admin_id 
+			FOREIGN KEY (admin_id) REFERENCES admins(id) 
+			ON DELETE CASCADE;
+		EXCEPTION
+			WHEN duplicate_object THEN null;
+		END $$;`,
 	}
 
 	return db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
@@ -172,6 +183,11 @@ func createIndexes(db *bun.DB, ctx context.Context) error {
 	profileChangeModel := &admin.ProfileChangeLog{}
 	if _, err := db.ExecContext(ctx, profileChangeModel.CreateIndex()); err != nil {
 		return fmt.Errorf("error creating index for profile changes: %w", err)
+	}
+
+	userFilterModel := &admin.UserFilterDB{}
+	if _, err := db.ExecContext(ctx, userFilterModel.CreateIndex()); err != nil {
+		return fmt.Errorf("error creating index for user filters: %w", err)
 	}
 
 	couponModel := &coupon.Coupon{}

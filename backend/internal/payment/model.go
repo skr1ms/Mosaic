@@ -33,10 +33,10 @@ const (
 
 // Стили обработки согласно ТЗ
 const (
-	StyleGrayscale = "grayscale"
-	StyleSkinTone  = "skin_tone"
-	StylePopArt    = "pop_art"
-	StyleMaxColors = "max_colors"
+	StyleGrayscale = "grayscale"  // оттенки серого
+	StyleSkinTone = "skin_tones" // оттенки телесного
+	StylePopArt    = "pop_art"    // поп-арт
+	StyleMaxColors = "max_colors" // максимум цветов
 )
 
 // Модель заказа для покупки купонов онлайн
