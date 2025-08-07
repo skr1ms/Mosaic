@@ -13,11 +13,13 @@ type PaymentRepository struct {
 	db *bun.DB
 }
 
+var _ PaymentRepositoryInterface = (*PaymentRepository)(nil)
+
 func NewPaymentRepository(db *bun.DB) *PaymentRepository {
 	return &PaymentRepository{db: db}
 }
 
-// Методы для работы с заказами
+// CreateOrder создает новый заказ
 func (r *PaymentRepository) CreateOrder(ctx context.Context, order *Order) error {
 	order.CreatedAt = time.Now()
 	order.UpdatedAt = time.Now()
@@ -28,6 +30,7 @@ func (r *PaymentRepository) CreateOrder(ctx context.Context, order *Order) error
 	return nil
 }
 
+// GetOrderByNumber возвращает заказ по номеру
 func (r *PaymentRepository) GetOrderByNumber(ctx context.Context, orderNumber string) (*Order, error) {
 	order := &Order{}
 	err := r.db.NewSelect().
@@ -40,6 +43,7 @@ func (r *PaymentRepository) GetOrderByNumber(ctx context.Context, orderNumber st
 	return order, nil
 }
 
+// GetOrderByID возвращает заказ по ID
 func (r *PaymentRepository) GetOrderByID(ctx context.Context, id uuid.UUID) (*Order, error) {
 	order := &Order{}
 	err := r.db.NewSelect().
@@ -52,6 +56,7 @@ func (r *PaymentRepository) GetOrderByID(ctx context.Context, id uuid.UUID) (*Or
 	return order, nil
 }
 
+// UpdateOrderStatus обновляет статус заказа
 func (r *PaymentRepository) UpdateOrderStatus(ctx context.Context, orderNumber string, status string, alfaBankOrderID *string) error {
 	query := r.db.NewUpdate().
 		Model((*Order)(nil)).
@@ -74,6 +79,7 @@ func (r *PaymentRepository) UpdateOrderStatus(ctx context.Context, orderNumber s
 	return nil
 }
 
+// UpdateOrderPaymentURL обновляет URL платежа для заказа
 func (r *PaymentRepository) UpdateOrderPaymentURL(ctx context.Context, orderNumber string, paymentURL string) error {
 	_, err := r.db.NewUpdate().
 		Model((*Order)(nil)).
@@ -87,6 +93,7 @@ func (r *PaymentRepository) UpdateOrderPaymentURL(ctx context.Context, orderNumb
 	return nil
 }
 
+// UpdateOrderCoupon обновляет купон заказа
 func (r *PaymentRepository) UpdateOrderCoupon(ctx context.Context, orderNumber string, couponID uuid.UUID) error {
 	_, err := r.db.NewUpdate().
 		Model((*Order)(nil)).
@@ -100,6 +107,7 @@ func (r *PaymentRepository) UpdateOrderCoupon(ctx context.Context, orderNumber s
 	return nil
 }
 
+// GetOrdersByEmail возвращает список заказов по email пользователя
 func (r *PaymentRepository) GetOrdersByEmail(ctx context.Context, email string, limit int) ([]Order, error) {
 	var orders []Order
 	err := r.db.NewSelect().
@@ -114,6 +122,7 @@ func (r *PaymentRepository) GetOrdersByEmail(ctx context.Context, email string, 
 	return orders, nil
 }
 
+// GetOrdersByPartner возвращает список заказов по ID партнера
 func (r *PaymentRepository) GetOrdersByPartner(ctx context.Context, partnerID uuid.UUID, limit int) ([]Order, error) {
 	var orders []Order
 	err := r.db.NewSelect().
@@ -128,7 +137,7 @@ func (r *PaymentRepository) GetOrdersByPartner(ctx context.Context, partnerID uu
 	return orders, nil
 }
 
-// Методы для статистики
+// GetOrdersCountByStatus возвращает количество заказов по статусу
 func (r *PaymentRepository) GetOrdersCountByStatus(ctx context.Context, status string) (int, error) {
 	count, err := r.db.NewSelect().
 		Model((*Order)(nil)).
@@ -140,6 +149,7 @@ func (r *PaymentRepository) GetOrdersCountByStatus(ctx context.Context, status s
 	return count, nil
 }
 
+// GetOrdersCountByPartner возвращает количество заказов по ID партнера и статусу
 func (r *PaymentRepository) GetOrdersCountByPartner(ctx context.Context, partnerID uuid.UUID, status string) (int, error) {
 	query := r.db.NewSelect().
 		Model((*Order)(nil)).

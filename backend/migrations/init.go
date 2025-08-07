@@ -91,7 +91,7 @@ func createEnumTypes(db *bun.DB, ctx context.Context) error {
 
 		// ENUM для статуса купонов
 		`DO $$ BEGIN
-			CREATE TYPE coupon_status AS ENUM ('new', 'used');
+			CREATE TYPE coupon_status AS ENUM ('new', 'activated', 'used', 'completed');
 		EXCEPTION
 			WHEN duplicate_object THEN null;
 		END $$;`,

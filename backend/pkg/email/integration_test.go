@@ -23,19 +23,16 @@ func TestEmailQueue_Integration(t *testing.T) {
 
 	time.Sleep(100 * time.Millisecond)
 
-	// Отправляем тестовое письмо через очередь
 	err := queue.SendSchemaEmail("test@example.com", "TEST123", "https://example.com/schema.zip")
 	if err != nil {
 		t.Logf("Expected error due to mock SMTP config: %v", err)
 	}
 
-	// Отправляем уведомление об ошибке
 	err = queue.SendProcessingErrorEmail("test@example.com", "TEST123", "Test error message")
 	if err != nil {
 		t.Logf("Expected error due to mock SMTP config: %v", err)
 	}
 
-	// Отправляем обновление статуса
 	err = queue.SendStatusUpdateEmail("test@example.com", "TEST123", "processing", 50)
 	if err != nil {
 		t.Logf("Expected error due to mock SMTP config: %v", err)
@@ -47,7 +44,6 @@ func TestEmailQueue_Integration(t *testing.T) {
 }
 
 func TestRealEmailTemplates(t *testing.T) {
-	// Тестируем реальные шаблоны из новой директории templates
 	tm := NewTemplateManager("templates")
 	err := tm.loadTemplates()
 	if err != nil {
@@ -76,7 +72,6 @@ func TestRealEmailTemplates(t *testing.T) {
 		Timestamp:      time.Now().Format("02.01.2006 15:04:05"),
 	}
 
-	// Тестируем все основные шаблоны
 	templates := []string{"schema_ready", "processing_error", "status_update"}
 
 	for _, templateName := range templates {

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
 	"github.com/skr1ms/mosaic/internal/coupon"
 	"github.com/skr1ms/mosaic/internal/image"
@@ -26,6 +27,7 @@ type AdminServiceDeps struct {
 	CouponRepository  *coupon.CouponRepository
 	ImageRepository   *image.ImageRepository
 	S3Client          *s3.S3Client
+	RedisClient       *redis.Client
 }
 
 // AdminService содержит бизнес-логику для админской части
@@ -155,7 +157,7 @@ func (s *AdminService) GetDashboardData() (map[string]interface{}, error) {
 	usedCoupons := 0
 	purchasedCoupons := 0
 	for _, c := range allCoupons {
-		if c.Status == "used" {
+		if c.Status == "used" || c.Status == "completed" {
 			usedCoupons++
 		}
 		if c.IsPurchased {
@@ -1111,6 +1113,7 @@ func (s *AdminService) BatchResetCoupons(couponIDs []string) (*coupon.BatchReset
 	// Создаем временный CouponService для выполнения операции
 	couponService := coupon.NewCouponService(&coupon.CouponServiceDeps{
 		CouponRepository: s.deps.CouponRepository,
+		RedisClient:      s.deps.RedisClient,
 	})
 
 	response, err := couponService.BatchResetCoupons(couponIDs)
@@ -1129,6 +1132,7 @@ func (s *AdminService) PreviewBatchDelete(couponIDs []string) (*coupon.BatchDele
 	// Создаем временный CouponService для выполнения операции
 	couponService := coupon.NewCouponService(&coupon.CouponServiceDeps{
 		CouponRepository: s.deps.CouponRepository,
+		RedisClient:      s.deps.RedisClient,
 	})
 
 	response, err := couponService.PreviewBatchDelete(couponIDs)
@@ -1147,6 +1151,7 @@ func (s *AdminService) ExecuteBatchDelete(req coupon.BatchDeleteConfirmRequest) 
 	// Создаем временный CouponService для выполнения операции
 	couponService := coupon.NewCouponService(&coupon.CouponServiceDeps{
 		CouponRepository: s.deps.CouponRepository,
+		RedisClient:      s.deps.RedisClient,
 	})
 
 	response, err := couponService.ExecuteBatchDelete(req)
@@ -1165,6 +1170,7 @@ func (s *AdminService) ExportCouponsAdvanced(options coupon.ExportOptionsRequest
 	// Создаем временный CouponService для выполнения операции
 	couponService := coupon.NewCouponService(&coupon.CouponServiceDeps{
 		CouponRepository: s.deps.CouponRepository,
+		RedisClient:      s.deps.RedisClient,
 	})
 
 	content, filename, contentType, err := couponService.ExportCouponsAdvanced(options)
@@ -1187,10 +1193,10 @@ func (s *AdminService) DownloadCouponMaterials(id uuid.UUID) ([]byte, string, er
 		return nil, "", fmt.Errorf("coupon not found: %w", err)
 	}
 
-	// Проверяем, что купон использован
-	if coupon.Status != "used" {
-		log.Error().Str("coupon_id", id.String()).Str("status", coupon.Status).Msg("Coupon must be used to download materials")
-		return nil, "", fmt.Errorf("coupon must be used to download materials")
+	// Проверяем, что купон использован или завершен
+	if coupon.Status != "used" && coupon.Status != "completed" {
+		log.Error().Str("coupon_id", id.String()).Str("status", coupon.Status).Msg("Coupon must be used or completed to download materials")
+		return nil, "", fmt.Errorf("coupon must be used or completed to download materials")
 	}
 
 	// Получаем информацию об изображении для доступа к ZIP-архиву
@@ -1267,8 +1273,8 @@ func (s *AdminService) BatchDownloadMaterials(couponIDs []uuid.UUID) ([]byte, st
 		}
 
 		// Пропускаем неиспользованные купоны
-		if couponData.Status != "used" {
-			log.Warn().Str("coupon_id", couponID.String()).Str("status", couponData.Status).Msg("Coupon not used, skipping")
+		if couponData.Status != "used" && couponData.Status != "completed" {
+			log.Warn().Str("coupon_id", couponID.String()).Str("status", couponData.Status).Msg("Coupon not used or completed, skipping")
 			continue
 		}
 

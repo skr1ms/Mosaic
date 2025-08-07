@@ -8,17 +8,14 @@ import (
 	"github.com/skr1ms/mosaic/config"
 	"github.com/skr1ms/mosaic/internal/coupon"
 	"github.com/skr1ms/mosaic/pkg/bcrypt"
-	"github.com/skr1ms/mosaic/pkg/email"
-	"github.com/skr1ms/mosaic/pkg/jwt"
-	"github.com/skr1ms/mosaic/pkg/recaptcha"
 )
 
 type PartnerServiceDeps struct {
-	PartnerRepository *PartnerRepository
-	CouponService     *coupon.CouponService
-	Recaptcha         *recaptcha.Verifier
-	JwtService        *jwt.JWT
-	MailSender        *email.Mailer
+	PartnerRepository PartnerRepositoryInterface
+	CouponService     CouponServiceInterface
+	Recaptcha         RecaptchaInterface
+	JwtService        JWTInterface
+	MailSender        MailerInterface
 	Config            *config.Config
 }
 

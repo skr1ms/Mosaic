@@ -23,8 +23,10 @@ const (
 	StylePopArt    CouponStyle = "pop_art"
 	StyleMaxColors CouponStyle = "max_colors"
 
-	StatusNew  CouponStatus = "new"
-	StatusUsed CouponStatus = "used"
+	StatusNew       CouponStatus = "new"
+	StatusActivated CouponStatus = "activated"
+	StatusUsed      CouponStatus = "used"
+	StatusCompleted CouponStatus = "completed"
 )
 
 type CreateCouponRequest struct {
@@ -35,7 +37,7 @@ type CreateCouponRequest struct {
 }
 
 type UpdateCouponRequest struct {
-	Status           *CouponStatus `json:"status,omitempty" validate:"omitempty,oneof=new used"`
+	Status           *CouponStatus `json:"status,omitempty" validate:"omitempty,oneof=new activated used completed"`
 	IsPurchased      *bool         `json:"is_purchased,omitempty"`
 	PurchaseEmail    *string       `json:"purchase_email,omitempty" validate:"omitempty,email"`
 	PurchasedAt      *time.Time    `json:"purchased_at,omitempty"`

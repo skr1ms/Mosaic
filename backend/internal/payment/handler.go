@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog"
 	"github.com/skr1ms/mosaic/internal/coupon"
+	"github.com/skr1ms/mosaic/pkg/utils"
 )
 
 type PaymentHandlerDeps struct {
@@ -23,7 +24,7 @@ func NewPaymentHandler(router fiber.Router, deps *PaymentHandlerDeps) {
 	}
 
 	// Публичные маршруты для покупки купонов
-	paymentGroup := router.Group("/payment") 
+	paymentGroup := router.Group("/payment")
 
 	// Покупка купона онлайн
 	paymentGroup.Post("/purchase", handler.PurchaseCoupon)
@@ -55,10 +56,7 @@ func (h *PaymentHandler) PurchaseCoupon(c *fiber.Ctx) error {
 	var req PurchaseCouponRequest
 	if err := c.BodyParser(&req); err != nil {
 		log.Error().Err(err).Msg("Error parsing request body")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"success": false,
-			"message": "Error parsing request body",
-		})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_bad_request", "Error parsing request body")
 	}
 
 	// Получаем домен из заголовка или параметра
@@ -70,10 +68,7 @@ func (h *PaymentHandler) PurchaseCoupon(c *fiber.Ctx) error {
 	response, err := h.deps.PaymentService.PurchaseCoupon(c.Context(), &req)
 	if err != nil {
 		log.Error().Err(err).Msg("Error creating order")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"success": false,
-			"message": "Error creating order",
-		})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Error creating order")
 	}
 
 	return c.JSON(response)
@@ -94,19 +89,13 @@ func (h *PaymentHandler) GetOrderStatus(c *fiber.Ctx) error {
 	orderNumber := c.Params("orderNumber")
 	if orderNumber == "" {
 		log.Error().Msg("Order number is not specified")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"success": false,
-			"message": "Order number is not specified",
-		})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "order_number_required", "Order number is not specified")
 	}
 
 	response, err := h.deps.PaymentService.GetOrderStatus(c.Context(), orderNumber)
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting order status")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"success": false,
-			"message": "Error getting order status",
-		})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Error getting order status")
 	}
 
 	return c.JSON(response)
@@ -130,19 +119,13 @@ func (h *PaymentHandler) PaymentReturn(c *fiber.Ctx) error {
 	orderNumber := c.Query("orderNumber")
 	if orderNumber == "" {
 		log.Error().Msg("Order number is not specified")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"success": false,
-			"message": "Order number is not specified",
-		})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "order_number_required", "Order number is not specified")
 	}
 
 	err := h.deps.PaymentService.ProcessPaymentReturn(c.Context(), orderNumber)
 	if err != nil {
 		log.Error().Err(err).Msg("Error processing payment return")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"success": false,
-			"message": "Error processing payment",
-		})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Error processing payment")
 	}
 
 	// Перенаправляем на страницу успеха
@@ -167,10 +150,7 @@ func (h *PaymentHandler) PaymentNotification(c *fiber.Ctx) error {
 	var notification PaymentNotificationRequest
 	if err := c.BodyParser(&notification); err != nil {
 		log.Error().Err(err).Msg("Error parsing webhook notification")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"success": false,
-			"error":   "Invalid request format",
-		})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_parsing_parameters", "Invalid request format")
 	}
 
 	// Логируем получение webhook
@@ -185,10 +165,7 @@ func (h *PaymentHandler) PaymentNotification(c *fiber.Ctx) error {
 		log.Error().Err(err).
 			Str("order_number", notification.OrderNumber).
 			Msg("Error processing webhook notification")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"success": false,
-			"error":   "Error processing notification",
-		})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Error processing notification")
 	}
 
 	log.Info().

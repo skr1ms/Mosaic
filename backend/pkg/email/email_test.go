@@ -37,7 +37,6 @@ func TestTemplateManager_LoadTemplates(t *testing.T) {
 		t.Fatalf("Failed to render template: %v", err)
 	}
 
-	// Subject будет дефолтным для неизвестных шаблонов
 	expectedSubject := "Уведомление от сервиса алмазной мозаики"
 	if subject != expectedSubject {
 		t.Errorf("Expected subject '%s', got '%s'", expectedSubject, subject)
@@ -57,7 +56,6 @@ func TestTemplateManager_LoadTemplates(t *testing.T) {
 }
 
 func TestTemplateData_AllFields(t *testing.T) {
-	// Проверяем, что все поля структуры TemplateData доступны
 	data := TemplateData{
 		RecipientName:  "John Doe",
 		RecipientEmail: "john@example.com",

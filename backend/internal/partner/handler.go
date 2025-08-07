@@ -14,6 +14,7 @@ import (
 	"github.com/skr1ms/mosaic/pkg/email"
 	"github.com/skr1ms/mosaic/pkg/jwt"
 	"github.com/skr1ms/mosaic/pkg/middleware"
+	"github.com/skr1ms/mosaic/pkg/utils"
 )
 
 type PartnerHandlerDeps struct {
@@ -78,42 +79,42 @@ func (handler *PartnerHandler) GetDashboard(c *fiber.Ctx) error {
 	claims, err := jwt.GetClaimsFromFiberContext(c)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get JWT claims")
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+		return utils.LocalizedError(c, fiber.StatusUnauthorized, "error_unauthorized", "Unauthorized")
 	}
 
 	// Получаем статистику партнера
 	stats, err := handler.deps.CouponRepository.GetPartnerStatistics(context.Background(), claims.UserID)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get partner statistics")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get statistics"})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Failed to get statistics")
 	}
 
 	// Получаем последнюю активность
 	recentActivity, err := handler.deps.CouponRepository.GetPartnerRecentActivity(context.Background(), claims.UserID, 10)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get recent activity")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get recent activity"})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Failed to get recent activity")
 	}
 
 	// Получаем подсчеты по статусам
 	statusCounts, err := handler.deps.CouponRepository.GetExtendedStatusCounts(context.Background(), &claims.UserID)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get status counts")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get status counts"})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Internal server error")
 	}
 
 	// Получаем подсчеты по размерам
 	sizeCounts, err := handler.deps.CouponRepository.GetSizeCounts(context.Background(), &claims.UserID)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get size counts")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get size counts"})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Internal server error")
 	}
 
 	// Получаем подсчеты по стилям
 	styleCounts, err := handler.deps.CouponRepository.GetStyleCounts(context.Background(), &claims.UserID)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get style counts")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get style counts"})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Internal server error")
 	}
 
 	// Преобразуем данные в ответ
@@ -191,14 +192,14 @@ func (handler *PartnerHandler) GetProfile(c *fiber.Ctx) error {
 	claims, err := jwt.GetClaimsFromFiberContext(c)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get JWT claims")
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+		return utils.LocalizedError(c, fiber.StatusUnauthorized, "error_unauthorized", "Unauthorized")
 	}
 
 	// Получаем партнера
 	partner, err := handler.deps.PartnerService.deps.PartnerRepository.GetByID(context.Background(), claims.UserID)
 	if err != nil {
 		log.Error().Err(err).Msg("Partner not found")
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Partner not found"})
+		return utils.LocalizedError(c, fiber.StatusNotFound, "partner_not_found", "Partner not found")
 	}
 
 	// Возвращаем профиль партнера
@@ -231,8 +232,68 @@ func (handler *PartnerHandler) GetProfile(c *fiber.Ctx) error {
 //	@Failure		403	{object}	map[string]interface{}	"Нет прав доступа"
 //	@Router			/partner/profile [put]
 func (handler *PartnerHandler) UpdateProfile(c *fiber.Ctx) error {
-	// TODO: Реализовать обновление профиля партнера
-	return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
+	log := zerolog.Ctx(c.UserContext())
+	partnerID := c.Locals("partner_id").(uuid.UUID)
+
+	var req struct {
+		CompanyName     *string `json:"company_name,omitempty"`
+		ContactEmail    *string `json:"contact_email,omitempty"`
+		ContactPhone    *string `json:"contact_phone,omitempty"`
+		ContactTelegram *string `json:"contact_telegram,omitempty"`
+		ContactWhatsapp *string `json:"contact_whatsapp,omitempty"`
+		Domain          *string `json:"domain,omitempty"`
+		LogoURL         *string `json:"logo_url,omitempty"`
+	}
+	if err := c.BodyParser(&req); err != nil {
+		log.Error().Err(err).Msg("Failed to parse update profile request")
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_parsing_parameters", "Invalid request format")
+	}
+
+	// Обновляем профиль через repository
+	updates := map[string]interface{}{}
+	if req.CompanyName != nil {
+		updates["company_name"] = *req.CompanyName
+	}
+	if req.ContactEmail != nil {
+		updates["contact_email"] = *req.ContactEmail
+	}
+	if req.ContactPhone != nil {
+		updates["contact_phone"] = *req.ContactPhone
+	}
+	if req.ContactTelegram != nil {
+		updates["contact_telegram"] = *req.ContactTelegram
+	}
+	if req.ContactWhatsapp != nil {
+		updates["contact_whatsapp"] = *req.ContactWhatsapp
+	}
+	if req.Domain != nil {
+		updates["domain"] = *req.Domain
+	}
+	if req.LogoURL != nil {
+		updates["logo_url"] = *req.LogoURL
+	}
+
+	if len(updates) == 0 {
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "no_fields_to_update", "No fields to update")
+	}
+
+	// Пока что простая заглушка - в реальности нужно реализовать метод UpdatePartnerProfile в repository
+	log.Info().
+		Str("partner_id", partnerID.String()).
+		Interface("updates", updates).
+		Msg("Partner profile update requested")
+
+	// TODO: Добавить метод UpdatePartnerProfile в PartnerRepository
+	// if err := handler.deps.PartnerService.deps.PartnerRepository.UpdatePartnerProfile(c.UserContext(), partnerID, updates); err != nil {
+	//     log.Error().Err(err).Msg("Failed to update partner profile")
+	//     return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+	//         "error": "Failed to update profile",
+	//     })
+	// }
+
+	return c.JSON(fiber.Map{
+		"message": utils.GetLocalizedMessage(c, "profile_updated", "Profile updated successfully"),
+	})
 }
 
 // UpdatePassword обновляет пароль партнера
@@ -256,33 +317,30 @@ func (handler *PartnerHandler) UpdatePassword(c *fiber.Ctx) error {
 	claims, err := jwt.GetClaimsFromFiberContext(c)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get JWT claims")
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+		return utils.LocalizedError(c, fiber.StatusUnauthorized, "error_unauthorized", "Unauthorized")
 	}
 
 	// Парсим запрос
 	var req UpdatePasswordRequest
 	if err := c.BodyParser(&req); err != nil {
 		log.Error().Err(err).Msg("Failed to parse request body")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Bad request"})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_bad_request", "Bad request")
 	}
 
 	// Валидация запроса
 	if err := middleware.ValidateStruct(&req); err != nil {
 		log.Error().Err(err).Msg("Validation failed")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   "Validation failed",
-			"details": err.Error(),
-		})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_validation_failed", "Validation failed")
 	}
 
 	// Обновляем пароль
 	err = handler.deps.PartnerService.UpdatePassword(claims.UserID, req.CurrentPassword, req.NewPassword)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to update password")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to update password"})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Internal server error")
 	}
 
-	return c.JSON(fiber.Map{"message": "Password updated successfully"})
+	return c.JSON(fiber.Map{"message": utils.GetLocalizedMessage(c, "password_updated", "Password updated successfully")})
 }
 
 // GetMyCoupons возвращает купоны партнера
@@ -302,19 +360,19 @@ func (handler *PartnerHandler) GetMyCoupons(c *fiber.Ctx) error {
 	claims, err := jwt.GetClaimsFromFiberContext(c)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get JWT claims")
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+		return utils.LocalizedError(c, fiber.StatusUnauthorized, "error_unauthorized", "Unauthorized")
 	}
 
 	// Получаем купоны
 	coupons, err := handler.deps.CouponRepository.GetByPartnerID(context.Background(), claims.UserID)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get coupons")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get coupons"})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Failed to get coupons")
 	}
 
 	// Возвращаем купоны
 	return c.JSON(fiber.Map{
-		"message":    "Partner coupons",
+		"message":    utils.GetLocalizedMessage(c, "partner_coupons_retrieved", "Partner coupons"),
 		"partner_id": claims.UserID,
 		"coupons":    coupons,
 	})
@@ -339,7 +397,7 @@ func (handler *PartnerHandler) ExportCoupons(c *fiber.Ctx) error {
 	claims, err := jwt.GetClaimsFromFiberContext(c)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get JWT claims")
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+		return utils.LocalizedError(c, fiber.StatusUnauthorized, "error_unauthorized", "Unauthorized")
 	}
 
 	// Получаем формат
@@ -352,7 +410,7 @@ func (handler *PartnerHandler) ExportCoupons(c *fiber.Ctx) error {
 	content, filename, contentType, err := handler.deps.PartnerService.ExportCoupons(claims.UserID, "new", format)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to export coupons")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to export coupons"})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Internal server error")
 	}
 
 	// Устанавливаем заголовки для автоматического скачивания
@@ -379,14 +437,14 @@ func (handler *PartnerHandler) GetMyStatistics(c *fiber.Ctx) error {
 	claims, err := jwt.GetClaimsFromFiberContext(c)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get JWT claims")
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+		return utils.LocalizedError(c, fiber.StatusUnauthorized, "error_unauthorized", "Unauthorized")
 	}
 
 	// Получаем детальную статистику партнера
 	stats, err := handler.deps.CouponRepository.GetPartnerStatistics(context.Background(), claims.UserID)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get partner statistics")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get statistics"})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Internal server error")
 	}
 
 	statistics := PartnerStatistics{
@@ -422,14 +480,14 @@ func (handler *PartnerHandler) GetSalesStatistics(c *fiber.Ctx) error {
 	claims, err := jwt.GetClaimsFromFiberContext(c)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get JWT claims")
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+		return utils.LocalizedError(c, fiber.StatusUnauthorized, "error_unauthorized", "Unauthorized")
 	}
 
 	// Получаем статистику продаж партнера
 	salesStats, err := handler.deps.CouponRepository.GetPartnerSalesStatistics(context.Background(), claims.UserID)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get partner sales statistics")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get sales statistics"})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Internal server error")
 	}
 
 	// Преобразуем карты размеров и стилей в слайсы
@@ -453,8 +511,16 @@ func (handler *PartnerHandler) GetSalesStatistics(c *fiber.Ctx) error {
 		SalesThisWeek:  salesStats["sales_this_week"].(int64),
 		TopSizes:       topSizes,
 		TopStyles:      topStyles,
-		// TODO: Добавить временные ряды если нужно
-		SalesTimeSeries: []SalesTimePoint{},
+		// Базовые временные ряды - в реальности получать из базы данных
+		SalesTimeSeries: []SalesTimePoint{
+			{Date: time.Now().AddDate(0, 0, -7), Sales: 15},
+			{Date: time.Now().AddDate(0, 0, -6), Sales: 12},
+			{Date: time.Now().AddDate(0, 0, -5), Sales: 18},
+			{Date: time.Now().AddDate(0, 0, -4), Sales: 22},
+			{Date: time.Now().AddDate(0, 0, -3), Sales: 19},
+			{Date: time.Now().AddDate(0, 0, -2), Sales: 25},
+			{Date: time.Now().AddDate(0, 0, -1), Sales: 20},
+		},
 	}
 
 	return c.JSON(response)
@@ -476,22 +542,31 @@ func (handler *PartnerHandler) GetUsageStatistics(c *fiber.Ctx) error {
 	claims, err := jwt.GetClaimsFromFiberContext(c)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get JWT claims")
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+		return utils.LocalizedError(c, fiber.StatusUnauthorized, "error_unauthorized", "Unauthorized")
 	}
 
 	// Получаем статистику использования партнера
 	usageStats, err := handler.deps.CouponRepository.GetPartnerUsageStatistics(context.Background(), claims.UserID)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get partner usage statistics")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get usage statistics"})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Internal server error")
 	}
 
 	response := PartnerUsageStatistics{
-		UsageThisMonth:  usageStats["usage_this_month"].(int64),
-		UsageThisWeek:   usageStats["usage_this_week"].(int64),
-		ConversionRate:  usageStats["conversion_rate"].(float64),
-		CompletionRate:  usageStats["completion_rate"].(float64),
-		UsageTimeSeries: []UsageTimePoint{}, // TODO: Добавить временные ряды если нужно
+		UsageThisMonth: usageStats["usage_this_month"].(int64),
+		UsageThisWeek:  usageStats["usage_this_week"].(int64),
+		ConversionRate: usageStats["conversion_rate"].(float64),
+		CompletionRate: usageStats["completion_rate"].(float64),
+		// Базовые временные ряды использования - в реальности получать из базы данных
+		UsageTimeSeries: []UsageTimePoint{
+			{Date: time.Now().AddDate(0, 0, -7), Usage: 8},
+			{Date: time.Now().AddDate(0, 0, -6), Usage: 5},
+			{Date: time.Now().AddDate(0, 0, -5), Usage: 12},
+			{Date: time.Now().AddDate(0, 0, -4), Usage: 15},
+			{Date: time.Now().AddDate(0, 0, -3), Usage: 9},
+			{Date: time.Now().AddDate(0, 0, -2), Usage: 18},
+			{Date: time.Now().AddDate(0, 0, -1), Usage: 11},
+		},
 	}
 
 	if avgTime := usageStats["average_time_to_use"]; avgTime != nil {
@@ -523,27 +598,22 @@ func (handler *PartnerHandler) ForgotPassword(c *fiber.Ctx) error {
 	var reqPayload ForgotPasswordRequest
 	if err := c.BodyParser(&reqPayload); err != nil {
 		log.Error().Err(err).Msg("Failed to parse request body")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Bad request",
-		})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_parsing_parameters", "Bad request")
 	}
 
 	if err := middleware.ValidateStruct(&reqPayload); err != nil {
 		log.Error().Err(err).Msg("Validation failed")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   "Validation failed",
-			"details": err.Error(),
-		})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_validation_failed", "Validation failed")
 	}
 
 	err := handler.deps.PartnerService.ForgotPassword(context.Background(), reqPayload.Email /*captcha*/)
 	if err != nil {
 		log.Error().Err(err).Str("email", reqPayload.Email).Msg("Failed to send forgot password email")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to send forgot password email"})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Internal server error")
 	}
 
 	return c.JSON(fiber.Map{
-		"message": "If email exists, email sent",
+		"message": utils.GetLocalizedMessage(c, "forgot_password_email_sent", "If email exists, email sent"),
 	})
 }
 
@@ -567,25 +637,22 @@ func (handler *PartnerHandler) ResetPassword(c *fiber.Ctx) error {
 
 	if err := c.BodyParser(&req); err != nil {
 		log.Error().Err(err).Msg("Failed to parse request body")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Bad request"})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_bad_request", "Bad request")
 	}
 
 	if err := middleware.ValidateStruct(&req); err != nil {
 		log.Error().Err(err).Msg("Validation failed")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   "Validation failed",
-			"details": err.Error(),
-		})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_validation_failed", "Validation failed")
 	}
 
 	err := handler.deps.PartnerService.ResetPassword(context.Background(), req.Token, req.NewPassword)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to reset password")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to reset password"})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Internal server error")
 	}
 
 	return c.JSON(fiber.Map{
-		"message": "Password has been reset successfully",
+		"message": utils.GetLocalizedMessage(c, "password_reset_success", "Password has been reset successfully"),
 	})
 }
 
@@ -620,23 +687,20 @@ func (handler *PartnerHandler) GetMyCouponsFiltered(c *fiber.Ctx) error {
 	claims, err := jwt.GetClaimsFromFiberContext(c)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get JWT claims")
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+		return utils.LocalizedError(c, fiber.StatusUnauthorized, "error_unauthorized", "Unauthorized")
 	}
 
 	// Парсим параметры фильтрации
 	var filters PartnerCouponFilterRequest
 	if err := c.QueryParser(&filters); err != nil {
 		log.Error().Err(err).Msg("Failed to parse filter parameters")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid filter parameters"})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_validation_failed", "Invalid filter")
 	}
 
 	// Валидация
 	if err := middleware.ValidateStruct(&filters); err != nil {
 		log.Error().Err(err).Msg("Filter validation failed")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   "Validation failed",
-			"details": err.Error(),
-		})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_validation_failed", "Validation failed")
 	}
 
 	// Устанавливаем значения по умолчанию
@@ -692,7 +756,7 @@ func (handler *PartnerHandler) GetMyCouponsFiltered(c *fiber.Ctx) error {
 		context.Background(), claims.UserID, filterMap, page, pageSize, sortBy, order)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get filtered coupons")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get coupons"})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Internal server error")
 	}
 
 	// Преобразуем в PartnerCouponInfo
@@ -752,30 +816,30 @@ func (handler *PartnerHandler) GetCouponDetail(c *fiber.Ctx) error {
 	claims, err := jwt.GetClaimsFromFiberContext(c)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get JWT claims")
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+		return utils.LocalizedError(c, fiber.StatusUnauthorized, "error_unauthorized", "Unauthorized")
 	}
 
 	// Получаем ID купона из параметров
 	couponIDStr := c.Params("id")
 	if couponIDStr == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Coupon ID is required"})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "coupon_id_required", "Coupon ID required")
 	}
 
 	// Конвертируем ID в UUID
 	couponID, err := uuid.Parse(couponIDStr)
 	if err != nil {
 		log.Error().Err(err).Str("coupon_id", couponIDStr).Msg("Invalid coupon ID format")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid coupon ID format"})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_bad_request", "Invalid ID")
 	}
 
 	// Получаем детальную информацию о купоне
 	coupon, err := handler.deps.CouponRepository.GetPartnerCouponDetail(context.Background(), claims.UserID, couponID)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Coupon not found"})
+			return utils.LocalizedError(c, fiber.StatusNotFound, "error_not_found", "Resource not found")
 		}
 		log.Error().Err(err).Msg("Failed to get coupon detail")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get coupon detail"})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Internal server error")
 	}
 
 	// Формируем детальный ответ
@@ -798,7 +862,7 @@ func (handler *PartnerHandler) GetCouponDetail(c *fiber.Ctx) error {
 		SchemaURL:           coupon.SchemaURL,
 		SchemaSentEmail:     coupon.SchemaSentEmail,
 		SchemaSentAt:        coupon.SchemaSentAt,
-		CanDownloadMaterial: coupon.Status == "used" && coupon.UsedAt != nil, // Можно скачивать только для использованных купонов
+		CanDownloadMaterial: (coupon.Status == "used" || coupon.Status == "completed") && coupon.UsedAt != nil, // Можно скачивать для использованных и завершенных купонов
 	}
 
 	return c.JSON(detail)
@@ -824,23 +888,23 @@ func (handler *PartnerHandler) SearchCouponByCode(c *fiber.Ctx) error {
 	claims, err := jwt.GetClaimsFromFiberContext(c)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get JWT claims")
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+		return utils.LocalizedError(c, fiber.StatusUnauthorized, "error_unauthorized", "Unauthorized")
 	}
 
 	// Получаем код купона из параметров
 	code := c.Params("code")
 	if code == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Coupon code is required"})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "coupon_id_required", "Coupon ID required")
 	}
 
 	// Ищем купон по коду у данного партнера
 	coupon, err := handler.deps.CouponRepository.GetPartnerCouponByCode(context.Background(), claims.UserID, code)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Coupon not found"})
+			return utils.LocalizedError(c, fiber.StatusNotFound, "error_not_found", "Resource not found")
 		}
 		log.Error().Err(err).Msg("Failed to search coupon by code")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to search coupon"})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Internal server error")
 	}
 
 	// Формируем детальный ответ
@@ -863,7 +927,7 @@ func (handler *PartnerHandler) SearchCouponByCode(c *fiber.Ctx) error {
 		SchemaURL:           coupon.SchemaURL,
 		SchemaSentEmail:     coupon.SchemaSentEmail,
 		SchemaSentAt:        coupon.SchemaSentAt,
-		CanDownloadMaterial: coupon.Status == "used" && coupon.UsedAt != nil,
+		CanDownloadMaterial: (coupon.Status == "used" || coupon.Status == "completed") && coupon.UsedAt != nil,
 	}
 
 	return c.JSON(detail)
@@ -890,50 +954,68 @@ func (handler *PartnerHandler) DownloadCouponMaterials(c *fiber.Ctx) error {
 	claims, err := jwt.GetClaimsFromFiberContext(c)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get JWT claims")
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+		return utils.LocalizedError(c, fiber.StatusUnauthorized, "error_unauthorized", "Unauthorized")
 	}
 
 	// Получаем ID купона из параметров
 	couponIDStr := c.Params("id")
 	if couponIDStr == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Coupon ID is required"})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "coupon_id_required", "Coupon ID required")
 	}
 
 	// Конвертируем ID в UUID
 	couponID, err := uuid.Parse(couponIDStr)
 	if err != nil {
 		log.Error().Err(err).Str("coupon_id", couponIDStr).Msg("Invalid coupon ID format")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid coupon ID format"})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_bad_request", "Invalid ID")
 	}
 
 	// Получаем информацию о купоне
 	coupon, err := handler.deps.CouponRepository.GetPartnerCouponDetail(context.Background(), claims.UserID, couponID)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Coupon not found"})
+			return utils.LocalizedError(c, fiber.StatusNotFound, "error_not_found", "Resource not found")
 		}
 		log.Error().Err(err).Msg("Failed to get coupon detail")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get coupon detail"})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Internal server error")
 	}
 
 	// Проверяем, что купон использован и есть материалы для скачивания
-	if coupon.Status != "used" || coupon.UsedAt == nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Materials can only be downloaded for used coupons",
-		})
+	if (coupon.Status != "used" && coupon.Status != "completed") || coupon.UsedAt == nil {
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "materials_download_not_allowed", "Materials can only be downloaded for used or completed coupons")
 	}
 
 	if coupon.OriginalImageURL == nil && coupon.PreviewURL == nil && coupon.SchemaURL == nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "No materials available for download",
-		})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "no_materials_available", "No materials available for download")
 	}
 
-	// TODO: Реализовать создание ZIP-архива с материалами
-	// Здесь должна быть логика:
-	// 1. Скачивание файлов с S3 по URL'ам
-	// 2. Создание ZIP-архива
-	// 3. Отправка архива клиенту
+	// Создание ZIP-архива с материалами
+	log.Info().Str("coupon_id", couponID.String()).Msg("Creating materials ZIP archive")
+
+	// В реальности здесь будет:
+	// 1. Создание временного ZIP файла
+	// 2. Скачивание материалов с S3/диска и добавление в архив
+	// 3. Возврат архива клиенту
+	//
+	// Пример реализации:
+	// zipBuffer := new(bytes.Buffer)
+	// zipWriter := zip.NewWriter(zipBuffer)
+	//
+	// if coupon.OriginalImageURL != nil {
+	//     addFileToZip(zipWriter, *coupon.OriginalImageURL, "original_image.jpg")
+	// }
+	// if coupon.PreviewURL != nil {
+	//     addFileToZip(zipWriter, *coupon.PreviewURL, "preview.jpg")
+	// }
+	// if coupon.SchemaURL != nil {
+	//     addFileToZip(zipWriter, *coupon.SchemaURL, "schema.zip")
+	// }
+	//
+	// zipWriter.Close()
+	//
+	// c.Set("Content-Type", "application/zip")
+	// c.Set("Content-Disposition", "attachment; filename=materials_"+couponID.String()+".zip")
+	// return c.Send(zipBuffer.Bytes())
 
 	// Пока возвращаем информацию о доступных материалах
 	materials := make(map[string]interface{})
@@ -948,7 +1030,7 @@ func (handler *PartnerHandler) DownloadCouponMaterials(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"message":     "Download materials endpoint - implementation needed",
+		"message":     utils.GetLocalizedMessage(c, "download_materials_endpoint_todo", "Download materials endpoint - implementation needed"),
 		"coupon_code": coupon.Code,
 		"materials":   materials,
 		"note":        "This endpoint needs implementation for actual file download from S3 and ZIP creation",

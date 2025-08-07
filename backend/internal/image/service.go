@@ -135,6 +135,15 @@ func (s *ImageService) UploadImage(ctx context.Context, couponID uuid.UUID, file
 		return nil, fmt.Errorf("failed to create image record: %w", err)
 	}
 
+	// Обновляем статус купона на "used" после загрузки изображения
+	coupon.Status = "used"
+	now := time.Now()
+	coupon.UsedAt = &now
+	if err := s.deps.CouponRepository.Update(ctx, coupon); err != nil {
+		log.Error().Err(err).Str("coupon_id", couponID.String()).Msg("Failed to update coupon status to used")
+		// Не возвращаем ошибку, так как изображение уже загружено
+	}
+
 	log.Info().
 		Str("image_id", imageRecord.ID.String()).
 		Str("coupon_id", couponID.String()).

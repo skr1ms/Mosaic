@@ -7,16 +7,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/redis/go-redis/v9"
-	"github.com/skr1ms/mosaic/internal/coupon"
-	"github.com/skr1ms/mosaic/internal/partner"
 )
 
 // StatsServiceDeps содержит зависимости для StatsService
 type StatsServiceDeps struct {
-	CouponRepository  *coupon.CouponRepository
-	PartnerRepository *partner.PartnerRepository
-	RedisClient       *redis.Client
+	CouponRepository  CouponRepositoryInterface
+	PartnerRepository PartnerRepositoryInterface
+	RedisClient       RedisClientInterface
 }
 
 // StatsService содержит бизнес-логику для статистики

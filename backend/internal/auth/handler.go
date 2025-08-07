@@ -4,10 +4,11 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog"
 	"github.com/skr1ms/mosaic/pkg/middleware"
+	"github.com/skr1ms/mosaic/pkg/utils"
 )
 
 type AuthHandlerDeps struct {
-	AuthService *AuthService
+	AuthService AuthServiceInterface
 }
 
 type AuthHandler struct {
@@ -46,19 +47,26 @@ func (handler *AuthHandler) AdminLogin(c *fiber.Ctx) error {
 	// Парсим запрос
 	if err := c.BodyParser(&req); err != nil {
 		log.Error().Err(err).Msg("Invalid request body")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_bad_request", "Invalid request body")
+	}
+
+	// Валидируем запрос
+	if err := middleware.ValidateStruct(&req); err != nil {
+		log.Error().Err(err).Msg("Validation failed")
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_validation_failed", "Validation failed")
 	}
 
 	// Авторизуем администратора
 	admin, token, err := handler.deps.AuthService.AdminLogin(req.Login, req.Password)
 	if err != nil {
 		log.Error().Err(err).Msg("Admin login failed")
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid credentials"})
+		return utils.LocalizedError(c, fiber.StatusUnauthorized, "auth_invalid_credentials", "Invalid credentials")
 	}
 
 	// Возвращаем токены
+	message := utils.GetLocalizedMessage(c, "auth_login_successful", "Login successful")
 	return c.JSON(fiber.Map{
-		"message": "Login successful",
+		"message": message,
 		"admin": fiber.Map{
 			"id":    admin.ID,
 			"login": admin.Login,
@@ -88,19 +96,26 @@ func (handler *AuthHandler) RefreshAdminTokens(c *fiber.Ctx) error {
 	// Парсим запрос
 	if err := c.BodyParser(&req); err != nil {
 		log.Error().Err(err).Msg("Invalid request body")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_bad_request", "Invalid request body")
+	}
+
+	// Валидируем запрос
+	if err := middleware.ValidateStruct(&req); err != nil {
+		log.Error().Err(err).Msg("Validation failed")
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_validation_failed", "Validation failed")
 	}
 
 	// Обновляем токены
 	tokens, err := handler.deps.AuthService.RefreshAdminTokens(req.RefreshToken)
 	if err != nil {
 		log.Error().Err(err).Msg("Admin token refresh failed")
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid refresh token"})
+		return utils.LocalizedError(c, fiber.StatusUnauthorized, "auth_invalid_refresh_token", "Invalid refresh token")
 	}
 
 	// Возвращаем токены
+	message := utils.GetLocalizedMessage(c, "auth_tokens_refreshed", "Tokens refreshed successfully")
 	return c.JSON(fiber.Map{
-		"message":       "Tokens refreshed successfully",
+		"message":       message,
 		"access_token":  tokens.AccessToken,
 		"refresh_token": tokens.RefreshToken,
 		"expires_in":    tokens.ExpiresIn,
@@ -127,28 +142,30 @@ func (handler *AuthHandler) PartnerLogin(c *fiber.Ctx) error {
 	// Парсим запрос
 	if err := c.BodyParser(&req); err != nil {
 		log.Error().Err(err).Msg("Invalid request body")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_bad_request", "Invalid request body")
 	}
 
 	// Валидируем запрос
 	if err := middleware.ValidateStruct(&req); err != nil {
 		log.Error().Err(err).Msg("Validation failed")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   "Validation failed",
-			"details": err.Error(),
-		})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_validation_failed", "Validation failed")
 	}
 
 	// Авторизуем партнера
 	partner, tokens, err := handler.deps.AuthService.PartnerLogin(req.Login, req.Password)
 	if err != nil {
 		log.Error().Err(err).Msg("Partner login failed")
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid credentials"})
+		msg := "auth_invalid_credentials"
+		if err.Error() == "account blocked" {
+			msg = "auth_account_blocked"
+		}
+		return utils.LocalizedError(c, fiber.StatusUnauthorized, msg, "Invalid credentials")
 	}
 
 	// Возвращаем токены
+	message := utils.GetLocalizedMessage(c, "auth_login_successful", "Login successful")
 	return c.JSON(fiber.Map{
-		"message": "Login successful",
+		"message": message,
 		"partner": fiber.Map{
 			"id":           partner.ID,
 			"login":        partner.Login,
@@ -180,19 +197,26 @@ func (handler *AuthHandler) RefreshPartnerTokens(c *fiber.Ctx) error {
 	// Парсим запрос
 	if err := c.BodyParser(&req); err != nil {
 		log.Error().Err(err).Msg("Invalid request body")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_bad_request", "Invalid request body")
+	}
+
+	// Валидируем запрос
+	if err := middleware.ValidateStruct(&req); err != nil {
+		log.Error().Err(err).Msg("Validation failed")
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_validation_failed", "Validation failed")
 	}
 
 	// Обновляем токены
 	tokenPair, err := handler.deps.AuthService.RefreshPartnerTokens(req.RefreshToken)
 	if err != nil {
 		log.Error().Err(err).Msg("Partner token refresh failed")
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid refresh token"})
+		return utils.LocalizedError(c, fiber.StatusUnauthorized, "auth_invalid_refresh_token", "Invalid refresh token")
 	}
 
 	// Возвращаем токены
+	message := utils.GetLocalizedMessage(c, "auth_tokens_refreshed", "Tokens refreshed successfully")
 	return c.JSON(fiber.Map{
-		"message":       "Tokens refreshed successfully",
+		"message":       message,
 		"access_token":  tokenPair.AccessToken,
 		"refresh_token": tokenPair.RefreshToken,
 		"expires_in":    tokenPair.ExpiresIn,

@@ -23,15 +23,15 @@ import (
 )
 
 type PaymentServiceDeps struct {
-	PaymentRepository *PaymentRepository
-	CouponRepository  *coupon.CouponRepository
-	PartnerRepository *partner.PartnerRepository
+	PaymentRepository PaymentRepositoryInterface
+	CouponRepository  CouponRepositoryInterface
+	PartnerRepository PartnerRepositoryInterface
 	Config            *config.Config
 }
 
 type PaymentService struct {
 	deps       *PaymentServiceDeps
-	alfaClient *AlfaBankClient
+	alfaClient AlfaBankClientInterface
 }
 
 func NewPaymentService(deps *PaymentServiceDeps) *PaymentService {
@@ -41,10 +41,24 @@ func NewPaymentService(deps *PaymentServiceDeps) *PaymentService {
 	}
 }
 
+// NewPaymentServiceWithRealDeps создает сервис с реальными зависимостями
+func NewPaymentServiceWithRealDeps(paymentRepo *PaymentRepository, couponRepo *coupon.CouponRepository, partnerRepo *partner.PartnerRepository, config *config.Config) *PaymentService {
+	deps := &PaymentServiceDeps{
+		PaymentRepository: paymentRepo,
+		CouponRepository:  couponRepo,
+		PartnerRepository: partnerRepo,
+		Config:            config,
+	}
+	return NewPaymentService(deps)
+}
+
 type AlfaBankClient struct {
 	config *config.Config
 	client *http.Client
 }
+
+// Убеждаемся, что AlfaBankClient реализует интерфейс
+var _ AlfaBankClientInterface = (*AlfaBankClient)(nil)
 
 func NewAlfaBankClient(config *config.Config) *AlfaBankClient {
 	return &AlfaBankClient{
@@ -421,6 +435,8 @@ func (s *PaymentService) ProcessPaymentReturn(ctx context.Context, orderNumber s
 			OrderNumber:     orderNumber,
 			OrderStatus:     alfaResp.OrderStatus,
 			AlfaBankOrderID: *order.AlfaBankOrderID,
+			Amount:          order.Amount,
+			Currency:        order.Currency,
 		}
 
 		err = s.ProcessWebhookNotification(ctx, notification)

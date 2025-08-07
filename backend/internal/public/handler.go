@@ -86,9 +86,7 @@ func (handler *PublicHandler) GetPartnerByDomain(c *fiber.Ctx) error {
 	result, err := handler.deps.PublicService.deps.PartnerRepository.GetByDomain(context.Background(), domain)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get partner by domain")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get partner by domain",
-		})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "partner_get_failed", "Failed to get partner by domain")
 	}
 
 	return c.JSON(result)
@@ -109,34 +107,31 @@ func (handler *PublicHandler) GetCouponByCode(c *fiber.Ctx) error {
 
 	result, err := handler.deps.PublicService.GetCouponByCode(code)
 	if err != nil {
-		return utils.LogAndReturnError(c, err, "Failed to get coupon by code", fiber.StatusInternalServerError, map[string]interface{}{
-			"coupon_code": code,
-			"handler":     "GetCouponByCode",
-		})
+		msg := "error_internal"
+		if err.Error() == "not found" {
+			msg = "coupon_not_found"
+		}
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, msg, "Internal server error")
 	}
 
 	utils.LogSuccess(c, "Successfully retrieved coupon", map[string]interface{}{
 		"coupon_code": code,
 		"handler":     "GetCouponByCode",
 	})
-
 	return c.JSON(result)
-}
-
-// ActivateCoupon активирует купон для последующей обработки
-//
-//	@Summary		Активация купона
-//	@Description	Активирует купон и подготавливает его для загрузки изображения
-//	@Tags			coupons
-//	@Accept			json
-//	@Produce		json
-//	@Param			code	path		string					true	"Код купона"
-//	@Param			request	body		public.ActivateCouponRequest	true	"Данные для активации"
-//	@Success		200		{object}	map[string]interface{}	"Купон активирован"
-//	@Failure		400		{object}	map[string]interface{}	"Ошибка в запросе"
-//	@Failure		404		{object}	map[string]interface{}	"Купон не найден"
-//	@Failure		409		{object}	map[string]interface{}	"Купон уже использован"
-//	@Router			/api/coupons/{code}/activate [post]
+} // ActivateCoupon активирует купон для последующей обработки
+// @Summary		Активация купона
+// @Description	Активирует купон и подготавливает его для загрузки изображения
+// @Tags			coupons
+// @Accept			json
+// @Produce		json
+// @Param			code	path		string					true	"Код купона"
+// @Param			request	body		public.ActivateCouponRequest	true	"Данные для активации"
+// @Success		200		{object}	map[string]interface{}	"Купон активирован"
+// @Failure		400		{object}	map[string]interface{}	"Ошибка в запросе"
+// @Failure		404		{object}	map[string]interface{}	"Купон не найден"
+// @Failure		409		{object}	map[string]interface{}	"Купон уже использован"
+// @Router			/api/coupons/{code}/activate [post]
 func (handler *PublicHandler) ActivateCoupon(c *fiber.Ctx) error {
 	log := zerolog.Ctx(c.UserContext())
 	code := c.Params("code")
@@ -144,17 +139,19 @@ func (handler *PublicHandler) ActivateCoupon(c *fiber.Ctx) error {
 	var req ActivateCouponRequest
 	if err := c.BodyParser(&req); err != nil {
 		log.Error().Err(err).Msg("Failed to parse request body")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Bad request",
-		})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_bad_request", "Bad request")
 	}
 
 	result, err := handler.deps.PublicService.ActivateCoupon(code, req)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to activate coupon")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to activate coupon",
-		})
+		msg := "error_internal"
+		if err.Error() == "coupon not found" {
+			msg = "coupon_not_found"
+		} else if err.Error() == "coupon already used" {
+			msg = "coupon_already_used"
+		}
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, msg, "Failed to activate coupon")
 	}
 
 	return c.JSON(result)
@@ -177,43 +174,34 @@ func (handler *PublicHandler) UploadImage(c *fiber.Ctx) error {
 	log := zerolog.Ctx(c.UserContext())
 	couponID := c.FormValue("coupon_id")
 	if couponID == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Coupon ID is required",
-		})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "coupon_id_required", "Coupon ID is required")
 	}
 
 	// Получаем файл
 	file, err := c.FormFile("image")
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Image file is required",
-		})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "image_file_required", "Image file is required")
 	}
 
 	result, err := handler.deps.PublicService.UploadImage(couponID, file)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to upload image")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to upload image",
-		})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "image_upload_failed", "Failed to upload image")
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(result)
-}
-
-// EditImage применяет редактирование к изображению
-//
-//	@Summary		Редактирование изображения
-//	@Description	Применяет кадрирование, поворот и масштабирование к изображению
-//	@Tags			images
-//	@Accept			json
-//	@Produce		json
-//	@Param			id		path		string					true	"ID изображения"
-//	@Param			request	body		types.EditImageRequest		true	"Параметры редактирования"
-//	@Success		200		{object}	map[string]interface{}	"Изображение отредактировано"
-//	@Failure		400		{object}	map[string]interface{}	"Ошибка в запросе"
-//	@Failure		404		{object}	map[string]interface{}	"Изображение не найдено"
-//	@Router			/api/images/{id}/edit [post]
+} // EditImage применяет редактирование к изображению
+// @Summary		Редактирование изображения
+// @Description	Применяет кадрирование, поворот и масштабирование к изображению
+// @Tags			images
+// @Accept			json
+// @Produce		json
+// @Param			id		path		string					true	"ID изображения"
+// @Param			request	body		types.EditImageRequest		true	"Параметры редактирования"
+// @Success		200		{object}	map[string]interface{}	"Изображение отредактировано"
+// @Failure		400		{object}	map[string]interface{}	"Ошибка в запросе"
+// @Failure		404		{object}	map[string]interface{}	"Изображение не найдено"
+// @Router			/api/images/{id}/edit [post]
 func (handler *PublicHandler) EditImage(c *fiber.Ctx) error {
 	log := zerolog.Ctx(c.UserContext())
 	imageID := c.Params("id")
@@ -221,17 +209,17 @@ func (handler *PublicHandler) EditImage(c *fiber.Ctx) error {
 	var req types.EditImageRequest
 	if err := c.BodyParser(&req); err != nil {
 		log.Error().Err(err).Msg("Failed to parse request body")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Bad request",
-		})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_bad_request", "Bad request")
 	}
 
 	result, err := handler.deps.PublicService.EditImage(imageID, req)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to edit image")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to edit image",
-		})
+		msg := "image_edit_failed"
+		if err.Error() == "image not found" {
+			msg = "image_not_found"
+		}
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, msg, "Failed to edit image")
 	}
 
 	return c.JSON(result)
@@ -257,17 +245,17 @@ func (handler *PublicHandler) ProcessImage(c *fiber.Ctx) error {
 	var req types.ProcessImageRequest
 	if err := c.BodyParser(&req); err != nil {
 		log.Error().Err(err).Msg("Failed to parse request body")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Bad request",
-		})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_bad_request", "Bad request")
 	}
 
 	result, err := handler.deps.PublicService.ProcessImage(imageID, req)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to process image")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to process image",
-		})
+		msg := "image_process_failed"
+		if err.Error() == "image not found" {
+			msg = "image_not_found"
+		}
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, msg, "Failed to process image")
 	}
 
 	return c.JSON(result)
@@ -294,26 +282,20 @@ func (handler *PublicHandler) GenerateSchema(c *fiber.Ctx) error {
 	imageUUID, err := uuid.Parse(imageID)
 	if err != nil {
 		log.Error().Err(err).Msg("Invalid image ID format")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid image ID format",
-		})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "image_invalid_id", "Invalid image ID format")
 	}
 
 	var req types.GenerateSchemaRequest
 	if err := c.BodyParser(&req); err != nil {
 		log.Error().Err(err).Msg("Failed to parse request body")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Bad request",
-		})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_bad_request", "Bad request")
 	}
 
 	// Получаем задачу для получения CouponID (для обновления купона после создания схемы)
 	task, err := handler.deps.PublicService.deps.ImageRepository.GetByID(context.Background(), imageUUID)
 	if err != nil {
 		log.Error().Err(err).Msg("Image not found")
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "Image not found",
-		})
+		return utils.LocalizedError(c, fiber.StatusNotFound, "image_not_found", "Image not found")
 	}
 
 	// Запускаем создание схемы асинхронно через ImageService
@@ -323,9 +305,9 @@ func (handler *PublicHandler) GenerateSchema(c *fiber.Ctx) error {
 			return
 		}
 
-		// Обновляем купон как использованный после успешного создания схемы
+		// Обновляем купон как завершенный после успешного создания схемы
 		if coupon, err := handler.deps.PublicService.deps.CouponRepository.GetByID(context.Background(), task.CouponID); err == nil {
-			coupon.Status = "used"
+			coupon.Status = "completed"
 			// Получаем актуальный статус изображения для URL схемы
 			if status, err := handler.deps.PublicService.deps.ImageService.GetImageStatus(context.Background(), imageUUID); err == nil && status.SchemaURL != nil {
 				coupon.SchemaURL = status.SchemaURL
@@ -337,7 +319,7 @@ func (handler *PublicHandler) GenerateSchema(c *fiber.Ctx) error {
 	}()
 
 	return c.JSON(fiber.Map{
-		"message":    "Schema generation started",
+		"message":     utils.GetLocalizedMessage(c, "schema_generation_started", "Schema generation started"),
 		"actions":    []string{"download"},
 		"email_sent": true, // Email будет отправлен автоматически после создания схемы
 	})
@@ -360,24 +342,18 @@ func (handler *PublicHandler) DownloadSchema(c *fiber.Ctx) error {
 	// Парсим ID изображения
 	imageUUID, err := uuid.Parse(imageID)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid image ID",
-		})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "image_invalid_id", "Invalid image ID")
 	}
 
 	// Получаем статус изображения для получения URL схемы
 	status, err := handler.deps.PublicService.deps.ImageService.GetImageStatus(c.UserContext(), imageUUID)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get image status")
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "Image not found",
-		})
+		return utils.LocalizedError(c, fiber.StatusNotFound, "image_not_found", "Image not found")
 	}
 
 	if status.Status != "completed" || status.SchemaURL == nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Schema not ready",
-		})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "schema_not_ready", "Schema not ready")
 	}
 
 	// Перенаправляем на URL схемы (presigned URL от S3)
@@ -404,17 +380,13 @@ func (handler *PublicHandler) SendSchemaToEmail(c *fiber.Ctx) error {
 	var req SendEmailRequest
 	if err := c.BodyParser(&req); err != nil {
 		log.Error().Err(err).Msg("Failed to parse request body")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Bad request",
-		})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_bad_request", "Bad request")
 	}
 
 	result, err := handler.deps.PublicService.SendSchemaToEmail(imageID, req)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to send schema to email")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to send schema to email",
-		})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "schema_send_failed", "Failed to send schema to email")
 	}
 
 	return c.JSON(result)
@@ -437,9 +409,11 @@ func (handler *PublicHandler) GetImagePreview(c *fiber.Ctx) error {
 	result, err := handler.deps.PublicService.GetImagePreview(imageID)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get image preview")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get image preview",
-		})
+		msg := "error_internal"
+		if err.Error() == "image not found" {
+			msg = "image_not_found"
+		}
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, msg, "Failed to get image preview")
 	}
 
 	return c.JSON(result)
@@ -462,9 +436,11 @@ func (handler *PublicHandler) GetProcessingStatus(c *fiber.Ctx) error {
 	result, err := handler.deps.PublicService.GetProcessingStatus(imageID)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get processing status")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get processing status",
-		})
+		msg := "error_internal"
+		if err.Error() == "image not found" {
+			msg = "image_not_found"
+		}
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, msg, "Failed to get processing status")
 	}
 
 	return c.JSON(result)
@@ -487,17 +463,13 @@ func (handler *PublicHandler) PurchaseCoupon(c *fiber.Ctx) error {
 	// Проверяем, разрешена ли покупка в текущем контексте брендинга
 	branding := middleware.GetBrandingFromContext(c)
 	if branding != nil && !branding.AllowPurchases {
-		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"error": "Purchase not allowed for this partner",
-		})
+		return utils.LocalizedError(c, fiber.StatusForbidden, "coupon_purchase_not_allowed", "Purchase not allowed for this partner")
 	}
 
 	var req PurchaseCouponRequest
 	if err := c.BodyParser(&req); err != nil {
 		log.Error().Err(err).Msg("Failed to parse request body")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Bad request",
-		})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "error_bad_request", "Bad request")
 	}
 
 	// Если есть партнер в контексте, добавляем его ID к запросу покупки
@@ -512,9 +484,7 @@ func (handler *PublicHandler) PurchaseCoupon(c *fiber.Ctx) error {
 	result, err := handler.deps.PublicService.PurchaseCoupon(req)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to purchase coupon")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to purchase coupon",
-		})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Failed to purchase coupon")
 	}
 
 	// Добавляем данные брендинга к ответу
@@ -533,7 +503,6 @@ func (handler *PublicHandler) PurchaseCoupon(c *fiber.Ctx) error {
 //	@Success		200	{array}	map[string]interface{}	"Доступные размеры"
 //	@Router			/api/sizes [get]
 func (handler *PublicHandler) GetAvailableSizes(c *fiber.Ctx) error {
-	// TODO: Реализовать получение доступных размеров
 	sizes := handler.deps.PublicService.GetAvailableSizes()
 	return c.JSON(sizes)
 }
@@ -547,7 +516,6 @@ func (handler *PublicHandler) GetAvailableSizes(c *fiber.Ctx) error {
 //	@Success		200	{array}	map[string]interface{}	"Доступные стили"
 //	@Router			/api/styles [get]
 func (handler *PublicHandler) GetAvailableStyles(c *fiber.Ctx) error {
-	// TODO: Реализовать получение доступных стилей
 	styles := handler.deps.PublicService.GetAvailableStyles()
 	return c.JSON(styles)
 }

@@ -22,7 +22,10 @@ package main
 //	@description				Type "Bearer" followed by a space and JWT token.
 
 import (
+	"time"
+
 	adaptor "github.com/gofiber/adaptor/v2"
+	"github.com/gofiber/contrib/fiberi18n/v2"
 	"github.com/gofiber/contrib/swagger"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -42,13 +45,16 @@ import (
 	"github.com/skr1ms/mosaic/migrations"
 	"github.com/skr1ms/mosaic/pkg/db"
 	"github.com/skr1ms/mosaic/pkg/email"
+	"github.com/skr1ms/mosaic/pkg/errors"
 	"github.com/skr1ms/mosaic/pkg/jwt"
 	"github.com/skr1ms/mosaic/pkg/middleware"
+	"github.com/skr1ms/mosaic/pkg/queue"
 	"github.com/skr1ms/mosaic/pkg/recaptcha"
 	"github.com/skr1ms/mosaic/pkg/redis"
 	"github.com/skr1ms/mosaic/pkg/s3"
 	"github.com/skr1ms/mosaic/pkg/stablediffusion"
 	"github.com/skr1ms/mosaic/pkg/zip"
+	"golang.org/x/text/language"
 )
 
 func InitializeApp() *fiber.App {
@@ -75,10 +81,12 @@ func InitializeApp() *fiber.App {
 
 	stableDiffusionClient := stablediffusion.NewStableDiffusionClient(cfg.StableDiffusionConfig)
 
+	queueManager := queue.NewQueueManager(redisClient)
+
 	appLogger := middleware.NewLogger()
 
 	app := fiber.New(fiber.Config{
-		ErrorHandler: appLogger.ErrorHandler(),
+		ErrorHandler: errors.ErrorHandler(),
 	})
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
@@ -92,7 +100,16 @@ func InitializeApp() *fiber.App {
 
 	app.Use(appLogger.AnalyticsMiddleware())
 
-	// Branding middleware - определяет партнера по домену
+	app.Use(middleware.GeneralRateLimiter())
+
+	app.Use(middleware.AuditLogger())
+
+	app.Use(fiberi18n.New(&fiberi18n.Config{
+		RootPath:        "./locales",
+		AcceptLanguages: []language.Tag{language.Russian, language.English, language.Spanish},
+		DefaultLanguage: language.Russian,
+	}))
+
 	brandingMiddleware := middleware.BrandingMiddleware(database.DB, middleware.DefaultBranding{
 		BrandName:       cfg.BrandingConfig.DefaultBrandName,
 		LogoURL:         cfg.BrandingConfig.DefaultLogoURL,
@@ -108,7 +125,6 @@ func InitializeApp() *fiber.App {
 	})
 	app.Use(brandingMiddleware)
 
-	// swagger ui middleware
 	app.Use(swagger.New(swagger.Config{
 		BasePath: "/",
 		FilePath: "./docs/swagger.json",
@@ -118,6 +134,15 @@ func InitializeApp() *fiber.App {
 
 	// API
 	api := app.Group("/api")
+
+	// Health check endpoint
+	app.Get("/health", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"status":    "healthy",
+			"timestamp": time.Now().Unix(),
+			"version":   "1.0.0",
+		})
+	})
 
 	// repository
 	adminRepo := admin.NewAdminRepository(database.DB)
@@ -143,18 +168,20 @@ func InitializeApp() *fiber.App {
 		CouponRepository:  couponRepo,
 		ImageRepository:   imageRepo,
 		S3Client:          s3Client,
+		RedisClient:       redisClient,
 	})
 
 	partnerService := partner.NewPartnerService(&partner.PartnerServiceDeps{
 		PartnerRepository: partnerRepo,
 		Recaptcha:         recaptchService,
-		JwtService:        jwtService,
+		JwtService:        &partner.JWTAdapter{JWT: jwtService},
 		MailSender:        mailSender,
 		Config:            cfg,
 	})
 
 	couponService := coupon.NewCouponService(&coupon.CouponServiceDeps{
 		CouponRepository: couponRepo,
+		RedisClient:      redisClient,
 	})
 
 	imageService := image.NewImageService(&image.ImageServiceDeps{
@@ -174,6 +201,7 @@ func InitializeApp() *fiber.App {
 	})
 
 	publicService := public.NewPublicService(&public.PublicServiceDeps{
+		Config:            cfg,
 		CouponRepository:  couponRepo,
 		ImageRepository:   imageRepo,
 		PartnerRepository: partnerRepo,
@@ -190,6 +218,11 @@ func InitializeApp() *fiber.App {
 
 	cronService := stats.NewCronService(statsService)
 	cronService.Start()
+
+	imageAdapter := queue.NewImageServiceAdapter(imageService)
+	emailAdapter := queue.NewEmailServiceAdapter(mailSender)
+
+	queueManager.StartAllWorkers(imageAdapter, emailAdapter)
 
 	// handlers
 	admin.NewAdminHandler(api, &admin.AdminHandlerDeps{

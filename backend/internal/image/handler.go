@@ -7,11 +7,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"github.com/skr1ms/mosaic/internal/types"
+	"github.com/skr1ms/mosaic/pkg/utils"
 )
 
 type ImageHandlerDeps struct {
-	ImageService     *ImageService
-	ImageRepository  *ImageRepository
+	ImageService    *ImageService
+	ImageRepository *ImageRepository
 }
 
 type ImageHandler struct {
@@ -65,9 +66,7 @@ func (h *ImageHandler) UploadImage(c *fiber.Ctx) error {
 	couponCode := c.FormValue("coupon_code")
 	if len(couponCode) != 12 {
 		log.Error().Msg("Invalid coupon code format")
-		return c.Status(400).JSON(fiber.Map{
-			"error": "Invalid coupon code format",
-		})
+		return utils.LocalizedError(c, 400, "coupon_invalid_code", "Invalid coupon code format")
 	}
 
 	// Получаем купон по коду
@@ -75,43 +74,33 @@ func (h *ImageHandler) UploadImage(c *fiber.Ctx) error {
 	if err != nil {
 		if err.Error() == "not found" {
 			log.Error().Msg("Coupon not found")
-			return c.Status(404).JSON(fiber.Map{
-				"error": "Coupon not found",
-			})
+			return utils.LocalizedError(c, 404, "coupon_not_found", "Coupon not found")
 		}
 		log.Error().Err(err).Msg("Error finding coupon")
-		return c.Status(500).JSON(fiber.Map{
-			"error": "Error finding coupon",
-		})
+		return utils.LocalizedError(c, 500, "error_internal", "Error finding coupon")
 	}
 
 	if coupon.Status != "activated" {
 		log.Error().Msg("Coupon not activated")
-		return c.Status(400).JSON(fiber.Map{
-			"error": "Coupon not activated",
-		})
+		return utils.LocalizedError(c, 400, "coupon_already_used", "Coupon not activated")
 	}
 
 	// Получаем загружаемый файл
 	file, err := c.FormFile("image")
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting uploaded image")
-		return c.Status(400).JSON(fiber.Map{
-			"error": "error getting uploaded image",
-		})
+		return utils.LocalizedError(c, 400, "image_file_required", "Error getting uploaded image")
 	}
 
 	// Загружаем изображение через сервис
 	imageRecord, err := h.deps.ImageService.UploadImage(context.Background(), coupon.ID, file, *coupon.UserEmail)
 	if err != nil {
 		log.Error().Err(err).Msg("Error uploading image")
-		return c.Status(500).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		return utils.LocalizedError(c, 500, "image_upload_failed", err.Error())
 	}
 
 	return c.JSON(types.ImageUploadResponse{
-		Message:     "Image successfully uploaded",
+		Message:     utils.GetLocalizedMessage(c, "image_uploaded_successfully", "Image successfully uploaded"),
 		ImageID:     imageRecord.ID,
 		NextStep:    "edit_image",
 		CouponSize:  coupon.Size,
@@ -139,35 +128,27 @@ func (h *ImageHandler) EditImage(c *fiber.Ctx) error {
 	imageID, err := uuid.Parse(imageIDStr)
 	if err != nil {
 		log.Error().Err(err).Msg("Invalid image ID format")
-		return c.Status(400).JSON(fiber.Map{
-			"error": "error parsing image ID",
-		})
+		return utils.LocalizedError(c, 400, "error_parsing_id", "error parsing image ID")
 	}
 
 	// Парсим параметры редактирования
 	var editParams ImageEditParams
 	if err := c.BodyParser(&editParams); err != nil {
 		log.Error().Err(err).Msg("Error parsing edit parameters")
-		return c.Status(400).JSON(fiber.Map{
-			"error": "error parsing edit parameters",
-		})
+		return utils.LocalizedError(c, 400, "error_parsing_parameters", "error parsing edit parameters")
 	}
 
 	// Применяем редактирование
 	if err := h.deps.ImageService.EditImage(context.Background(), imageID, editParams); err != nil {
 		log.Error().Err(err).Msg("Error editing image")
-		return c.Status(500).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		return utils.LocalizedError(c, 500, "error_internal", err.Error())
 	}
 
 	// Получаем статус для возврата URL превью
 	status, err := h.deps.ImageService.GetImageStatus(context.Background(), imageID)
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting image status")
-		return c.Status(500).JSON(fiber.Map{
-			"error": "error getting image status",
-		})
+		return utils.LocalizedError(c, 500, "error_internal", "error getting image status")
 	}
 
 	previewURL := ""
@@ -176,7 +157,7 @@ func (h *ImageHandler) EditImage(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(types.ImageEditResponse{
-		Message:    "Image successfully edited",
+		Message:    utils.GetLocalizedMessage(c, "image_edited_successfully", "Image successfully edited"),
 		ImageID:    imageID,
 		NextStep:   "process_image",
 		PreviewURL: previewURL,
@@ -202,17 +183,13 @@ func (h *ImageHandler) ProcessImage(c *fiber.Ctx) error {
 	imageID, err := uuid.Parse(imageIDStr)
 	if err != nil {
 		log.Error().Err(err).Msg("Invalid image ID format")
-		return c.Status(400).JSON(fiber.Map{
-			"error": "error parsing image ID",
-		})
+		return utils.LocalizedError(c, 400, "error_parsing_id", "error parsing image ID")
 	}
 
 	var processRequest types.ProcessImageRequest
 	if err := c.BodyParser(&processRequest); err != nil {
 		log.Error().Err(err).Msg("Error parsing process parameters")
-		return c.Status(400).JSON(fiber.Map{
-			"error": "error parsing process parameters",
-		})
+		return utils.LocalizedError(c, 400, "error_parsing_parameters", "error parsing process parameters")
 	}
 
 	processParams := ProcessingParams{
@@ -238,9 +215,7 @@ func (h *ImageHandler) ProcessImage(c *fiber.Ctx) error {
 	status, err := h.deps.ImageService.GetImageStatus(context.Background(), imageID)
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting image status")
-		return c.Status(500).JSON(fiber.Map{
-			"error": "error getting image status",
-		})
+		return utils.LocalizedError(c, 500, "error_internal", "error getting image status")
 	}
 
 	previewURL := ""
@@ -253,7 +228,7 @@ func (h *ImageHandler) ProcessImage(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(types.ProcessImageResponse{
-		Message:     "Processing started",
+		Message:     utils.GetLocalizedMessage(c, "processing_started", "Processing started"),
 		ImageID:     imageID,
 		NextStep:    "generate_schema",
 		PreviewURL:  previewURL,
@@ -280,24 +255,18 @@ func (h *ImageHandler) GenerateSchema(c *fiber.Ctx) error {
 	imageID, err := uuid.Parse(imageIDStr)
 	if err != nil {
 		log.Error().Err(err).Msg("Invalid image ID format")
-		return c.Status(400).JSON(fiber.Map{
-			"error": "error parsing image ID",
-		})
+		return utils.LocalizedError(c, 400, "error_parsing_id", "error parsing image ID")
 	}
 
 	var schemaRequest types.GenerateSchemaRequest
 	if err := c.BodyParser(&schemaRequest); err != nil {
 		log.Error().Err(err).Msg("Error parsing schema request")
-		return c.Status(400).JSON(fiber.Map{
-			"error": "error parsing schema request",
-		})
+		return utils.LocalizedError(c, 400, "error_parsing_parameters", "error parsing schema request")
 	}
 
 	if !schemaRequest.Confirmed {
 		log.Error().Msg("Schema request not confirmed")
-		return c.Status(400).JSON(fiber.Map{
-			"error": "schema request not confirmed",
-		})
+		return utils.LocalizedError(c, 400, "schema_not_confirmed", "schema request not confirmed")
 	}
 
 	// Запускаем создание схемы (асинхронно)
@@ -311,7 +280,7 @@ func (h *ImageHandler) GenerateSchema(c *fiber.Ctx) error {
 	}()
 
 	return c.JSON(types.GenerateSchemaResponse{
-		Message:   "Schema generation started",
+		Message:   utils.GetLocalizedMessage(c, "schema_generation_started", "Schema generation started"),
 		ImageID:   imageID,
 		EmailSent: true, // Email будет отправлен автоматически после создания схемы
 	})
@@ -334,17 +303,13 @@ func (h *ImageHandler) GetImageStatus(c *fiber.Ctx) error {
 	imageID, err := uuid.Parse(imageIDStr)
 	if err != nil {
 		log.Error().Err(err).Msg("Invalid image ID format")
-		return c.Status(400).JSON(fiber.Map{
-			"error": "error parsing image ID",
-		})
+		return utils.LocalizedError(c, 400, "error_parsing_id", "error parsing image ID")
 	}
 
 	status, err := h.deps.ImageService.GetImageStatus(context.Background(), imageID)
 	if err != nil {
 		log.Error().Err(err).Msg("Image not found")
-		return c.Status(404).JSON(fiber.Map{
-			"error": "image not found",
-		})
+		return utils.LocalizedError(c, 404, "image_not_found", "image not found")
 	}
 
 	return c.JSON(status)
@@ -366,9 +331,7 @@ func (h *ImageHandler) GetQueue(c *fiber.Ctx) error {
 	tasks, err := h.deps.ImageService.GetQueue(status)
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting queue")
-		return c.Status(500).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		return utils.LocalizedError(c, 500, "error_internal", err.Error())
 	}
 
 	return c.JSON(tasks)
@@ -391,17 +354,13 @@ func (h *ImageHandler) GetTaskByID(c *fiber.Ctx) error {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		log.Error().Err(err).Msg("Invalid ID format")
-		return c.Status(400).JSON(fiber.Map{
-			"error": "error parsing ID",
-		})
+		return utils.LocalizedError(c, 400, "error_parsing_id", "error parsing ID")
 	}
 
 	task, err := h.deps.ImageRepository.GetByID(context.Background(), id)
 	if err != nil {
 		log.Error().Err(err).Msg("Task not found")
-		return c.Status(404).JSON(fiber.Map{
-			"error": "task not found",
-		})
+		return utils.LocalizedError(c, 404, "task_not_found", "task not found")
 	}
 
 	return c.JSON(task)
@@ -423,9 +382,7 @@ func (h *ImageHandler) AddToQueue(c *fiber.Ctx) error {
 	var req AddToQueueRequest
 	if err := c.BodyParser(&req); err != nil {
 		log.Error().Err(err).Msg("Error parsing request")
-		return c.Status(400).JSON(fiber.Map{
-			"error": "error parsing request",
-		})
+		return utils.LocalizedError(c, 400, "error_parsing_parameters", "error parsing request")
 	}
 
 	task := &Image{
@@ -439,13 +396,11 @@ func (h *ImageHandler) AddToQueue(c *fiber.Ctx) error {
 
 	if err := h.deps.ImageRepository.Create(context.Background(), task); err != nil {
 		log.Error().Err(err).Msg("Error adding task to queue")
-		return c.Status(500).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		return utils.LocalizedError(c, 500, "error_internal", err.Error())
 	}
 
 	return c.Status(201).JSON(fiber.Map{
-		"message": "Task added to queue",
+		"message": utils.GetLocalizedMessage(c, "task_added_to_queue", "Task added to queue"),
 		"task_id": task.ID,
 	})
 }
@@ -467,20 +422,16 @@ func (h *ImageHandler) StartProcessing(c *fiber.Ctx) error {
 
 	if err != nil {
 		log.Error().Err(err).Msg("Invalid ID format")
-		return c.Status(400).JSON(fiber.Map{
-			"error": "error parsing ID",
-		})
+		return utils.LocalizedError(c, 400, "error_parsing_id", "error parsing ID")
 	}
 
 	if err := h.deps.ImageRepository.StartProcessing(context.Background(), id); err != nil {
 		log.Error().Err(err).Msg("Error starting processing")
-		return c.Status(500).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		return utils.LocalizedError(c, 500, "error_internal", err.Error())
 	}
 
 	return c.JSON(fiber.Map{
-		"message": "Processing started",
+		"message": utils.GetLocalizedMessage(c, "processing_started", "Processing started"),
 	})
 }
 
@@ -501,20 +452,16 @@ func (h *ImageHandler) CompleteProcessing(c *fiber.Ctx) error {
 
 	if err != nil {
 		log.Error().Err(err).Msg("Invalid ID format")
-		return c.Status(400).JSON(fiber.Map{
-			"error": "error parsing ID",
-		})
+		return utils.LocalizedError(c, 400, "error_parsing_id", "error parsing ID")
 	}
 
 	if err := h.deps.ImageRepository.CompleteProcessing(context.Background(), id); err != nil {
 		log.Error().Err(err).Msg("Error completing processing")
-		return c.Status(500).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		return utils.LocalizedError(c, 500, "error_internal", err.Error())
 	}
 
 	return c.JSON(fiber.Map{
-		"message": "Processing completed",
+		"message": utils.GetLocalizedMessage(c, "processing_completed", "Processing completed"),
 	})
 }
 
@@ -536,28 +483,22 @@ func (h *ImageHandler) FailProcessing(c *fiber.Ctx) error {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		log.Error().Err(err).Msg("Invalid ID format")
-		return c.Status(400).JSON(fiber.Map{
-			"error": "error parsing ID",
-		})
+		return utils.LocalizedError(c, 400, "error_parsing_id", "error parsing ID")
 	}
 
 	var req FailProcessingRequest
 	if err := c.BodyParser(&req); err != nil {
 		log.Error().Err(err).Msg("Error parsing request")
-		return c.Status(400).JSON(fiber.Map{
-			"error": "error parsing request",
-		})
+		return utils.LocalizedError(c, 400, "error_parsing_parameters", "error parsing request")
 	}
 
 	if err := h.deps.ImageRepository.FailProcessing(context.Background(), id, req.ErrorMessage); err != nil {
 		log.Error().Err(err).Msg("Error failing processing")
-		return c.Status(500).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		return utils.LocalizedError(c, 500, "error_internal", err.Error())
 	}
 
 	return c.JSON(fiber.Map{
-		"message": "Processing failed",
+		"message": utils.GetLocalizedMessage(c, "processing_failed", "Processing failed"),
 	})
 }
 
@@ -577,20 +518,16 @@ func (h *ImageHandler) RetryTask(c *fiber.Ctx) error {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		log.Error().Err(err).Msg("Invalid ID format")
-		return c.Status(400).JSON(fiber.Map{
-			"error": "error parsing ID",
-		})
+		return utils.LocalizedError(c, 400, "error_parsing_id", "error parsing ID")
 	}
 
 	if err := h.deps.ImageRepository.RetryTask(context.Background(), id); err != nil {
 		log.Error().Err(err).Msg("Error retrying task")
-		return c.Status(500).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		return utils.LocalizedError(c, 500, "error_internal", err.Error())
 	}
 
 	return c.JSON(fiber.Map{
-		"message": "Task retried",
+		"message": utils.GetLocalizedMessage(c, "task_retried", "Task retried"),
 	})
 }
 
@@ -610,20 +547,16 @@ func (h *ImageHandler) DeleteTask(c *fiber.Ctx) error {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		log.Error().Err(err).Msg("Invalid ID format")
-		return c.Status(400).JSON(fiber.Map{
-			"error": "error parsing ID",
-		})
+		return utils.LocalizedError(c, 400, "error_parsing_id", "error parsing ID")
 	}
 
 	if err := h.deps.ImageRepository.Delete(context.Background(), id); err != nil {
 		log.Error().Err(err).Msg("Error deleting task")
-		return c.Status(500).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		return utils.LocalizedError(c, 500, "error_internal", err.Error())
 	}
 
 	return c.JSON(fiber.Map{
-		"message": "Task deleted",
+		"message": utils.GetLocalizedMessage(c, "task_deleted", "Task deleted"),
 	})
 }
 
@@ -640,9 +573,7 @@ func (h *ImageHandler) GetStatistics(c *fiber.Ctx) error {
 	stats, err := h.deps.ImageRepository.GetStatistics(context.Background())
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting statistics")
-		return c.Status(500).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		return utils.LocalizedError(c, 500, "error_internal", err.Error())
 	}
 
 	return c.JSON(stats)
@@ -662,14 +593,10 @@ func (h *ImageHandler) GetNextTask(c *fiber.Ctx) error {
 	task, err := h.deps.ImageRepository.GetNextInQueue(context.Background())
 	if err != nil {
 		if err.Error() == "no tasks in queue" {
-			return c.Status(404).JSON(fiber.Map{
-				"message": "No tasks in queue",
-			})
+			return utils.LocalizedError(c, 404, "no_tasks_in_queue", "No tasks in queue")
 		}
 		log.Error().Err(err).Msg("Error getting next task")
-		return c.Status(500).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		return utils.LocalizedError(c, 500, "error_internal", err.Error())
 	}
 
 	return c.JSON(task)

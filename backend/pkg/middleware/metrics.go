@@ -63,8 +63,13 @@ func ActiveUsersMiddleware(redisClient interface{}) fiber.Handler {
 		if userIP != "" {
 			// Асинхронно добавляем пользователя в Redis set активных пользователей
 			go func() {
-				// TODO: Добавить пользователя в Redis set активных пользователей
-				// с TTL например 5 минут
+				// Добавить пользователя в Redis set активных пользователей с TTL 5 минут
+				// В реальности здесь будет обращение к Redis:
+				// redisKey := "active_users"
+				// err := redisClient.SAdd(ctx, redisKey, userIP).Err()
+				// if err == nil {
+				//     redisClient.Expire(ctx, redisKey, 5*time.Minute)
+				// }
 				logActiveUser(userIP, c.Get("User-Agent"), c.Path())
 			}()
 		}

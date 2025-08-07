@@ -14,10 +14,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 )
 
 type CouponServiceDeps struct {
 	CouponRepository *CouponRepository
+	RedisClient      *redis.Client
 }
 
 type CouponService struct {
@@ -178,8 +180,8 @@ func (s *CouponService) DownloadMaterials(id uuid.UUID) ([]byte, string, error) 
 		return nil, "", fmt.Errorf("coupon not found: %w", err)
 	}
 
-	if coupon.Status != "used" {
-		return nil, "", fmt.Errorf("coupon must be used to download materials")
+	if coupon.Status != "used" && coupon.Status != "completed" {
+		return nil, "", fmt.Errorf("coupon must be used or completed to download materials")
 	}
 
 	var buf bytes.Buffer
@@ -394,7 +396,7 @@ func (s *CouponService) PreviewBatchDelete(couponIDs []string) (*BatchDeletePrev
 
 	// Генерируем ключ подтверждения (временный токен)
 	confirmationKey := uuid.New().String()
-	expiresAt := time.Now().Add(15 * time.Minute) // Ключ действителен 15 минут
+	expiresAt := time.Now().Add(15 * time.Minute)
 
 	response := &BatchDeletePreviewResponse{
 		TotalCount:      len(previews),
@@ -405,8 +407,23 @@ func (s *CouponService) PreviewBatchDelete(couponIDs []string) (*BatchDeletePrev
 		ExpiresAt:       expiresAt,
 	}
 
-	// TODO: Сохранить ключ подтверждения в Redis или кэше с TTL 15 минут
-	// Пока что просто возвращаем, в продакшене нужно использовать Redis
+	// Сохранить ключ подтверждения в Redis с TTL 15 минут
+	confirmationData := map[string]interface{}{
+		"action":     "batch_delete",
+		"coupon_ids": couponIDs,
+		"created_at": time.Now(),
+	}
+
+	dataJSON, err := json.Marshal(confirmationData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal confirmation data: %w", err)
+	}
+
+	redisKey := fmt.Sprintf("confirmation:%s", confirmationKey)
+	err = s.deps.RedisClient.Set(context.Background(), redisKey, dataJSON, 15*time.Minute).Err()
+	if err != nil {
+		return nil, fmt.Errorf("failed to save confirmation key to Redis: %w", err)
+	}
 
 	return response, nil
 }
@@ -419,7 +436,6 @@ func (s *CouponService) ExecuteBatchDelete(request BatchDeleteConfirmRequest) (*
 		Errors:  make([]string, 0),
 	}
 
-	// Валидация входных данных
 	if len(request.CouponIDs) == 0 {
 		return response, errors.New("no coupon IDs provided")
 	}
@@ -428,10 +444,22 @@ func (s *CouponService) ExecuteBatchDelete(request BatchDeleteConfirmRequest) (*
 		return response, errors.New("too many coupon IDs (maximum 1000)")
 	}
 
-	// TODO: Проверить ключ подтверждения в Redis
-	// Пока что делаем простую валидацию формата
-	if _, err := uuid.Parse(request.ConfirmationKey); err != nil {
-		return response, errors.New("invalid confirmation key")
+	redisKey := fmt.Sprintf("confirmation:%s", request.ConfirmationKey)
+	confirmationDataJSON, err := s.deps.RedisClient.Get(context.Background(), redisKey).Result()
+	if err != nil {
+		if err == redis.Nil {
+			return response, errors.New("invalid or expired confirmation key")
+		}
+		return response, fmt.Errorf("failed to check confirmation key: %w", err)
+	}
+
+	var confirmationData map[string]interface{}
+	if err := json.Unmarshal([]byte(confirmationDataJSON), &confirmationData); err != nil {
+		return response, errors.New("invalid confirmation data")
+	}
+
+	if action, ok := confirmationData["action"].(string); !ok || action != "batch_delete" {
+		return response, errors.New("invalid confirmation action")
 	}
 
 	// Конвертируем строковые ID в UUID
@@ -448,7 +476,6 @@ func (s *CouponService) ExecuteBatchDelete(request BatchDeleteConfirmRequest) (*
 		}
 	}
 
-	// Добавляем невалидные ID в неуспешные
 	response.Failed = append(response.Failed, invalidIDs...)
 
 	if len(validIDs) == 0 {
@@ -498,7 +525,12 @@ func (s *CouponService) ExecuteBatchDelete(request BatchDeleteConfirmRequest) (*
 	response.DeletedCount = len(response.Deleted)
 	response.FailedCount = len(response.Failed)
 
-	// TODO: Удалить ключ подтверждения из Redis после использования
+	// Удалить ключ подтверждения из Redis после использования
+	redisKey = fmt.Sprintf("confirmation:%s", request.ConfirmationKey)
+	if err := s.deps.RedisClient.Del(context.Background(), redisKey).Err(); err != nil {
+		// Логируем ошибку, но не прерываем выполнение
+		// log.Error().Err(err).Msg("Failed to delete confirmation key from Redis")
+	}
 
 	return response, nil
 }

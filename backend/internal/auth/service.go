@@ -11,9 +11,9 @@ import (
 )
 
 type AuthServiceDeps struct {
-	PartnerRepository *partner.PartnerRepository
-	AdminRepository   *admin.AdminRepository
-	JwtService        *jwt.JWT
+	PartnerRepository PartnerRepositoryInterface
+	AdminRepository   AdminRepositoryInterface
+	JwtService        JwtServiceInterface
 }
 
 type AuthService struct {

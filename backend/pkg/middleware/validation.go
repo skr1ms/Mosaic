@@ -6,6 +6,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog/log"
+	"github.com/skr1ms/mosaic/pkg/errors"
 	validatepartnerdata "github.com/skr1ms/mosaic/pkg/validatePartnerData"
 )
 
@@ -34,24 +35,21 @@ func ValidationMiddleware(structType interface{}) fiber.Handler {
 				logValidationError(c.IP(), c.Get("User-Agent"), c.Path(), "json_parse_error", err.Error(), time.Since(start))
 			}()
 
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error":   "Invalid JSON",
-				"message": err.Error(),
-			})
+			return errors.SendError(c, errors.BadRequestError("Invalid JSON format: "+err.Error()))
 		}
 
 		// Валидируем структуру
 		if err := ValidateStruct(payload); err != nil {
-			validationErrors := make([]fiber.Map, 0)
+			validationErrors := make([]errors.ValidationFieldError, 0)
 
 			if validationErrs, ok := err.(validator.ValidationErrors); ok {
 				for _, validationErr := range validationErrs {
-					validationErrors = append(validationErrors, fiber.Map{
-						"field":   validationErr.Field(),
-						"tag":     validationErr.Tag(),
-						"value":   validationErr.Value(),
-						"message": getErrorMessage(validationErr),
-					})
+					validationErrors = append(validationErrors, errors.CreateValidationFieldError(
+						validationErr.Field(),
+						validationErr.Tag(),
+						validationErr.Value(),
+						getErrorMessage(validationErr),
+					))
 				}
 			}
 
@@ -60,10 +58,7 @@ func ValidationMiddleware(structType interface{}) fiber.Handler {
 				logValidationError(c.IP(), c.Get("User-Agent"), c.Path(), "validation_error", err.Error(), time.Since(start))
 			}()
 
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error":  "Validation failed",
-				"errors": validationErrors,
-			})
+			return errors.SendError(c, errors.ValidationErrorWithFields(validationErrors))
 		}
 
 		// Асинхронно логируем успешную валидацию
@@ -99,6 +94,26 @@ func getErrorMessage(err validator.FieldError) string {
 		return "Неверный формат ссылки на Telegram"
 	case "whatsapp_link":
 		return "Неверный формат ссылки на WhatsApp"
+	case "domain":
+		return "Неверный формат доменного имени"
+	case "business_email":
+		return "Укажите корпоративный email (не gmail, mail.ru и т.д.)"
+	case "marketplace_url":
+		return "Неверный формат ссылки на маркетплейс"
+	case "ozon_url":
+		return "Ссылка должна вести на сайт Ozon"
+	case "wildberries_url":
+		return "Ссылка должна вести на сайт Wildberries"
+	case "partner_code":
+		return "Код партнера должен быть 4-значным числом от 0001 до 9999"
+	case "coupon_code":
+		return "Код купона должен содержать 12 цифр"
+	case "image_format":
+		return "Поддерживаемые форматы: JPG, PNG, GIF, BMP, WebP"
+	case "image_size":
+		return "Неподдерживаемый размер мозаики"
+	case "image_style":
+		return "Неподдерживаемый стиль обработки"
 	case "oneof":
 		return "Недопустимое значение"
 	default:

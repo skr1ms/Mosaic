@@ -1,8 +1,10 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -24,8 +26,10 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Port        string
-	FrontendURL string
+	Port              string
+	FrontendURL       string
+	PaymentSuccessURL string
+	PaymentFailureURL string
 }
 
 type PostgresConfig struct {
@@ -102,10 +106,12 @@ func NewConfig() (*Config, error) {
 		log.Fatal().Err(err).Msg("Failed to load config")
 	}
 
-	return &Config{
+	config := &Config{
 		ServerConfig: ServerConfig{
-			Port:        os.Getenv("SERVER_PORT"),
-			FrontendURL: os.Getenv("FRONTEND_URL"),
+			Port:              os.Getenv("SERVER_PORT"),
+			FrontendURL:       os.Getenv("FRONTEND_URL"),
+			PaymentSuccessURL: getEnvOrDefault("PAYMENT_SUCCESS_URL", "http://localhost:3000/payment/success"),
+			PaymentFailureURL: getEnvOrDefault("PAYMENT_FAILURE_URL", "http://localhost:3000/payment/failure"),
 		},
 		PostgresConfig: PostgresConfig{
 			URL: os.Getenv("DATABASE_URL"),
@@ -165,7 +171,89 @@ func NewConfig() (*Config, error) {
 			DefaultOzonLink:        getEnvOrDefault("DEFAULT_OZON_LINK", ""),
 			DefaultWildberriesLink: getEnvOrDefault("DEFAULT_WILDBERRIES_LINK", ""),
 		},
-	}, nil
+	}
+
+	// Валидация обязательных переменных окружения
+	if err := validateConfig(config); err != nil {
+		log.Fatal().Err(err).Msg("Configuration validation failed")
+		return nil, err
+	}
+
+	return config, nil
+}
+
+// validateConfig проверяет обязательные поля конфигурации
+func validateConfig(config *Config) error {
+	var missingVars []string
+
+	// Критически важные переменные для работы системы
+	if config.ServerConfig.Port == "" {
+		missingVars = append(missingVars, "SERVER_PORT")
+	}
+	if config.PostgresConfig.URL == "" {
+		missingVars = append(missingVars, "DATABASE_URL")
+	}
+	if config.RedisConfig.URL == "" {
+		missingVars = append(missingVars, "REDIS_URL")
+	}
+	if config.AuthConfig.AccessTokenSecret == "" {
+		missingVars = append(missingVars, "ACCESS_TOKEN_SECRET")
+	}
+	if config.AuthConfig.RefreshTokenSecret == "" {
+		missingVars = append(missingVars, "REFRESH_TOKEN_SECRET")
+	}
+
+	// Переменные для платежной системы (критично для безопасности)
+	if config.AlphaBankConfig.Username == "" {
+		missingVars = append(missingVars, "ALFA_BANK_USERNAME")
+	}
+	if config.AlphaBankConfig.Password == "" {
+		missingVars = append(missingVars, "ALFA_BANK_PASSWORD")
+	}
+	if config.AlphaBankConfig.WebhookSecret == "" {
+		missingVars = append(missingVars, "ALFA_BANK_WEBHOOK_SECRET")
+	}
+
+	// Переменные для S3 (важно для хранения изображений)
+	if config.S3MinioConfig.Endpoint == "" {
+		missingVars = append(missingVars, "MINIO_ENDPOINT")
+	}
+	if config.S3MinioConfig.AccessKeyID == "" {
+		missingVars = append(missingVars, "MINIO_ACCESS_KEY")
+	}
+	if config.S3MinioConfig.SecretAccessKey == "" {
+		missingVars = append(missingVars, "MINIO_SECRET_KEY")
+	}
+
+	// Переменные для SMTP (важно для отправки email)
+	if config.SMTPConfig.Host == "" {
+		missingVars = append(missingVars, "SMTP_HOST")
+	}
+	if config.SMTPConfig.Username == "" {
+		missingVars = append(missingVars, "SMTP_USERNAME")
+	}
+	if config.SMTPConfig.Password == "" {
+		missingVars = append(missingVars, "SMTP_PASSWORD")
+	}
+	if config.SMTPConfig.From == "" {
+		missingVars = append(missingVars, "SMTP_FROM")
+	}
+
+	// Переменные для reCAPTCHA (важно для безопасности)
+	if config.RecaptchaConfig.SecretKey == "" {
+		missingVars = append(missingVars, "RECAPTCHA_SECRET_KEY")
+	}
+
+	// Переменные для Stable Diffusion (важно для основной функциональности)
+	if config.StableDiffusionConfig.BaseURL == "" {
+		missingVars = append(missingVars, "STABLE_DIFFUSION_URL")
+	}
+
+	if len(missingVars) > 0 {
+		return fmt.Errorf("missing required environment variables: %s", strings.Join(missingVars, ", "))
+	}
+
+	return nil
 }
 
 func getAlphaBankUrl() string {

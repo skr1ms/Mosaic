@@ -4,27 +4,25 @@ import (
 	"context"
 	"fmt"
 	"mime/multipart"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/skr1ms/mosaic/config"
 	"github.com/skr1ms/mosaic/internal/coupon"
 	"github.com/skr1ms/mosaic/internal/image"
-	"github.com/skr1ms/mosaic/internal/partner"
 	"github.com/skr1ms/mosaic/internal/payment"
 	"github.com/skr1ms/mosaic/internal/types"
-	"github.com/skr1ms/mosaic/pkg/email"
 	"github.com/skr1ms/mosaic/pkg/randomCouponCode"
 )
 
 type PublicServiceDeps struct {
-	CouponRepository  *coupon.CouponRepository
-	ImageRepository   *image.ImageRepository
-	PartnerRepository *partner.PartnerRepository
-	ImageService      *image.ImageService
-	PaymentService    *payment.PaymentService
-	EmailService      *email.Mailer
+	CouponRepository  CouponRepositoryInterface
+	ImageRepository   ImageRepositoryInterface
+	PartnerRepository PartnerRepositoryInterface
+	ImageService      ImageServiceInterface
+	PaymentService    PaymentServiceInterface
+	EmailService      EmailServiceInterface
+	Config            *config.Config
 }
 
 type PublicService struct {
@@ -84,6 +82,10 @@ func (s *PublicService) GetCouponByCode(code string) (map[string]interface{}, er
 
 // ActivateCoupon активирует купон для последующей обработки
 func (s *PublicService) ActivateCoupon(code string, req ActivateCouponRequest) (map[string]interface{}, error) {
+	if req.Email == "" {
+		return nil, fmt.Errorf("email is required")
+	}
+
 	coupon, err := s.deps.CouponRepository.GetByCode(context.Background(), code)
 	if err != nil {
 		return nil, fmt.Errorf("coupon not found: %w", err)
@@ -180,8 +182,7 @@ func (s *PublicService) EditImage(imageID string, req types.EditImageRequest) (m
 	}, nil
 }
 
-// ProcessImage применяет стиль обработки к изображению (устаревший метод, используйте ImageService)
-// Оставлен для обратной совместимости
+// ProcessImage применяет стиль обработки к изображению
 func (s *PublicService) ProcessImage(imageID string, req types.ProcessImageRequest) (map[string]interface{}, error) {
 	imageUUID, err := uuid.Parse(imageID)
 	if err != nil {
@@ -395,7 +396,7 @@ func (s *PublicService) PurchaseCoupon(req PurchaseCouponRequest) (map[string]in
 		Size:      req.Size,
 		Style:     req.Style,
 		Email:     req.Email,
-		ReturnURL: "http://localhost:3000/payment/success", // TODO: получать из конфига
+		ReturnURL: s.deps.Config.ServerConfig.PaymentSuccessURL,
 		Language:  "ru",
 	}
 
@@ -441,31 +442,18 @@ func (s *PublicService) GetAvailableStyles() []map[string]interface{} {
 	}
 }
 
-// Вспомогательные функции
-
 func isNumeric(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+
+	if len(s) < 12 {
+		return false
+	}
 	for _, char := range s {
 		if char < '0' || char > '9' {
 			return false
 		}
 	}
 	return true
-}
-
-func isValidImageType(file *multipart.FileHeader) bool {
-	ext := strings.ToLower(filepath.Ext(file.Filename))
-	return ext == ".jpg" || ext == ".jpeg" || ext == ".png"
-}
-
-func (s *PublicService) saveUploadedFile(file *multipart.FileHeader, couponID uuid.UUID) (string, error) {
-	// TODO: Реализовать сохранение файла
-	// Создать директорию uploads/images/[couponID]/
-	// Сохранить файл с оригинальным именем
-	// Вернуть путь к сохраненному файлу
-
-	filename := file.Filename
-	path := filepath.Join("uploads", "images", couponID.String(), filename)
-
-	// Реализация сохранения файла будет в image service
-	return path, nil
 }

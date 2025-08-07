@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"github.com/skr1ms/mosaic/pkg/middleware"
+	"github.com/skr1ms/mosaic/pkg/utils"
 )
 
 type StatsHandlerDeps struct {
@@ -71,9 +72,7 @@ func (h *StatsHandler) GetGeneralStats(c *fiber.Ctx) error {
 	stats, err := h.deps.StatsService.GetGeneralStats(c.Context())
 	if err != nil {
 		log.Error().Err(err).Msg("failed to get general stats")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get general statistics",
-		})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Failed to get general statistics")
 	}
 
 	return c.JSON(stats)
@@ -96,17 +95,13 @@ func (h *StatsHandler) GetPartnerStats(c *fiber.Ctx) error {
 	partnerIDStr := c.Params("partner_id")
 	partnerID, err := uuid.Parse(partnerIDStr)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid partner ID",
-		})
+		return utils.LocalizedError(c, fiber.StatusBadRequest, "partner_not_found", "Invalid partner ID")
 	}
 
 	stats, err := h.deps.StatsService.GetPartnerStats(c.Context(), partnerID)
 	if err != nil {
 		log.Error().Err(err).Str("partner_id", partnerID.String()).Msg("failed to get partner stats")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get partner statistics",
-		})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Failed to get partner statistics")
 	}
 
 	return c.JSON(stats)
@@ -126,9 +121,7 @@ func (h *StatsHandler) GetAllPartnersStats(c *fiber.Ctx) error {
 	stats, err := h.deps.StatsService.GetAllPartnersStats(c.Context())
 	if err != nil {
 		log.Error().Err(err).Msg("failed to get all partners stats")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get partners statistics",
-		})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Failed to get partners statistics")
 	}
 
 	return c.JSON(stats)
@@ -156,9 +149,7 @@ func (h *StatsHandler) GetTimeSeriesStats(c *fiber.Ctx) error {
 	if partnerIDStr := c.Query("partner_id"); partnerIDStr != "" {
 		partnerID, err := uuid.Parse(partnerIDStr)
 		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "Invalid partner ID",
-			})
+			return utils.LocalizedError(c, fiber.StatusBadRequest, "partner_not_found", "Invalid partner ID")
 		}
 		filters.PartnerID = &partnerID
 	}
@@ -178,9 +169,7 @@ func (h *StatsHandler) GetTimeSeriesStats(c *fiber.Ctx) error {
 	stats, err := h.deps.StatsService.GetTimeSeriesStats(c.Context(), filters)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to get time series stats")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get time series statistics",
-		})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Failed to get time series statistics")
 	}
 
 	return c.JSON(stats)
@@ -200,9 +189,7 @@ func (h *StatsHandler) GetSystemHealth(c *fiber.Ctx) error {
 	health, err := h.deps.StatsService.GetSystemHealth(c.Context())
 	if err != nil {
 		log.Error().Err(err).Msg("failed to get system health")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get system health",
-		})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Failed to get system health")
 	}
 
 	return c.JSON(health)
@@ -230,9 +217,7 @@ func (h *StatsHandler) GetCouponsByStatus(c *fiber.Ctx) error {
 	stats, err := h.deps.StatsService.GetCouponsByStatus(c.Context(), partnerID)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to get coupons by status stats")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get coupons by status statistics",
-		})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Failed to get coupons by status statistics")
 	}
 
 	return c.JSON(stats)
@@ -259,9 +244,7 @@ func (h *StatsHandler) GetCouponsBySizes(c *fiber.Ctx) error {
 	stats, err := h.deps.StatsService.GetCouponsBySize(c.Context(), partnerID)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to get coupons by size stats")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get coupons by size statistics",
-		})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Failed to get coupons by size statistics")
 	}
 
 	return c.JSON(stats)
@@ -288,9 +271,7 @@ func (h *StatsHandler) GetCouponsByStyles(c *fiber.Ctx) error {
 	stats, err := h.deps.StatsService.GetCouponsByStyle(c.Context(), partnerID)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to get coupons by style stats")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get coupons by style statistics",
-		})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Failed to get coupons by style statistics")
 	}
 
 	return c.JSON(stats)
@@ -318,9 +299,7 @@ func (h *StatsHandler) GetTopPartners(c *fiber.Ctx) error {
 	stats, err := h.deps.StatsService.GetTopPartners(c.Context(), limit)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to get top partners")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get top partners",
-		})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Failed to get top partners")
 	}
 
 	return c.JSON(stats)
@@ -365,17 +344,13 @@ func (h *StatsHandler) GetMyPartnerStats(c *fiber.Ctx) error {
 	// Получаем ID партнера из middleware (предполагается, что middleware установил его)
 	partnerID := c.Locals("partner_id")
 	if partnerID == nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Partner not authenticated",
-		})
+		return utils.LocalizedError(c, fiber.StatusUnauthorized, "error_unauthorized", "Partner not authenticated")
 	}
 
 	stats, err := h.deps.StatsService.GetPartnerStats(c.Context(), partnerID.(uuid.UUID))
 	if err != nil {
 		log.Error().Err(err).Str("partner_id", partnerID.(uuid.UUID).String()).Msg("failed to get partner stats")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get partner statistics",
-		})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Failed to get partner statistics")
 	}
 
 	return c.JSON(stats)
@@ -395,18 +370,14 @@ func (h *StatsHandler) GetMyPartnerCouponsByStatus(c *fiber.Ctx) error {
 	log := zerolog.Ctx(c.UserContext())
 	partnerID := c.Locals("partner_id")
 	if partnerID == nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Partner not authenticated",
-		})
+		return utils.LocalizedError(c, fiber.StatusUnauthorized, "error_unauthorized", "Partner not authenticated")
 	}
 
 	partnerUUID := partnerID.(uuid.UUID)
 	stats, err := h.deps.StatsService.GetCouponsByStatus(c.Context(), &partnerUUID)
 	if err != nil {
 		log.Error().Err(err).Str("partner_id", partnerUUID.String()).Msg("failed to get partner coupons by status")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get coupons by status statistics",
-		})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Failed to get coupons by status statistics")
 	}
 
 	return c.JSON(stats)
@@ -429,9 +400,7 @@ func (h *StatsHandler) GetMyPartnerTimeSeriesStats(c *fiber.Ctx) error {
 	log := zerolog.Ctx(c.UserContext())
 	partnerID := c.Locals("partner_id")
 	if partnerID == nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Partner not authenticated",
-		})
+		return utils.LocalizedError(c, fiber.StatusUnauthorized, "error_unauthorized", "Partner not authenticated")
 	}
 
 	partnerUUID := partnerID.(uuid.UUID)
@@ -454,9 +423,7 @@ func (h *StatsHandler) GetMyPartnerTimeSeriesStats(c *fiber.Ctx) error {
 	stats, err := h.deps.StatsService.GetTimeSeriesStats(c.Context(), filters)
 	if err != nil {
 		log.Error().Err(err).Str("partner_id", partnerUUID.String()).Msg("failed to get partner time series stats")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get time series statistics",
-		})
+		return utils.LocalizedError(c, fiber.StatusInternalServerError, "error_internal", "Failed to get time series statistics")
 	}
 
 	return c.JSON(stats)
