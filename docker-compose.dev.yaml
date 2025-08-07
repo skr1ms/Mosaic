@@ -77,7 +77,6 @@ services:
     volumes:
       - ./monitoring/promtail.yml:/etc/promtail/config.yml
       - /var/log:/var/log:ro
-      - ./backend/logs:/app/logs:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     command: 
       - "-config.file=/etc/promtail/config.yml"
@@ -129,7 +128,6 @@ services:
         condition: service_healthy
     volumes:
       - ./backend/.env:/app/.env
-      - ./backend/logs:/app/logs
 
 volumes:
   postgres_dev_data:

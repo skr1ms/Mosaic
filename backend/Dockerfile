@@ -14,6 +14,7 @@ WORKDIR /app
 
 COPY --from=builder /app/main .
 COPY --from=builder /app/docs ./docs
+COPY --from=builder /app/locales ./locales
 
 EXPOSE 3000
 

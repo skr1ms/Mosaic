@@ -105,9 +105,10 @@ func InitializeApp() *fiber.App {
 	app.Use(middleware.AuditLogger())
 
 	app.Use(fiberi18n.New(&fiberi18n.Config{
-		RootPath:        "./locales",
-		AcceptLanguages: []language.Tag{language.Russian, language.English, language.Spanish},
-		DefaultLanguage: language.Russian,
+		RootPath:         "./locales",
+		AcceptLanguages:  []language.Tag{language.Russian, language.English, language.Spanish},
+		DefaultLanguage:  language.Russian,
+		FormatBundleFile: "json",
 	}))
 
 	brandingMiddleware := middleware.BrandingMiddleware(database.DB, middleware.DefaultBranding{
