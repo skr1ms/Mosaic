@@ -31,6 +31,7 @@ const AdminPages = () => {
                 </div>
             }>
                 <Routes>
+                    {/* Главная панель - доступна всем */}
                     <Route path="/dashboard" element={<Dashboard />} />
 
                     {/* Админские маршруты - только для админов */}
@@ -49,10 +50,13 @@ const AdminPages = () => {
 
                     {/* Аналитика - доступна всем (админам и партнерам) */}
                     <Route path="/analytics" element={<Analytics />} />
+                    
+                    {/* Статистика по партнерам - только для админов */}
                     {userRole === 'admin' && (
                         <Route path="/analytics/partners" element={<PartnerAnalytics />} />
                     )}
                     
+                    {/* Default redirect */}
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 </Routes>
             </Suspense>

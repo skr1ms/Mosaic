@@ -8,9 +8,10 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const token = localStorage.getItem('token');
   const userRole = localStorage.getItem('userRole');
 
-  if (!token) {
-    // Если нет токена, перенаправляем на страницу логина
-    return <Navigate to="/login" state={{ from: location }} replace />;
+  if (!token || !token.startsWith('Bearer ')) {
+    // Если нет токена или токен не в формате Bearer, перенаправляем на главную страницу
+    // которая автоматически покажет страницу логина
+    return <Navigate to="/" replace />;
   }
 
   // Если указаны разрешенные роли, проверяем роль пользователя

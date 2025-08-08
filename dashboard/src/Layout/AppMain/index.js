@@ -5,42 +5,13 @@ import { ToastContainer } from "react-toastify";
 
 import ProtectedRoute from "../../components/ProtectedRoute";
 
-const UserPages = lazy(() => import("../../DemoPages/UserPages"));
-const Applications = lazy(() => import("../../DemoPages/Applications"));
-const Dashboards = lazy(() => import("../../DemoPages/Dashboards"));
 const AdminPages = lazy(() => import("../../DemoPages/AdminPages"));
-const Login = lazy(() => import("../../pages/Login"));
-
-const Widgets = lazy(() => import("../../DemoPages/Widgets"));
-const Elements = lazy(() => import("../../DemoPages/Elements"));
-const Components = lazy(() => import("../../DemoPages/Components"));
-const Charts = lazy(() => import("../../DemoPages/Charts"));
-const Forms = lazy(() => import("../../DemoPages/Forms"));
-const Tables = lazy(() => import("../../DemoPages/Tables"));
 
 const AppMain = () => {
     return (
         <Fragment>
             <Routes>
-                {/* Login */}
-                <Route path="/login" element={
-                    <Suspense fallback={
-                        <div className="loader-container">
-                            <div className="loader-container-inner">
-                                <div className="text-center">
-                                    <Loader type="ball-pulse-rise"/>
-                                </div>
-                                <h6 className="mt-5">
-                                    Загрузка страницы входа...
-                                </h6>
-                            </div>
-                        </div>
-                    }>
-                        <Login />
-                    </Suspense>
-                } />
-
-                {/* Protected Admin Pages */}
+                {/* Dashboard - доступен всем авторизованным пользователям */}
                 <Route path="/dashboard" element={
                     <ProtectedRoute>
                         <Suspense fallback={
@@ -50,7 +21,7 @@ const AppMain = () => {
                                         <Loader type="ball-pulse-rise"/>
                                     </div>
                                     <h6 className="mt-5">
-                                        Загрузка админ панели...
+                                        Загрузка панели управления...
                                     </h6>
                                 </div>
                             </div>
@@ -60,6 +31,7 @@ const AppMain = () => {
                     </ProtectedRoute>
                 } />
 
+                {/* Админские маршруты - только для админов */}
                 <Route path="/partners/*" element={
                     <ProtectedRoute allowedRoles={['admin']}>
                         <Suspense fallback={
@@ -98,6 +70,7 @@ const AppMain = () => {
                     </ProtectedRoute>
                 } />
 
+                {/* Аналитика - доступна всем (админам и партнерам) */}
                 <Route path="/analytics" element={
                     <ProtectedRoute>
                         <Suspense fallback={
@@ -136,7 +109,7 @@ const AppMain = () => {
                     </ProtectedRoute>
                 } />
 
-                {/* Default redirect */}
+                {/* Default redirect - перенаправляем на dashboard */}
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Routes>
             <ToastContainer/>

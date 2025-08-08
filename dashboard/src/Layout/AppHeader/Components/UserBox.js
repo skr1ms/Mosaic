@@ -35,7 +35,7 @@ const UserBox = () => {
     // Получаем информацию о пользователе из localStorage
     const role = localStorage.getItem('userRole') || 'admin';
     const email = localStorage.getItem('userEmail') || '';
-    const name = role === 'admin' ? 'Администратор' : 'Партнер';
+    const name = localStorage.getItem('userName') || (role === 'admin' ? 'Администратор' : 'Партнер');
     
     setUserInfo({ role, email, name });
   }, []);
@@ -46,9 +46,21 @@ const UserBox = () => {
     localStorage.removeItem('userRole');
     localStorage.removeItem('userId');
     localStorage.removeItem('userEmail');
+    localStorage.removeItem('userName');
     
-    // Перенаправляем на страницу логина
-    navigate('/login');
+    // Перенаправляем на главную страницу (которая покажет логин)
+    navigate('/', { replace: true });
+  };
+
+  const getRoleDisplayName = (role) => {
+    switch (role) {
+      case 'admin':
+        return 'Администратор';
+      case 'partner':
+        return 'Партнер';
+      default:
+        return 'Пользователь';
+    }
   };
 
   return (
@@ -83,8 +95,13 @@ const UserBox = () => {
                                 {userInfo.name}
                               </div>
                               <div className="widget-subheading opacity-8">
-                                {userInfo.email}
+                                {getRoleDisplayName(userInfo.role)}
                               </div>
+                              {userInfo.email && (
+                                <div className="widget-subheading opacity-6">
+                                  {userInfo.email}
+                                </div>
+                              )}
                             </div>
                             <div className="widget-content-right me-2">
                               <Button 
@@ -92,6 +109,7 @@ const UserBox = () => {
                                 color="focus"
                                 onClick={handleLogout}
                               >
+                                <i className="pe-7s-power mr-2"></i>
                                 Выход
                               </Button>
                             </div>

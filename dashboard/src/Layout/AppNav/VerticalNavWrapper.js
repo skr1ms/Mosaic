@@ -86,10 +86,11 @@ const Nav = ({ enableMobileMenu, setEnableMobileMenu }) => {
   return (
     <Fragment>
       <div className="vertical-nav-menu">
+        {/* Главное меню - доступно всем */}
         <h5 className="app-sidebar__heading">ГЛАВНАЯ</h5>
         <ul className="metismenu-container">{renderMenu(MainNav)}</ul>
 
-        {/* Показываем админские разделы только для админов */}
+        {/* Админские разделы - только для админов */}
         {userRole === 'admin' && (
           <>
             <h5 className="app-sidebar__heading">АДМИНИСТРИРОВАНИЕ</h5>
@@ -97,15 +98,15 @@ const Nav = ({ enableMobileMenu, setEnableMobileMenu }) => {
           </>
         )}
 
-        {/* Показываем партнерские разделы только для партнеров */}
+        {/* Партнерские разделы - только для партнеров */}
         {userRole === 'partner' && (
           <>
-            <h5 className="app-sidebar__heading">АДМИНИСТРИРОВАНИЕ</h5>
+            <h5 className="app-sidebar__heading">УПРАВЛЕНИЕ</h5>
             <ul className="metismenu-container">{renderMenu(PartnerNav)}</ul>
           </>
         )}
 
-        {/* Системные операции показываем только админам */}
+        {/* Системные операции - только для админов */}
         {userRole === 'admin' && (
           <>
             <h5 className="app-sidebar__heading">СИСТЕМА</h5>
