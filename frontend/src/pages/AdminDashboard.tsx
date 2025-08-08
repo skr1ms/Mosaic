@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
+import Chat from '../components/Chat';
 
 interface DashboardStats {
   totalPartners: number;
@@ -26,13 +28,35 @@ interface PartnerAnalytics {
   churnRate: number;
 }
 
-const AdminDashboard: React.FC = () => {
+const AdminDashboard = () => {
+  const navigate = useNavigate();
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
   const [systemStats, setSystemStats] = useState<SystemStats | null>(null);
   const [analytics, setAnalytics] = useState<PartnerAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<'admin' | 'partner'>('admin');
+  const [userId, setUserId] = useState<string>('');
 
   useEffect(() => {
+    // Проверяем авторизацию
+    const token = localStorage.getItem('access_token');
+    const role = localStorage.getItem('user_role') as 'admin' | 'partner';
+    const id = localStorage.getItem('user_id');
+
+    if (!token || !role || !id) {
+      navigate('/login');
+      return;
+    }
+
+    setUserRole(role);
+    setUserId(id);
+
+    // Если это партнер, перенаправляем на партнерскую панель
+    if (role === 'partner') {
+      navigate('/partner/dashboard');
+      return;
+    }
+
     const fetchData = async () => {
       try {
         const [dashboardRes, systemRes, analyticsRes] = await Promise.all([
@@ -52,7 +76,12 @@ const AdminDashboard: React.FC = () => {
     };
 
     fetchData();
-  }, []);
+  }, [navigate]);
+
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate('/login');
+  };
 
   if (loading) {
     return (
@@ -64,12 +93,24 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
+      {/* Header */}
       <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-6">
+          <div className="flex justify-between items-center py-6">
             <h1 className="text-3xl font-bold text-gray-900">
               Панель администратора
             </h1>
+            <div className="flex items-center space-x-4">
+              <span className="text-gray-600">
+                Администратор: {localStorage.getItem('user_login')}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
+              >
+                Выйти
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -137,6 +178,17 @@ const AdminDashboard: React.FC = () => {
                     {systemStats.systemHealth === 'healthy' ? '🟢 Здоровая' : '🔴 Проблемы'}
                   </span>
                 </div>
+                <div className="flex justify-between">
+                  <span>Фронтенд:</span>
+                  <a 
+                    href="http://localhost:5173" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="font-semibold text-blue-600 hover:text-blue-800"
+                  >
+                    localhost:5173 →
+                  </a>
+                </div>
               </div>
             </div>
           )}
@@ -149,7 +201,7 @@ const AdminDashboard: React.FC = () => {
               <div className="mb-6">
                 <h3 className="text-lg font-medium mb-3">Топ партнеры</h3>
                 <div className="space-y-2">
-                  {analytics.topPartners.map((partner, index) => (
+                  {analytics.topPartners.map((partner: { name: string; coupons: number; revenue: number }, index: number) => (
                     <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
                       <span>{partner.name}</span>
                       <div className="text-sm text-gray-600">
@@ -178,6 +230,9 @@ const AdminDashboard: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Чат */}
+      <Chat userRole={userRole} userId={userId} />
     </div>
   );
 };
@@ -189,7 +244,7 @@ interface StatCardProps {
   color: string;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color }) => (
+const StatCard = ({ title, value, icon, color }: StatCardProps) => (
   <div className="bg-white rounded-lg shadow p-6">
     <div className="flex items-center">
       <div className={`${color} rounded-md p-3 text-white text-2xl mr-4`}>

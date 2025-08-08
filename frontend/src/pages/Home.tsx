@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-const Home: React.FC = () => {
+const Home = () => {
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="bg-white shadow">
@@ -19,7 +19,7 @@ const Home: React.FC = () => {
           
           {/* Админская панель */}
           <Link
-            to="/admin/dashboard"
+            to="/login?type=admin"
             className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
           >
             <div className="text-4xl mb-4">👨‍💼</div>
@@ -31,7 +31,7 @@ const Home: React.FC = () => {
 
           {/* Панель партнера */}
           <Link
-            to="/partner/login"
+            to="/login?type=partner"
             className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
           >
             <div className="text-4xl mb-4">🤝</div>

@@ -1,7 +1,8 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import AdminDashboard from './pages/AdminDashboard';
-import PartnerLogin from './pages/PartnerLogin';
+import PartnerDashboard from './pages/PartnerDashboard';
+import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 
@@ -10,10 +11,11 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/partner/login" element={<PartnerLogin />} />
-        <Route path="/partner/forgot-password" element={<ForgotPassword />} />
-        <Route path="/partner/reset-password" element={<ResetPassword />} />
+        <Route path="/partner/dashboard" element={<PartnerDashboard />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
     </BrowserRouter>
   );

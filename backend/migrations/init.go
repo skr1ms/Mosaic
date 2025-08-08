@@ -7,6 +7,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/skr1ms/mosaic/config"
 	"github.com/skr1ms/mosaic/internal/admin"
+	"github.com/skr1ms/mosaic/internal/chat"
 	"github.com/skr1ms/mosaic/internal/coupon"
 	"github.com/skr1ms/mosaic/internal/image"
 	"github.com/skr1ms/mosaic/internal/partner"
@@ -34,6 +35,7 @@ func Init(cfg *config.Config) {
 		(*coupon.Coupon)(nil),
 		(*image.Image)(nil),
 		(*payment.Order)(nil),
+		(*chat.Message)(nil),
 	}
 
 	for _, model := range models {

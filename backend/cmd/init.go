@@ -33,6 +33,7 @@ import (
 	_ "github.com/skr1ms/mosaic/docs" // Swagger docs
 	"github.com/skr1ms/mosaic/internal/admin"
 	"github.com/skr1ms/mosaic/internal/auth"
+	"github.com/skr1ms/mosaic/internal/chat"
 	"github.com/skr1ms/mosaic/internal/coupon"
 	"github.com/skr1ms/mosaic/internal/image"
 	"github.com/skr1ms/mosaic/internal/partner"
@@ -101,6 +102,7 @@ func InitializeApp() *fiber.App {
 	partnerRepo := partner.NewPartnerRepository(database.DB)
 	imageRepo := image.NewRepository(database.DB)
 	paymentRepo := payment.NewPaymentRepository(database.DB)
+	chatRepo := chat.NewRepository(database.DB)
 
 	// service
 	mailSender := email.NewMailer(cfg)
@@ -157,6 +159,8 @@ func InitializeApp() *fiber.App {
 		RedisClient:       redisClient,
 	})
 
+	chatService := chat.NewService(chatRepo)
+
 	cronService := stats.NewCronService(statsService)
 	cronService.Start()
 
@@ -199,6 +203,8 @@ func InitializeApp() *fiber.App {
 	stats.NewStatsHandler(api, &stats.StatsHandlerDeps{
 		StatsService: statsService,
 	})
+
+	chat.NewHandler(api, chatService, jwtService)
 
 	// Prometheus metrics endpoint
 	app.Get("/metrics", adaptor.HTTPHandler(promhttp.Handler()))
