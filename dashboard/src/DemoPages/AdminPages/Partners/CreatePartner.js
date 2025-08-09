@@ -2,7 +2,7 @@ import React, { Fragment, useState } from 'react';
 import {
     Row, Col, Card, CardBody, CardTitle, CardHeader,
     Button, Form, FormGroup, Label, Input, FormFeedback,
-    Alert
+    Alert, InputGroup, InputGroupText
 } from 'reactstrap';
 
 const CreatePartner = () => {
@@ -26,6 +26,8 @@ const CreatePartner = () => {
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitMessage, setSubmitMessage] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -186,30 +188,50 @@ const CreatePartner = () => {
                                     <Col md="6">
                                         <FormGroup>
                                             <Label for="password">Пароль *</Label>
-                                            <Input
-                                                type="password"
-                                                id="password"
-                                                name="password"
-                                                value={formData.password}
-                                                onChange={handleInputChange}
-                                                invalid={!!errors.password}
-                                                placeholder="Минимум 6 символов"
-                                            />
+                                            <InputGroup>
+                                                <Input
+                                                    type={showPassword ? "text" : "password"}
+                                                    id="password"
+                                                    name="password"
+                                                    value={formData.password}
+                                                    onChange={handleInputChange}
+                                                    invalid={!!errors.password}
+                                                    placeholder="Минимум 6 символов"
+                                                />
+                                                <InputGroupText>
+                                                    <Button
+                                                        color="outline-secondary"
+                                                        onClick={() => setShowPassword(!showPassword)}
+                                                    >
+                                                        <i className={`fa ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                                                    </Button>
+                                                </InputGroupText>
+                                            </InputGroup>
                                             <FormFeedback>{errors.password}</FormFeedback>
                                         </FormGroup>
                                     </Col>
                                     <Col md="6">
                                         <FormGroup>
                                             <Label for="confirmPassword">Подтверждение пароля *</Label>
-                                            <Input
-                                                type="password"
-                                                id="confirmPassword"
-                                                name="confirmPassword"
-                                                value={formData.confirmPassword}
-                                                onChange={handleInputChange}
-                                                invalid={!!errors.confirmPassword}
-                                                placeholder="Повторите пароль"
-                                            />
+                                            <InputGroup>
+                                                <Input
+                                                    type={showConfirmPassword ? "text" : "password"}
+                                                    id="confirmPassword"
+                                                    name="confirmPassword"
+                                                    value={formData.confirmPassword}
+                                                    onChange={handleInputChange}
+                                                    invalid={!!errors.confirmPassword}
+                                                    placeholder="Повторите пароль"
+                                                />
+                                                <InputGroupText>
+                                                    <Button
+                                                        color="outline-secondary"
+                                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                    >
+                                                        <i className={`fa ${showConfirmPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                                                    </Button>
+                                                </InputGroupText>
+                                            </InputGroup>
                                             <FormFeedback>{errors.confirmPassword}</FormFeedback>
                                         </FormGroup>
                                     </Col>

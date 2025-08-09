@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/api';
+import eyeIcon from './eye_icon.png';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -11,6 +12,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showTestData, setShowTestData] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -144,7 +146,7 @@ const Login = () => {
 
               <div className="mb-3">
                 <label htmlFor="email" className="form-label d-flex align-items-center">
-                  <i className="pe-7s-mail mr-2" style={{ lineHeight: '1' }}></i>
+                  <i className="pe-7s-mail mr-2" style={{ lineHeight: '1', verticalAlign: 'middle', display: 'inline-flex', alignItems: 'center', marginTop: '2px' }}></i>
                   Email/Логин
                 </label>
                 <input
@@ -164,16 +166,34 @@ const Login = () => {
                   <i className="pe-7s-lock mr-2"></i>
                   Пароль
                 </label>
-                <input
-                  type="password"
-                  className="form-control"
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Введите ваш пароль"
-                  required
-                />
+                <div className="input-group">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    className="form-control border-end-0"
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="Введите ваш пароль"
+                    required
+                  />
+                  <span 
+                    className="input-group-text bg-transparent border-start-0" 
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    <img 
+                      src={eyeIcon} 
+                      alt={showPassword ? "Скрыть пароль" : "Показать пароль"}
+                      style={{ 
+                        width: '16px', 
+                        height: '16px',
+                        filter: showPassword ? 'brightness(0.7)' : 'brightness(1)',
+                        transition: 'filter 0.2s ease'
+                      }}
+                    />
+                  </span>
+                </div>
               </div>
 
               <button
