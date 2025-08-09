@@ -4,10 +4,10 @@ FROM nginx:alpine
 RUN mkdir -p /var/log/nginx
 
 # Копируем готовые HTML страницы из pages
-COPY ../pages /usr/share/nginx/html
+COPY pages /usr/share/nginx/html
 
 # Копируем nginx конфиг
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Устанавливаем правильные права для nginx
 RUN chown -R nginx:nginx /usr/share/nginx/html && \
