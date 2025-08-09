@@ -1,85 +1,22 @@
 services:
-  postgres:
-    image: postgres:17-alpine
-    container_name: mosaic_postgres
-    environment:
-      POSTGRES_DB: mosaic
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    image: redis:8-alpine
-    container_name: mosaic_redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # minio:
-  #   image: minio/minio:latest
-  #   container_name: mosaic_minio
-  #   environment:
-  #     MINIO_ROOT_USER: minioadmin
-  #     MINIO_ROOT_PASSWORD: minioadmin123
-  #   ports:
-  #     - "9000:9000"
-  #     - "9001:9001"
-  #   volumes:
-  #     - minio_data:/data
-  #   command: server /data --console-address ":9001"
-
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: mosaic_backend
-    environment:
-      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/mosaic?sslmode=disable
-      - REDIS_URL=redis://redis:6379
-      - MINIO_ENDPOINT=minio:9000
-      - MINIO_ACCESS_KEY=minioadmin
-      - MINIO_SECRET_KEY=minioadmin123
-      - JWT_SECRET=your-secret-key
-    ports:
-      - "8080:8080"
-    dns:
-      - 8.8.8.8  
-      - 1.1.1.1
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    volumes:
-      - ./backend:/app
-    restart: unless-stopped
-
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: mosaic_frontend
-    ports:
-      - "3000:3000"
-    depends_on:
-      - backend
+    container_name: photo-doyoupaint-frontend
     restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      # Для продакшена раскомментируйте и настройте SSL сертификаты
+      # - ./ssl/cert.pem:/etc/nginx/ssl/cert.pem:ro
+      # - ./ssl/key.pem:/etc/nginx/ssl/key.pem:ro
+      - ./logs/nginx:/var/log/nginx
+    environment:
+      - NODE_ENV=production
+    networks:
+      - photo-network
 
-volumes:
-  postgres_data:
-  redis_data:
-  minio_data:
+networks:
+  photo-network:
+    driver: bridge
