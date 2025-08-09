@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактор изображений - Алмазная мозаика</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/editor.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Шапка сайта -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <img src="assets/logo.svg" alt="Алмазная мозаика" id="partner-logo">
+                    <span id="partner-name">Алмазная мозаика</span>
+                </div>
+                
+                <nav class="nav">
+                    <ul class="nav-menu">
+                        <li><a href="index.html" class="nav-link">Главная</a></li>
+                        <li><a href="#" class="nav-link active">Редактор</a></li>
+                    </ul>
+                </nav>
+                
+                <div class="language-dropdown">
+                    <button class="lang-dropdown-btn" id="lang-dropdown-btn">
+                        <span id="current-lang">RU</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="lang-dropdown-menu" id="lang-dropdown-menu">
+                        <div class="lang-option" data-lang="ru">
+                            <span>RU</span>
+                            <i class="fas fa-check" style="display: none;"></i>
+                        </div>
+                        <div class="lang-option" data-lang="en">
+                            <span>EN</span>
+                            <i class="fas fa-check" style="display: none;"></i>
+                        </div>
+                        <div class="lang-option" data-lang="es">
+                            <span>ES</span>
+                            <i class="fas fa-check" style="display: none;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Основной контент -->
+    <main class="editor-main">
+        <div class="container">
+            <!-- Информация о купоне -->
+            <div class="coupon-info" id="coupon-info">
+                <div class="coupon-card">
+                    <h2><i class="fas fa-ticket-alt"></i> Информация о купоне</h2>
+                    <div class="coupon-details">
+                        <p><strong>Номер купона:</strong> <span id="coupon-number"></span></p>
+                        <p><strong>Размер:</strong> <span id="coupon-size"></span></p>
+                        <p><strong>Стиль:</strong> <span id="coupon-style"></span></p>
+                    </div>
+                    <div class="dev-mode-indicator" id="dev-mode-indicator" style="display: none;">
+                        <i class="fas fa-code"></i> Режим разработки
+                    </div>
+                </div>
+            </div>
+
+            <!-- Этапы процесса -->
+            <div class="process-steps">
+                <div class="step active" data-step="upload">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Загрузка изображения</div>
+                </div>
+                <div class="step" data-step="edit">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Редактирование</div>
+                </div>
+                <div class="step" data-step="styles">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Выбор стилей</div>
+                </div>
+                <div class="step" data-step="confirm">
+                    <div class="step-number">4</div>
+                    <div class="step-title">Подтверждение</div>
+                </div>
+            </div>
+
+            <!-- Этап 1: Загрузка изображения -->
+            <div class="editor-step active" id="step-upload">
+                <div class="upload-area">
+                    <div class="upload-content">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <h3>Загрузите ваше изображение</h3>
+                        <p>Перетащите файл сюда или нажмите для выбора</p>
+                        <p class="file-types">Поддерживаемые форматы: JPG, PNG</p>
+                        <input type="file" id="image-upload" accept="image/*" hidden>
+                        <button class="btn btn-primary" onclick="document.getElementById('image-upload').click()">
+                            <i class="fas fa-folder-open"></i> Выбрать файл
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Этап 2: Редактирование -->
+            <div class="editor-step" id="step-edit">
+                <div class="editor-layout">
+                    <div class="editor-canvas">
+                        <div class="canvas-container">
+                            <canvas id="image-canvas"></canvas>
+                            <div class="canvas-overlay">
+                                <div class="crop-overlay" id="crop-overlay"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="editor-tools">
+                        <h3>Инструменты редактирования</h3>
+                        
+                        <div class="tool-group">
+                            <h4>Кадрирование</h4>
+                            <div class="tool-buttons">
+                                <button class="tool-btn" data-action="crop" title="Кадрировать">
+                                    <i class="fas fa-crop"></i>
+                                </button>
+                                <button class="tool-btn" data-action="reset-crop" title="Сбросить кадрирование">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="tool-group">
+                            <h4>Масштабирование</h4>
+                            <div class="zoom-controls">
+                                <button class="tool-btn" data-action="zoom-out" title="Уменьшить">
+                                    <i class="fas fa-search-minus"></i>
+                                </button>
+                                <span class="zoom-level">100%</span>
+                                <button class="tool-btn" data-action="zoom-in" title="Увеличить">
+                                    <i class="fas fa-search-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="tool-group">
+                            <h4>Поворот</h4>
+                            <div class="tool-buttons">
+                                <button class="tool-btn" data-action="rotate-left" title="Повернуть влево">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                <button class="tool-btn" data-action="rotate-right" title="Повернуть вправо">
+                                    <i class="fas fa-redo"></i>
+                                </button>
+                                <button class="tool-btn" data-action="rotate-180" title="Повернуть на 180°">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="tool-group">
+                            <h4>Замена изображения</h4>
+                            <button class="btn btn-secondary" onclick="replaceImage()">
+                                <i class="fas fa-image"></i> Заменить изображение
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Этап 3: Выбор стилей -->
+            <div class="editor-step" id="step-styles">
+                <div class="styles-layout">
+                    <div class="styles-preview">
+                        <h3>Предварительный просмотр</h3>
+                        <div class="preview-container">
+                            <canvas id="preview-canvas"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="styles-options">
+                        <h3>Варианты обработки</h3>
+                        
+                        <div class="style-category">
+                            <h4>Без обработки</h4>
+                            <div class="style-option" data-style="original">
+                                <div class="style-preview">
+                                    <svg class="style-icon" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect x="10" y="10" width="60" height="60" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
+                                        <circle cx="25" cy="25" r="3" fill="#94a3b8"/>
+                                        <circle cx="40" cy="25" r="3" fill="#94a3b8"/>
+                                        <circle cx="55" cy="25" r="3" fill="#94a3b8"/>
+                                        <circle cx="25" cy="40" r="3" fill="#94a3b8"/>
+                                        <circle cx="40" cy="40" r="3" fill="#94a3b8"/>
+                                        <circle cx="55" cy="40" r="3" fill="#94a3b8"/>
+                                        <circle cx="25" cy="55" r="3" fill="#94a3b8"/>
+                                        <circle cx="40" cy="55" r="3" fill="#94a3b8"/>
+                                        <circle cx="55" cy="55" r="3" fill="#94a3b8"/>
+                                    </svg>
+                                </div>
+                                <div class="style-info">
+                                    <h5>Оригинал</h5>
+                                    <p>Без дополнительной обработки</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="style-category">
+                            <h4>AI улучшение</h4>
+                            <div class="style-option" data-style="enhanced">
+                                <div class="style-preview">
+                                    <svg class="style-icon" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect x="10" y="10" width="60" height="60" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+                                        <path d="M20 30 L35 45 L60 20" stroke="#3b82f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <circle cx="25" cy="25" r="2" fill="#3b82f6"/>
+                                        <circle cx="40" cy="40" r="2" fill="#3b82f6"/>
+                                        <circle cx="55" cy="55" r="2" fill="#3b82f6"/>
+                                        <path d="M15 15 L25 25 M45 35 L55 45" stroke="#3b82f6" stroke-width="1" opacity="0.5"/>
+                                    </svg>
+                                </div>
+                                <div class="style-info">
+                                    <h5>Улучшенное</h5>
+                                    <p>AI обработка для лучшего качества</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="style-category">
+                            <h4>Художественные стили</h4>
+                            <div class="style-option" data-style="pop-art">
+                                <div class="style-preview">
+                                    <svg class="style-icon" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect x="10" y="10" width="60" height="60" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+                                        <circle cx="25" cy="25" r="8" fill="#ef4444"/>
+                                        <circle cx="55" cy="25" r="8" fill="#3b82f6"/>
+                                        <circle cx="25" cy="55" r="8" fill="#10b981"/>
+                                        <circle cx="55" cy="55" r="8" fill="#f59e0b"/>
+                                        <path d="M20 40 L60 40" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/>
+                                        <path d="M40 20 L40 60" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <div class="style-info">
+                                    <h5>Поп-арт</h5>
+                                    <p>Яркие цвета и контраст</p>
+                                </div>
+                            </div>
+                            
+                            <div class="style-option" data-style="vintage">
+                                <div class="style-preview">
+                                    <svg class="style-icon" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect x="10" y="10" width="60" height="60" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+                                        <path d="M20 25 Q40 15 60 25 Q40 35 20 25" fill="#d97706" opacity="0.3"/>
+                                        <path d="M20 35 Q40 25 60 35 Q40 45 20 35" fill="#d97706" opacity="0.3"/>
+                                        <path d="M20 45 Q40 35 60 45 Q40 55 20 45" fill="#d97706" opacity="0.3"/>
+                                        <circle cx="30" cy="30" r="3" fill="#d97706"/>
+                                        <circle cx="50" cy="30" r="3" fill="#d97706"/>
+                                        <circle cx="40" cy="50" r="3" fill="#d97706"/>
+                                        <path d="M15 15 L25 25 M55 55 L65 65" stroke="#d97706" stroke-width="1" opacity="0.5"/>
+                                    </svg>
+                                </div>
+                                <div class="style-info">
+                                    <h5>Винтаж</h5>
+                                    <p>Ретро стиль с теплыми тонами</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="style-category">
+                            <h4>Настройки мозаики</h4>
+                            <div class="mosaic-settings">
+                                <div class="setting-group">
+                                    <label>Освещение:</label>
+                                    <select id="lighting-setting">
+                                        <option value="sun">Солнце</option>
+                                        <option value="moon">Луна</option>
+                                        <option value="venus">Венера</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="setting-group">
+                                    <label>Контрастность:</label>
+                                    <select id="contrast-setting">
+                                        <option value="normal">Обычная</option>
+                                        <option value="high">Высокая</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Этап 4: Подтверждение -->
+            <div class="editor-step" id="step-confirm">
+                <div class="confirm-layout">
+                    <div class="final-preview">
+                        <h3>Финальный результат</h3>
+                        <div class="final-image">
+                            <canvas id="final-canvas"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="confirm-warning">
+                        <div class="warning-box">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h4>Важное предупреждение</h4>
+                            <p>Вы уверены, что хотите выбрать данный дизайн картины и создать схему выкладки камней?</p>
+                            <p><strong>После применения купона повторное создание схемы будет невозможно.</strong></p>
+                        </div>
+                        
+                        <div class="confirm-buttons">
+                            <button class="btn btn-secondary" onclick="goBackToStyles()">
+                                <i class="fas fa-arrow-left"></i> НЕТ, попробую еще другие варианты
+                            </button>
+                            <button class="btn btn-primary" onclick="createScheme()">
+                                <i class="fas fa-check"></i> ДА, я уверен
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Навигация по этапам -->
+            <div class="step-navigation">
+                <button class="btn btn-secondary" id="prev-step">
+                    <i class="fas fa-arrow-left"></i> Назад
+                </button>
+                <button class="btn btn-primary" id="next-step">
+                    Далее <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Подвал -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Контакты</h3>
+                    <div class="contact-info">
+                        <p><i class="fas fa-envelope"></i> <span id="partner-email">info@diamond-art.ru</span></p>
+                        <p><i class="fas fa-phone"></i> <span id="partner-phone">+7 (999) 123-45-67</span></p>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Социальные сети</h3>
+                    <div class="social-links">
+                        <a href="#" class="social-link" id="telegram-link">
+                            <i class="fab fa-telegram"></i> Telegram
+                        </a>
+                        <a href="#" class="social-link" id="whatsapp-link">
+                            <i class="fab fa-whatsapp"></i> WhatsApp
+                        </a>
+                        <a href="#" class="social-link" id="instagram-link">
+                            <i class="fab fa-instagram"></i> Instagram
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2024 Алмазная мозаика. Все права защищены.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Модальное окно создания схемы -->
+    <div class="modal" id="scheme-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Создание схемы</h3>
+            </div>
+            <div class="modal-body">
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <p id="progress-text">Обрабатываем изображение...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script src="js/editor.js"></script>
+</body>
+</html>

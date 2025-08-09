@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Режим разработки - Алмазная мозаика</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .dev-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dev-title {
+            color: #1e3a8a;
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2rem;
+        }
+        
+        .dev-links {
+            display: grid;
+            gap: 1rem;
+        }
+        
+        .dev-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .dev-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        }
+        
+        .dev-link i {
+            font-size: 1.5rem;
+        }
+        
+        .dev-link .link-info {
+            flex: 1;
+            margin-left: 1rem;
+        }
+        
+        .dev-link h3 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+        
+        .dev-link p {
+            margin: 0.25rem 0 0 0;
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+        
+        .dev-link .arrow {
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+        
+        .warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .warning i {
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="dev-container">
+        <h1 class="dev-title">
+            <i class="fas fa-code"></i> Режим разработки
+        </h1>
+        
+        <div class="warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Внимание!</strong> Эта страница предназначена только для разработки и тестирования.
+        </div>
+        
+        <div class="dev-links">
+            <a href="editor.html?dev=true" class="dev-link">
+                <i class="fas fa-palette"></i>
+                <div class="link-info">
+                    <h3>Редактор изображений</h3>
+                    <p>Страница редактора с демо-данными</p>
+                </div>
+                <i class="fas fa-arrow-right arrow"></i>
+            </a>
+            
+            <a href="shop.html?dev=true" class="dev-link">
+                <i class="fas fa-shopping-cart"></i>
+                <div class="link-info">
+                    <h3>Магазин купонов</h3>
+                    <p>Страница покупки купонов</p>
+                </div>
+                <i class="fas fa-arrow-right arrow"></i>
+            </a>
+            
+            <a href="index.html" class="dev-link">
+                <i class="fas fa-home"></i>
+                <div class="link-info">
+                    <h3>Главная страница</h3>
+                    <p>Вернуться на главную</p>
+                </div>
+                <i class="fas fa-arrow-right arrow"></i>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

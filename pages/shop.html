@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Магазин купонов - Алмазная мозаика</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/shop.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Шапка сайта -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <img src="assets/logo.svg" alt="Алмазная мозаика" id="partner-logo">
+                    <span id="partner-name">Алмазная мозаика</span>
+                </div>
+                
+                <nav class="nav">
+                    <ul class="nav-menu">
+                        <li><a href="index.html" class="nav-link">Главная</a></li>
+                        <li><a href="#" class="nav-link active">Магазин</a></li>
+                    </ul>
+                </nav>
+                
+                <div class="language-dropdown">
+                    <button class="lang-dropdown-btn" id="lang-dropdown-btn">
+                        <span id="current-lang">RU</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="lang-dropdown-menu" id="lang-dropdown-menu">
+                        <div class="lang-option" data-lang="ru">
+                            <span>RU</span>
+                            <i class="fas fa-check" style="display: none;"></i>
+                        </div>
+                        <div class="lang-option" data-lang="en">
+                            <span>EN</span>
+                            <i class="fas fa-check" style="display: none;"></i>
+                        </div>
+                        <div class="lang-option" data-lang="es">
+                            <span>ES</span>
+                            <i class="fas fa-check" style="display: none;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Основной контент -->
+    <main class="shop-main">
+        <div class="container">
+            <!-- Заголовок -->
+            <div class="shop-header">
+                <h1>Купить купон для алмазной мозаики</h1>
+                <p>Выберите размер и стиль для создания уникальной картины</p>
+            </div>
+
+            <!-- Выбор размера -->
+            <section class="size-selection">
+                <h2><i class="fas fa-ruler-combined"></i> Выберите размер мозаики</h2>
+                <div class="size-grid">
+                    <div class="size-option" data-size="21x30" data-price="1500">
+                        <div class="size-preview">
+                            <div class="size-visual" style="width: 60px; height: 85px;"></div>
+                        </div>
+                        <div class="size-info">
+                            <h3>21×30 см</h3>
+                            <p>Маленький размер</p>
+                            <div class="size-price">1 500 ₽</div>
+                        </div>
+                    </div>
+                    
+                    <div class="size-option" data-size="30x40" data-price="2000">
+                        <div class="size-preview">
+                            <div class="size-visual" style="width: 75px; height: 100px;"></div>
+                        </div>
+                        <div class="size-info">
+                            <h3>30×40 см</h3>
+                            <p>Средний размер</p>
+                            <div class="size-price">2 000 ₽</div>
+                        </div>
+                    </div>
+                    
+                    <div class="size-option" data-size="40x40" data-price="2500">
+                        <div class="size-preview">
+                            <div class="size-visual" style="width: 100px; height: 100px;"></div>
+                        </div>
+                        <div class="size-info">
+                            <h3>40×40 см</h3>
+                            <p>Квадратный формат</p>
+                            <div class="size-price">2 500 ₽</div>
+                        </div>
+                    </div>
+                    
+                    <div class="size-option" data-size="40x50" data-price="3000">
+                        <div class="size-preview">
+                            <div class="size-visual" style="width: 100px; height: 125px;"></div>
+                        </div>
+                        <div class="size-info">
+                            <h3>40×50 см</h3>
+                            <p>Популярный размер</p>
+                            <div class="size-price">3 000 ₽</div>
+                        </div>
+                    </div>
+                    
+                    <div class="size-option" data-size="40x60" data-price="3500">
+                        <div class="size-preview">
+                            <div class="size-visual" style="width: 100px; height: 150px;"></div>
+                        </div>
+                        <div class="size-info">
+                            <h3>40×60 см</h3>
+                            <p>Широкий формат</p>
+                            <div class="size-price">3 500 ₽</div>
+                        </div>
+                    </div>
+                    
+                    <div class="size-option" data-size="50x70" data-price="4500">
+                        <div class="size-preview">
+                            <div class="size-visual" style="width: 125px; height: 175px;"></div>
+                        </div>
+                        <div class="size-info">
+                            <h3>50×70 см</h3>
+                            <p>Большой размер</p>
+                            <div class="size-price">4 500 ₽</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Выбор стиля -->
+            <section class="style-selection">
+                <h2><i class="fas fa-palette"></i> Выберите стиль обработки</h2>
+                <div class="style-grid">
+                    <div class="style-option" data-style="grayscale" data-price="0">
+                        <div class="style-preview">
+                            <div class="style-visual grayscale"></div>
+                        </div>
+                        <div class="style-info">
+                            <h3>Оттенки серого</h3>
+                            <p>Классический черно-белый стиль</p>
+                            <div class="style-price">Бесплатно</div>
+                        </div>
+                    </div>
+                    
+                    <div class="style-option" data-style="flesh" data-price="500">
+                        <div class="style-preview">
+                            <div class="style-visual flesh"></div>
+                        </div>
+                        <div class="style-info">
+                            <h3>Оттенки телесного</h3>
+                            <p>Теплые тона для портретов</p>
+                            <div class="style-price">+500 ₽</div>
+                        </div>
+                    </div>
+                    
+                    <div class="style-option" data-style="pop-art" data-price="800">
+                        <div class="style-preview">
+                            <div class="style-visual pop-art"></div>
+                        </div>
+                        <div class="style-info">
+                            <h3>Поп-арт</h3>
+                            <p>Яркие цвета и контраст</p>
+                            <div class="style-price">+800 ₽</div>
+                        </div>
+                    </div>
+                    
+                    <div class="style-option" data-style="max-colors" data-price="1200">
+                        <div class="style-preview">
+                            <div class="style-visual max-colors"></div>
+                        </div>
+                        <div class="style-info">
+                            <h3>Максимум цветов</h3>
+                            <p>Максимальная цветовая палитра</p>
+                            <div class="style-price">+1 200 ₽</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Корзина -->
+            <section class="cart-section">
+                <div class="cart-container">
+                    <h2><i class="fas fa-shopping-cart"></i> Ваш заказ</h2>
+                    
+                    <div class="cart-items">
+                        <div class="cart-item" id="size-item">
+                            <div class="item-info">
+                                <span class="item-label">Размер:</span>
+                                <span class="item-value">Не выбран</span>
+                            </div>
+                            <div class="item-price">0 ₽</div>
+                        </div>
+                        
+                        <div class="cart-item" id="style-item">
+                            <div class="item-info">
+                                <span class="item-label">Стиль:</span>
+                                <span class="item-value">Не выбран</span>
+                            </div>
+                            <div class="item-price">0 ₽</div>
+                        </div>
+                    </div>
+                    
+                    <div class="cart-total">
+                        <div class="total-label">Итого:</div>
+                        <div class="total-price" id="total-price">0 ₽</div>
+                    </div>
+                    
+                    <button class="btn btn-primary btn-large" id="buy-button" disabled>
+                        <i class="fas fa-credit-card"></i> Перейти к оплате
+                    </button>
+                </div>
+            </section>
+
+            <!-- Информация о доставке -->
+            <section class="delivery-info">
+                <h2><i class="fas fa-info-circle"></i> Важная информация</h2>
+                <div class="info-grid">
+                    <div class="info-card">
+                        <i class="fas fa-envelope"></i>
+                        <h3>Электронная доставка</h3>
+                        <p>Купон будет отправлен на ваш email в течение 5 минут после оплаты</p>
+                    </div>
+                    
+                    <div class="info-card">
+                        <i class="fas fa-image"></i>
+                        <h3>Загрузка изображения</h3>
+                        <p>После получения купона вы сможете загрузить свое изображение и создать схему</p>
+                    </div>
+                    
+                    <div class="info-card">
+                        <i class="fas fa-shield-alt"></i>
+                        <h3>Безопасная оплата</h3>
+                        <p>Оплата производится через защищенное соединение банка-эквайера</p>
+                    </div>
+                    
+                    <div class="info-card">
+                        <i class="fas fa-undo"></i>
+                        <h3>Возврат средств</h3>
+                        <p>Возврат возможен в течение 14 дней, если купон не был использован</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Альтернативные варианты покупки -->
+            <section class="alternative-purchase">
+                <h2><i class="fas fa-store"></i> Купить с набором камней</h2>
+                <p>Если у вас еще нет набора камней для алмазной мозаики, вы можете купить полный комплект:</p>
+                
+                <div class="marketplace-links">
+                    <a href="#" class="marketplace-link" id="ozon-shop-link">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span>Купить на OZON</span>
+                    </a>
+                    <a href="#" class="marketplace-link" id="wildberries-shop-link">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span>Купить на Wildberries</span>
+                    </a>
+                    <a href="#" class="marketplace-link" id="yandex-market-shop-link">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span>Купить на Яндекс.Маркет</span>
+                    </a>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Подвал -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Контакты</h3>
+                    <div class="contact-info">
+                        <p><i class="fas fa-envelope"></i> <span id="partner-email">info@diamond-art.ru</span></p>
+                        <p><i class="fas fa-phone"></i> <span id="partner-phone">+7 (999) 123-45-67</span></p>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Социальные сети</h3>
+                    <div class="social-links">
+                        <a href="#" class="social-link" id="telegram-link">
+                            <i class="fab fa-telegram"></i> Telegram
+                        </a>
+                        <a href="#" class="social-link" id="whatsapp-link">
+                            <i class="fab fa-whatsapp"></i> WhatsApp
+                        </a>
+                        <a href="#" class="social-link" id="instagram-link">
+                            <i class="fab fa-instagram"></i> Instagram
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2024 Алмазная мозаика. Все права защищены.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Модальное окно оплаты -->
+    <div class="modal" id="payment-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Оплата заказа</h3>
+                <button class="modal-close" onclick="closePaymentModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="order-summary">
+                    <h4>Сводка заказа</h4>
+                    <div class="summary-item">
+                        <span>Размер:</span>
+                        <span id="summary-size">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>Стиль:</span>
+                        <span id="summary-style">-</span>
+                    </div>
+                    <div class="summary-total">
+                        <span>К оплате:</span>
+                        <span id="summary-total">-</span>
+                    </div>
+                </div>
+                
+                <form class="payment-form" id="payment-form">
+                    <div class="form-group">
+                        <label for="email">Email для получения купона</label>
+                        <input type="email" id="email" required placeholder="your@email.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="card-number">Номер карты</label>
+                        <input type="text" id="card-number" required placeholder="1234 5678 9012 3456" maxlength="19">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="card-expiry">Срок действия</label>
+                            <input type="text" id="card-expiry" required placeholder="MM/YY" maxlength="5">
+                        </div>
+                        <div class="form-group">
+                            <label for="card-cvv">CVV</label>
+                            <input type="text" id="card-cvv" required placeholder="123" maxlength="3">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-large">
+                        <i class="fas fa-lock"></i> Оплатить
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script src="js/shop.js"></script>
+</body>
+</html>
