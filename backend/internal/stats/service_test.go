@@ -80,12 +80,12 @@ func (m *MockCouponRepository) GetStyleCounts(ctx context.Context, partnerID *uu
 	return args.Get(0).(map[string]int64), args.Error(1)
 }
 
-func (m *MockCouponRepository) GetTimeSeriesData(ctx context.Context, from, to time.Time, period string, partnerID *uuid.UUID) ([]map[string]interface{}, error) {
+func (m *MockCouponRepository) GetTimeSeriesData(ctx context.Context, from, to time.Time, period string, partnerID *uuid.UUID) ([]map[string]any, error) {
 	args := m.Called(ctx, from, to, period, partnerID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]map[string]interface{}), args.Error(1)
+	return args.Get(0).([]map[string]any), args.Error(1)
 }
 
 func (m *MockCouponRepository) HealthCheck(ctx context.Context) error {
@@ -134,7 +134,7 @@ func (m *MockRedisClient) Get(ctx context.Context, key string) *redis.StringCmd 
 	return args.Get(0).(*redis.StringCmd)
 }
 
-func (m *MockRedisClient) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.StatusCmd {
+func (m *MockRedisClient) Set(ctx context.Context, key string, value any, expiration time.Duration) *redis.StatusCmd {
 	args := m.Called(ctx, key, value, expiration)
 	return args.Get(0).(*redis.StatusCmd)
 }
@@ -158,8 +158,8 @@ func createTestPartner() *partner.Partner {
 	}
 }
 
-func createTestTimeSeriesData() []map[string]interface{} {
-	return []map[string]interface{}{
+func createTestTimeSeriesData() []map[string]any {
+	return []map[string]any{
 		{
 			"date":               "2024-01-01",
 			"coupons_created":    int64(10),

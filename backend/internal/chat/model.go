@@ -75,9 +75,9 @@ type ChatRequest struct {
 }
 
 type ChatResponse struct {
-	Success bool        `json:"success"`
-	Message string      `json:"message,omitempty"`
-	Data    interface{} `json:"data,omitempty"`
+	Success bool   `json:"success"`
+	Message string `json:"message,omitempty"`
+	Data    any    `json:"data,omitempty"`
 }
 
 type UsersResponse struct {

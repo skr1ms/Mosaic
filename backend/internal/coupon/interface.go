@@ -10,7 +10,7 @@ import (
 
 type RedisClientInterface interface {
 	Get(ctx context.Context, key string) *redis.StringCmd
-	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.StatusCmd
+	Set(ctx context.Context, key string, value any, expiration time.Duration) *redis.StatusCmd
 	Del(ctx context.Context, keys ...string) *redis.IntCmd
 }
 
@@ -34,9 +34,9 @@ type CouponRepositoryInterface interface {
 		createdFrom, createdTo, usedFrom, usedTo *time.Time,
 		sortBy, sortDir string,
 	) ([]*Coupon, int, error)
-	GetFiltered(ctx context.Context, filters map[string]interface{}) ([]*Coupon, error)
+	GetFiltered(ctx context.Context, filters map[string]any) ([]*Coupon, error)
 
-	GetPartnerCouponsWithFilter(ctx context.Context, partnerID uuid.UUID, filters map[string]interface{}, page, limit int, sortBy, order string) ([]*Coupon, int, error)
+	GetPartnerCouponsWithFilter(ctx context.Context, partnerID uuid.UUID, filters map[string]any, page, limit int, sortBy, order string) ([]*Coupon, int, error)
 	GetPartnerCouponByCode(ctx context.Context, partnerID uuid.UUID, code string) (*Coupon, error)
 	GetPartnerCouponDetail(ctx context.Context, partnerID uuid.UUID, couponID uuid.UUID) (*Coupon, error)
 	GetPartnerRecentActivity(ctx context.Context, partnerID uuid.UUID, limit int) ([]*Coupon, error)
@@ -62,9 +62,9 @@ type CouponRepositoryInterface interface {
 	CountActivatedInTimeRange(ctx context.Context, from, to time.Time) (int64, error)
 
 	GetStatistics(ctx context.Context, partnerID *uuid.UUID) (map[string]int64, error)
-	GetPartnerStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]interface{}, error)
-	GetPartnerSalesStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]interface{}, error)
-	GetPartnerUsageStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]interface{}, error)
+	GetPartnerStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]any, error)
+	GetPartnerSalesStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]any, error)
+	GetPartnerUsageStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]any, error)
 	GetStatusCounts(ctx context.Context, partnerID *uuid.UUID) (map[string]int64, error)
 	GetExtendedStatusCounts(ctx context.Context, partnerID *uuid.UUID) (map[string]int64, error)
 	GetSizeCounts(ctx context.Context, partnerID *uuid.UUID) (map[string]int64, error)
@@ -74,7 +74,7 @@ type CouponRepositoryInterface interface {
 	GetTopPurchasedByPartner(ctx context.Context, limit int) ([]PartnerCount, error)
 
 	GetLastActivityByPartner(ctx context.Context, partnerID uuid.UUID) (*time.Time, error)
-	GetTimeSeriesData(ctx context.Context, from, to time.Time, period string, partnerID *uuid.UUID) ([]map[string]interface{}, error)
+	GetTimeSeriesData(ctx context.Context, from, to time.Time, period string, partnerID *uuid.UUID) ([]map[string]any, error)
 	GetRecentActivated(ctx context.Context, limit int) ([]*Coupon, error)
 
 	CodeExists(ctx context.Context, code string) (bool, error)
@@ -82,7 +82,7 @@ type CouponRepositoryInterface interface {
 
 	GetCouponsWithAdvancedFilter(ctx context.Context, filter CouponFilterRequest) ([]*CouponInfo, int, error)
 	GetCouponsForDeletion(ctx context.Context, ids []uuid.UUID) ([]*CouponDeletePreview, error)
-	GetCouponsForExport(ctx context.Context, options ExportOptionsRequest) (interface{}, error)
+	GetCouponsForExport(ctx context.Context, options ExportOptionsRequest) (any, error)
 }
 
 type S3Interface interface {

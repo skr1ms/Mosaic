@@ -16,7 +16,7 @@ type EmailJob struct {
 	To          string
 	Subject     string
 	TemplateID  string
-	Data        map[string]interface{}
+	Data        map[string]any
 	Attachments []Attachment
 	CreatedAt   time.Time
 	Attempts    int
@@ -139,7 +139,7 @@ func (q *EmailQueue) SendSchemaEmail(to, couponCode, schemaURL string) error {
 		To:         to,
 		Subject:    "Your diamond mosaic schema is ready!",
 		TemplateID: "schema_ready",
-		Data: map[string]interface{}{
+		Data: map[string]any{
 			"CouponCode": couponCode,
 			"SchemaURL":  schemaURL,
 		},
@@ -155,7 +155,7 @@ func (q *EmailQueue) SendProcessingErrorEmail(to, couponCode, errorMessage strin
 		To:         to,
 		Subject:    "Error processing your image",
 		TemplateID: "processing_error",
-		Data: map[string]interface{}{
+		Data: map[string]any{
 			"CouponCode":   couponCode,
 			"ErrorMessage": errorMessage,
 		},
@@ -171,7 +171,7 @@ func (q *EmailQueue) SendStatusUpdateEmail(to, couponCode, status string, progre
 		To:         to,
 		Subject:    "Update on your order status",
 		TemplateID: "status_update",
-		Data: map[string]interface{}{
+		Data: map[string]any{
 			"CouponCode": couponCode,
 			"Status":     status,
 			"Progress":   progress,
@@ -230,11 +230,11 @@ func (q *EmailQueue) retryScheduler() {
 }
 
 // GetStats returns queue statistics
-func (q *EmailQueue) GetStats() map[string]interface{} {
+func (q *EmailQueue) GetStats() map[string]any {
 	q.mu.RLock()
 	defer q.mu.RUnlock()
 
-	return map[string]interface{}{
+	return map[string]any{
 		"running":      q.running,
 		"workers":      q.workers,
 		"jobs_queued":  len(q.jobs),

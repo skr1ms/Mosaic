@@ -381,7 +381,7 @@ func (r *CouponRepository) CountPurchasedByPartnerID(ctx context.Context, partne
 	return count, nil
 }
 
-func (r *CouponRepository) GetFiltered(ctx context.Context, filters map[string]interface{}) ([]*Coupon, error) {
+func (r *CouponRepository) GetFiltered(ctx context.Context, filters map[string]any) ([]*Coupon, error) {
 	query := r.db.NewSelect().Model((*Coupon)(nil))
 
 	for key, value := range filters {
@@ -577,7 +577,7 @@ func (r *CouponRepository) GetLastActivityByPartner(ctx context.Context, partner
 }
 
 // Returns data for time series charts
-func (r *CouponRepository) GetTimeSeriesData(ctx context.Context, dateFrom, dateTo time.Time, period string, partnerID *uuid.UUID) ([]map[string]interface{}, error) {
+func (r *CouponRepository) GetTimeSeriesData(ctx context.Context, dateFrom, dateTo time.Time, period string, partnerID *uuid.UUID) ([]map[string]any, error) {
 	var dateFormat string
 	switch period {
 	case "day":
@@ -613,7 +613,7 @@ func (r *CouponRepository) GetTimeSeriesData(ctx context.Context, dateFrom, date
 	}
 	defer rows.Close()
 
-	var results []map[string]interface{}
+	var results []map[string]any
 	for rows.Next() {
 		var date string
 		var created, activated, purchased, partners int64
@@ -622,7 +622,7 @@ func (r *CouponRepository) GetTimeSeriesData(ctx context.Context, dateFrom, date
 			return nil, fmt.Errorf("failed to scan time series data: %w", err)
 		}
 
-		results = append(results, map[string]interface{}{
+		results = append(results, map[string]any{
 			"date":               date,
 			"coupons_created":    created,
 			"coupons_activated":  activated,
@@ -1122,7 +1122,7 @@ func (r *CouponRepository) GetCouponsForDeletion(ctx context.Context, ids []uuid
 }
 
 // Returns coupons for export with extended information
-func (r *CouponRepository) GetCouponsForExport(ctx context.Context, options ExportOptionsRequest) (interface{}, error) {
+func (r *CouponRepository) GetCouponsForExport(ctx context.Context, options ExportOptionsRequest) (any, error) {
 	query := r.db.NewSelect().Model((*Coupon)(nil)).TableExpr("coupons AS coupon")
 
 	// Apply filters
@@ -1398,7 +1398,7 @@ func (r *CouponRepository) GetCouponsForExport(ctx context.Context, options Expo
 	}
 }
 
-func (r *CouponRepository) GetPartnerCouponsWithFilter(ctx context.Context, partnerID uuid.UUID, filters map[string]interface{}, page, limit int, sortBy, order string) ([]*Coupon, int, error) {
+func (r *CouponRepository) GetPartnerCouponsWithFilter(ctx context.Context, partnerID uuid.UUID, filters map[string]any, page, limit int, sortBy, order string) ([]*Coupon, int, error) {
 	query := r.db.NewSelect().Model((*Coupon)(nil)).Where("partner_id = ?", partnerID)
 
 	// Apply filters
@@ -1498,8 +1498,8 @@ func (r *CouponRepository) GetPartnerRecentActivity(ctx context.Context, partner
 	return coupons, nil
 }
 
-func (r *CouponRepository) GetPartnerStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]interface{}, error) {
-	stats := make(map[string]interface{})
+func (r *CouponRepository) GetPartnerStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]any, error) {
+	stats := make(map[string]any)
 
 	// Total coupon count
 	totalCount, err := r.db.NewSelect().Model((*Coupon)(nil)).
@@ -1566,8 +1566,8 @@ func (r *CouponRepository) GetPartnerStatistics(ctx context.Context, partnerID u
 	return stats, nil
 }
 
-func (r *CouponRepository) GetPartnerSalesStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]interface{}, error) {
-	stats := make(map[string]interface{})
+func (r *CouponRepository) GetPartnerSalesStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]any, error) {
+	stats := make(map[string]any)
 
 	// Total sales (online purchased)
 	totalSales, err := r.db.NewSelect().Model((*Coupon)(nil)).
@@ -1619,8 +1619,8 @@ func (r *CouponRepository) GetPartnerSalesStatistics(ctx context.Context, partne
 	return stats, nil
 }
 
-func (r *CouponRepository) GetPartnerUsageStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]interface{}, error) {
-	stats := make(map[string]interface{})
+func (r *CouponRepository) GetPartnerUsageStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]any, error) {
+	stats := make(map[string]any)
 
 	// Usage this month
 	now := time.Now()

@@ -215,7 +215,7 @@ func (r *PartnerRepository) GetPartnerCouponsForExport(ctx context.Context, part
 		FROM coupons c
 		JOIN partners p ON c.partner_id = p.id
 		WHERE c.partner_id = ?`
-	args := []interface{}{partnerID}
+	args := []any{partnerID}
 	if status != "" {
 		query += " AND c.status = ?"
 		args = append(args, status)
@@ -259,25 +259,25 @@ func (r *PartnerRepository) GetCouponsStatistics(ctx context.Context, partnerID 
 	var count int
 	var err error
 
-	count, err = r.db.NewSelect().Model(map[string]interface{}{}).Table("coupons").Where("partner_id = ?", partnerID).Count(ctx)
+	count, err = r.db.NewSelect().Model(map[string]any{}).Table("coupons").Where("partner_id = ?", partnerID).Count(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get coupons statistics: %w", err)
 	}
 	stats["total"] = int64(count)
 
-	count, err = r.db.NewSelect().Model(map[string]interface{}{}).Table("coupons").Where("partner_id = ? AND status = ?", partnerID, "used").Count(ctx)
+	count, err = r.db.NewSelect().Model(map[string]any{}).Table("coupons").Where("partner_id = ? AND status = ?", partnerID, "used").Count(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get coupons statistics: %w", err)
 	}
 	stats["activated"] = int64(count)
 
-	count, err = r.db.NewSelect().Model(map[string]interface{}{}).Table("coupons").Where("partner_id = ? AND status = ?", partnerID, "new").Count(ctx)
+	count, err = r.db.NewSelect().Model(map[string]any{}).Table("coupons").Where("partner_id = ? AND status = ?", partnerID, "new").Count(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get coupons statistics: %w", err)
 	}
 	stats["new"] = int64(count)
 
-	count, err = r.db.NewSelect().Model(map[string]interface{}{}).Table("coupons").Where("partner_id = ? AND is_purchased = ?", partnerID, true).Count(ctx)
+	count, err = r.db.NewSelect().Model(map[string]any{}).Table("coupons").Where("partner_id = ? AND is_purchased = ?", partnerID, true).Count(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get coupons statistics: %w", err)
 	}

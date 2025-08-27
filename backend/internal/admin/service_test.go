@@ -343,28 +343,28 @@ func (m *MockCouponRepository) GetStatistics(ctx context.Context, partnerID *uui
 	return args.Get(0).(map[string]int64), args.Error(1)
 }
 
-func (m *MockCouponRepository) GetPartnerStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]interface{}, error) {
+func (m *MockCouponRepository) GetPartnerStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]any, error) {
 	args := m.Called(ctx, partnerID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(map[string]interface{}), args.Error(1)
+	return args.Get(0).(map[string]any), args.Error(1)
 }
 
-func (m *MockCouponRepository) GetPartnerSalesStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]interface{}, error) {
+func (m *MockCouponRepository) GetPartnerSalesStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]any, error) {
 	args := m.Called(ctx, partnerID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(map[string]interface{}), args.Error(1)
+	return args.Get(0).(map[string]any), args.Error(1)
 }
 
-func (m *MockCouponRepository) GetPartnerUsageStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]interface{}, error) {
+func (m *MockCouponRepository) GetPartnerUsageStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]any, error) {
 	args := m.Called(ctx, partnerID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(map[string]interface{}), args.Error(1)
+	return args.Get(0).(map[string]any), args.Error(1)
 }
 
 func (m *MockCouponRepository) GetStatusCounts(ctx context.Context, partnerID *uuid.UUID) (map[string]int64, error) {
@@ -423,12 +423,12 @@ func (m *MockCouponRepository) GetLastActivityByPartner(ctx context.Context, par
 	return args.Get(0).(*time.Time), args.Error(1)
 }
 
-func (m *MockCouponRepository) GetTimeSeriesData(ctx context.Context, from, to time.Time, period string, partnerID *uuid.UUID) ([]map[string]interface{}, error) {
+func (m *MockCouponRepository) GetTimeSeriesData(ctx context.Context, from, to time.Time, period string, partnerID *uuid.UUID) ([]map[string]any, error) {
 	args := m.Called(ctx, from, to, period, partnerID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]map[string]interface{}), args.Error(1)
+	return args.Get(0).([]map[string]any), args.Error(1)
 }
 
 func (m *MockCouponRepository) CodeExists(ctx context.Context, code string) (bool, error) {
@@ -457,7 +457,7 @@ func (m *MockCouponRepository) GetCouponsForDeletion(ctx context.Context, ids []
 	return args.Get(0).([]*coupon.CouponDeletePreview), args.Error(1)
 }
 
-func (m *MockCouponRepository) GetCouponsForExport(ctx context.Context, options coupon.ExportOptionsRequest) (interface{}, error) {
+func (m *MockCouponRepository) GetCouponsForExport(ctx context.Context, options coupon.ExportOptionsRequest) (any, error) {
 	args := m.Called(ctx, options)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -513,7 +513,7 @@ func (m *MockCouponRepository) BatchReset(ctx context.Context, ids []uuid.UUID) 
 	return args.Get(0).([]uuid.UUID), args.Get(1).([]uuid.UUID), args.Error(2)
 }
 
-func (m *MockCouponRepository) GetPartnerCouponsWithFilter(ctx context.Context, partnerID uuid.UUID, filters map[string]interface{}, page, limit int, sortBy, order string) ([]*coupon.Coupon, int, error) {
+func (m *MockCouponRepository) GetPartnerCouponsWithFilter(ctx context.Context, partnerID uuid.UUID, filters map[string]any, page, limit int, sortBy, order string) ([]*coupon.Coupon, int, error) {
 	args := m.Called(ctx, partnerID, filters, page, limit, sortBy, order)
 	if args.Get(0) == nil {
 		return nil, args.Int(1), args.Error(2)
@@ -597,12 +597,12 @@ type MockS3Client struct {
 	mock.Mock
 }
 
-func (m *MockS3Client) DownloadFile(ctx context.Context, key string) (interface{}, error) {
+func (m *MockS3Client) DownloadFile(ctx context.Context, key string) (any, error) {
 	args := m.Called(ctx, key)
 	return args.Get(0), args.Error(1)
 }
 
-func (m *MockS3Client) UploadLogo(ctx context.Context, reader interface{}, size int64, contentType string, partnerID string) (string, error) {
+func (m *MockS3Client) UploadLogo(ctx context.Context, reader any, size int64, contentType string, partnerID string) (string, error) {
 	args := m.Called(ctx, reader, size, contentType, partnerID)
 	return args.String(0), args.Error(1)
 }
@@ -627,7 +627,7 @@ func (m *MockRedisClient) Get(ctx context.Context, key string) *redis.StringCmd 
 	return args.Get(0).(*redis.StringCmd)
 }
 
-func (m *MockRedisClient) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.StatusCmd {
+func (m *MockRedisClient) Set(ctx context.Context, key string, value any, expiration time.Duration) *redis.StatusCmd {
 	args := m.Called(ctx, key, value, expiration)
 	return args.Get(0).(*redis.StatusCmd)
 }

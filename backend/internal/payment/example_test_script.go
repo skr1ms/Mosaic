@@ -145,7 +145,7 @@ func printTestResult(testName string, result *payment.TestScenarioResult) {
 	}
 }
 
-func printJSON(title string, data interface{}) {
+func printJSON(title string, data any) {
 	fmt.Printf("\n📋 %s:\n", title)
 	jsonData, _ := json.MarshalIndent(data, "   ", "  ")
 	fmt.Printf("   %s\n", string(jsonData))

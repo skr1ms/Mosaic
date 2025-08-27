@@ -21,7 +21,7 @@ func NewImageServiceAdapter(imageService *image.ImageService) *ImageServiceAdapt
 }
 
 // ProcessImageWithStyle processes image with given style
-func (a *ImageServiceAdapter) ProcessImageWithStyle(ctx context.Context, imageID uuid.UUID, style string, parameters map[string]interface{}) error {
+func (a *ImageServiceAdapter) ProcessImageWithStyle(ctx context.Context, imageID uuid.UUID, style string, parameters map[string]any) error {
 	processParams := image.ProcessingParams{
 		Style: style,
 	}
@@ -41,7 +41,7 @@ func (a *ImageServiceAdapter) ProcessImageWithStyle(ctx context.Context, imageID
 	if lighting, ok := parameters["lighting"].(string); ok {
 		processParams.Lighting = lighting
 	}
-	if settings, ok := parameters["settings"].(map[string]interface{}); ok {
+	if settings, ok := parameters["settings"].(map[string]any); ok {
 		processParams.Settings = settings
 	}
 
@@ -49,7 +49,7 @@ func (a *ImageServiceAdapter) ProcessImageWithStyle(ctx context.Context, imageID
 }
 
 // ProcessImageWithAI processes image using AI (Stable Diffusion)
-func (a *ImageServiceAdapter) ProcessImageWithAI(ctx context.Context, imageID uuid.UUID, style string, useAI bool, parameters map[string]interface{}) error {
+func (a *ImageServiceAdapter) ProcessImageWithAI(ctx context.Context, imageID uuid.UUID, style string, useAI bool, parameters map[string]any) error {
 	processParams := image.ProcessingParams{
 		Style: style,
 		UseAI: useAI,
@@ -67,7 +67,7 @@ func (a *ImageServiceAdapter) ProcessImageWithAI(ctx context.Context, imageID uu
 	if lighting, ok := parameters["lighting"].(string); ok {
 		processParams.Lighting = lighting
 	}
-	if settings, ok := parameters["settings"].(map[string]interface{}); ok {
+	if settings, ok := parameters["settings"].(map[string]any); ok {
 		processParams.Settings = settings
 	}
 

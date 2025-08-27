@@ -128,7 +128,7 @@ func (handler *ImageHandler) UploadImage(c *fiber.Ctx) error {
 		})
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{
 		"image_id":     imageRecord.ID,
 		"coupon_code":  couponCode,
 		"coupon_size":  coupon.Size,
@@ -197,7 +197,7 @@ func (handler *ImageHandler) EditImage(c *fiber.Ctx) error {
 		previewURL = *status.EditedURL
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{
 		"image_id":    imageID,
 		"preview_url": previewURL,
 	}).Msg("Image edited successfully")
@@ -272,7 +272,7 @@ func (handler *ImageHandler) ProcessImage(c *fiber.Ctx) error {
 		originalURL = *status.OriginalURL
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{
 		"image_id":     imageID,
 		"style":        processRequest.Style,
 		"use_ai":       processRequest.UseAI,
@@ -329,7 +329,7 @@ func (handler *ImageHandler) GenerateSchema(c *fiber.Ctx) error {
 	// Starting the scheme generation in the background with a separate context
 	handler.generateSchemaAsync(imageID, schemaRequest.Confirmed)
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{
 		"image_id":  imageID,
 		"confirmed": schemaRequest.Confirmed,
 	}).Msg("Schema generation started")
@@ -372,7 +372,7 @@ func (handler *ImageHandler) GetImageStatus(c *fiber.Ctx) error {
 		})
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{
 		"image_id": imageID,
 		"status":   status.Status,
 	}).Msg("Image status retrieved")
@@ -387,7 +387,7 @@ func (handler *ImageHandler) downloadSchemaArchive(c *fiber.Ctx, isPublic bool) 
 
 	schemaUUID := c.Params("schema_uuid")
 	if schemaUUID == "" {
-		handler.deps.Logger.FromContext(c).Error().Interface("context", map[string]interface{}{"schema_uuid": schemaUUID}).Msg("Schema UUID is required")
+		handler.deps.Logger.FromContext(c).Error().Interface("context", map[string]any{"schema_uuid": schemaUUID}).Msg("Schema UUID is required")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Schema UUID is required",
 		})
@@ -395,7 +395,7 @@ func (handler *ImageHandler) downloadSchemaArchive(c *fiber.Ctx, isPublic bool) 
 
 	parsedUUID, err := uuid.Parse(schemaUUID)
 	if err != nil {
-		handler.deps.Logger.FromContext(c).Error().Err(err).Interface("context", map[string]interface{}{"schema_uuid": schemaUUID}).Msg("Invalid UUID format")
+		handler.deps.Logger.FromContext(c).Error().Err(err).Interface("context", map[string]any{"schema_uuid": schemaUUID}).Msg("Invalid UUID format")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid UUID format",
 		})
@@ -403,14 +403,14 @@ func (handler *ImageHandler) downloadSchemaArchive(c *fiber.Ctx, isPublic bool) 
 
 	imageRecord, err := handler.deps.ImageRepository.GetByID(ctx, parsedUUID)
 	if err != nil {
-		handler.deps.Logger.FromContext(c).Error().Err(err).Interface("context", map[string]interface{}{"schema_uuid": schemaUUID}).Msg("Schema not found")
+		handler.deps.Logger.FromContext(c).Error().Err(err).Interface("context", map[string]any{"schema_uuid": schemaUUID}).Msg("Schema not found")
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Schema not found",
 		})
 	}
 
 	if imageRecord.Status != "completed" || imageRecord.SchemaS3Key == nil {
-		handler.deps.Logger.FromContext(c).Error().Interface("context", map[string]interface{}{"schema_uuid": schemaUUID}).Msg("Schema is not ready for download")
+		handler.deps.Logger.FromContext(c).Error().Interface("context", map[string]any{"schema_uuid": schemaUUID}).Msg("Schema is not ready for download")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Schema is not ready for download",
 		})
@@ -422,13 +422,13 @@ func (handler *ImageHandler) downloadSchemaArchive(c *fiber.Ctx, isPublic bool) 
 			Err(err).
 			Str("schema_s3_key", *imageRecord.SchemaS3Key).
 			Msg("Failed to generate download URL")
-		handler.deps.Logger.FromContext(c).Error().Err(err).Interface("context", map[string]interface{}{"schema_uuid": schemaUUID, "s3_key": *imageRecord.SchemaS3Key}).Msg("Failed to generate download URL")
+		handler.deps.Logger.FromContext(c).Error().Err(err).Interface("context", map[string]any{"schema_uuid": schemaUUID, "s3_key": *imageRecord.SchemaS3Key}).Msg("Failed to generate download URL")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to generate download URL",
 		})
 	}
 
-	logContext := map[string]interface{}{
+	logContext := map[string]any{
 		"schema_uuid": schemaUUID,
 		"s3_key":      *imageRecord.SchemaS3Key,
 		"is_public":   isPublic,
@@ -460,7 +460,7 @@ func (handler *ImageHandler) DownloadSchemaArchivePublic(c *fiber.Ctx) error {
 // @Param status query string false "Task status filter (uploaded, edited, processing, processed, completed, failed)"
 // @Param date_from query string false "Start date filter (YYYY-MM-DD)"
 // @Param date_to query string false "End date filter (YYYY-MM-DD)"
-// @Success 200 {array} map[string]interface{} "List of tasks in processing queue"
+// @Success 200 {array} map[string]any "List of tasks in processing queue"
 // @Failure 500 {object} map[string]string "Internal server error - failed to get queue"
 // @Router /admin/queue [get]
 func (handler *ImageHandler) GetQueue(c *fiber.Ctx) error {
@@ -476,7 +476,7 @@ func (handler *ImageHandler) GetQueue(c *fiber.Ctx) error {
 		})
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{
 		"status":    status,
 		"date_from": dateFrom,
 		"date_to":   dateTo,
@@ -491,7 +491,7 @@ func (handler *ImageHandler) GetQueue(c *fiber.Ctx) error {
 // @Tags admin-image-processing
 // @Produce json
 // @Param id path string true "Task ID (UUID format)"
-// @Success 200 {object} map[string]interface{} "Task information with status details"
+// @Success 200 {object} map[string]any "Task information with status details"
 // @Failure 400 {object} map[string]string "Validation error - invalid task ID format"
 // @Failure 404 {object} map[string]string "Task not found"
 // @Failure 500 {object} map[string]string "Internal server error - failed to get task"
@@ -523,7 +523,7 @@ func (handler *ImageHandler) GetTaskByID(c *fiber.Ctx) error {
 		return c.JSON(task)
 	}
 
-	result := map[string]interface{}{
+	result := map[string]any{
 		"id":            task.ID,
 		"coupon_id":     task.CouponID,
 		"user_email":    task.UserEmail,
@@ -542,7 +542,7 @@ func (handler *ImageHandler) GetTaskByID(c *fiber.Ctx) error {
 		"zip_url":       status.ZipURL,
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{
 		"task_id": id,
 		"status":  task.Status,
 	}).Msg("Task retrieved by ID")
@@ -556,7 +556,7 @@ func (handler *ImageHandler) GetTaskByID(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param task body AddToQueueRequest true "Task parameters including coupon ID, image path, processing params, user email and priority"
-// @Success 201 {object} map[string]interface{} "Task added to queue successfully"
+// @Success 201 {object} map[string]any "Task added to queue successfully"
 // @Failure 400 {object} map[string]string "Validation error - failed to parse request"
 // @Failure 500 {object} map[string]string "Internal server error - failed to add task to queue"
 // @Router /admin/queue [post]
@@ -588,7 +588,7 @@ func (handler *ImageHandler) AddToQueue(c *fiber.Ctx) error {
 		})
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{
 		"task_id":    task.ID,
 		"coupon_id":  req.CouponID,
 		"user_email": req.UserEmail,
@@ -606,7 +606,7 @@ func (handler *ImageHandler) AddToQueue(c *fiber.Ctx) error {
 // @Tags admin-image-processing
 // @Produce json
 // @Param id path string true "Task ID (UUID format)"
-// @Success 200 {object} map[string]interface{} "Processing started successfully"
+// @Success 200 {object} map[string]any "Processing started successfully"
 // @Failure 400 {object} map[string]string "Validation error - invalid task ID format"
 // @Failure 500 {object} map[string]string "Internal server error - failed to start processing"
 // @Router /admin/queue/{id}/start [put]
@@ -630,7 +630,7 @@ func (handler *ImageHandler) StartProcessing(c *fiber.Ctx) error {
 		})
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{
 		"task_id": id,
 	}).Msg("Task processing started")
 
@@ -644,7 +644,7 @@ func (handler *ImageHandler) StartProcessing(c *fiber.Ctx) error {
 // @Tags admin-image-processing
 // @Produce json
 // @Param id path string true "Task ID (UUID format)"
-// @Success 200 {object} map[string]interface{} "Task completed successfully"
+// @Success 200 {object} map[string]any "Task completed successfully"
 // @Failure 400 {object} map[string]string "Validation error - invalid task ID format"
 // @Failure 500 {object} map[string]string "Internal server error - failed to complete processing"
 // @Router /admin/queue/{id}/complete [put]
@@ -668,7 +668,7 @@ func (handler *ImageHandler) CompleteProcessing(c *fiber.Ctx) error {
 		})
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{
 		"task_id": id,
 	}).Msg("Task processing completed")
 
@@ -684,7 +684,7 @@ func (handler *ImageHandler) CompleteProcessing(c *fiber.Ctx) error {
 // @Produce json
 // @Param id path string true "Task ID (UUID format)"
 // @Param error body FailProcessingRequest true "Error message details"
-// @Success 200 {object} map[string]interface{} "Task marked as failed successfully"
+// @Success 200 {object} map[string]any "Task marked as failed successfully"
 // @Failure 400 {object} map[string]string "Validation error - invalid task ID format or failed to parse request"
 // @Failure 500 {object} map[string]string "Internal server error - failed to mark task as failed"
 // @Router /admin/queue/{id}/fail [put]
@@ -716,7 +716,7 @@ func (handler *ImageHandler) FailProcessing(c *fiber.Ctx) error {
 		})
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{
 		"task_id":       id,
 		"error_message": req.ErrorMessage,
 	}).Msg("Task processing failed")
@@ -731,7 +731,7 @@ func (handler *ImageHandler) FailProcessing(c *fiber.Ctx) error {
 // @Tags admin-image-processing
 // @Produce json
 // @Param id path string true "Task ID (UUID format)"
-// @Success 200 {object} map[string]interface{} "Task returned to queue successfully"
+// @Success 200 {object} map[string]any "Task returned to queue successfully"
 // @Failure 400 {object} map[string]string "Validation error - invalid task ID format"
 // @Failure 500 {object} map[string]string "Internal server error - failed to retry task"
 // @Router /admin/queue/{id}/retry [put]
@@ -755,7 +755,7 @@ func (handler *ImageHandler) RetryTask(c *fiber.Ctx) error {
 		})
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{
 		"task_id": id,
 	}).Msg("Task retried")
 
@@ -769,7 +769,7 @@ func (handler *ImageHandler) RetryTask(c *fiber.Ctx) error {
 // @Tags admin-image-processing
 // @Produce json
 // @Param id path string true "Task ID (UUID format)"
-// @Success 200 {object} map[string]interface{} "Task deleted successfully"
+// @Success 200 {object} map[string]any "Task deleted successfully"
 // @Failure 400 {object} map[string]string "Validation error - invalid task ID format"
 // @Failure 500 {object} map[string]string "Internal server error - failed to delete task"
 // @Router /admin/queue/{id} [delete]
@@ -780,20 +780,20 @@ func (handler *ImageHandler) DeleteTask(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		handler.deps.Logger.FromContext(c).Error().Err(err).Interface("context", map[string]interface{}{"task_id": idStr}).Msg("Invalid ID format")
+		handler.deps.Logger.FromContext(c).Error().Err(err).Interface("context", map[string]any{"task_id": idStr}).Msg("Invalid ID format")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid ID format",
 		})
 	}
 
 	if err := handler.deps.ImageRepository.Delete(ctx, id); err != nil {
-		handler.deps.Logger.FromContext(c).Error().Err(err).Interface("context", map[string]interface{}{"task_id": id}).Msg("Error deleting task")
+		handler.deps.Logger.FromContext(c).Error().Err(err).Interface("context", map[string]any{"task_id": id}).Msg("Error deleting task")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Error deleting task",
 		})
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{"task_id": id}).Msg("Task deleted")
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{"task_id": id}).Msg("Task deleted")
 
 	return c.JSON(fiber.Map{
 		"message": "Task deleted",
@@ -804,7 +804,7 @@ func (handler *ImageHandler) DeleteTask(c *fiber.Ctx) error {
 // @Description Returns image processing statistics
 // @Tags admin-image-processing
 // @Produce json
-// @Success 200 {object} map[string]interface{} "Processing statistics"
+// @Success 200 {object} map[string]any "Processing statistics"
 // @Failure 500 {object} map[string]string "Internal server error - failed to get statistics"
 // @Router /admin/statistics [get]
 func (handler *ImageHandler) GetStatistics(c *fiber.Ctx) error {
@@ -827,7 +827,7 @@ func (handler *ImageHandler) GetStatistics(c *fiber.Ctx) error {
 // @Description Returns next task in queue for processing
 // @Tags admin-image-processing
 // @Produce json
-// @Success 200 {object} map[string]interface{} "Next task for processing"
+// @Success 200 {object} map[string]any "Next task for processing"
 // @Failure 404 {object} map[string]string "No tasks in queue"
 // @Failure 500 {object} map[string]string "Internal server error - failed to get next task"
 // @Router /admin/next [get]

@@ -23,57 +23,57 @@ type StableDiffusionClient struct {
 
 // Img2ImgRequest structure for img2img API request
 type Img2ImgRequest struct {
-	InitImages                        []string               `json:"init_images"`                          // Base images in base64
-	ResizeMode                        int                    `json:"resize_mode"`                          // Resize mode (0-3)
-	DenoisingStrength                 float64                `json:"denoising_strength"`                   // Denoising strength (0.0-1.0)
-	ImageCfgScale                     float64                `json:"image_cfg_scale"`                      // Image configuration scale
-	Mask                              string                 `json:"mask,omitempty"`                       // Mask in base64 (optional)
-	MaskBlur                          int                    `json:"mask_blur"`                            // Mask blur
-	InpaintingFill                    int                    `json:"inpainting_fill"`                      // Inpainting fill
-	InpaintFullRes                    bool                   `json:"inpaint_full_res"`                     // Inpainting in full resolution
-	InpaintFullResPadding             int                    `json:"inpaint_full_res_padding"`             // Padding for full resolution
-	InpaintingMaskInvert              int                    `json:"inpainting_mask_invert"`               // Mask inversion
-	InitialNoiseMultiplier            float64                `json:"initial_noise_multiplier"`             // Initial noise multiplier
-	Prompt                            string                 `json:"prompt"`                               // Text prompt
-	Styles                            []string               `json:"styles,omitempty"`                     // Styles
-	Seed                              int64                  `json:"seed"`                                 // Generation seed
-	Subseed                           int64                  `json:"subseed"`                              // Subseed
-	SubseedStrength                   float64                `json:"subseed_strength"`                     // Subseed strength
-	SeedResizeFromH                   int                    `json:"seed_resize_from_h"`                   // Height for seed resize
-	SeedResizeFromW                   int                    `json:"seed_resize_from_w"`                   // Width for seed resize
-	SamplerName                       string                 `json:"sampler_name"`                         // Sampler name
-	BatchSize                         int                    `json:"batch_size"`                           // Batch size
-	NIter                             int                    `json:"n_iter"`                               // Number of iterations
-	Steps                             int                    `json:"steps"`                                // Number of steps
-	CfgScale                          float64                `json:"cfg_scale"`                            // CFG scale
-	Width                             int                    `json:"width"`                                // Image width
-	Height                            int                    `json:"height"`                               // Image height
-	RestoreFaces                      bool                   `json:"restore_faces"`                        // Face restoration
-	Tiling                            bool                   `json:"tiling"`                               // Tiling
-	DoNotSaveSamples                  bool                   `json:"do_not_save_samples"`                  // Don't save samples
-	DoNotSaveGrid                     bool                   `json:"do_not_save_grid"`                     // Don't save grid
-	NegativePrompt                    string                 `json:"negative_prompt"`                      // Negative prompt
-	Eta                               float64                `json:"eta"`                                  // Eta parameter
-	SChurn                            float64                `json:"s_churn"`                              // S-churn parameter
-	STmax                             float64                `json:"s_tmax"`                               // S-tmax parameter
-	STmin                             float64                `json:"s_tmin"`                               // S-tmin parameter
-	SNoise                            float64                `json:"s_noise"`                              // S-noise parameter
-	OverrideSettings                  map[string]interface{} `json:"override_settings"`                    // Settings override
-	OverrideSettingsRestoreAfterwards bool                   `json:"override_settings_restore_afterwards"` // Restore settings after
-	ScriptArgs                        []interface{}          `json:"script_args,omitempty"`                // Script arguments
-	SamplerIndex                      string                 `json:"sampler_index"`                        // Sampler index
-	IncludeInitImages                 bool                   `json:"include_init_images"`                  // Include source images
-	ScriptName                        string                 `json:"script_name,omitempty"`                // Script name
-	SendImages                        bool                   `json:"send_images"`                          // Send images
-	SaveImages                        bool                   `json:"save_images"`                          // Save images
-	AlwaysonScripts                   map[string]interface{} `json:"alwayson_scripts,omitempty"`           // Always active scripts
+	InitImages                        []string       `json:"init_images"`                          // Base images in base64
+	ResizeMode                        int            `json:"resize_mode"`                          // Resize mode (0-3)
+	DenoisingStrength                 float64        `json:"denoising_strength"`                   // Denoising strength (0.0-1.0)
+	ImageCfgScale                     float64        `json:"image_cfg_scale"`                      // Image configuration scale
+	Mask                              string         `json:"mask,omitempty"`                       // Mask in base64 (optional)
+	MaskBlur                          int            `json:"mask_blur"`                            // Mask blur
+	InpaintingFill                    int            `json:"inpainting_fill"`                      // Inpainting fill
+	InpaintFullRes                    bool           `json:"inpaint_full_res"`                     // Inpainting in full resolution
+	InpaintFullResPadding             int            `json:"inpaint_full_res_padding"`             // Padding for full resolution
+	InpaintingMaskInvert              int            `json:"inpainting_mask_invert"`               // Mask inversion
+	InitialNoiseMultiplier            float64        `json:"initial_noise_multiplier"`             // Initial noise multiplier
+	Prompt                            string         `json:"prompt"`                               // Text prompt
+	Styles                            []string       `json:"styles,omitempty"`                     // Styles
+	Seed                              int64          `json:"seed"`                                 // Generation seed
+	Subseed                           int64          `json:"subseed"`                              // Subseed
+	SubseedStrength                   float64        `json:"subseed_strength"`                     // Subseed strength
+	SeedResizeFromH                   int            `json:"seed_resize_from_h"`                   // Height for seed resize
+	SeedResizeFromW                   int            `json:"seed_resize_from_w"`                   // Width for seed resize
+	SamplerName                       string         `json:"sampler_name"`                         // Sampler name
+	BatchSize                         int            `json:"batch_size"`                           // Batch size
+	NIter                             int            `json:"n_iter"`                               // Number of iterations
+	Steps                             int            `json:"steps"`                                // Number of steps
+	CfgScale                          float64        `json:"cfg_scale"`                            // CFG scale
+	Width                             int            `json:"width"`                                // Image width
+	Height                            int            `json:"height"`                               // Image height
+	RestoreFaces                      bool           `json:"restore_faces"`                        // Face restoration
+	Tiling                            bool           `json:"tiling"`                               // Tiling
+	DoNotSaveSamples                  bool           `json:"do_not_save_samples"`                  // Don't save samples
+	DoNotSaveGrid                     bool           `json:"do_not_save_grid"`                     // Don't save grid
+	NegativePrompt                    string         `json:"negative_prompt"`                      // Negative prompt
+	Eta                               float64        `json:"eta"`                                  // Eta parameter
+	SChurn                            float64        `json:"s_churn"`                              // S-churn parameter
+	STmax                             float64        `json:"s_tmax"`                               // S-tmax parameter
+	STmin                             float64        `json:"s_tmin"`                               // S-tmin parameter
+	SNoise                            float64        `json:"s_noise"`                              // S-noise parameter
+	OverrideSettings                  map[string]any `json:"override_settings"`                    // Settings override
+	OverrideSettingsRestoreAfterwards bool           `json:"override_settings_restore_afterwards"` // Restore settings after
+	ScriptArgs                        []any          `json:"script_args,omitempty"`                // Script arguments
+	SamplerIndex                      string         `json:"sampler_index"`                        // Sampler index
+	IncludeInitImages                 bool           `json:"include_init_images"`                  // Include source images
+	ScriptName                        string         `json:"script_name,omitempty"`                // Script name
+	SendImages                        bool           `json:"send_images"`                          // Send images
+	SaveImages                        bool           `json:"save_images"`                          // Save images
+	AlwaysonScripts                   map[string]any `json:"alwayson_scripts,omitempty"`           // Always active scripts
 }
 
 // Img2ImgResponse structure for img2img API response
 type Img2ImgResponse struct {
-	Images     []string               `json:"images"`     // Generated images in base64
-	Parameters map[string]interface{} `json:"parameters"` // Generation parameters
-	Info       string                 `json:"info"`       // Generation info
+	Images     []string       `json:"images"`     // Generated images in base64
+	Parameters map[string]any `json:"parameters"` // Generation parameters
+	Info       string         `json:"info"`       // Generation info
 }
 
 // ProcessingStyle processing styles according to requirements
@@ -210,7 +210,7 @@ func (c *StableDiffusionClient) ProcessImage(ctx context.Context, req ProcessIma
 			Tiling:            false,
 		}
 
-		apiRequest.OverrideSettings = map[string]interface{}{}
+		apiRequest.OverrideSettings = map[string]any{}
 		apiRequest.OverrideSettingsRestoreAfterwards = true
 
 		c.logger.GetZerologLogger().Info().Int("attempt", i+1).Int("width", w).Int("height", h).Msg("Stable Diffusion request with safe dimensions")

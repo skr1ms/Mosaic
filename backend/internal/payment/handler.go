@@ -48,8 +48,8 @@ func NewPaymentHandler(router fiber.Router, deps *PaymentHandlerDeps) {
 // @Produce json
 // @Param request body PurchaseCouponRequest true "Purchase request data"
 // @Success 200 {object} PurchaseCouponResponse
-// @Failure 400 {object} map[string]interface{} "Invalid request data"
-// @Failure 500 {object} map[string]interface{} "Failed to create order"
+// @Failure 400 {object} map[string]any "Invalid request data"
+// @Failure 500 {object} map[string]any "Failed to create order"
 // @Router /payment/purchase [post]
 func (h *PaymentHandler) PurchaseCoupon(c *fiber.Ctx) error {
 	var req PurchaseCouponRequest
@@ -103,8 +103,8 @@ func (h *PaymentHandler) PurchaseCoupon(c *fiber.Ctx) error {
 // @Produce json
 // @Param orderNumber path string true "Order number"
 // @Success 200 {object} OrderStatusResponse
-// @Failure 400 {object} map[string]interface{} "Order number is required"
-// @Failure 500 {object} map[string]interface{} "Failed to get order status"
+// @Failure 400 {object} map[string]any "Order number is required"
+// @Failure 500 {object} map[string]any "Failed to get order status"
 // @Router /payment/orders/{orderNumber}/status [get]
 func (h *PaymentHandler) GetOrderStatus(c *fiber.Ctx) error {
 	orderNumber := strings.TrimSpace(c.Params("orderNumber"))
@@ -151,8 +151,8 @@ func (h *PaymentHandler) GetOrderStatus(c *fiber.Ctx) error {
 // @Description Retrieve available payment methods and configurations
 // @Tags payment
 // @Produce json
-// @Success 200 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{} "Failed to get payment options"
+// @Success 200 {object} map[string]any
+// @Failure 500 {object} map[string]any "Failed to get payment options"
 // @Router /payment/options [get]
 func (h *PaymentHandler) GetAvailableOptions(c *fiber.Ctx) error {
 	response := h.deps.PaymentService.GetAvailableOptions()
@@ -171,8 +171,8 @@ func (h *PaymentHandler) GetAvailableOptions(c *fiber.Ctx) error {
 // @Produce json
 // @Param orderNumber query string true "Order number"
 // @Success 302 "Redirect to success page"
-// @Failure 400 {object} map[string]interface{} "Order number is required"
-// @Failure 500 {object} map[string]interface{} "Failed to process payment return"
+// @Failure 400 {object} map[string]any "Order number is required"
+// @Failure 500 {object} map[string]any "Failed to process payment return"
 // @Router /payment/return [get]
 func (h *PaymentHandler) PaymentReturn(c *fiber.Ctx) error {
 	orderNumber := c.Query("orderNumber")
@@ -221,9 +221,9 @@ func (h *PaymentHandler) PaymentReturn(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param notification body PaymentNotificationRequest true "Notification data"
-// @Success 200 {object} map[string]interface{} "Notification processed successfully"
-// @Failure 400 {object} map[string]interface{} "Invalid notification data"
-// @Failure 500 {object} map[string]interface{} "Failed to process notification"
+// @Success 200 {object} map[string]any "Notification processed successfully"
+// @Failure 400 {object} map[string]any "Invalid notification data"
+// @Failure 500 {object} map[string]any "Failed to process notification"
 // @Router /payment/notification [post]
 func (h *PaymentHandler) PaymentNotification(c *fiber.Ctx) error {
 	var notification PaymentNotificationRequest
@@ -279,8 +279,8 @@ func (h *PaymentHandler) PaymentNotification(c *fiber.Ctx) error {
 // @Description Test integration with Alfa Bank API using current configuration
 // @Tags payment
 // @Produce json
-// @Success 200 {object} map[string]interface{} "Integration test results"
-// @Failure 500 {object} map[string]interface{} "Integration test failed"
+// @Success 200 {object} map[string]any "Integration test results"
+// @Failure 500 {object} map[string]any "Integration test failed"
 // @Router /payment/test-integration [get]
 func (h *PaymentHandler) TestIntegration(c *fiber.Ctx) error {
 	// Create a test order to verify integration

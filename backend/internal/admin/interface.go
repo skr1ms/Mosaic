@@ -87,9 +87,9 @@ type CouponRepositoryInterface interface {
 	CountBrandedPurchasesByPartner(ctx context.Context, partnerID uuid.UUID) (int64, error)
 	CountActivatedInTimeRange(ctx context.Context, from, to time.Time) (int64, error)
 	GetStatistics(ctx context.Context, partnerID *uuid.UUID) (map[string]int64, error)
-	GetPartnerStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]interface{}, error)
-	GetPartnerSalesStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]interface{}, error)
-	GetPartnerUsageStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]interface{}, error)
+	GetPartnerStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]any, error)
+	GetPartnerSalesStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]any, error)
+	GetPartnerUsageStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]any, error)
 	GetStatusCounts(ctx context.Context, partnerID *uuid.UUID) (map[string]int64, error)
 	GetExtendedStatusCounts(ctx context.Context, partnerID *uuid.UUID) (map[string]int64, error)
 	GetSizeCounts(ctx context.Context, partnerID *uuid.UUID) (map[string]int64, error)
@@ -97,12 +97,12 @@ type CouponRepositoryInterface interface {
 	GetTopActivatedByPartner(ctx context.Context, limit int) ([]coupon.PartnerCount, error)
 	GetTopPurchasedByPartner(ctx context.Context, limit int) ([]coupon.PartnerCount, error)
 	GetLastActivityByPartner(ctx context.Context, partnerID uuid.UUID) (*time.Time, error)
-	GetTimeSeriesData(ctx context.Context, from, to time.Time, period string, partnerID *uuid.UUID) ([]map[string]interface{}, error)
+	GetTimeSeriesData(ctx context.Context, from, to time.Time, period string, partnerID *uuid.UUID) ([]map[string]any, error)
 	CodeExists(ctx context.Context, code string) (bool, error)
 	HealthCheck(ctx context.Context) error
 	GetCouponsWithAdvancedFilter(ctx context.Context, filter coupon.CouponFilterRequest) ([]*coupon.CouponInfo, int, error)
 	GetCouponsForDeletion(ctx context.Context, ids []uuid.UUID) ([]*coupon.CouponDeletePreview, error)
-	GetCouponsForExport(ctx context.Context, options coupon.ExportOptionsRequest) (interface{}, error)
+	GetCouponsForExport(ctx context.Context, options coupon.ExportOptionsRequest) (any, error)
 	CountCreatedByPartnerInRange(ctx context.Context, partnerID uuid.UUID, from, to *time.Time) (int, error)
 	CountActivatedByPartnerInRange(ctx context.Context, partnerID uuid.UUID, from, to *time.Time) (int, error)
 	CountPurchasedByPartnerInRange(ctx context.Context, partnerID uuid.UUID, from, to *time.Time) (int, error)
@@ -112,7 +112,7 @@ type CouponRepositoryInterface interface {
 	ResetCoupon(ctx context.Context, id uuid.UUID) error
 	Reset(ctx context.Context, id uuid.UUID) error
 	BatchReset(ctx context.Context, ids []uuid.UUID) ([]uuid.UUID, []uuid.UUID, error)
-	GetPartnerCouponsWithFilter(ctx context.Context, partnerID uuid.UUID, filters map[string]interface{}, page, limit int, sortBy, order string) ([]*coupon.Coupon, int, error)
+	GetPartnerCouponsWithFilter(ctx context.Context, partnerID uuid.UUID, filters map[string]any, page, limit int, sortBy, order string) ([]*coupon.Coupon, int, error)
 	GetPartnerCouponByCode(ctx context.Context, partnerID uuid.UUID, code string) (*coupon.Coupon, error)
 	GetPartnerCouponDetail(ctx context.Context, partnerID uuid.UUID, couponID uuid.UUID) (*coupon.Coupon, error)
 	GetPartnerRecentActivity(ctx context.Context, partnerID uuid.UUID, limit int) ([]*coupon.Coupon, error)
@@ -138,7 +138,7 @@ type S3ClientInterface interface {
 type RedisClientInterface interface {
 	Ping(ctx context.Context) *redis.StatusCmd
 	Get(ctx context.Context, key string) *redis.StringCmd
-	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.StatusCmd
+	Set(ctx context.Context, key string, value any, expiration time.Duration) *redis.StatusCmd
 	Del(ctx context.Context, keys ...string) *redis.IntCmd
 	LLen(ctx context.Context, key string) *redis.IntCmd
 }
@@ -149,7 +149,7 @@ type AdminServiceInterface interface {
 	DeleteAdmin(id uuid.UUID) error
 	UpdateAdminPassword(id uuid.UUID, newPassword string) error
 	UpdateAdminEmail(id uuid.UUID, newEmail string) error
-	GetDashboardData() (map[string]interface{}, error)
+	GetDashboardData() (map[string]any, error)
 	GetPartners(search, status, sortBy, order string) ([]*partner.Partner, error)
 	GetPartnerDetail(partnerID uuid.UUID) (*PartnerDetailResponse, error)
 	CreatePartner(req partner.CreatePartnerRequest) (*partner.Partner, error)
@@ -157,8 +157,8 @@ type AdminServiceInterface interface {
 	UpdatePartnerWithHistory(partnerID uuid.UUID, req partner.UpdatePartnerRequest, adminLogin, reason string) (*partner.Partner, error)
 	ExportCouponsAdvanced(options coupon.ExportOptionsRequest) ([]byte, string, string, error)
 	DownloadCouponMaterials(couponID uuid.UUID) ([]byte, string, error)
-	GetStatistics() (map[string]interface{}, error)
-	GetSystemStatistics() (map[string]interface{}, error)
+	GetStatistics() (map[string]any, error)
+	GetSystemStatistics() (map[string]any, error)
 	GetImageDetails(imageID uuid.UUID) (*image.Image, error)
 	DeleteImageTask(imageID uuid.UUID) error
 	RetryImageTask(imageID uuid.UUID) error

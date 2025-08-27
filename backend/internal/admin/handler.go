@@ -116,11 +116,11 @@ func NewAdminHandler(router fiber.Router, deps *AdminHandlerDeps) {
 // @Produce json
 // @Security BearerAuth
 // @Param admin body CreateAdminRequest true "New admin data"
-// @Success 201 {object} map[string]interface{} "Admin created"
-// @Failure 400 {object} map[string]interface{} "Invalid request payload"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 201 {object} map[string]any "Admin created"
+// @Failure 400 {object} map[string]any "Invalid request payload"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/main-admin/admins [post]
 func (handler *AdminHandler) CreateAdmin(c *fiber.Ctx) error {
 	var payload CreateAdminRequest
@@ -144,7 +144,7 @@ func (handler *AdminHandler) CreateAdmin(c *fiber.Ctx) error {
 			"error": "Failed to create admin",
 		})
 	}
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{
 		"id":    admin.ID,
 		"login": admin.Login,
 		"role":  "admin",
@@ -161,10 +161,10 @@ func (handler *AdminHandler) CreateAdmin(c *fiber.Ctx) error {
 // @Tags admin-dashboard
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} map[string]interface{} "Dashboard data"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Dashboard data"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/dashboard [get]
 func (handler *AdminHandler) GetDashboard(c *fiber.Ctx) error {
 	dashboardData, err := handler.deps.AdminService.GetDashboardData()
@@ -183,10 +183,10 @@ func (handler *AdminHandler) GetDashboard(c *fiber.Ctx) error {
 // @Tags admin-management
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {array} map[string]interface{} "List of administrators"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {array} map[string]any "List of administrators"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/main-admin/admins [get]
 func (handler *AdminHandler) GetAdmins(c *fiber.Ctx) error {
 	admins, err := handler.deps.AdminService.GetAdmins()
@@ -196,7 +196,7 @@ func (handler *AdminHandler) GetAdmins(c *fiber.Ctx) error {
 			"error": "Failed to get admins",
 		})
 	}
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{"count": len(admins)}).Msg("Admins list retrieved")
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{"count": len(admins)}).Msg("Admins list retrieved")
 	return c.JSON(admins)
 }
 
@@ -206,12 +206,12 @@ func (handler *AdminHandler) GetAdmins(c *fiber.Ctx) error {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Admin ID"
-// @Success 200 {object} map[string]interface{} "Admin deleted"
-// @Failure 400 {object} map[string]interface{} "Invalid admin ID"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 404 {object} map[string]interface{} "Admin not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Admin deleted"
+// @Failure 400 {object} map[string]any "Invalid admin ID"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 404 {object} map[string]any "Admin not found"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/main-admin/admins/{id} [delete]
 func (handler *AdminHandler) DeleteAdmin(c *fiber.Ctx) error {
 	idStr := c.Params("id")
@@ -237,7 +237,7 @@ func (handler *AdminHandler) DeleteAdmin(c *fiber.Ctx) error {
 		})
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{"admin_id": id}).Msg("Admin deleted")
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{"admin_id": id}).Msg("Admin deleted")
 	return c.JSON(fiber.Map{
 		"message": "Admin deleted successfully",
 	})
@@ -251,12 +251,12 @@ func (handler *AdminHandler) DeleteAdmin(c *fiber.Ctx) error {
 // @Security BearerAuth
 // @Param id path string true "Admin ID"
 // @Param request body UpdateAdminPasswordRequest true "New password"
-// @Success 200 {object} map[string]interface{} "Password updated"
-// @Failure 400 {object} map[string]interface{} "Invalid request or password too short"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 404 {object} map[string]interface{} "Admin not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Password updated"
+// @Failure 400 {object} map[string]any "Invalid request or password too short"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 404 {object} map[string]any "Admin not found"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/admins/{id}/password [patch]
 func (handler *AdminHandler) UpdateAdminPassword(c *fiber.Ctx) error {
 	idStr := c.Params("id")
@@ -312,7 +312,7 @@ func (handler *AdminHandler) UpdateAdminPassword(c *fiber.Ctx) error {
 		})
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{"admin_id": id}).Msg("Admin password updated")
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{"admin_id": id}).Msg("Admin password updated")
 	return c.JSON(fiber.Map{
 		"message": "Admin password updated successfully",
 	})
@@ -326,12 +326,12 @@ func (handler *AdminHandler) UpdateAdminPassword(c *fiber.Ctx) error {
 // @Security BearerAuth
 // @Param id path string true "Admin ID"
 // @Param request body UpdateAdminEmailRequest true "New email"
-// @Success 200 {object} map[string]interface{} "Email updated"
-// @Failure 400 {object} map[string]interface{} "Invalid request or email format"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 404 {object} map[string]interface{} "Admin not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Email updated"
+// @Failure 400 {object} map[string]any "Invalid request or email format"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 404 {object} map[string]any "Admin not found"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/admins/{id}/email [patch]
 func (handler *AdminHandler) UpdateAdminEmail(c *fiber.Ctx) error {
 	idStr := c.Params("id")
@@ -390,7 +390,7 @@ func (handler *AdminHandler) UpdateAdminEmail(c *fiber.Ctx) error {
 		})
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{"admin_id": id}).Msg("Admin email updated")
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{"admin_id": id}).Msg("Admin email updated")
 	return c.JSON(fiber.Map{
 		"message": "Admin email updated successfully",
 	})
@@ -405,10 +405,10 @@ func (handler *AdminHandler) UpdateAdminEmail(c *fiber.Ctx) error {
 // @Param status query string false "Filter by status (active/blocked)"
 // @Param sort_by query string false "Sort field (created_at/brand_name)"
 // @Param order query string false "Sort order (asc/desc, default desc)"
-// @Success 200 {object} map[string]interface{} "Partners list"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Partners list"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/partners [get]
 func (handler *AdminHandler) GetPartners(c *fiber.Ctx) error {
 	search := c.Query("search")
@@ -446,7 +446,7 @@ func (handler *AdminHandler) GetPartners(c *fiber.Ctx) error {
 			"status":           partner.Status,
 		}
 	}
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{"count": len(result)}).Msg("Partners list retrieved")
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{"count": len(result)}).Msg("Partners list retrieved")
 	return c.JSON(fiber.Map{
 		"partners": result,
 		"total":    len(result),
@@ -460,12 +460,12 @@ func (handler *AdminHandler) GetPartners(c *fiber.Ctx) error {
 // @Produce json
 // @Security BearerAuth
 // @Param partner body partner.CreatePartnerRequest true "New partner data"
-// @Success 201 {object} map[string]interface{} "Partner created"
-// @Failure 400 {object} map[string]interface{} "Invalid request payload"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 409 {object} map[string]interface{} "Partner with this login/domain already exists"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 201 {object} map[string]any "Partner created"
+// @Failure 400 {object} map[string]any "Invalid request payload"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 409 {object} map[string]any "Partner with this login/domain already exists"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/partners [post]
 func (handler *AdminHandler) CreatePartner(c *fiber.Ctx) error {
 	var req partner.CreatePartnerRequest
@@ -499,7 +499,7 @@ func (handler *AdminHandler) CreatePartner(c *fiber.Ctx) error {
 
 	// CI/CD pipeline is now triggered automatically in CreatePartner method
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{
 		"id":           partner.ID,
 		"login":        partner.Login,
 		"partner_code": partner.PartnerCode,
@@ -517,12 +517,12 @@ func (handler *AdminHandler) CreatePartner(c *fiber.Ctx) error {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Partner ID"
-// @Success 200 {object} map[string]interface{} "Partner info"
-// @Failure 400 {object} map[string]interface{} "Invalid ID"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 404 {object} map[string]interface{} "Partner not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Partner info"
+// @Failure 400 {object} map[string]any "Invalid ID"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 404 {object} map[string]any "Partner not found"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/partners/{id} [get]
 func (handler *AdminHandler) GetPartner(c *fiber.Ctx) error {
 	partnerID, err := uuid.Parse(c.Params("id"))
@@ -551,7 +551,7 @@ func (handler *AdminHandler) GetPartner(c *fiber.Ctx) error {
 	if err != nil {
 		purchasedCoupons = 0
 	}
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{"partner_id": partner.ID}).Msg("Partner details retrieved")
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{"partner_id": partner.ID}).Msg("Partner details retrieved")
 	return c.JSON(fiber.Map{
 		"id":                partner.ID,
 		"login":             partner.Login,
@@ -586,12 +586,12 @@ func (handler *AdminHandler) GetPartner(c *fiber.Ctx) error {
 // @Security BearerAuth
 // @Param id path string true "Partner ID"
 // @Param logo formData file true "Logo file (image/*)"
-// @Success 200 {object} map[string]interface{} "Logo URL"
-// @Failure 400 {object} map[string]interface{} "Bad request"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 404 {object} map[string]interface{} "Partner not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Logo URL"
+// @Failure 400 {object} map[string]any "Bad request"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 404 {object} map[string]any "Partner not found"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/partners/{id}/logo [post]
 func (handler *AdminHandler) UploadPartnerLogo(c *fiber.Ctx) error {
 	partnerID, err := uuid.Parse(c.Params("id"))
@@ -648,7 +648,7 @@ func (handler *AdminHandler) UploadPartnerLogo(c *fiber.Ctx) error {
 			"error": "Failed to update partner",
 		})
 	}
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{"partner_id": p.ID, "logo_key": key}).Msg("Partner logo uploaded")
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{"partner_id": p.ID, "logo_key": key}).Msg("Partner logo uploaded")
 	return c.JSON(fiber.Map{
 		"logo_url": url,
 		"logo_key": key,
@@ -661,12 +661,12 @@ func (handler *AdminHandler) UploadPartnerLogo(c *fiber.Ctx) error {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Partner ID"
-// @Success 200 {object} map[string]interface{} "Partner detail info"
-// @Failure 400 {object} map[string]interface{} "Invalid partner ID"
-// @Failure 404 {object} map[string]interface{} "Partner not found"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Partner detail info"
+// @Failure 400 {object} map[string]any "Invalid partner ID"
+// @Failure 404 {object} map[string]any "Partner not found"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/partners/{id}/detail [get]
 func (handler *AdminHandler) GetPartnerDetail(c *fiber.Ctx) error {
 	partnerID, err := uuid.Parse(c.Params("id"))
@@ -689,7 +689,7 @@ func (handler *AdminHandler) GetPartnerDetail(c *fiber.Ctx) error {
 			"error": "Failed to get partner detail",
 		})
 	}
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{"partner_id": partnerID}).Msg("Partner detail retrieved")
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{"partner_id": partnerID}).Msg("Partner detail retrieved")
 	return c.JSON(partnerDetail)
 }
 
@@ -700,11 +700,11 @@ func (handler *AdminHandler) GetPartnerDetail(c *fiber.Ctx) error {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Partner ID"
-// @Success 200 {object} map[string]interface{} "Partner updated"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 404 {object} map[string]interface{} "Partner not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Partner updated"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 404 {object} map[string]any "Partner not found"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/partners/{id} [put]
 func (handler *AdminHandler) UpdatePartner(c *fiber.Ctx) error {
 	var req partner.UpdatePartnerRequest
@@ -745,7 +745,7 @@ func (handler *AdminHandler) UpdatePartner(c *fiber.Ctx) error {
 	}
 
 	// CI/CD pipeline is now triggered automatically in UpdatePartner method when domain changes
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{"partner_id": partner.ID}).Msg("Partner updated")
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{"partner_id": partner.ID}).Msg("Partner updated")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"id":           partner.ID,
 		"login":        partner.Login,
@@ -759,12 +759,12 @@ func (handler *AdminHandler) UpdatePartner(c *fiber.Ctx) error {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Partner ID"
-// @Success 200 {object} map[string]interface{} "Partner blocked"
-// @Failure 400 {object} map[string]interface{} "Invalid ID"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 404 {object} map[string]interface{} "Partner not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Partner blocked"
+// @Failure 400 {object} map[string]any "Invalid ID"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 404 {object} map[string]any "Partner not found"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/partners/{id}/block [patch]
 func (handler *AdminHandler) BlockPartner(c *fiber.Ctx) error {
 	partnerID, err := uuid.Parse(c.Params("id"))
@@ -786,7 +786,7 @@ func (handler *AdminHandler) BlockPartner(c *fiber.Ctx) error {
 			"error": "Failed to block coupons",
 		})
 	}
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{"partner_id": partnerID}).Msg("Partner blocked")
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{"partner_id": partnerID}).Msg("Partner blocked")
 	return c.JSON(fiber.Map{"message": "Partner blocked successfully"})
 }
 
@@ -796,12 +796,12 @@ func (handler *AdminHandler) BlockPartner(c *fiber.Ctx) error {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Partner ID"
-// @Success 200 {object} map[string]interface{} "Partner unblocked"
-// @Failure 400 {object} map[string]interface{} "Invalid ID"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 404 {object} map[string]interface{} "Partner not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Partner unblocked"
+// @Failure 400 {object} map[string]any "Invalid ID"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 404 {object} map[string]any "Partner not found"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/partners/{id}/unblock [patch]
 func (handler *AdminHandler) UnblockPartner(c *fiber.Ctx) error {
 	partnerID, err := uuid.Parse(c.Params("id"))
@@ -823,7 +823,7 @@ func (handler *AdminHandler) UnblockPartner(c *fiber.Ctx) error {
 			"error": "Failed to unblock coupons",
 		})
 	}
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{"partner_id": partnerID}).Msg("Partner unblocked")
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{"partner_id": partnerID}).Msg("Partner unblocked")
 	return c.JSON(fiber.Map{"message": "Partner unblocked successfully"})
 }
 
@@ -834,12 +834,12 @@ func (handler *AdminHandler) UnblockPartner(c *fiber.Ctx) error {
 // @Security BearerAuth
 // @Param id path string true "Partner ID"
 // @Param confirm query boolean false "Delete confirmation (true/false)"
-// @Success 200 {object} map[string]interface{} "Partner deleted"
-// @Failure 400 {object} map[string]interface{} "Invalid ID or confirmation required"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 404 {object} map[string]interface{} "Partner not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Partner deleted"
+// @Failure 400 {object} map[string]any "Invalid ID or confirmation required"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 404 {object} map[string]any "Partner not found"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/partners/{id} [delete]
 func (handler *AdminHandler) DeletePartner(c *fiber.Ctx) error {
 	partnerID, err := uuid.Parse(c.Params("id"))
@@ -875,7 +875,7 @@ func (handler *AdminHandler) DeletePartner(c *fiber.Ctx) error {
 		handler.deps.Logger.FromContext(c).Error().Msg("Failed to delete partner")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to delete partner"})
 	}
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{"partner_id": partner.ID}).Msg("Partner deleted")
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{"partner_id": partner.ID}).Msg("Partner deleted")
 	return c.JSON(fiber.Map{
 		"deleted_partner": fiber.Map{
 			"id":                partner.ID,
@@ -892,12 +892,12 @@ func (handler *AdminHandler) DeletePartner(c *fiber.Ctx) error {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Partner ID"
-// @Success 200 {object} map[string]interface{} "Partner statistics"
-// @Failure 400 {object} map[string]interface{} "Invalid ID"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 404 {object} map[string]interface{} "Partner not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Partner statistics"
+// @Failure 400 {object} map[string]any "Invalid ID"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 404 {object} map[string]any "Partner not found"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/partners/{id}/statistics [get]
 func (handler *AdminHandler) GetPartnerStatistics(c *fiber.Ctx) error {
 	partnerID, err := uuid.Parse(c.Params("id"))
@@ -933,7 +933,7 @@ func (handler *AdminHandler) GetPartnerStatistics(c *fiber.Ctx) error {
 	if totalCoupons > 0 {
 		activationRate = (float64(activatedCoupons) / float64(totalCoupons)) * 100
 	}
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{"partner_id": partnerID}).Msg("Partner statistics retrieved")
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{"partner_id": partnerID}).Msg("Partner statistics retrieved")
 	return c.JSON(fiber.Map{
 		"partner_id":        partnerID,
 		"total_coupons":     totalCoupons,
@@ -956,10 +956,10 @@ func (handler *AdminHandler) GetPartnerStatistics(c *fiber.Ctx) error {
 // @Param style query string false "Style for filtering"
 // @Param limit query int false "Number of records per page (default 50)"
 // @Param offset query int false "Offset for pagination (default 0)"
-// @Success 200 {object} map[string]interface{} "Coupons list"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Coupons list"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/coupons [get]
 func (handler *AdminHandler) GetCoupons(c *fiber.Ctx) error {
 	filters := map[string]any{}
@@ -1027,7 +1027,7 @@ func (handler *AdminHandler) GetCoupons(c *fiber.Ctx) error {
 		}
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{"count": len(result)}).Msg("Coupons list retrieved")
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{"count": len(result)}).Msg("Coupons list retrieved")
 	return c.JSON(fiber.Map{
 		"coupons": result,
 		"total":   len(result),
@@ -1050,11 +1050,11 @@ func (handler *AdminHandler) GetCoupons(c *fiber.Ctx) error {
 // @Param created_to query string false "Creation date to (RFC3339)"
 // @Param used_from query string false "Usage date from (RFC3339)"
 // @Param used_to query string false "Usage date to (RFC3339)"
-// @Success 200 {object} map[string]interface{} "Coupons with pagination info"
-// @Failure 400 {object} map[string]interface{} "Invalid request parameters"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Coupons with pagination info"
+// @Failure 400 {object} map[string]any "Invalid request parameters"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/coupons/paginated [get]
 func (handler *AdminHandler) GetCouponsPaginated(c *fiber.Ctx) error {
 	page := c.QueryInt("page", 1)
@@ -1154,7 +1154,7 @@ func (handler *AdminHandler) GetCouponsPaginated(c *fiber.Ctx) error {
 	hasNext := page < totalPages
 	hasPrev := page > 1
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{
 		"page":  page,
 		"limit": limit,
 		"total": total,
@@ -1179,11 +1179,11 @@ func (handler *AdminHandler) GetCouponsPaginated(c *fiber.Ctx) error {
 // @Produce json
 // @Security BearerAuth
 // @Param request body coupon.CreateCouponRequest true "Coupon creation parameters"
-// @Success 201 {object} map[string]interface{} "Coupons created"
-// @Failure 400 {object} map[string]interface{} "Request error"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 201 {object} map[string]any "Coupons created"
+// @Failure 400 {object} map[string]any "Request error"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/coupons [post]
 func (handler *AdminHandler) CreateCoupons(c *fiber.Ctx) error {
 	var req coupon.CreateCouponRequest
@@ -1251,7 +1251,7 @@ func (handler *AdminHandler) CreateCoupons(c *fiber.Ctx) error {
 		})
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{
 		"count":      req.Count,
 		"partner_id": req.PartnerID,
 		"size":       req.Size,
@@ -1276,11 +1276,11 @@ func (handler *AdminHandler) CreateCoupons(c *fiber.Ctx) error {
 // @Param id path string true "Partner ID"
 // @Param format query string false "File format (txt or csv)" default(txt)
 // @Success 200 {string} string "Partner coupons file"
-// @Failure 400 {object} map[string]interface{} "Invalid partner ID"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 404 {object} map[string]interface{} "Partner not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Failure 400 {object} map[string]any "Invalid partner ID"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 404 {object} map[string]any "Partner not found"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/coupons/export/partner/{id} [get]
 func (handler *AdminHandler) ExportPartnerCoupons(c *fiber.Ctx) error {
 	partnerIDStr := c.Params("id")
@@ -1325,7 +1325,7 @@ func (handler *AdminHandler) ExportPartnerCoupons(c *fiber.Ctx) error {
 	c.Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
 	c.Set("Cache-Control", "no-cache")
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{
 		"partner_id": partnerID,
 		"format":     format,
 		"filename":   filename,
@@ -1340,11 +1340,11 @@ func (handler *AdminHandler) ExportPartnerCoupons(c *fiber.Ctx) error {
 // @Produce json
 // @Security BearerAuth
 // @Param request body map[string][]string true "List of coupon IDs to delete"
-// @Success 200 {object} map[string]interface{} "Batch deletion result"
-// @Failure 400 {object} map[string]interface{} "Request error"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Batch deletion result"
+// @Failure 400 {object} map[string]any "Request error"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/coupons/batch-delete [post]
 func (handler *AdminHandler) BatchDeleteCoupons(c *fiber.Ctx) error {
 	var req struct {
@@ -1384,7 +1384,7 @@ func (handler *AdminHandler) BatchDeleteCoupons(c *fiber.Ctx) error {
 		})
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{
 		"deleted_count": deletedCount,
 		"requested":     len(req.CouponIDs),
 	}).Msg("Coupons batch deleted")
@@ -1401,12 +1401,12 @@ func (handler *AdminHandler) BatchDeleteCoupons(c *fiber.Ctx) error {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Coupon ID"
-// @Success 200 {object} map[string]interface{} "Coupon information"
-// @Failure 400 {object} map[string]interface{} "Invalid ID"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 404 {object} map[string]interface{} "Coupon not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Coupon information"
+// @Failure 400 {object} map[string]any "Invalid ID"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 404 {object} map[string]any "Coupon not found"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/coupons/{id} [get]
 func (handler *AdminHandler) GetCoupon(c *fiber.Ctx) error {
 	couponID, err := uuid.Parse(c.Params("id"))
@@ -1433,7 +1433,7 @@ func (handler *AdminHandler) GetCoupon(c *fiber.Ctx) error {
 		}
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{"coupon_id": coupon.ID}).Msg("Coupon details retrieved")
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{"coupon_id": coupon.ID}).Msg("Coupon details retrieved")
 	return c.JSON(fiber.Map{
 		"id":                coupon.ID,
 		"code":              coupon.Code,
@@ -1459,12 +1459,12 @@ func (handler *AdminHandler) GetCoupon(c *fiber.Ctx) error {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Coupon ID"
-// @Success 200 {object} map[string]interface{} "Coupon reset"
-// @Failure 400 {object} map[string]interface{} "Invalid ID"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 404 {object} map[string]interface{} "Coupon not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Coupon reset"
+// @Failure 400 {object} map[string]any "Invalid ID"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 404 {object} map[string]any "Coupon not found"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/coupons/{id}/reset [patch]
 func (handler *AdminHandler) ResetCoupon(c *fiber.Ctx) error {
 	couponID, err := uuid.Parse(c.Params("id"))
@@ -1482,7 +1482,7 @@ func (handler *AdminHandler) ResetCoupon(c *fiber.Ctx) error {
 		})
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{"coupon_id": couponID}).Msg("Coupon reset")
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{"coupon_id": couponID}).Msg("Coupon reset")
 	return c.JSON(fiber.Map{"message": "Coupon reset successfully"})
 }
 
@@ -1493,12 +1493,12 @@ func (handler *AdminHandler) ResetCoupon(c *fiber.Ctx) error {
 // @Security BearerAuth
 // @Param id path string true "Coupon ID"
 // @Param confirm query boolean false "Delete confirmation (true/false)"
-// @Success 200 {object} map[string]interface{} "Coupon deleted"
-// @Failure 400 {object} map[string]interface{} "Invalid ID or confirmation required"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 404 {object} map[string]interface{} "Coupon not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Coupon deleted"
+// @Failure 400 {object} map[string]any "Invalid ID or confirmation required"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 404 {object} map[string]any "Coupon not found"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/coupons/{id} [delete]
 func (handler *AdminHandler) DeleteCoupon(c *fiber.Ctx) error {
 	couponID, err := uuid.Parse(c.Params("id"))
@@ -1530,7 +1530,7 @@ func (handler *AdminHandler) DeleteCoupon(c *fiber.Ctx) error {
 		})
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{"coupon_id": couponID}).Msg("Coupon deleted")
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{"coupon_id": couponID}).Msg("Coupon deleted")
 	return c.JSON(fiber.Map{
 		"message": "Coupon deleted successfully",
 		"deleted_coupon": fiber.Map{
@@ -1548,11 +1548,11 @@ func (handler *AdminHandler) DeleteCoupon(c *fiber.Ctx) error {
 // @Security BearerAuth
 // @Param id path string true "Coupon ID"
 // @Success 200 {string} string "ZIP archive with materials"
-// @Failure 400 {object} map[string]interface{} "Invalid coupon ID"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 404 {object} map[string]interface{} "Coupon not found or not used"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Failure 400 {object} map[string]any "Invalid coupon ID"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 404 {object} map[string]any "Coupon not found or not used"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/coupons/{id}/download-materials [get]
 func (handler *AdminHandler) DownloadCouponMaterials(c *fiber.Ctx) error {
 	idStr := c.Params("id")
@@ -1587,7 +1587,7 @@ func (handler *AdminHandler) DownloadCouponMaterials(c *fiber.Ctx) error {
 	c.Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
 	c.Set("Content-Type", "application/zip")
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{"coupon_id": id}).Msg("Coupon materials downloaded")
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{"coupon_id": id}).Msg("Coupon materials downloaded")
 	return c.Send(archiveData)
 }
 
@@ -1599,10 +1599,10 @@ func (handler *AdminHandler) DownloadCouponMaterials(c *fiber.Ctx) error {
 // @Security BearerAuth
 // @Param request body coupon.BatchResetRequest true "List of coupon IDs to reset"
 // @Success 200 {object} coupon.BatchResetResponse "Batch reset result"
-// @Failure 400 {object} map[string]interface{} "Invalid request"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Failure 400 {object} map[string]any "Invalid request"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/coupons/batch/reset [post]
 func (handler *AdminHandler) BatchResetCoupons(c *fiber.Ctx) error {
 	var req coupon.BatchResetRequest
@@ -1631,7 +1631,7 @@ func (handler *AdminHandler) BatchResetCoupons(c *fiber.Ctx) error {
 		})
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{"count": len(req.CouponIDs)}).Msg("Coupons batch reset")
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{"count": len(req.CouponIDs)}).Msg("Coupons batch reset")
 	return c.JSON(response)
 }
 
@@ -1643,10 +1643,10 @@ func (handler *AdminHandler) BatchResetCoupons(c *fiber.Ctx) error {
 // @Security BearerAuth
 // @Param request body coupon.ExportOptionsRequest true "Export options"
 // @Success 200 {string} string "Export file"
-// @Failure 400 {object} map[string]interface{} "Invalid request"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Failure 400 {object} map[string]any "Invalid request"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/coupons/export-advanced [post]
 func (handler *AdminHandler) ExportCouponsAdvanced(c *fiber.Ctx) error {
 	var req coupon.ExportOptionsRequest
@@ -1676,7 +1676,7 @@ func (handler *AdminHandler) ExportCouponsAdvanced(c *fiber.Ctx) error {
 	c.Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
 	c.Set("Content-Type", contentType)
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{
 		"format":      req.Format,
 		"file_format": req.FileFormat,
 		"filename":    filename,
@@ -1689,10 +1689,10 @@ func (handler *AdminHandler) ExportCouponsAdvanced(c *fiber.Ctx) error {
 // @Tags admin-statistics
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} map[string]interface{} "Statistics"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Statistics"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/statistics [get]
 func (handler *AdminHandler) GetStatistics(c *fiber.Ctx) error {
 	stats, err := handler.deps.AdminService.GetStatistics()
@@ -1711,10 +1711,10 @@ func (handler *AdminHandler) GetStatistics(c *fiber.Ctx) error {
 // @Tags admin-statistics
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} map[string]interface{} "Partners statistics"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Partners statistics"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/statistics/partners [get]
 func (handler *AdminHandler) GetPartnersStatistics(c *fiber.Ctx) error {
 	dateFromStr := strings.TrimSpace(c.Query("date_from"))
@@ -1788,7 +1788,7 @@ func (handler *AdminHandler) GetPartnersStatistics(c *fiber.Ctx) error {
 		})
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{"count": len(partnersStats)}).Msg("Partners statistics retrieved")
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{"count": len(partnersStats)}).Msg("Partners statistics retrieved")
 	return c.JSON(fiber.Map{
 		"partners": partnersStats,
 	})
@@ -1799,10 +1799,10 @@ func (handler *AdminHandler) GetPartnersStatistics(c *fiber.Ctx) error {
 // @Tags admin-statistics
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} map[string]interface{} "System statistics"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "System statistics"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/statistics/system [get]
 func (handler *AdminHandler) GetSystemStatistics(c *fiber.Ctx) error {
 	stats, err := handler.deps.AdminService.GetSystemStatistics()
@@ -1825,10 +1825,10 @@ func (handler *AdminHandler) GetSystemStatistics(c *fiber.Ctx) error {
 // @Param partner_id query string false "Filter by partner ID"
 // @Param limit query int false "Record limit (default 50)"
 // @Param offset query int false "Offset (default 0)"
-// @Success 200 {array} map[string]interface{} "Image processing tasks list"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {array} map[string]any "Image processing tasks list"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/images [get]
 func (handler *AdminHandler) GetAllImages(c *fiber.Ctx) error {
 	status := strings.TrimSpace(c.Query("status"))
@@ -1894,7 +1894,7 @@ func (handler *AdminHandler) GetAllImages(c *fiber.Ctx) error {
 		})
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{
 		"total":  total,
 		"limit":  limit,
 		"offset": offset,
@@ -1913,11 +1913,11 @@ func (handler *AdminHandler) GetAllImages(c *fiber.Ctx) error {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Task ID"
-// @Success 200 {object} map[string]interface{} "Task details"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 404 {object} map[string]interface{} "Task not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Task details"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 404 {object} map[string]any "Task not found"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/images/{id} [get]
 func (handler *AdminHandler) GetImageDetails(c *fiber.Ctx) error {
 	imageID := c.Params("id")
@@ -1937,7 +1937,7 @@ func (handler *AdminHandler) GetImageDetails(c *fiber.Ctx) error {
 		})
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{"task_id": imageUUID}).Msg("Image task details retrieved")
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{"task_id": imageUUID}).Msg("Image task details retrieved")
 	return c.JSON(task)
 }
 
@@ -1947,11 +1947,11 @@ func (handler *AdminHandler) GetImageDetails(c *fiber.Ctx) error {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Task ID"
-// @Success 200 {object} map[string]interface{} "Task deleted"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 404 {object} map[string]interface{} "Task not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Task deleted"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 404 {object} map[string]any "Task not found"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/images/{id} [delete]
 func (handler *AdminHandler) DeleteImageTask(c *fiber.Ctx) error {
 	imageID := c.Params("id")
@@ -1971,7 +1971,7 @@ func (handler *AdminHandler) DeleteImageTask(c *fiber.Ctx) error {
 		})
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{"task_id": imageUUID}).Msg("Image task deleted")
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{"task_id": imageUUID}).Msg("Image task deleted")
 	return c.JSON(fiber.Map{"message": "Image task deleted"})
 }
 
@@ -1981,12 +1981,12 @@ func (handler *AdminHandler) DeleteImageTask(c *fiber.Ctx) error {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Task ID"
-// @Success 200 {object} map[string]interface{} "Task queued for retry"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 404 {object} map[string]interface{} "Task not found"
-// @Failure 400 {object} map[string]interface{} "Task cannot be retried"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Task queued for retry"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 404 {object} map[string]any "Task not found"
+// @Failure 400 {object} map[string]any "Task cannot be retried"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/images/{id}/retry [post]
 func (handler *AdminHandler) RetryImageTask(c *fiber.Ctx) error {
 	imageID := c.Params("id")
@@ -2006,7 +2006,7 @@ func (handler *AdminHandler) RetryImageTask(c *fiber.Ctx) error {
 		})
 	}
 
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{"task_id": imageUUID}).Msg("Image task queued for retry")
+	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]any{"task_id": imageUUID}).Msg("Image task queued for retry")
 	return c.JSON(fiber.Map{"message": "Image task queued for retry"})
 }
 
@@ -2016,10 +2016,10 @@ func (handler *AdminHandler) RetryImageTask(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} map[string]interface{} "Nginx configuration updated"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Nginx configuration updated"
+// @Failure 401 {object} map[string]any "Unauthorized"
+// @Failure 403 {object} map[string]any "Forbidden"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /admin/nginx/deploy [post]
 func (handler *AdminHandler) DeployNginxConfig(c *fiber.Ctx) error {
 	err := handler.generateAndDeployNginxConfig()

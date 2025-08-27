@@ -112,7 +112,7 @@ func (s *PartnerService) DeletePartnerWithCoupons(ctx context.Context, partnerID
 }
 
 // GetComparisonStatistics returns comparison statistics with other partners
-func (s *PartnerService) GetComparisonStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]interface{}, error) {
+func (s *PartnerService) GetComparisonStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]any, error) {
 
 	if s.deps == nil || s.deps.CouponRepository == nil || s.deps.PartnerRepository == nil {
 		return nil, fmt.Errorf("service dependencies not initialized")
@@ -210,10 +210,10 @@ func (s *PartnerService) GetComparisonStatistics(ctx context.Context, partnerID 
 	usedFiltered := filterClosest(topUsed, currentUsedCount)
 	purchasedFiltered := filterClosest(topPurchased, currentPurchasedCount)
 
-	return map[string]interface{}{
+	return map[string]any{
 		"used":      usedFiltered,
 		"purchased": purchasedFiltered,
-		"me": map[string]interface{}{
+		"me": map[string]any{
 			"partner_code": currentCode,
 			"brand_name":   currentBrand,
 		},

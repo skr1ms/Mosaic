@@ -693,7 +693,7 @@ func TestImageService_ProcessingParams(t *testing.T) {
 			Contrast:   "high",
 			Brightness: 50.0,
 			Saturation: -25.0,
-			Settings: map[string]interface{}{
+			Settings: map[string]any{
 				"custom": "value",
 			},
 		}

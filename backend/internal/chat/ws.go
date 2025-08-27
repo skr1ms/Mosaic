@@ -32,14 +32,14 @@ func (h *Hub) set(userID string, c *websocket.Conn, role string) {
 }
 
 // Set attaches user connection to hub (public method for tests)
-func (h *Hub) Set(userID string, c interface{}) {
+func (h *Hub) Set(userID string, c any) {
 	if conn, ok := c.(*websocket.Conn); ok {
 		h.set(userID, conn, "test")
 	}
 }
 
 // SetWithRole attaches user connection with role to hub
-func (h *Hub) SetWithRole(userID string, c interface{}, role string) {
+func (h *Hub) SetWithRole(userID string, c any, role string) {
 	if conn, ok := c.(*websocket.Conn); ok {
 		h.set(userID, conn, role)
 	}
@@ -78,13 +78,13 @@ func (h *Hub) sendTo(userID string, payload any) {
 }
 
 // SendTo sends message to specific user
-func (h *Hub) SendTo(userID string, message interface{}) error {
+func (h *Hub) SendTo(userID string, message any) error {
 	h.sendTo(userID, message)
 	return nil
 }
 
 // BroadcastToRole sends message to all users with specific role
-func (h *Hub) BroadcastToRole(role string, message interface{}) error {
+func (h *Hub) BroadcastToRole(role string, message any) error {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
@@ -113,9 +113,9 @@ func (h *Hub) BroadcastToRole(role string, message interface{}) error {
 
 // NotifyPresence notifies about user presence
 func (h *Hub) NotifyPresence(userID string, online bool) {
-	message := map[string]interface{}{
+	message := map[string]any{
 		"type": "presence",
-		"data": map[string]interface{}{
+		"data": map[string]any{
 			"userID": userID,
 			"online": online,
 		},
@@ -160,7 +160,10 @@ func (handler *ChatHandler) Socket(c *websocket.Conn) {
 	userID := claims.UserID.String()
 	userRole := claims.Role
 	handler.deps.ChatService.GetHub().SetWithRole(userID, c, userRole)
-	go handler.deps.ChatService.NotifyPresence(userID, true)
+	handler.deps.GoroutineManager.StartGoroutineWithTimeout("notify_presence_online", 5*time.Second, func() error {
+		handler.deps.ChatService.NotifyPresence(userID, true)
+		return nil
+	})
 
 	// Configure ping/pong keepalive
 	c.SetReadLimit(1024 * 1024)
@@ -171,17 +174,18 @@ func (handler *ChatHandler) Socket(c *websocket.Conn) {
 	})
 
 	// Ping/pong keepalive
-	go func(conn *websocket.Conn) {
+	handler.deps.GoroutineManager.StartGoroutineWithTimeout("websocket_ping_pong", 0, func() error {
 		ticker := time.NewTicker(30 * time.Second)
 		defer ticker.Stop()
 
 		for range ticker.C {
-			if err := conn.WriteControl(websocket.PingMessage, []byte("ping"), time.Now().Add(10*time.Second)); err != nil {
-				_ = conn.Close()
-				return
+			if err := c.WriteControl(websocket.PingMessage, []byte("ping"), time.Now().Add(10*time.Second)); err != nil {
+				_ = c.Close()
+				return err
 			}
 		}
-	}(c)
+		return nil
+	})
 
 	for {
 		_, msg, err := c.ReadMessage()
@@ -255,5 +259,8 @@ func (handler *ChatHandler) Socket(c *websocket.Conn) {
 		}
 	}
 	handler.deps.ChatService.GetHub().Delete(userID)
-	go handler.deps.ChatService.NotifyPresence(userID, false)
+	handler.deps.GoroutineManager.StartGoroutineWithTimeout("notify_presence_offline", 5*time.Second, func() error {
+		handler.deps.ChatService.NotifyPresence(userID, false)
+		return nil
+	})
 }

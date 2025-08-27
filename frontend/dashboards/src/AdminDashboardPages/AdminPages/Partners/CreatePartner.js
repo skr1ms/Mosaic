@@ -105,7 +105,7 @@ const CreatePartner = () => {
             newErrors.email = t('partners.invalid_email_format');
         }
 
-        const domainRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$/;
+        const domainRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.[a-zA-Z0-9]{2,}$/;
         if (formData.domain && !domainRegex.test(formData.domain)) {
             newErrors.domain = t('partners.invalid_domain_format');
         }

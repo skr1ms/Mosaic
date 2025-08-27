@@ -25,16 +25,16 @@ type TaskQueue struct {
 
 // Task represents task in queue
 type Task struct {
-	ID          string                 `json:"id"`
-	Type        string                 `json:"type"`
-	Payload     map[string]interface{} `json:"payload"`
-	Priority    int                    `json:"priority"`
-	MaxRetries  int                    `json:"max_retries"`
-	Retries     int                    `json:"retries"`
-	CreatedAt   time.Time              `json:"created_at"`
-	ScheduledAt *time.Time             `json:"scheduled_at,omitempty"`
-	ProcessedAt *time.Time             `json:"processed_at,omitempty"`
-	Error       string                 `json:"error,omitempty"`
+	ID          string         `json:"id"`
+	Type        string         `json:"type"`
+	Payload     map[string]any `json:"payload"`
+	Priority    int            `json:"priority"`
+	MaxRetries  int            `json:"max_retries"`
+	Retries     int            `json:"retries"`
+	CreatedAt   time.Time      `json:"created_at"`
+	ScheduledAt *time.Time     `json:"scheduled_at,omitempty"`
+	ProcessedAt *time.Time     `json:"processed_at,omitempty"`
+	Error       string         `json:"error,omitempty"`
 }
 
 // TaskHandler function for task processing
@@ -62,7 +62,7 @@ func NewTaskQueue(name string, redisClient *redis.Client, logger *middleware.Log
 }
 
 // Enqueue adds task to queue
-func (q *TaskQueue) Enqueue(taskType string, payload map[string]interface{}, opts ...TaskOption) error {
+func (q *TaskQueue) Enqueue(taskType string, payload map[string]any, opts ...TaskOption) error {
 	task := &Task{
 		ID:         uuid.New().String(),
 		Type:       taskType,

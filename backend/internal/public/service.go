@@ -64,13 +64,13 @@ func (s *PublicService) GetPaymentService() PaymentServiceInterface {
 }
 
 // GetPartnerByDomain returns public partner information by domain
-func (s *PublicService) GetPartnerByDomain(domain string) (map[string]interface{}, error) {
+func (s *PublicService) GetPartnerByDomain(domain string) (map[string]any, error) {
 	partner, err := s.deps.PartnerRepository.GetByDomain(context.Background(), domain)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get partner by domain: %w", err)
 	}
 
-	return map[string]interface{}{
+	return map[string]any{
 		"brand_name":       partner.BrandName,
 		"domain":           partner.Domain,
 		"logo_url":         partner.LogoURL,
@@ -86,7 +86,7 @@ func (s *PublicService) GetPartnerByDomain(domain string) (map[string]interface{
 }
 
 // GetCouponByCode returns coupon information by code
-func (s *PublicService) GetCouponByCode(code string) (map[string]interface{}, error) {
+func (s *PublicService) GetCouponByCode(code string) (map[string]any, error) {
 	cleanCode := strings.ReplaceAll(code, "-", "")
 	if len(cleanCode) != 12 || !isNumeric(cleanCode) {
 		return nil, fmt.Errorf("invalid coupon code: length=%d, isNumeric=%v", len(cleanCode), isNumeric(cleanCode))
@@ -97,7 +97,7 @@ func (s *PublicService) GetCouponByCode(code string) (map[string]interface{}, er
 		return nil, fmt.Errorf("coupon not found: %w", err)
 	}
 
-	return map[string]interface{}{
+	return map[string]any{
 		"id":     coupon.ID,
 		"code":   coupon.Code,
 		"size":   coupon.Size,
@@ -108,7 +108,7 @@ func (s *PublicService) GetCouponByCode(code string) (map[string]interface{}, er
 }
 
 // ActivateCoupon activates coupon for subsequent processing
-func (s *PublicService) ActivateCoupon(code string) (map[string]interface{}, error) {
+func (s *PublicService) ActivateCoupon(code string) (map[string]any, error) {
 	cleanCode := strings.ReplaceAll(code, "-", "")
 
 	coupon, err := s.deps.CouponRepository.GetByCode(context.Background(), cleanCode)
@@ -128,7 +128,7 @@ func (s *PublicService) ActivateCoupon(code string) (map[string]interface{}, err
 		return nil, fmt.Errorf("failed to activate coupon: %w", err)
 	}
 
-	return map[string]interface{}{
+	return map[string]any{
 		"message":   "Купон успешно активирован",
 		"coupon_id": coupon.ID,
 		"next_step": "upload_image",
@@ -136,7 +136,7 @@ func (s *PublicService) ActivateCoupon(code string) (map[string]interface{}, err
 }
 
 // UploadImage uploads image for processing (uses ImageService)
-func (s *PublicService) UploadImage(couponID string, file *multipart.FileHeader) (map[string]interface{}, error) {
+func (s *PublicService) UploadImage(couponID string, file *multipart.FileHeader) (map[string]any, error) {
 	couponUUID, err := uuid.Parse(couponID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid coupon id: %w", err)
@@ -156,7 +156,7 @@ func (s *PublicService) UploadImage(couponID string, file *multipart.FileHeader)
 		return nil, fmt.Errorf("failed to upload image: %w", err)
 	}
 
-	return map[string]interface{}{
+	return map[string]any{
 		"message":      "Изображение успешно загружено",
 		"image_id":     imageRecord.ID,
 		"next_step":    "edit_image",
@@ -167,7 +167,7 @@ func (s *PublicService) UploadImage(couponID string, file *multipart.FileHeader)
 
 // EditImage applies editing to image (deprecated method, use ImageService)
 // Kept for backward compatibility
-func (s *PublicService) EditImage(imageID string, req types.EditImageRequest) (map[string]interface{}, error) {
+func (s *PublicService) EditImage(imageID string, req types.EditImageRequest) (map[string]any, error) {
 	imageUUID, err := uuid.Parse(imageID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid image id: %w", err)
@@ -196,7 +196,7 @@ func (s *PublicService) EditImage(imageID string, req types.EditImageRequest) (m
 		previewURL = *status.EditedURL
 	}
 
-	return map[string]interface{}{
+	return map[string]any{
 		"message":     "Изображение успешно отредактировано",
 		"next_step":   "choose_style",
 		"preview_url": previewURL,
@@ -204,7 +204,7 @@ func (s *PublicService) EditImage(imageID string, req types.EditImageRequest) (m
 }
 
 // ProcessImage applies processing style to image
-func (s *PublicService) ProcessImage(imageID string, req types.ProcessImageRequest) (map[string]interface{}, error) {
+func (s *PublicService) ProcessImage(imageID string, req types.ProcessImageRequest) (map[string]any, error) {
 	imageUUID, err := uuid.Parse(imageID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid image id: %w", err)
@@ -217,7 +217,7 @@ func (s *PublicService) ProcessImage(imageID string, req types.ProcessImageReque
 		Contrast:   req.Contrast,
 		Brightness: req.Brightness,
 		Saturation: req.Saturation,
-		Settings:   make(map[string]interface{}),
+		Settings:   make(map[string]any),
 	}
 
 	s.processImageAsync(imageUUID, processParams)
@@ -236,7 +236,7 @@ func (s *PublicService) ProcessImage(imageID string, req types.ProcessImageReque
 		originalURL = *status.OriginalURL
 	}
 
-	return map[string]interface{}{
+	return map[string]any{
 		"message":      "Обработка запущена",
 		"next_step":    "generate_schema",
 		"preview_url":  previewURL,
@@ -245,7 +245,7 @@ func (s *PublicService) ProcessImage(imageID string, req types.ProcessImageReque
 }
 
 // GetImagePreview returns image preview
-func (s *PublicService) GetImagePreview(imageID string) (map[string]interface{}, error) {
+func (s *PublicService) GetImagePreview(imageID string) (map[string]any, error) {
 	imageUUID, err := uuid.Parse(imageID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid image id: %w", err)
@@ -261,7 +261,7 @@ func (s *PublicService) GetImagePreview(imageID string) (map[string]interface{},
 		return nil, fmt.Errorf("failed to get image status: %w", err)
 	}
 
-	return map[string]interface{}{
+	return map[string]any{
 		"id":           task.ID,
 		"status":       task.Status,
 		"preview_url":  status.PreviewURL,
@@ -270,7 +270,7 @@ func (s *PublicService) GetImagePreview(imageID string) (map[string]interface{},
 }
 
 // GetProcessingStatus returns processing status
-func (s *PublicService) GetProcessingStatus(imageID string) (map[string]interface{}, error) {
+func (s *PublicService) GetProcessingStatus(imageID string) (map[string]any, error) {
 	imageUUID, err := uuid.Parse(imageID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid image id: %w", err)
@@ -293,7 +293,7 @@ func (s *PublicService) GetProcessingStatus(imageID string) (map[string]interfac
 		progress = 0
 	}
 
-	return map[string]interface{}{
+	return map[string]any{
 		"id":           task.ID,
 		"status":       task.Status,
 		"progress":     progress,
@@ -332,7 +332,7 @@ func (s *PublicService) GetImageForDownload(imageID string) (*image.Image, error
 }
 
 // SendSchemaToEmail sends schema to email
-func (s *PublicService) SendSchemaToEmail(imageID string, req SendEmailRequest) (map[string]interface{}, error) {
+func (s *PublicService) SendSchemaToEmail(imageID string, req SendEmailRequest) (map[string]any, error) {
 	imageUUID, err := uuid.Parse(imageID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid image id: %w", err)
@@ -370,13 +370,13 @@ func (s *PublicService) SendSchemaToEmail(imageID string, req SendEmailRequest) 
 		return nil, fmt.Errorf("failed to send email: %w", err)
 	}
 
-	return map[string]interface{}{
+	return map[string]any{
 		"message": "Schema successfully sent to email",
 	}, nil
 }
 
 // PurchaseCoupon purchases new coupon online (coupon creation happens after payment in PaymentService)
-func (s *PublicService) PurchaseCoupon(req PurchaseCouponRequest) (map[string]interface{}, error) {
+func (s *PublicService) PurchaseCoupon(req PurchaseCouponRequest) (map[string]any, error) {
 	paymentReq := &payment.PurchaseCouponRequest{
 		Size:      req.Size,
 		Style:     req.Style,
@@ -391,13 +391,13 @@ func (s *PublicService) PurchaseCoupon(req PurchaseCouponRequest) (map[string]in
 	}
 
 	if !response.Success {
-		return map[string]interface{}{
+		return map[string]any{
 			"success": false,
 			"message": response.Message,
 		}, nil
 	}
 
-	return map[string]interface{}{
+	return map[string]any{
 		"success":     true,
 		"order_id":    response.OrderID,
 		"payment_url": response.PaymentURL,
@@ -406,8 +406,8 @@ func (s *PublicService) PurchaseCoupon(req PurchaseCouponRequest) (map[string]in
 }
 
 // GetAvailableSizes returns available sizes
-func (s *PublicService) GetAvailableSizes() []map[string]interface{} {
-	return []map[string]interface{}{
+func (s *PublicService) GetAvailableSizes() []map[string]any {
+	return []map[string]any{
 		{"size": "21x30", "title": "21×30 см", "price": int(payment.FixedPriceRub)},
 		{"size": "30x40", "title": "30×40 см", "price": int(payment.FixedPriceRub)},
 		{"size": "40x40", "title": "40×40 см", "price": int(payment.FixedPriceRub)},
@@ -418,8 +418,8 @@ func (s *PublicService) GetAvailableSizes() []map[string]interface{} {
 }
 
 // GetAvailableStyles returns available styles
-func (s *PublicService) GetAvailableStyles() []map[string]interface{} {
-	return []map[string]interface{}{
+func (s *PublicService) GetAvailableStyles() []map[string]any {
+	return []map[string]any{
 		{"style": "grayscale", "title": "Оттенки серого", "description": "Классическая обработка в оттенках серого"},
 		{"style": "skin_tones", "title": "Оттенки телесного", "description": "Подходит для портретов"},
 		{"style": "pop_art", "title": "Поп-арт", "description": "Яркие насыщенные цвета"},

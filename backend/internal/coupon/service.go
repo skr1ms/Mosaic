@@ -339,7 +339,7 @@ func (s *CouponService) PreviewBatchDelete(couponIDs []string) (*BatchDeletePrev
 		ExpiresAt:       expiresAt,
 	}
 
-	confirmationData := map[string]interface{}{
+	confirmationData := map[string]any{
 		"action":     "batch_delete",
 		"coupon_ids": couponIDs,
 		"created_at": time.Now(),
@@ -384,7 +384,7 @@ func (s *CouponService) ExecuteBatchDelete(request BatchDeleteConfirmRequest) (*
 		return response, fmt.Errorf("failed to check confirmation key: %w", err)
 	}
 
-	var confirmationData map[string]interface{}
+	var confirmationData map[string]any
 	if err := json.Unmarshal([]byte(confirmationDataJSON), &confirmationData); err != nil {
 		return response, fmt.Errorf("invalid confirmation data")
 	}
@@ -496,7 +496,7 @@ func (s *CouponService) ExportCouponsAdvanced(options ExportOptionsRequest) ([]b
 }
 
 // generateTXT creates text file for export
-func (s *CouponService) generateTXT(data interface{}, options ExportOptionsRequest) ([]byte, error) {
+func (s *CouponService) generateTXT(data any, options ExportOptionsRequest) ([]byte, error) {
 	var content strings.Builder
 
 	switch options.Format {
@@ -628,7 +628,7 @@ func (s *CouponService) generateTXT(data interface{}, options ExportOptionsReque
 }
 
 // generateCSV creates CSV file for export
-func (s *CouponService) generateCSV(data interface{}, options ExportOptionsRequest) ([]byte, error) {
+func (s *CouponService) generateCSV(data any, options ExportOptionsRequest) ([]byte, error) {
 	var buffer bytes.Buffer
 	// Пишем BOM для лучшей поддержки Excel при CSV
 	if options.FileFormat == "csv" {
@@ -829,7 +829,7 @@ func (s *CouponService) generateCSV(data interface{}, options ExportOptionsReque
 }
 
 // generateCSVGeneric universal CSV generator using reflection
-func (s *CouponService) generateCSVGeneric(data interface{}, options ExportOptionsRequest) ([]byte, error) {
+func (s *CouponService) generateCSVGeneric(data any, options ExportOptionsRequest) ([]byte, error) {
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return nil, err

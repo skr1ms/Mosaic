@@ -64,22 +64,22 @@ type ConfigInterface interface {
 }
 
 type PublicServiceInterface interface {
-	GetPartnerByDomain(domain string) (map[string]interface{}, error)
+	GetPartnerByDomain(domain string) (map[string]any, error)
 
-	GetCouponByCode(code string) (map[string]interface{}, error)
-	ActivateCoupon(code string) (map[string]interface{}, error)
-	PurchaseCoupon(req PurchaseCouponRequest) (map[string]interface{}, error)
+	GetCouponByCode(code string) (map[string]any, error)
+	ActivateCoupon(code string) (map[string]any, error)
+	PurchaseCoupon(req PurchaseCouponRequest) (map[string]any, error)
 
-	UploadImage(couponID string, file *multipart.FileHeader) (map[string]interface{}, error)
-	EditImage(imageID string, req types.EditImageRequest) (map[string]interface{}, error)
-	ProcessImage(imageID string, req types.ProcessImageRequest) (map[string]interface{}, error)
-	GetImagePreview(imageID string) (map[string]interface{}, error)
-	GetProcessingStatus(imageID string) (map[string]interface{}, error)
+	UploadImage(couponID string, file *multipart.FileHeader) (map[string]any, error)
+	EditImage(imageID string, req types.EditImageRequest) (map[string]any, error)
+	ProcessImage(imageID string, req types.ProcessImageRequest) (map[string]any, error)
+	GetImagePreview(imageID string) (map[string]any, error)
+	GetProcessingStatus(imageID string) (map[string]any, error)
 	GetImageForDownload(imageID string) (*image.Image, error)
-	SendSchemaToEmail(imageID string, req SendEmailRequest) (map[string]interface{}, error)
+	SendSchemaToEmail(imageID string, req SendEmailRequest) (map[string]any, error)
 
-	GetAvailableSizes() []map[string]interface{}
-	GetAvailableStyles() []map[string]interface{}
+	GetAvailableSizes() []map[string]any
+	GetAvailableStyles() []map[string]any
 	GetRecaptchaSiteKey() string
 
 	GetCouponRepository() CouponRepositoryInterface
@@ -114,15 +114,15 @@ type TimeProviderInterface interface {
 }
 
 type LoggerInterface interface {
-	Info(msg string, fields ...interface{})
-	Error(msg string, err error, fields ...interface{})
-	Warn(msg string, fields ...interface{})
-	Debug(msg string, fields ...interface{})
+	Info(msg string, fields ...any)
+	Error(msg string, err error, fields ...any)
+	Warn(msg string, fields ...any)
+	Debug(msg string, fields ...any)
 }
 
 type CacheInterface interface {
-	Get(key string) (interface{}, error)
-	Set(key string, value interface{}, ttl int64) error
+	Get(key string) (any, error)
+	Set(key string, value any, ttl int64) error
 	Delete(key string) error
 	Exists(key string) bool
 }
@@ -135,8 +135,8 @@ type S3StorageInterface interface {
 }
 
 type QueueInterface interface {
-	Enqueue(queueName string, payload interface{}) error
-	Dequeue(queueName string) (interface{}, error)
+	Enqueue(queueName string, payload any) error
+	Dequeue(queueName string) (any, error)
 	GetQueueSize(queueName string) (int, error)
 }
 
@@ -164,8 +164,8 @@ type NotificationServiceInterface interface {
 }
 
 type AnalyticsInterface interface {
-	TrackEvent(event string, properties map[string]interface{}) error
-	TrackUserAction(userID string, action string, properties map[string]interface{}) error
+	TrackEvent(event string, properties map[string]any) error
+	TrackUserAction(userID string, action string, properties map[string]any) error
 	IncrementCounter(metric string, value int) error
 }
 
@@ -174,7 +174,7 @@ type HealthCheckerInterface interface {
 	CheckRedis() error
 	CheckS3() error
 	CheckExternalServices() error
-	GetOverallHealth() map[string]interface{}
+	GetOverallHealth() map[string]any
 }
 
 type MetricsCollectorInterface interface {

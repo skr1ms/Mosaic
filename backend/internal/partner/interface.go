@@ -63,7 +63,7 @@ type ConfigInterface interface {
 type PartnerServiceInterface interface {
 	DeletePartnerWithCoupons(ctx context.Context, partnerID uuid.UUID) error
 	ExportCoupons(partnerID uuid.UUID, status string, format string) ([]byte, string, string, error)
-	GetComparisonStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]interface{}, error)
+	GetComparisonStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]any, error)
 	DownloadCouponMaterials(id uuid.UUID) ([]byte, string, error)
 
 	GetPartnerRepository() PartnerRepositoryInterface
@@ -98,9 +98,9 @@ type MailSenderInterface interface {
 }
 
 type BrandingHelperInterface interface {
-	GetPartnerBranding(partnerCode string) (map[string]interface{}, error)
-	UpdatePartnerBranding(partnerCode string, branding map[string]interface{}) error
-	GetDefaultBranding() map[string]interface{}
+	GetPartnerBranding(partnerCode string) (map[string]any, error)
+	UpdatePartnerBranding(partnerCode string, branding map[string]any) error
+	GetDefaultBranding() map[string]any
 }
 
 type ImageRepositoryInterface interface {

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/rs/zerolog"
 	"github.com/skr1ms/mosaic/internal/coupon"
 	"github.com/skr1ms/mosaic/internal/image"
 	"github.com/skr1ms/mosaic/internal/partner"
@@ -29,6 +30,7 @@ type AdminServiceDeps struct {
 	RedisClient       RedisClientInterface
 	GitLabClient      *gitlab.Client
 	GoroutineManager  *goroutine.Manager
+	Logger            *zerolog.Logger
 }
 
 type AdminService struct {
@@ -91,8 +93,8 @@ func (s *AdminService) CreateAdmin(req CreateAdminRequest) (*Admin, error) {
 }
 
 // GetDashboardData aggregates statistics for admin dashboard including coupons, partners, and image processing
-func (s *AdminService) GetDashboardData() (map[string]interface{}, error) {
-	result := make(map[string]interface{})
+func (s *AdminService) GetDashboardData() (map[string]any, error) {
+	result := make(map[string]any)
 
 	allCoupons, err := s.deps.CouponRepository.GetAll(context.Background())
 	if err != nil {
@@ -310,13 +312,22 @@ func (s *AdminService) CreatePartner(req partner.CreatePartnerRequest) (*partner
 
 	// Trigger CI/CD pipeline for domain update if GitLab client is available
 	if s.deps.GitLabClient != nil && s.deps.GoroutineManager != nil {
+		s.deps.Logger.Info().
+			Str("partner_domain", newPartner.Domain).
+			Msg("Creating new partner, triggering CI/CD pipeline")
+
 		s.deps.GoroutineManager.StartGoroutineWithTimeout("trigger_domain_update_pipeline", 30*time.Second, func() error {
+			s.deps.Logger.Info().Msg("Starting GitLab pipeline trigger for new partner")
 			_, err := s.deps.GitLabClient.TriggerDomainUpdate("main")
 			if err != nil {
+				s.deps.Logger.Error().Err(err).Msg("Failed to trigger domain update pipeline for new partner")
 				return fmt.Errorf("failed to trigger domain update pipeline: %w", err)
 			}
+			s.deps.Logger.Info().Msg("Successfully triggered domain update pipeline for new partner")
 			return nil
 		})
+	} else {
+		s.deps.Logger.Warn().Msg("GitLabClient or GoroutineManager is nil, cannot trigger pipeline for new partner")
 	}
 
 	return newPartner, nil
@@ -469,15 +480,35 @@ func (s *AdminService) UpdatePartner(id uuid.UUID, req partner.UpdatePartnerRequ
 	// Trigger CI/CD pipeline for domain update only if domain was actually changed
 	if req.Domain != nil && *req.Domain != oldDomain {
 		// Domain was changed, trigger CI/CD pipeline
+		s.deps.Logger.Info().
+			Str("old_domain", oldDomain).
+			Str("new_domain", *req.Domain).
+			Msg("Domain changed, triggering CI/CD pipeline")
+
 		if s.deps.GitLabClient != nil && s.deps.GoroutineManager != nil {
 			s.deps.GoroutineManager.StartGoroutineWithTimeout("trigger_domain_update_pipeline", 30*time.Second, func() error {
+				s.deps.Logger.Info().Msg("Starting GitLab pipeline trigger")
 				_, err := s.deps.GitLabClient.TriggerDomainUpdate("main")
 				if err != nil {
+					s.deps.Logger.Error().Err(err).Msg("Failed to trigger domain update pipeline")
 					return fmt.Errorf("failed to trigger domain update pipeline: %w", err)
 				}
+				s.deps.Logger.Info().Msg("Successfully triggered domain update pipeline")
 				return nil
 			})
+		} else {
+			s.deps.Logger.Warn().Msg("GitLabClient or GoroutineManager is nil, cannot trigger pipeline")
 		}
+	} else {
+		s.deps.Logger.Info().
+			Str("old_domain", oldDomain).
+			Str("new_domain", func() string {
+				if req.Domain != nil {
+					return *req.Domain
+				}
+				return "nil"
+			}()).
+			Msg("Domain not changed, skipping CI/CD trigger")
 	}
 
 	return existingPartner, nil
@@ -549,7 +580,7 @@ func (s *AdminService) DeletePartner(id uuid.UUID) error {
 }
 
 // GetPartnerStatistics retrieves coupon statistics for specific partner
-func (s *AdminService) GetPartnerStatistics(partnerID uuid.UUID) (map[string]interface{}, error) {
+func (s *AdminService) GetPartnerStatistics(partnerID uuid.UUID) (map[string]any, error) {
 	if _, err := s.deps.PartnerRepository.GetByID(context.Background(), partnerID); err != nil {
 		return nil, fmt.Errorf("partner not found: %w", err)
 	}
@@ -559,7 +590,7 @@ func (s *AdminService) GetPartnerStatistics(partnerID uuid.UUID) (map[string]int
 		return nil, fmt.Errorf("failed to get coupon statistics: %w", err)
 	}
 
-	return map[string]interface{}{
+	return map[string]any{
 		"coupon_statistics": stats,
 	}, nil
 }
@@ -751,26 +782,26 @@ func (s *AdminService) DeleteCoupon(id uuid.UUID) error {
 }
 
 // GetStatistics retrieves overall coupon statistics
-func (s *AdminService) GetStatistics() (map[string]interface{}, error) {
+func (s *AdminService) GetStatistics() (map[string]any, error) {
 	stats, err := s.deps.CouponRepository.GetStatistics(context.Background(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get statistics: %w", err)
 	}
 
-	return map[string]interface{}{
+	return map[string]any{
 		"coupon_statistics": stats,
 	}, nil
 }
 
 // GetPartnersStatistics retrieves coupon statistics for all partners
-func (s *AdminService) GetPartnersStatistics() (map[string]interface{}, error) {
+func (s *AdminService) GetPartnersStatistics() (map[string]any, error) {
 	partners, err := s.deps.PartnerRepository.GetAll(context.Background(), "created_at", "desc")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get partners: %w", err)
 	}
 
-	result := make(map[string]interface{})
-	partnerStats := make([]map[string]interface{}, 0, len(partners))
+	result := make(map[string]any)
+	partnerStats := make([]map[string]any, 0, len(partners))
 
 	for _, p := range partners {
 		stats, err := s.deps.CouponRepository.GetStatistics(context.Background(), &p.ID)
@@ -778,7 +809,7 @@ func (s *AdminService) GetPartnersStatistics() (map[string]interface{}, error) {
 			continue
 		}
 
-		partnerStats = append(partnerStats, map[string]interface{}{
+		partnerStats = append(partnerStats, map[string]any{
 			"partner_id":   p.ID,
 			"brand_name":   p.BrandName,
 			"partner_code": p.PartnerCode,
@@ -792,8 +823,8 @@ func (s *AdminService) GetPartnersStatistics() (map[string]interface{}, error) {
 }
 
 // GetSystemStatistics aggregates comprehensive system statistics including coupons, partners, and image processing
-func (s *AdminService) GetSystemStatistics() (map[string]interface{}, error) {
-	result := make(map[string]interface{})
+func (s *AdminService) GetSystemStatistics() (map[string]any, error) {
+	result := make(map[string]any)
 
 	couponStats, err := s.deps.CouponRepository.GetStatistics(context.Background(), nil)
 	if err == nil {
@@ -808,7 +839,7 @@ func (s *AdminService) GetSystemStatistics() (map[string]interface{}, error) {
 				activePartners++
 			}
 		}
-		result["partners"] = map[string]interface{}{
+		result["partners"] = map[string]any{
 			"total":  len(partners),
 			"active": activePartners,
 		}
@@ -831,7 +862,7 @@ func (s *AdminService) GetSystemStatistics() (map[string]interface{}, error) {
 			}
 		}
 
-		result["image_processing"] = map[string]interface{}{
+		result["image_processing"] = map[string]any{
 			"total":      len(images),
 			"processing": processingImages,
 			"completed":  completedImages,
@@ -843,8 +874,8 @@ func (s *AdminService) GetSystemStatistics() (map[string]interface{}, error) {
 }
 
 // GetAnalytics provides detailed analytics data including daily creation trends and distribution statistics
-func (s *AdminService) GetAnalytics() (map[string]interface{}, error) {
-	result := make(map[string]interface{})
+func (s *AdminService) GetAnalytics() (map[string]any, error) {
+	result := make(map[string]any)
 
 	allCoupons, err := s.deps.CouponRepository.GetAll(context.Background())
 	if err != nil {
@@ -872,7 +903,7 @@ func (s *AdminService) GetAnalytics() (map[string]interface{}, error) {
 }
 
 // GetDashboardStatistics returns dashboard data (alias for GetDashboardData)
-func (s *AdminService) GetDashboardStatistics() (map[string]interface{}, error) {
+func (s *AdminService) GetDashboardStatistics() (map[string]any, error) {
 	return s.GetDashboardData()
 }
 

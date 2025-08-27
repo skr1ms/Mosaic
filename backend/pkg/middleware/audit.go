@@ -15,17 +15,17 @@ import (
 var auditLogger = NewLogger()
 
 type AuditEvent struct {
-	UserID       string                 `json:"user_id,omitempty"`
-	UserType     string                 `json:"user_type"` // admin, partner, public
-	Action       string                 `json:"action"`
-	Resource     string                 `json:"resource"`
-	ResourceID   string                 `json:"resource_id,omitempty"`
-	Details      map[string]interface{} `json:"details,omitempty"`
-	IPAddress    string                 `json:"ip_address"`
-	UserAgent    string                 `json:"user_agent"`
-	Timestamp    time.Time              `json:"timestamp"`
-	Success      bool                   `json:"success"`
-	ErrorMessage string                 `json:"error_message,omitempty"`
+	UserID       string         `json:"user_id,omitempty"`
+	UserType     string         `json:"user_type"` // admin, partner, public
+	Action       string         `json:"action"`
+	Resource     string         `json:"resource"`
+	ResourceID   string         `json:"resource_id,omitempty"`
+	Details      map[string]any `json:"details,omitempty"`
+	IPAddress    string         `json:"ip_address"`
+	UserAgent    string         `json:"user_agent"`
+	Timestamp    time.Time      `json:"timestamp"`
+	Success      bool           `json:"success"`
+	ErrorMessage string         `json:"error_message,omitempty"`
 }
 
 // AuditLogger middleware for logging critical actions
@@ -80,7 +80,7 @@ func createAuditEvent(c *fiber.Ctx, err error, duration time.Duration) AuditEven
 		Timestamp: time.Now(),
 		Success:   err == nil && c.Response().StatusCode() < 400,
 
-		Details: map[string]interface{}{
+		Details: map[string]any{
 			"method":   c.Method(),
 			"path":     c.Path(),
 			"status":   c.Response().StatusCode(),
@@ -162,7 +162,7 @@ func extractUserInfo(c *fiber.Ctx) (userType, userID string) {
 			return userType, userID
 		}
 		// Fallback to map format for backward compatibility
-		if claimsMap, ok := claims.(map[string]interface{}); ok {
+		if claimsMap, ok := claims.(map[string]any); ok {
 			if role, exists := claimsMap["role"]; exists {
 				userType = fmt.Sprintf("%v", role)
 			}
@@ -221,7 +221,7 @@ func addCriticalDetails(event *AuditEvent, c *fiber.Ctx) {
 	// For payment transactions, we add the amount (from the body)
 	if event.Resource == "PAYMENT" && c.Method() == "POST" {
 		if bodyBytes := c.Body(); len(bodyBytes) > 0 {
-			var paymentData map[string]interface{}
+			var paymentData map[string]any
 			if err := json.Unmarshal(bodyBytes, &paymentData); err == nil {
 				if amount, exists := paymentData["amount"]; exists {
 					event.Details["amount"] = amount

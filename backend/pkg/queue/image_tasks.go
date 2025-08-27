@@ -33,8 +33,8 @@ const (
 )
 
 // EnqueueImageProcessing adds image processing task
-func (q *ImageTaskQueue) EnqueueImageProcessing(imageID uuid.UUID, style string, parameters map[string]interface{}) error {
-	payload := map[string]interface{}{
+func (q *ImageTaskQueue) EnqueueImageProcessing(imageID uuid.UUID, style string, parameters map[string]any) error {
+	payload := map[string]any{
 		"image_id":   imageID.String(),
 		"style":      style,
 		"parameters": parameters,
@@ -45,7 +45,7 @@ func (q *ImageTaskQueue) EnqueueImageProcessing(imageID uuid.UUID, style string,
 
 // EnqueueSchemaGeneration adds schema generation task
 func (q *ImageTaskQueue) EnqueueSchemaGeneration(imageID uuid.UUID, couponID uuid.UUID, confirmed bool) error {
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"image_id":  imageID.String(),
 		"coupon_id": couponID.String(),
 		"confirmed": confirmed,
@@ -56,7 +56,7 @@ func (q *ImageTaskQueue) EnqueueSchemaGeneration(imageID uuid.UUID, couponID uui
 
 // EnqueueEmailSending adds email sending task
 func (q *ImageTaskQueue) EnqueueEmailSending(email string, schemaURL string, couponCode string) error {
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"email":       email,
 		"schema_url":  schemaURL,
 		"coupon_code": couponCode,
@@ -67,7 +67,7 @@ func (q *ImageTaskQueue) EnqueueEmailSending(email string, schemaURL string, cou
 
 // EnqueueImageOptimization adds image optimization task
 func (q *ImageTaskQueue) EnqueueImageOptimization(imageID uuid.UUID, quality int) error {
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"image_id": imageID.String(),
 		"quality":  quality,
 	}
@@ -77,7 +77,7 @@ func (q *ImageTaskQueue) EnqueueImageOptimization(imageID uuid.UUID, quality int
 
 // EnqueueThumbnailGeneration adds thumbnail generation task
 func (q *ImageTaskQueue) EnqueueThumbnailGeneration(imageID uuid.UUID, sizes []string) error {
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"image_id": imageID.String(),
 		"sizes":    sizes,
 	}
@@ -91,10 +91,10 @@ func (q *ImageTaskQueue) EnqueueAIProcessing(
 	userEmail string,
 	style string,
 	useAI bool,
-	parameters map[string]interface{},
+	parameters map[string]any,
 	priority int,
 ) error {
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"image_id":   imageID.String(),
 		"user_email": userEmail,
 		"style":      style,
@@ -120,9 +120,9 @@ func (q *ImageTaskQueue) EnqueuePriorityAIProcessing(
 	userEmail string,
 	style string,
 	useAI bool,
-	parameters map[string]interface{},
+	parameters map[string]any,
 ) error {
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"image_id":   imageID.String(),
 		"user_email": userEmail,
 		"style":      style,
@@ -160,11 +160,11 @@ func GetImageTaskHandlers(imageService *ImageServiceAdapter, emailService *Email
 // Service interfaces
 
 type ImageService interface {
-	ProcessImageWithStyle(ctx context.Context, imageID uuid.UUID, style string, parameters map[string]interface{}) error
+	ProcessImageWithStyle(ctx context.Context, imageID uuid.UUID, style string, parameters map[string]any) error
 	GenerateSchema(ctx context.Context, imageID uuid.UUID, confirmed bool) error
 	OptimizeImage(ctx context.Context, imageID uuid.UUID, quality int) error
 	GenerateThumbnails(ctx context.Context, imageID uuid.UUID, sizes []string) error
-	ProcessImageWithAI(ctx context.Context, imageID uuid.UUID, style string, useAI bool, parameters map[string]interface{}) error
+	ProcessImageWithAI(ctx context.Context, imageID uuid.UUID, style string, useAI bool, parameters map[string]any) error
 }
 
 type EmailService interface {
@@ -188,7 +188,7 @@ func handleProcessImage(ctx context.Context, task *Task, imageService *ImageServ
 	}
 
 	style, _ := payload["style"].(string)
-	parameters, _ := payload["parameters"].(map[string]interface{})
+	parameters, _ := payload["parameters"].(map[string]any)
 
 	return imageService.ProcessImageWithStyle(ctx, imageID, style, parameters)
 }
@@ -275,7 +275,7 @@ func handleAIProcessing(ctx context.Context, task *Task, imageService *ImageServ
 	}
 
 	style, _ := payload["style"].(string)
-	parameters, _ := payload["parameters"].(map[string]interface{})
+	parameters, _ := payload["parameters"].(map[string]any)
 
 	return imageService.ProcessImageWithStyle(ctx, imageID, style, parameters)
 }
@@ -286,7 +286,7 @@ func handleAIPriority(ctx context.Context, task *Task, imageService *ImageServic
 }
 
 // calculateAIPriority вычисляет приоритет для AI задачи
-func calculateAIPriority(style string, useAI bool, basePriority int, parameters map[string]interface{}) int {
+func calculateAIPriority(style string, useAI bool, basePriority int, parameters map[string]any) int {
 	if !useAI {
 		return basePriority
 	}

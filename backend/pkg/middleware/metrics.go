@@ -43,7 +43,7 @@ func MetricsMiddleware(metricsCollector MetricsCollector, logger *Logger) fiber.
 }
 
 // ActiveUsersMiddleware for tracking active users
-func ActiveUsersMiddleware(redisClient interface{}) fiber.Handler {
+func ActiveUsersMiddleware(redisClient any) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		userIP := c.IP()
 

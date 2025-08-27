@@ -52,11 +52,11 @@ func NewAuthHandler(router fiber.Router, AuthHandlerDeps *AuthHandlerDeps) {
 // @Accept       json
 // @Produce      json
 // @Param        credentials body LoginRequest true "Login credentials"
-// @Success      200 {object} map[string]interface{} "Successful login"
-// @Failure      400 {object} map[string]interface{} "Bad request"
-// @Failure      401 {object} map[string]interface{} "Invalid credentials"
-// @Failure      403 {object} map[string]interface{} "Account blocked"
-// @Failure      500 {object} map[string]interface{} "Internal server error"
+// @Success      200 {object} map[string]any "Successful login"
+// @Failure      400 {object} map[string]any "Bad request"
+// @Failure      401 {object} map[string]any "Invalid credentials"
+// @Failure      403 {object} map[string]any "Account blocked"
+// @Failure      500 {object} map[string]any "Internal server error"
 // @Router       /auth/login [post]
 func (handler *AuthHandler) UniversalLogin(c *fiber.Ctx) error {
 	var req LoginRequest
@@ -149,10 +149,10 @@ func (handler *AuthHandler) UniversalLogin(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Param        refresh body RefreshTokenRequest true "Refresh token"
-// @Success      200 {object} map[string]interface{} "New tokens"
-// @Failure      400 {object} map[string]interface{} "Bad request"
-// @Failure      401 {object} map[string]interface{} "Invalid or expired refresh token"
-// @Failure      500 {object} map[string]interface{} "Internal server error"
+// @Success      200 {object} map[string]any "New tokens"
+// @Failure      400 {object} map[string]any "Bad request"
+// @Failure      401 {object} map[string]any "Invalid or expired refresh token"
+// @Failure      500 {object} map[string]any "Internal server error"
 // @Router       /auth/refresh [post]
 func (handler *AuthHandler) RefreshTokens(c *fiber.Ctx) error {
 	var req RefreshTokenRequest
@@ -236,10 +236,10 @@ func (handler *AuthHandler) RefreshTokens(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Param        request body ForgotPasswordRequest true "Verification data and captcha"
-// @Success      200 {object} map[string]interface{} "Email sent"
-// @Failure      400 {object} map[string]interface{} "Bad request"
-// @Failure      404 {object} map[string]interface{} "User not found"
-// @Failure      500 {object} map[string]interface{} "Internal server error"
+// @Success      200 {object} map[string]any "Email sent"
+// @Failure      400 {object} map[string]any "Bad request"
+// @Failure      404 {object} map[string]any "User not found"
+// @Failure      500 {object} map[string]any "Internal server error"
 // @Router       /auth/forgot-password [post]
 func (handler *AuthHandler) ForgotPassword(c *fiber.Ctx) error {
 	var reqPayload ForgotPasswordRequest
@@ -307,11 +307,11 @@ func (handler *AuthHandler) ForgotPassword(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Param        request body ResetPasswordRequest true "Reset token and new password"
-// @Success      200 {object} map[string]interface{} "Password changed"
-// @Failure      400 {object} map[string]interface{} "Bad request"
-// @Failure      401 {object} map[string]interface{} "Invalid or expired token"
-// @Failure      404 {object} map[string]interface{} "User not found"
-// @Failure      500 {object} map[string]interface{} "Internal server error"
+// @Success      200 {object} map[string]any "Password changed"
+// @Failure      400 {object} map[string]any "Bad request"
+// @Failure      401 {object} map[string]any "Invalid or expired token"
+// @Failure      404 {object} map[string]any "User not found"
+// @Failure      500 {object} map[string]any "Internal server error"
 // @Router       /auth/reset-password [post]
 func (handler *AuthHandler) ResetPassword(c *fiber.Ctx) error {
 	var req ResetPasswordRequest
@@ -370,10 +370,10 @@ func (handler *AuthHandler) ResetPassword(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Param        request body ChangePasswordRequest true "Current and new password"
-// @Success      200 {object} map[string]interface{} "Password changed"
-// @Failure      400 {object} map[string]interface{} "Bad request"
-// @Failure      401 {object} map[string]interface{} "Invalid current password"
-// @Failure      500 {object} map[string]interface{} "Internal server error"
+// @Success      200 {object} map[string]any "Password changed"
+// @Failure      400 {object} map[string]any "Bad request"
+// @Failure      401 {object} map[string]any "Invalid current password"
+// @Failure      500 {object} map[string]any "Internal server error"
 // @Router       /auth/change-password [post]
 // @Security     BearerAuth
 func (handler *AuthHandler) ChangePassword(c *fiber.Ctx) error {
@@ -459,12 +459,12 @@ func (handler *AuthHandler) ChangePassword(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Param        request body ChangeEmailRequest true "Password and new email"
-// @Success      200 {object} map[string]interface{} "Email changed successfully"
-// @Failure      400 {object} map[string]interface{} "Validation error"
-// @Failure      401 {object} map[string]interface{} "Invalid password"
-// @Failure      403 {object} map[string]interface{} "Admins only"
-// @Failure      409 {object} map[string]interface{} "Email already in use"
-// @Failure      500 {object} map[string]interface{} "Internal server error"
+// @Success      200 {object} map[string]any "Email changed successfully"
+// @Failure      400 {object} map[string]any "Validation error"
+// @Failure      401 {object} map[string]any "Invalid password"
+// @Failure      403 {object} map[string]any "Admins only"
+// @Failure      409 {object} map[string]any "Email already in use"
+// @Failure      500 {object} map[string]any "Internal server error"
 // @Router       /auth/change-email [post]
 // @Security     BearerAuth
 func (handler *AuthHandler) ChangeEmail(c *fiber.Ctx) error {

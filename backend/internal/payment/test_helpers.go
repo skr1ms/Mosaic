@@ -109,7 +109,7 @@ func (h *TestHelpers) TestIntegration() (*TestIntegrationResponse, error) {
 }
 
 // TestWebhook sends a test webhook notification
-func (h *TestHelpers) TestWebhook(req *PaymentNotificationRequest) (map[string]interface{}, error) {
+func (h *TestHelpers) TestWebhook(req *PaymentNotificationRequest) (map[string]any, error) {
 	jsonData, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
@@ -121,7 +121,7 @@ func (h *TestHelpers) TestWebhook(req *PaymentNotificationRequest) (map[string]i
 	}
 	defer resp.Body.Close()
 
-	var response map[string]interface{}
+	var response map[string]any
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}

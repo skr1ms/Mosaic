@@ -104,14 +104,14 @@ func (bh *BrandingHelper) CanPurchase(c *fiber.Ctx) bool {
 }
 
 // CreateBrandingResponse creates structured response with branding data
-func (bh *BrandingHelper) CreateBrandingResponse(c *fiber.Ctx) map[string]interface{} {
+func (bh *BrandingHelper) CreateBrandingResponse(c *fiber.Ctx) map[string]any {
 	return BrandingResponse(c)
 }
 
 // AddBrandingToResponse adds branding data to existing response
-func (bh *BrandingHelper) AddBrandingToResponse(c *fiber.Ctx, response map[string]interface{}) map[string]interface{} {
+func (bh *BrandingHelper) AddBrandingToResponse(c *fiber.Ctx, response map[string]any) map[string]any {
 	if response == nil {
-		response = make(map[string]interface{})
+		response = make(map[string]any)
 	}
 
 	response["branding"] = bh.CreateBrandingResponse(c)

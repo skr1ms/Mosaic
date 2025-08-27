@@ -93,12 +93,12 @@ type JWTServiceInterface interface {
 }
 
 type HubInterface interface {
-	SendTo(userID string, message interface{}) error
-	BroadcastToRole(role string, message interface{}) error
+	SendTo(userID string, message any) error
+	BroadcastToRole(role string, message any) error
 	NotifyPresence(userID string, online bool)
 	GetOnlineUsers() []string
 	IsUserOnline(userID string) bool
-	Set(userID string, c interface{})
-	SetWithRole(userID string, c interface{}, role string)
+	Set(userID string, c any)
+	SetWithRole(userID string, c any, role string)
 	Delete(userID string)
 }

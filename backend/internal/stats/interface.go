@@ -21,7 +21,7 @@ type CouponRepositoryInterface interface {
 	GetExtendedStatusCounts(ctx context.Context, partnerID *uuid.UUID) (map[string]int64, error)
 	GetSizeCounts(ctx context.Context, partnerID *uuid.UUID) (map[string]int64, error)
 	GetStyleCounts(ctx context.Context, partnerID *uuid.UUID) (map[string]int64, error)
-	GetTimeSeriesData(ctx context.Context, from, to time.Time, period string, partnerID *uuid.UUID) ([]map[string]interface{}, error)
+	GetTimeSeriesData(ctx context.Context, from, to time.Time, period string, partnerID *uuid.UUID) ([]map[string]any, error)
 	HealthCheck(ctx context.Context) error
 }
 
@@ -34,7 +34,7 @@ type PartnerRepositoryInterface interface {
 
 type RedisClientInterface interface {
 	Get(ctx context.Context, key string) *redis.StringCmd
-	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.StatusCmd
+	Set(ctx context.Context, key string, value any, expiration time.Duration) *redis.StatusCmd
 	Ping(ctx context.Context) *redis.StatusCmd
 	LLen(ctx context.Context, key string) *redis.IntCmd
 }

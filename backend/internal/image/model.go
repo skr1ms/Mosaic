@@ -11,13 +11,13 @@ import (
 )
 
 type ProcessingParams struct {
-	Style      string                 `json:"style" validate:"required,oneof=grayscale skin_tones pop_art max_colors"`
-	UseAI      bool                   `json:"use_ai"`
-	Lighting   string                 `json:"lighting,omitempty" validate:"omitempty,oneof=sun moon venus"`
-	Contrast   string                 `json:"contrast,omitempty" validate:"omitempty,oneof=low high"`
-	Brightness float64                `json:"brightness,omitempty" validate:"omitempty,min=-100,max=100"`
-	Saturation float64                `json:"saturation,omitempty" validate:"omitempty,min=-100,max=100"`
-	Settings   map[string]interface{} `json:"settings,omitempty"`
+	Style      string         `json:"style" validate:"required,oneof=grayscale skin_tones pop_art max_colors"`
+	UseAI      bool           `json:"use_ai"`
+	Lighting   string         `json:"lighting,omitempty" validate:"omitempty,oneof=sun moon venus"`
+	Contrast   string         `json:"contrast,omitempty" validate:"omitempty,oneof=low high"`
+	Brightness float64        `json:"brightness,omitempty" validate:"omitempty,min=-100,max=100"`
+	Saturation float64        `json:"saturation,omitempty" validate:"omitempty,min=-100,max=100"`
+	Settings   map[string]any `json:"settings,omitempty"`
 }
 
 // Value implements driver.Valuer interface to convert ProcessingParams to database value
@@ -33,7 +33,7 @@ func (p *ProcessingParams) Value() (driver.Value, error) {
 }
 
 // Scan implements sql.Scanner interface to convert database value to ProcessingParams
-func (p *ProcessingParams) Scan(value interface{}) error {
+func (p *ProcessingParams) Scan(value any) error {
 	if value == nil {
 		return nil
 	}

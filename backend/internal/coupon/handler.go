@@ -58,8 +58,8 @@ func NewCouponHandler(router fiber.Router, deps *CouponHandlerDeps) {
 // @Param size query string false "Coupon size"
 // @Param style query string false "Coupon style"
 // @Param partner_id query string false "Partner ID"
-// @Success 200 {array} map[string]interface{} "List of coupons"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {array} map[string]any "List of coupons"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /coupons [get]
 func (handler *CouponHandler) GetCoupons(c *fiber.Ctx) error {
 	code := c.Query("code")
@@ -106,9 +106,9 @@ func (handler *CouponHandler) GetCoupons(c *fiber.Ctx) error {
 // @Param size query string false "Coupon size"
 // @Param style query string false "Coupon style"
 // @Param partner_id query string false "Partner ID"
-// @Success 200 {object} map[string]interface{} "Coupons with pagination info"
-// @Failure 400 {object} map[string]interface{} "Invalid request parameters"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Coupons with pagination info"
+// @Failure 400 {object} map[string]any "Invalid request parameters"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /coupons/paginated [get]
 func (handler *CouponHandler) GetCouponsPaginated(c *fiber.Ctx) error {
 	page := c.QueryInt("page", 1)
@@ -176,7 +176,7 @@ func (handler *CouponHandler) GetCouponsPaginated(c *fiber.Ctx) error {
 // @Param status query string false "Coupon status for export"
 // @Param format query string false "Export format: codes (codes only) or full (full information)"
 // @Success 200 {string} string "Text file with coupons"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /coupons/export [get]
 func (handler *CouponHandler) ExportCoupons(c *fiber.Ctx) error {
 	partnerIDStr := c.Query("partner_id")
@@ -219,8 +219,8 @@ func (handler *CouponHandler) ExportCoupons(c *fiber.Ctx) error {
 // @Produce application/octet-stream
 // @Param request body ExportOptionsRequest true "Export options"
 // @Success 200 {string} string "Export file"
-// @Failure 400 {object} map[string]interface{} "Invalid request"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Failure 400 {object} map[string]any "Invalid request"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /coupons/export-advanced [get]
 func (handler *CouponHandler) ExportCouponsAdvanced(c *fiber.Ctx) error {
 	var req ExportOptionsRequest
@@ -260,8 +260,8 @@ func (handler *CouponHandler) ExportCouponsAdvanced(c *fiber.Ctx) error {
 // @Tags coupons
 // @Produce json
 // @Param partner_id query string false "Partner ID for filtering"
-// @Success 200 {object} map[string]interface{} "Coupon statistics"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Coupon statistics"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /coupons/statistics [get]
 func (handler *CouponHandler) GetStatistics(c *fiber.Ctx) error {
 	partnerIDStr := c.Query("partner_id")
@@ -296,9 +296,9 @@ func (handler *CouponHandler) GetStatistics(c *fiber.Ctx) error {
 // @Param status query string false "Coupon status"
 // @Param size query string false "Coupon size"
 // @Param style query string false "Coupon style"
-// @Success 200 {array} map[string]interface{} "Partner coupons"
-// @Failure 400 {object} map[string]interface{} "Invalid partner ID"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {array} map[string]any "Partner coupons"
+// @Failure 400 {object} map[string]any "Invalid partner ID"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /coupons/partner/{partner_id} [get]
 func (handler *CouponHandler) GetCouponsByPartner(c *fiber.Ctx) error {
 	partnerIDStr := c.Params("partner_id")
@@ -342,9 +342,9 @@ func (handler *CouponHandler) GetCouponsByPartner(c *fiber.Ctx) error {
 // @Tags coupons
 // @Produce json
 // @Param code path string true "Coupon code"
-// @Success 200 {object} map[string]interface{} "Coupon information"
-// @Failure 404 {object} map[string]interface{} "Coupon not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Coupon information"
+// @Failure 404 {object} map[string]any "Coupon not found"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /coupons/code/{code} [get]
 func (handler *CouponHandler) GetCouponByCode(c *fiber.Ctx) error {
 	code := c.Params("code")
@@ -375,9 +375,9 @@ func (handler *CouponHandler) GetCouponByCode(c *fiber.Ctx) error {
 // @Tags coupons
 // @Produce json
 // @Param code path string true "Coupon code"
-// @Success 200 {object} map[string]interface{} "Coupon validation status"
-// @Failure 404 {object} map[string]interface{} "Coupon not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Coupon validation status"
+// @Failure 404 {object} map[string]any "Coupon not found"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /coupons/code/{code}/validate [post]
 func (handler *CouponHandler) ValidateCoupon(c *fiber.Ctx) error {
 	code := c.Params("code")
@@ -410,10 +410,10 @@ func (handler *CouponHandler) ValidateCoupon(c *fiber.Ctx) error {
 // @Tags coupons
 // @Produce json
 // @Param id path string true "Coupon ID"
-// @Success 200 {object} map[string]interface{} "Coupon information"
-// @Failure 400 {object} map[string]interface{} "Invalid coupon ID"
-// @Failure 404 {object} map[string]interface{} "Coupon not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Coupon information"
+// @Failure 400 {object} map[string]any "Invalid coupon ID"
+// @Failure 404 {object} map[string]any "Coupon not found"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /coupons/{id} [get]
 func (handler *CouponHandler) GetCouponByID(c *fiber.Ctx) error {
 	idStr := c.Params("id")
@@ -453,9 +453,9 @@ func (handler *CouponHandler) GetCouponByID(c *fiber.Ctx) error {
 // @Produce json
 // @Param id path string true "Coupon ID"
 // @Param request body ActivateCouponRequest true "Image links"
-// @Success 200 {object} map[string]interface{} "Coupon activated"
-// @Failure 400 {object} map[string]interface{} "Invalid coupon ID or request body"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Coupon activated"
+// @Failure 400 {object} map[string]any "Invalid coupon ID or request body"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /coupons/{id}/activate [put]
 func (handler *CouponHandler) ActivateCoupon(c *fiber.Ctx) error {
 	idStr := c.Params("id")
@@ -502,9 +502,9 @@ func (handler *CouponHandler) ActivateCoupon(c *fiber.Ctx) error {
 // @Tags coupons
 // @Produce json
 // @Param id path string true "Coupon ID"
-// @Success 200 {object} map[string]interface{} "Coupon reset"
-// @Failure 400 {object} map[string]interface{} "Invalid coupon ID"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Coupon reset"
+// @Failure 400 {object} map[string]any "Invalid coupon ID"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /coupons/{id}/reset [put]
 func (handler *CouponHandler) ResetCoupon(c *fiber.Ctx) error {
 	idStr := c.Params("id")
@@ -537,9 +537,9 @@ func (handler *CouponHandler) ResetCoupon(c *fiber.Ctx) error {
 // @Produce json
 // @Param id path string true "Coupon ID"
 // @Param request body SendSchemaRequest true "Email for sending"
-// @Success 200 {object} map[string]interface{} "Schema sent"
-// @Failure 400 {object} map[string]interface{} "Invalid coupon ID or request body"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Schema sent"
+// @Failure 400 {object} map[string]any "Invalid coupon ID or request body"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /coupons/{id}/send-schema [put]
 func (handler *CouponHandler) SendSchema(c *fiber.Ctx) error {
 	idStr := c.Params("id")
@@ -581,9 +581,9 @@ func (handler *CouponHandler) SendSchema(c *fiber.Ctx) error {
 // @Produce json
 // @Param id path string true "Coupon ID"
 // @Param request body MarkAsPurchasedRequest true "Buyer's email"
-// @Success 200 {object} map[string]interface{} "Coupon marked as purchased"
-// @Failure 400 {object} map[string]interface{} "Invalid coupon ID or request body"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Success 200 {object} map[string]any "Coupon marked as purchased"
+// @Failure 400 {object} map[string]any "Invalid coupon ID or request body"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /coupons/{id}/purchase [put]
 func (handler *CouponHandler) MarkAsPurchased(c *fiber.Ctx) error {
 	idStr := c.Params("id")
@@ -624,9 +624,9 @@ func (handler *CouponHandler) MarkAsPurchased(c *fiber.Ctx) error {
 // @Produce application/zip
 // @Param id path string true "Coupon ID"
 // @Success 200 {string} string "ZIP archive with materials"
-// @Failure 400 {object} map[string]interface{} "Invalid coupon ID"
-// @Failure 404 {object} map[string]interface{} "Coupon not found or not used"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Failure 400 {object} map[string]any "Invalid coupon ID"
+// @Failure 404 {object} map[string]any "Coupon not found or not used"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /coupons/{id}/download-materials [get]
 func (handler *CouponHandler) DownloadMaterials(c *fiber.Ctx) error {
 	idStr := c.Params("id")
@@ -664,8 +664,8 @@ func (handler *CouponHandler) DownloadMaterials(c *fiber.Ctx) error {
 // @Produce json
 // @Param request body BatchResetRequest true "List of coupon IDs to reset"
 // @Success 200 {object} BatchResetResponse "Batch reset result"
-// @Failure 400 {object} map[string]interface{} "Invalid request"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Failure 400 {object} map[string]any "Invalid request"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /coupons/batch/reset [post]
 func (handler *CouponHandler) BatchResetCoupons(c *fiber.Ctx) error {
 	var req BatchResetRequest
@@ -714,8 +714,8 @@ func (handler *CouponHandler) BatchResetCoupons(c *fiber.Ctx) error {
 // @Produce json
 // @Param request body BatchDeleteRequest true "List of coupon IDs for deletion"
 // @Success 200 {object} BatchDeletePreviewResponse "Delete preview"
-// @Failure 400 {object} map[string]interface{} "Invalid request"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Failure 400 {object} map[string]any "Invalid request"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /coupons/batch/delete/preview [post]
 func (handler *CouponHandler) PreviewBatchDelete(c *fiber.Ctx) error {
 	var req BatchDeleteRequest
@@ -763,8 +763,8 @@ func (handler *CouponHandler) PreviewBatchDelete(c *fiber.Ctx) error {
 // @Produce json
 // @Param request body BatchDeleteConfirmRequest true "Delete confirmation with key"
 // @Success 200 {object} BatchDeleteResponse "Delete result"
-// @Failure 400 {object} map[string]interface{} "Invalid request"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Failure 400 {object} map[string]any "Invalid request"
+// @Failure 500 {object} map[string]any "Internal server error"
 // @Router /coupons/batch/delete/confirm [post]
 func (handler *CouponHandler) ExecuteBatchDelete(c *fiber.Ctx) error {
 	var req BatchDeleteConfirmRequest

@@ -70,8 +70,8 @@ func NewStatsHandler(router fiber.Router, deps *StatsHandlerDeps) {
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {object} GeneralStatsResponse "General statistics data"
-// @Failure 401 {object} map[string]interface{} "Unauthorized access"
-// @Failure 500 {object} map[string]interface{} "Internal server error while getting general statistics"
+// @Failure 401 {object} map[string]any "Unauthorized access"
+// @Failure 500 {object} map[string]any "Internal server error while getting general statistics"
 // @Router /admin/stats/general [get]
 func (h *StatsHandler) GetGeneralStats(c *fiber.Ctx) error {
 	stats, err := h.deps.StatsService.GetGeneralStats(c.Context())
@@ -99,8 +99,8 @@ func (h *StatsHandler) GetGeneralStats(c *fiber.Ctx) error {
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {object} PartnerListStatsResponse "Partners statistics data"
-// @Failure 401 {object} map[string]interface{} "Unauthorized access"
-// @Failure 500 {object} map[string]interface{} "Internal server error while getting all partners statistics"
+// @Failure 401 {object} map[string]any "Unauthorized access"
+// @Failure 500 {object} map[string]any "Internal server error while getting all partners statistics"
 // @Router /admin/stats/partners [get]
 func (h *StatsHandler) GetAllPartnersStats(c *fiber.Ctx) error {
 	stats, err := h.deps.StatsService.GetAllPartnersStats(c.Context())
@@ -129,10 +129,10 @@ func (h *StatsHandler) GetAllPartnersStats(c *fiber.Ctx) error {
 // @Security BearerAuth
 // @Param partner_id path string true "Partner ID" format(uuid)
 // @Success 200 {object} PartnerStatsResponse "Partner statistics data"
-// @Failure 400 {object} map[string]interface{} "Invalid partner ID format"
-// @Failure 401 {object} map[string]interface{} "Unauthorized access"
-// @Failure 404 {object} map[string]interface{} "Partner not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error while getting partner statistics"
+// @Failure 400 {object} map[string]any "Invalid partner ID format"
+// @Failure 401 {object} map[string]any "Unauthorized access"
+// @Failure 404 {object} map[string]any "Partner not found"
+// @Failure 500 {object} map[string]any "Internal server error while getting partner statistics"
 // @Router /admin/stats/partners/{partner_id} [get]
 func (h *StatsHandler) GetPartnerStats(c *fiber.Ctx) error {
 	partnerIDStr := c.Params("partner_id")
@@ -179,9 +179,9 @@ func (h *StatsHandler) GetPartnerStats(c *fiber.Ctx) error {
 // @Param date_to query string false "End date (YYYY-MM-DD)" format(date)
 // @Param period query string false "Grouping period" Enums(day, week, month, year)
 // @Success 200 {object} TimeSeriesStatsResponse "Time series statistics data"
-// @Failure 400 {object} map[string]interface{} "Invalid request parameters format"
-// @Failure 401 {object} map[string]interface{} "Unauthorized access"
-// @Failure 500 {object} map[string]interface{} "Internal server error while getting time series statistics"
+// @Failure 400 {object} map[string]any "Invalid request parameters format"
+// @Failure 401 {object} map[string]any "Unauthorized access"
+// @Failure 500 {object} map[string]any "Internal server error while getting time series statistics"
 // @Router /admin/stats/time-series [get]
 func (h *StatsHandler) GetTimeSeriesStats(c *fiber.Ctx) error {
 	filters := &StatsFiltersRequest{}
@@ -240,8 +240,8 @@ func (h *StatsHandler) GetTimeSeriesStats(c *fiber.Ctx) error {
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {object} SystemHealthResponse "System health data"
-// @Failure 401 {object} map[string]interface{} "Unauthorized access"
-// @Failure 500 {object} map[string]interface{} "Internal server error while checking system health"
+// @Failure 401 {object} map[string]any "Unauthorized access"
+// @Failure 500 {object} map[string]any "Internal server error while checking system health"
 // @Router /admin/stats/system-health [get]
 func (h *StatsHandler) GetSystemHealth(c *fiber.Ctx) error {
 	health, err := h.deps.StatsService.GetSystemHealth(c.Context())
@@ -270,9 +270,9 @@ func (h *StatsHandler) GetSystemHealth(c *fiber.Ctx) error {
 // @Security BearerAuth
 // @Param partner_id query string false "Partner ID (optional)" format(uuid)
 // @Success 200 {object} CouponsByStatusResponse "Coupons by status statistics"
-// @Failure 400 {object} map[string]interface{} "Invalid partner ID format"
-// @Failure 401 {object} map[string]interface{} "Unauthorized access"
-// @Failure 500 {object} map[string]interface{} "Internal server error while getting coupons by status statistics"
+// @Failure 400 {object} map[string]any "Invalid partner ID format"
+// @Failure 401 {object} map[string]any "Unauthorized access"
+// @Failure 500 {object} map[string]any "Internal server error while getting coupons by status statistics"
 // @Router /admin/stats/coupons-by-status [get]
 func (h *StatsHandler) GetCouponsByStatus(c *fiber.Ctx) error {
 	var partnerID *uuid.UUID
@@ -319,9 +319,9 @@ func (h *StatsHandler) GetCouponsByStatus(c *fiber.Ctx) error {
 // @Security BearerAuth
 // @Param partner_id query string false "Partner ID (optional)" format(uuid)
 // @Success 200 {object} CouponsBySizeResponse "Coupons by size statistics"
-// @Failure 400 {object} map[string]interface{} "Invalid partner ID format"
-// @Failure 401 {object} map[string]interface{} "Unauthorized access"
-// @Failure 500 {object} map[string]interface{} "Internal server error while getting coupons by size statistics"
+// @Failure 400 {object} map[string]any "Invalid partner ID format"
+// @Failure 401 {object} map[string]any "Unauthorized access"
+// @Failure 500 {object} map[string]any "Internal server error while getting coupons by size statistics"
 // @Router /admin/stats/coupons-by-size [get]
 func (h *StatsHandler) GetCouponsBySizes(c *fiber.Ctx) error {
 	var partnerID *uuid.UUID
@@ -368,9 +368,9 @@ func (h *StatsHandler) GetCouponsBySizes(c *fiber.Ctx) error {
 // @Security BearerAuth
 // @Param partner_id query string false "Partner ID (optional)" format(uuid)
 // @Success 200 {object} CouponsByStyleResponse "Coupons by style statistics"
-// @Failure 400 {object} map[string]interface{} "Invalid partner ID format"
-// @Failure 401 {object} map[string]interface{} "Unauthorized access"
-// @Failure 500 {object} map[string]interface{} "Internal server error while getting coupons by style statistics"
+// @Failure 400 {object} map[string]any "Invalid partner ID format"
+// @Failure 401 {object} map[string]any "Unauthorized access"
+// @Failure 500 {object} map[string]any "Internal server error while getting coupons by style statistics"
 // @Router /admin/stats/coupons-by-style [get]
 func (h *StatsHandler) GetCouponsByStyles(c *fiber.Ctx) error {
 	var partnerID *uuid.UUID
@@ -417,9 +417,9 @@ func (h *StatsHandler) GetCouponsByStyles(c *fiber.Ctx) error {
 // @Security BearerAuth
 // @Param limit query int false "Number of partners to return (default: 10)" minimum(1) maximum(100)
 // @Success 200 {object} TopPartnersResponse "Top partners statistics"
-// @Failure 400 {object} map[string]interface{} "Invalid limit parameter"
-// @Failure 401 {object} map[string]interface{} "Unauthorized access"
-// @Failure 500 {object} map[string]interface{} "Internal server error while getting top partners"
+// @Failure 400 {object} map[string]any "Invalid limit parameter"
+// @Failure 401 {object} map[string]any "Unauthorized access"
+// @Failure 500 {object} map[string]any "Internal server error while getting top partners"
 // @Router /admin/stats/top-partners [get]
 func (h *StatsHandler) GetTopPartners(c *fiber.Ctx) error {
 	limit := 10
@@ -476,8 +476,8 @@ func (h *StatsHandler) GetTopPartners(c *fiber.Ctx) error {
 // @Produce json
 // @Security BearerAuth
 // @Success 101 {string} string "Switching to WebSocket protocol"
-// @Failure 400 {object} map[string]interface{} "WebSocket upgrade failed"
-// @Failure 401 {object} map[string]interface{} "Unauthorized access"
+// @Failure 400 {object} map[string]any "WebSocket upgrade failed"
+// @Failure 401 {object} map[string]any "Unauthorized access"
 // @Router /admin/stats/realtime [get]
 func (h *StatsHandler) HandleRealTimeStats(c *websocket.Conn) {
 	// WebSocket не имеет доступа к fiber.Ctx напрямую
@@ -511,8 +511,8 @@ func (h *StatsHandler) HandleRealTimeStats(c *websocket.Conn) {
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {object} PartnerStatsResponse "Partner statistics data"
-// @Failure 401 {object} map[string]interface{} "Partner not authenticated"
-// @Failure 500 {object} map[string]interface{} "Internal server error while getting partner statistics"
+// @Failure 401 {object} map[string]any "Partner not authenticated"
+// @Failure 500 {object} map[string]any "Internal server error while getting partner statistics"
 // @Router /partner/stats/my [get]
 func (h *StatsHandler) GetMyPartnerStats(c *fiber.Ctx) error {
 	partnerID := c.Locals("partner_id")
@@ -565,8 +565,8 @@ func (h *StatsHandler) GetMyPartnerStats(c *fiber.Ctx) error {
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {object} CouponsByStatusResponse "Partner coupons by status statistics"
-// @Failure 401 {object} map[string]interface{} "Partner not authenticated"
-// @Failure 500 {object} map[string]interface{} "Internal server error while getting coupons by status statistics"
+// @Failure 401 {object} map[string]any "Partner not authenticated"
+// @Failure 500 {object} map[string]any "Internal server error while getting coupons by status statistics"
 // @Router /partner/stats/my/coupons-by-status [get]
 func (h *StatsHandler) GetMyPartnerCouponsByStatus(c *fiber.Ctx) error {
 	partnerID := c.Locals("partner_id")
@@ -622,8 +622,8 @@ func (h *StatsHandler) GetMyPartnerCouponsByStatus(c *fiber.Ctx) error {
 // @Param date_to query string false "End date (YYYY-MM-DD)" format(date)
 // @Param period query string false "Grouping period" Enums(day, week, month)
 // @Success 200 {object} TimeSeriesStatsResponse "Partner time series statistics"
-// @Failure 401 {object} map[string]interface{} "Partner not authenticated"
-// @Failure 500 {object} map[string]interface{} "Internal server error while getting time series statistics"
+// @Failure 401 {object} map[string]any "Partner not authenticated"
+// @Failure 500 {object} map[string]any "Internal server error while getting time series statistics"
 // @Router /partner/stats/my/time-series [get]
 func (h *StatsHandler) GetMyPartnerTimeSeriesStats(c *fiber.Ctx) error {
 	partnerID := c.Locals("partner_id")

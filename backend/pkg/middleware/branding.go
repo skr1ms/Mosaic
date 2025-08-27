@@ -363,17 +363,17 @@ func ValidateMarketplaceURL(urlStr string, marketplace string) bool {
 }
 
 // BrandingResponse creates response structure with branding data for API
-func BrandingResponse(c *fiber.Ctx) map[string]interface{} {
+func BrandingResponse(c *fiber.Ctx) map[string]any {
 	branding := GetBrandingFromContext(c)
 	if branding == nil {
-		return map[string]interface{}{
+		return map[string]any{
 			"is_default": true,
 		}
 	}
 
 	contactLinks := BuildContactLinks(branding)
 
-	response := map[string]interface{}{
+	response := map[string]any{
 		"is_default":        branding.IsDefault,
 		"brand_name":        branding.BrandName,
 		"logo_url":          branding.LogoURL,

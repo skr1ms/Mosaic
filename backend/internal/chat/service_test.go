@@ -235,12 +235,12 @@ type MockHub struct {
 	mock.Mock
 }
 
-func (m *MockHub) SendTo(userID string, message interface{}) error {
+func (m *MockHub) SendTo(userID string, message any) error {
 	args := m.Called(userID, message)
 	return args.Error(0)
 }
 
-func (m *MockHub) BroadcastToRole(role string, message interface{}) error {
+func (m *MockHub) BroadcastToRole(role string, message any) error {
 	args := m.Called(role, message)
 	return args.Error(0)
 }
@@ -262,11 +262,11 @@ func (m *MockHub) IsUserOnline(userID string) bool {
 	return args.Bool(0)
 }
 
-func (m *MockHub) Set(userID string, c interface{}) {
+func (m *MockHub) Set(userID string, c any) {
 	m.Called(userID, c)
 }
 
-func (m *MockHub) SetWithRole(userID string, c interface{}, role string) {
+func (m *MockHub) SetWithRole(userID string, c any, role string) {
 	m.Called(userID, c, role)
 }
 

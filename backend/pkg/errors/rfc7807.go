@@ -9,12 +9,12 @@ import (
 )
 
 type ProblemDetail struct {
-	Type       string                 `json:"type"`
-	Title      string                 `json:"title"`
-	Status     int                    `json:"status"`
-	Detail     string                 `json:"detail"`
-	Instance   string                 `json:"instance"`
-	Extensions map[string]interface{} `json:"extensions,omitempty"`
+	Type       string         `json:"type"`
+	Title      string         `json:"title"`
+	Status     int            `json:"status"`
+	Detail     string         `json:"detail"`
+	Instance   string         `json:"instance"`
+	Extensions map[string]any `json:"extensions,omitempty"`
 }
 
 // Error implements error interface
@@ -59,9 +59,9 @@ func (p *ProblemDetail) WithInstance(instance string) *ProblemDetail {
 }
 
 // WithExtension adds additional field
-func (p *ProblemDetail) WithExtension(key string, value interface{}) *ProblemDetail {
+func (p *ProblemDetail) WithExtension(key string, value any) *ProblemDetail {
 	if p.Extensions == nil {
-		p.Extensions = make(map[string]interface{})
+		p.Extensions = make(map[string]any)
 	}
 	p.Extensions[key] = value
 	return p
@@ -189,14 +189,14 @@ func ValidationErrorWithFields(fields []ValidationFieldError) *ProblemDetail {
 
 // ValidationFieldError represents field validation error
 type ValidationFieldError struct {
-	Field   string      `json:"field"`
-	Tag     string      `json:"tag"`
-	Value   interface{} `json:"value"`
-	Message string      `json:"message"`
+	Field   string `json:"field"`
+	Tag     string `json:"tag"`
+	Value   any    `json:"value"`
+	Message string `json:"message"`
 }
 
 // CreateValidationFieldError creates field validation error
-func CreateValidationFieldError(field, tag string, value interface{}, message string) ValidationFieldError {
+func CreateValidationFieldError(field, tag string, value any, message string) ValidationFieldError {
 	return ValidationFieldError{
 		Field:   field,
 		Tag:     tag,

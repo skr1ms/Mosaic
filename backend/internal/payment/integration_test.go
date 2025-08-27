@@ -106,14 +106,14 @@ func setupTestSuite() *PaymentIntegrationTestSuite {
 func TestPaymentHandler_PurchaseCoupon_Integration(t *testing.T) {
 	tests := []struct {
 		name               string
-		requestBody        map[string]interface{}
+		requestBody        map[string]any
 		mockSetup          func(*MockPaymentService)
 		expectedStatusCode int
 		expectedSuccess    bool
 	}{
 		{
 			name: "successful_purchase",
-			requestBody: map[string]interface{}{
+			requestBody: map[string]any{
 				"size":       "40x50",
 				"style":      "max_colors",
 				"email":      "test@example.com",
@@ -135,7 +135,7 @@ func TestPaymentHandler_PurchaseCoupon_Integration(t *testing.T) {
 		},
 		{
 			name: "invalid_request_body",
-			requestBody: map[string]interface{}{
+			requestBody: map[string]any{
 				"size": "INVALID_SIZE",
 			},
 			mockSetup: func(service *MockPaymentService) {
@@ -149,7 +149,7 @@ func TestPaymentHandler_PurchaseCoupon_Integration(t *testing.T) {
 		},
 		{
 			name: "service_error",
-			requestBody: map[string]interface{}{
+			requestBody: map[string]any{
 				"size":       "40x50",
 				"style":      "max_colors",
 				"email":      "test@example.com",
@@ -365,14 +365,14 @@ func TestPaymentHandler_TestIntegration_Integration(t *testing.T) {
 func TestPaymentHandler_PaymentNotification_Integration(t *testing.T) {
 	tests := []struct {
 		name               string
-		requestBody        map[string]interface{}
+		requestBody        map[string]any
 		mockSetup          func(*MockPaymentService)
 		expectedStatusCode int
 		expectedSuccess    bool
 	}{
 		{
 			name: "successful_webhook_processing",
-			requestBody: map[string]interface{}{
+			requestBody: map[string]any{
 				"orderNumber": "ORD_WEBHOOK_123",
 				"orderStatus": 2,
 				"orderId":     "ALFA_ORDER_456",
@@ -388,7 +388,7 @@ func TestPaymentHandler_PaymentNotification_Integration(t *testing.T) {
 		},
 		{
 			name:        "invalid_request_body",
-			requestBody: map[string]interface{}{},
+			requestBody: map[string]any{},
 			mockSetup: func(service *MockPaymentService) {
 				service.On("ProcessWebhookNotification", mock.Anything, mock.Anything).Return(fmt.Errorf("invalid signature"))
 			},
@@ -397,7 +397,7 @@ func TestPaymentHandler_PaymentNotification_Integration(t *testing.T) {
 		},
 		{
 			name: "webhook_processing_error",
-			requestBody: map[string]interface{}{
+			requestBody: map[string]any{
 				"orderNumber": "ORD_ERROR_123",
 				"orderStatus": 2,
 			},
@@ -429,7 +429,7 @@ func TestPaymentHandler_PaymentNotification_Integration(t *testing.T) {
 			assert.Equal(t, tt.expectedStatusCode, resp.StatusCode)
 
 			if tt.expectedStatusCode == 200 {
-				var response map[string]interface{}
+				var response map[string]any
 				json.NewDecoder(resp.Body).Decode(&response)
 				success, exists := response["success"]
 				assert.True(t, exists)

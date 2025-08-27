@@ -62,10 +62,10 @@ func NewPartnerHandler(router fiber.Router, deps *PartnerHandlerDeps) {
 // @Tags partner-dashboard
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} map[string]interface{} "Dashboard data with coupons and recent activations"
-// @Failure 401 {object} map[string]interface{} "Unauthorized: JWT token is missing or invalid"
-// @Failure 403 {object} map[string]interface{} "Forbidden: User does not have partner role"
-// @Failure 500 {object} map[string]interface{} "Internal server error when retrieving dashboard data"
+// @Success 200 {object} map[string]any "Dashboard data with coupons and recent activations"
+// @Failure 401 {object} map[string]any "Unauthorized: JWT token is missing or invalid"
+// @Failure 403 {object} map[string]any "Forbidden: User does not have partner role"
+// @Failure 500 {object} map[string]any "Internal server error when retrieving dashboard data"
 // @Router /partner/dashboard [get]
 func (handler *PartnerHandler) GetDashboard(c *fiber.Ctx) error {
 	claims, err := jwt.GetClaimsFromFiberContext(c)
@@ -123,10 +123,10 @@ func (handler *PartnerHandler) GetDashboard(c *fiber.Ctx) error {
 // @Tags partner-profile
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} map[string]interface{} "Partner profile data"
-// @Failure 401 {object} map[string]interface{} "Unauthorized: JWT token is missing or invalid"
-// @Failure 403 {object} map[string]interface{} "Forbidden: User does not have partner role"
-// @Failure 404 {object} map[string]interface{} "Partner not found in the database"
+// @Success 200 {object} map[string]any "Partner profile data"
+// @Failure 401 {object} map[string]any "Unauthorized: JWT token is missing or invalid"
+// @Failure 403 {object} map[string]any "Forbidden: User does not have partner role"
+// @Failure 404 {object} map[string]any "Partner not found in the database"
 // @Router /partner/profile [get]
 func (handler *PartnerHandler) GetProfile(c *fiber.Ctx) error {
 	claims, err := jwt.GetClaimsFromFiberContext(c)
@@ -189,7 +189,7 @@ func (handler *PartnerHandler) GetProfile(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Failure 403 {object} map[string]interface{} "Forbidden: Profile is read-only, contact administrator"
+// @Failure 403 {object} map[string]any "Forbidden: Profile is read-only, contact administrator"
 // @Router /partner/profile [put]
 func (handler *PartnerHandler) UpdateProfile(c *fiber.Ctx) error {
 	handler.deps.Logger.FromContext(c).Warn().
@@ -220,10 +220,10 @@ func (handler *PartnerHandler) UpdateProfile(c *fiber.Ctx) error {
 // @Param sort_order query string false "Sort order" Enums(asc,desc) default(desc)
 // @Param page query integer false "Page number" default(1)
 // @Param limit query integer false "Number of items per page" default(50) minimum(1) maximum(100)
-// @Success 200 {object} map[string]interface{} "List of partner coupons with pagination info"
-// @Failure 401 {object} map[string]interface{} "Unauthorized: JWT token is missing or invalid"
-// @Failure 403 {object} map[string]interface{} "Forbidden: User does not have partner role"
-// @Failure 500 {object} map[string]interface{} "Internal server error when retrieving coupons"
+// @Success 200 {object} map[string]any "List of partner coupons with pagination info"
+// @Failure 401 {object} map[string]any "Unauthorized: JWT token is missing or invalid"
+// @Failure 403 {object} map[string]any "Forbidden: User does not have partner role"
+// @Failure 500 {object} map[string]any "Internal server error when retrieving coupons"
 // @Router /partner/coupons [get]
 func (handler *PartnerHandler) GetMyCoupons(c *fiber.Ctx) error {
 	claims, err := jwt.GetClaimsFromFiberContext(c)
@@ -315,10 +315,10 @@ func (handler *PartnerHandler) GetMyCoupons(c *fiber.Ctx) error {
 // @Param format query string false "File format (txt or csv)" Enums(txt,csv) default(csv)
 // @Param status query string false "Coupon status to export (new, used, completed, or 'all' for all statuses)" default(new)
 // @Success 200 {string} string "File with coupons as attachment"
-// @Failure 400 {object} map[string]interface{} "Bad request: Invalid parameters"
-// @Failure 401 {object} map[string]interface{} "Unauthorized: JWT token is missing or invalid"
-// @Failure 403 {object} map[string]interface{} "Forbidden: User does not have partner role"
-// @Failure 500 {object} map[string]interface{} "Internal server error during export process"
+// @Failure 400 {object} map[string]any "Bad request: Invalid parameters"
+// @Failure 401 {object} map[string]any "Unauthorized: JWT token is missing or invalid"
+// @Failure 403 {object} map[string]any "Forbidden: User does not have partner role"
+// @Failure 500 {object} map[string]any "Internal server error during export process"
 // @Router /partner/coupons/export [get]
 func (handler *PartnerHandler) ExportCoupons(c *fiber.Ctx) error {
 	claims, err := jwt.GetClaimsFromFiberContext(c)
@@ -386,10 +386,10 @@ func (handler *PartnerHandler) ExportCoupons(c *fiber.Ctx) error {
 // @Tags partner-statistics
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} map[string]interface{} "Partner statistics with coupon counts"
-// @Failure 401 {object} map[string]interface{} "Unauthorized: JWT token is missing or invalid"
-// @Failure 403 {object} map[string]interface{} "Forbidden: User does not have partner role"
-// @Failure 500 {object} map[string]interface{} "Internal server error when retrieving statistics"
+// @Success 200 {object} map[string]any "Partner statistics with coupon counts"
+// @Failure 401 {object} map[string]any "Unauthorized: JWT token is missing or invalid"
+// @Failure 403 {object} map[string]any "Forbidden: User does not have partner role"
+// @Failure 500 {object} map[string]any "Internal server error when retrieving statistics"
 // @Router /partner/statistics [get]
 func (handler *PartnerHandler) GetMyStatistics(c *fiber.Ctx) error {
 	claims, err := jwt.GetClaimsFromFiberContext(c)
@@ -441,10 +441,10 @@ func (handler *PartnerHandler) GetMyStatistics(c *fiber.Ctx) error {
 // @Tags partner-statistics
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} map[string]interface{} "Comparison statistics with other partners"
-// @Failure 401 {object} map[string]interface{} "Unauthorized: JWT token is missing or invalid"
-// @Failure 403 {object} map[string]interface{} "Forbidden: User does not have partner role"
-// @Failure 500 {object} map[string]interface{} "Internal server error when retrieving comparison statistics"
+// @Success 200 {object} map[string]any "Comparison statistics with other partners"
+// @Failure 401 {object} map[string]any "Unauthorized: JWT token is missing or invalid"
+// @Failure 403 {object} map[string]any "Forbidden: User does not have partner role"
+// @Failure 500 {object} map[string]any "Internal server error when retrieving comparison statistics"
 // @Router /partner/statistics/comparison [get]
 func (handler *PartnerHandler) GetComparisonStatistics(c *fiber.Ctx) error {
 	claims, err := jwt.GetClaimsFromFiberContext(c)
@@ -494,11 +494,11 @@ func (handler *PartnerHandler) GetComparisonStatistics(c *fiber.Ctx) error {
 // @Security BearerAuth
 // @Param id path string true "Coupon ID"
 // @Success 200 {string} string "ZIP archive with materials as attachment"
-// @Failure 400 {object} map[string]interface{} "Bad request: Invalid coupon ID format"
-// @Failure 401 {object} map[string]interface{} "Unauthorized: JWT token is missing or invalid"
-// @Failure 403 {object} map[string]interface{} "Forbidden: Coupon does not belong to partner"
-// @Failure 404 {object} map[string]interface{} "Coupon not found or materials not available"
-// @Failure 500 {object} map[string]interface{} "Internal server error during download process"
+// @Failure 400 {object} map[string]any "Bad request: Invalid coupon ID format"
+// @Failure 401 {object} map[string]any "Unauthorized: JWT token is missing or invalid"
+// @Failure 403 {object} map[string]any "Forbidden: Coupon does not belong to partner"
+// @Failure 404 {object} map[string]any "Coupon not found or materials not available"
+// @Failure 500 {object} map[string]any "Internal server error during download process"
 // @Router /partner/coupons/{id}/download-materials [get]
 func (handler *PartnerHandler) DownloadCouponMaterials(c *fiber.Ctx) error {
 	claims, err := jwt.GetClaimsFromFiberContext(c)

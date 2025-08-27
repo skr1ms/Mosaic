@@ -48,7 +48,7 @@ func (j *JWT) CreateSignedOpenToken(messageID uint, ttl time.Duration) (string, 
 
 // ParseSignedOpenToken validates and returns messageID
 func (j *JWT) ParseSignedOpenToken(tokenString string) (uint, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			log.Error().Msg("Unexpected signing method in open token")
 			return nil, fmt.Errorf("unexpected signing method")
@@ -96,11 +96,11 @@ type Claims struct {
 }
 
 const (
-	AdminAccessTokenDuration  = time.Hour * 2      
-	AdminRefreshTokenDuration = time.Hour * 24 * 3 
+	AdminAccessTokenDuration  = time.Hour * 2
+	AdminRefreshTokenDuration = time.Hour * 24 * 3
 
-	PartnerAccessTokenDuration  = time.Hour * 1  
-	PartnerRefreshTokenDuration = time.Hour * 24 
+	PartnerAccessTokenDuration  = time.Hour * 1
+	PartnerRefreshTokenDuration = time.Hour * 24
 
 	PasswordResetTokenDuration = time.Minute * 15
 )
@@ -193,7 +193,7 @@ func (j *JWT) CreateTokenPair(userID uuid.UUID, login, role string) (*TokenPair,
 
 // ValidateAccessToken validates access token
 func (j *JWT) ValidateAccessToken(tokenString string) (*Claims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			log.Error().Msg("Unexpected signing method in access token validation")
 			return nil, fmt.Errorf("unexpected signing method")
@@ -220,7 +220,7 @@ func (j *JWT) ValidateAccessToken(tokenString string) (*Claims, error) {
 
 // ValidateRefreshToken validates refresh token
 func (j *JWT) ValidateRefreshToken(tokenString string) (*Claims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			log.Error().Msg("Unexpected signing method in refresh token validation")
 			return nil, fmt.Errorf("unexpected signing method")
@@ -335,7 +335,7 @@ func (j *JWT) CreatePasswordResetToken(userID uuid.UUID, email string) (string, 
 }
 
 func (j *JWT) ValidatePasswordResetToken(tokenString string) (*Claims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			log.Error().Msg("Unexpected signing method in password reset token validation")
 			return nil, fmt.Errorf("unexpected signing method")

@@ -66,8 +66,8 @@ func NewPublicHandler(router fiber.Router, deps *PublicHandlerDeps) *PublicHandl
 // @Description Returns branding data (logo, contacts, links) for the current domain
 // @Tags public
 // @Produce json
-// @Success 200 {object} map[string]interface{} "Branding data including logo, contacts, and links"
-// @Failure 500 {object} map[string]interface{} "Internal server error when retrieving branding data"
+// @Success 200 {object} map[string]any "Branding data including logo, contacts, and links"
+// @Failure 500 {object} map[string]any "Internal server error when retrieving branding data"
 // @Router /api/branding [get]
 func (h *PublicHandler) GetBrandingInfo(c *fiber.Ctx) error {
 	brandingResponse := middleware.BrandingResponse(c)
@@ -112,9 +112,9 @@ func (h *PublicHandler) GetBrandingInfo(c *fiber.Ctx) error {
 // @Tags public
 // @Produce json
 // @Param domain path string true "Partner's domain name"
-// @Success 200 {object} map[string]interface{} "Partner information including branding and contact details"
-// @Failure 404 {object} map[string]interface{} "Partner not found for the specified domain"
-// @Failure 500 {object} map[string]interface{} "Internal server error when retrieving partner information"
+// @Success 200 {object} map[string]any "Partner information including branding and contact details"
+// @Failure 404 {object} map[string]any "Partner not found for the specified domain"
+// @Failure 500 {object} map[string]any "Internal server error when retrieving partner information"
 // @Router /api/partners/{domain}/info [get]
 func (h *PublicHandler) GetPartnerByDomain(c *fiber.Ctx) error {
 	domain := c.Params("domain")
@@ -150,10 +150,10 @@ func (h *PublicHandler) GetPartnerByDomain(c *fiber.Ctx) error {
 // @Tags coupons
 // @Produce json
 // @Param code path string true "Coupon code (12 digits)"
-// @Success 200 {object} map[string]interface{} "Coupon information including status, partner, and creation date"
-// @Failure 400 {object} map[string]interface{} "Invalid coupon code format"
-// @Failure 404 {object} map[string]interface{} "Coupon not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error when retrieving coupon"
+// @Success 200 {object} map[string]any "Coupon information including status, partner, and creation date"
+// @Failure 400 {object} map[string]any "Invalid coupon code format"
+// @Failure 404 {object} map[string]any "Coupon not found"
+// @Failure 500 {object} map[string]any "Internal server error when retrieving coupon"
 // @Router /api/coupons/{code} [get]
 func (h *PublicHandler) GetCouponByCode(c *fiber.Ctx) error {
 	code := c.Params("code")
@@ -206,11 +206,11 @@ func (h *PublicHandler) GetCouponByCode(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param code path string true "Coupon code"
-// @Success 200 {object} map[string]interface{} "Coupon activated successfully"
-// @Failure 400 {object} map[string]interface{} "Invalid request format"
-// @Failure 404 {object} map[string]interface{} "Coupon not found"
-// @Failure 409 {object} map[string]interface{} "Coupon already used"
-// @Failure 500 {object} map[string]interface{} "Internal server error during coupon activation"
+// @Success 200 {object} map[string]any "Coupon activated successfully"
+// @Failure 400 {object} map[string]any "Invalid request format"
+// @Failure 404 {object} map[string]any "Coupon not found"
+// @Failure 409 {object} map[string]any "Coupon already used"
+// @Failure 500 {object} map[string]any "Internal server error during coupon activation"
 // @Router /api/coupons/{code}/activate [post]
 func (h *PublicHandler) ActivateCoupon(c *fiber.Ctx) error {
 	code := c.Params("code")
@@ -263,10 +263,10 @@ func (h *PublicHandler) ActivateCoupon(c *fiber.Ctx) error {
 // @Param coupon_id formData string false "ID of activated coupon (UUID)"
 // @Param coupon_code formData string false "Coupon code (12 digits) - alternative to coupon_id"
 // @Param image formData file true "Image file (JPG, PNG)"
-// @Success 201 {object} map[string]interface{} "Image uploaded successfully"
-// @Failure 400 {object} map[string]interface{} "Bad request: missing required fields or invalid data"
-// @Failure 413 {object} map[string]interface{} "File too large"
-// @Failure 500 {object} map[string]interface{} "Internal server error during image upload"
+// @Success 201 {object} map[string]any "Image uploaded successfully"
+// @Failure 400 {object} map[string]any "Bad request: missing required fields or invalid data"
+// @Failure 413 {object} map[string]any "File too large"
+// @Failure 500 {object} map[string]any "Internal server error during image upload"
 // @Router /api/images/upload [post]
 func (h *PublicHandler) UploadImage(c *fiber.Ctx) error {
 	couponID := c.FormValue("coupon_id")
@@ -367,10 +367,10 @@ func (h *PublicHandler) UploadImage(c *fiber.Ctx) error {
 // @Produce json
 // @Param id path string true "Image ID"
 // @Param request body types.EditImageRequest true "Editing parameters"
-// @Success 200 {object} map[string]interface{} "Image edited successfully"
-// @Failure 400 {object} map[string]interface{} "Bad request: invalid editing parameters"
-// @Failure 404 {object} map[string]interface{} "Image not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error during image editing"
+// @Success 200 {object} map[string]any "Image edited successfully"
+// @Failure 400 {object} map[string]any "Bad request: invalid editing parameters"
+// @Failure 404 {object} map[string]any "Image not found"
+// @Failure 500 {object} map[string]any "Internal server error during image editing"
 // @Router /api/images/{id}/edit [post]
 func (h *PublicHandler) EditImage(c *fiber.Ctx) error {
 	imageID := c.Params("id")
@@ -435,10 +435,10 @@ func (h *PublicHandler) EditImage(c *fiber.Ctx) error {
 // @Produce json
 // @Param id path string true "Image ID"
 // @Param request body types.ProcessImageRequest true "Processing parameters"
-// @Success 200 {object} map[string]interface{} "Image processing started"
-// @Failure 400 {object} map[string]interface{} "Bad request: invalid processing parameters"
-// @Failure 404 {object} map[string]interface{} "Image not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error during image processing"
+// @Success 200 {object} map[string]any "Image processing started"
+// @Failure 400 {object} map[string]any "Bad request: invalid processing parameters"
+// @Failure 404 {object} map[string]any "Image not found"
+// @Failure 500 {object} map[string]any "Internal server error during image processing"
 // @Router /api/images/{id}/process [post]
 func (h *PublicHandler) ProcessImage(c *fiber.Ctx) error {
 	imageID := c.Params("id")
@@ -503,10 +503,10 @@ func (h *PublicHandler) ProcessImage(c *fiber.Ctx) error {
 // @Produce json
 // @Param id path string true "Image ID"
 // @Param request body types.GenerateSchemaRequest true "Schema generation parameters"
-// @Success 200 {object} map[string]interface{} "Schema generation started"
-// @Failure 400 {object} map[string]interface{} "Bad request: invalid schema generation parameters"
-// @Failure 404 {object} map[string]interface{} "Image not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error during schema generation"
+// @Success 200 {object} map[string]any "Schema generation started"
+// @Failure 400 {object} map[string]any "Bad request: invalid schema generation parameters"
+// @Failure 404 {object} map[string]any "Image not found"
+// @Failure 500 {object} map[string]any "Internal server error during schema generation"
 // @Router /api/images/{id}/generate-schema [post]
 func (h *PublicHandler) GenerateSchema(c *fiber.Ctx) error {
 	imageID := c.Params("id")
@@ -584,10 +584,10 @@ func (h *PublicHandler) GenerateSchema(c *fiber.Ctx) error {
 // @Produce application/octet-stream
 // @Param id path string true "Image ID"
 // @Success 200 {file} file "Schema file"
-// @Failure 400 {object} map[string]interface{} "Invalid image ID format"
-// @Failure 404 {object} map[string]interface{} "Image not found"
-// @Failure 409 {object} map[string]interface{} "Schema not ready"
-// @Failure 500 {object} map[string]interface{} "Internal server error during schema download"
+// @Failure 400 {object} map[string]any "Invalid image ID format"
+// @Failure 404 {object} map[string]any "Image not found"
+// @Failure 409 {object} map[string]any "Schema not ready"
+// @Failure 500 {object} map[string]any "Internal server error during schema download"
 // @Router /api/images/{id}/download [get]
 func (h *PublicHandler) DownloadSchema(c *fiber.Ctx) error {
 	imageID := c.Params("id")
@@ -651,10 +651,10 @@ func (h *PublicHandler) DownloadSchema(c *fiber.Ctx) error {
 // @Produce json
 // @Param id path string true "Image ID"
 // @Param request body public.SendEmailRequest true "Email address for sending"
-// @Success 200 {object} map[string]interface{} "Schema sent successfully"
-// @Failure 400 {object} map[string]interface{} "Bad request: invalid email or request format"
-// @Failure 404 {object} map[string]interface{} "Image not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error during email sending"
+// @Success 200 {object} map[string]any "Schema sent successfully"
+// @Failure 400 {object} map[string]any "Bad request: invalid email or request format"
+// @Failure 404 {object} map[string]any "Image not found"
+// @Failure 500 {object} map[string]any "Internal server error during email sending"
 // @Router /api/images/{id}/send-email [post]
 func (h *PublicHandler) SendSchemaToEmail(c *fiber.Ctx) error {
 	imageID := c.Params("id")
@@ -707,9 +707,9 @@ func (h *PublicHandler) SendSchemaToEmail(c *fiber.Ctx) error {
 // @Tags images
 // @Produce json
 // @Param id path string true "Image ID"
-// @Success 200 {object} map[string]interface{} "Image preview with URL and dimensions"
-// @Failure 404 {object} map[string]interface{} "Image not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error when retrieving image preview"
+// @Success 200 {object} map[string]any "Image preview with URL and dimensions"
+// @Failure 404 {object} map[string]any "Image not found"
+// @Failure 500 {object} map[string]any "Internal server error when retrieving image preview"
 // @Router /api/images/{id}/preview [get]
 func (h *PublicHandler) GetImagePreview(c *fiber.Ctx) error {
 	imageID := c.Params("id")
@@ -756,9 +756,9 @@ func (h *PublicHandler) GetImagePreview(c *fiber.Ctx) error {
 // @Tags images
 // @Produce json
 // @Param id path string true "Image ID"
-// @Success 200 {object} map[string]interface{} "Processing status including current step and progress"
-// @Failure 404 {object} map[string]interface{} "Image not found"
-// @Failure 500 {object} map[string]interface{} "Internal server error when retrieving processing status"
+// @Success 200 {object} map[string]any "Processing status including current step and progress"
+// @Failure 404 {object} map[string]any "Image not found"
+// @Failure 500 {object} map[string]any "Internal server error when retrieving processing status"
 // @Router /api/images/{id}/status [get]
 func (h *PublicHandler) GetProcessingStatus(c *fiber.Ctx) error {
 	imageID := c.Params("id")
@@ -807,10 +807,10 @@ func (h *PublicHandler) GetProcessingStatus(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param request body public.PurchaseCouponRequest true "Purchase parameters"
-// @Success 201 {object} map[string]interface{} "Coupon purchased successfully"
-// @Failure 400 {object} map[string]interface{} "Bad request: invalid purchase parameters"
-// @Failure 403 {object} map[string]interface{} "Purchase not allowed for this partner"
-// @Failure 500 {object} map[string]interface{} "Internal server error during coupon purchase"
+// @Success 201 {object} map[string]any "Coupon purchased successfully"
+// @Failure 400 {object} map[string]any "Bad request: invalid purchase parameters"
+// @Failure 403 {object} map[string]any "Purchase not allowed for this partner"
+// @Failure 500 {object} map[string]any "Internal server error during coupon purchase"
 // @Router /api/coupons/purchase [post]
 func (h *PublicHandler) PurchaseCoupon(c *fiber.Ctx) error {
 	branding := middleware.GetBrandingFromContext(c)
@@ -848,7 +848,7 @@ func (h *PublicHandler) PurchaseCoupon(c *fiber.Ctx) error {
 			Err(err).
 			Str("handler", "PurchaseCoupon").
 			Msg("Failed to purchase coupon")
-			
+
 		errorResponse := fiber.Map{
 			"error":      "Failed to purchase coupon",
 			"request_id": c.Get("X-REQUEST-ID"),
@@ -876,8 +876,8 @@ func (h *PublicHandler) PurchaseCoupon(c *fiber.Ctx) error {
 // @Description Returns list of available mosaic sizes
 // @Tags public
 // @Produce json
-// @Success 200 {array} map[string]interface{} "Available sizes with dimensions and prices"
-// @Failure 500 {object} map[string]interface{} "Internal server error when retrieving available sizes"
+// @Success 200 {array} map[string]any "Available sizes with dimensions and prices"
+// @Failure 500 {object} map[string]any "Internal server error when retrieving available sizes"
 // @Router /api/sizes [get]
 func (h *PublicHandler) GetAvailableSizes(c *fiber.Ctx) error {
 	sizes := h.deps.PublicService.GetAvailableSizes()
@@ -894,8 +894,8 @@ func (h *PublicHandler) GetAvailableSizes(c *fiber.Ctx) error {
 // @Description Returns list of available processing styles
 // @Tags public
 // @Produce json
-// @Success 200 {array} map[string]interface{} "Available styles with descriptions and examples"
-// @Failure 500 {object} map[string]interface{} "Internal server error when retrieving available styles"
+// @Success 200 {array} map[string]any "Available styles with descriptions and examples"
+// @Failure 500 {object} map[string]any "Internal server error when retrieving available styles"
 // @Router /api/styles [get]
 func (h *PublicHandler) GetAvailableStyles(c *fiber.Ctx) error {
 	styles := h.deps.PublicService.GetAvailableStyles()
@@ -914,7 +914,7 @@ func (h *PublicHandler) GetAvailableStyles(c *fiber.Ctx) error {
 // @Tags public
 // @Produce json
 // @Success 200 {object} map[string]string "reCAPTCHA site key"
-// @Failure 500 {object} map[string]interface{} "Internal server error when retrieving reCAPTCHA site key"
+// @Failure 500 {object} map[string]any "Internal server error when retrieving reCAPTCHA site key"
 // @Router /api/config/recaptcha [get]
 func (h *PublicHandler) GetRecaptchaSiteKey(c *fiber.Ctx) error {
 	siteKey := h.deps.PublicService.GetRecaptchaSiteKey()

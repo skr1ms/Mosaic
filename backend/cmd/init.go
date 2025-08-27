@@ -226,6 +226,7 @@ func InitializeApp() *fiber.App {
 		RedisClient:       redisClient,
 		GitLabClient:      gitlabClient,
 		GoroutineManager:  goroutineManager,
+		Logger:            middleware.NewLogger().GetZerologLogger(),
 	})
 
 	partnerService := partner.NewPartnerService(&partner.PartnerServiceDeps{
@@ -252,6 +253,7 @@ func InitializeApp() *fiber.App {
 		cfg.MosaicGeneratorConfig.OutputDir,
 		cfg.MosaicGeneratorConfig.PythonCommand,
 		appLogger,
+		goroutineManager,
 	)
 
 	imageService := image.NewImageService(&image.ImageServiceDeps{
@@ -302,9 +304,10 @@ func InitializeApp() *fiber.App {
 
 	// handlers
 	chat.NewChatHandler(api, &chat.ChatHandlerDeps{
-		ChatService: chatService,
-		JwtService:  jwtService,
-		Logger:      appLogger,
+		ChatService:      chatService,
+		JwtService:       jwtService,
+		Logger:           appLogger,
+		GoroutineManager: goroutineManager,
 	})
 
 	admin.NewAdminHandler(api, &admin.AdminHandlerDeps{
@@ -362,13 +365,13 @@ func InitializeApp() *fiber.App {
 	app.Get("/metrics", adaptor.HTTPHandler(promhttp.Handler()))
 
 	// Running the metrics server on a separate port
-	go func() {
+	goroutineManager.StartGoroutineWithTimeout("metrics_server", 0, func() error {
 		metricsApp := fiber.New()
 		metricsApp.Get("/metrics", adaptor.HTTPHandler(promhttp.Handler()))
 
 		// Metrics server is running on port
-		metricsApp.Listen(":" + cfg.MetricsConfig.Port)
-	}()
+		return metricsApp.Listen(":" + cfg.MetricsConfig.Port)
+	})
 
 	// Server is running on port
 

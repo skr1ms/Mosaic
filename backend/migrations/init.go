@@ -28,7 +28,7 @@ func Init(cfg *config.Config) {
 		log.Fatal().Err(err).Msg("Failed to create enum types")
 	}
 
-	models := []interface{}{
+	models := []any{
 		(*partner.Partner)(nil),
 		(*admin.Admin)(nil),
 		(*admin.ProfileChangeLog)(nil),
@@ -216,7 +216,7 @@ func createDefaultAdmin(cfg *config.Config, db *bun.DB, ctx context.Context) err
 		Login:    cfg.DefaultAdminConfig.DefaultLogin,
 		Email:    cfg.DefaultAdminConfig.DefaultEmail,
 		Password: hashedPassword,
-		Role:     "main_admin", 
+		Role:     "main_admin",
 	}
 
 	_, err = db.NewInsert().Model(defaultAdmin).Exec(ctx)

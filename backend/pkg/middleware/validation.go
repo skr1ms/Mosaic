@@ -20,20 +20,20 @@ func init() {
 }
 
 // ValidateStruct validates structure and returns validation errors
-func ValidateStruct(s interface{}) error {
+func ValidateStruct(s any) error {
 	return validate.Struct(s)
 }
 
 // ValidationMiddleware middleware for automatic JSON payload validation with async logging
 type ValidationMiddleware struct {
-	structType       interface{}
+	structType       any
 	goroutineManager *goroutine.Manager
 	loggingPool      *goroutine.WorkerPool
 	logger           *Logger
 }
 
 // NewValidationMiddleware creates new validation middleware
-func NewValidationMiddleware(structType interface{}, logger *Logger) *ValidationMiddleware {
+func NewValidationMiddleware(structType any, logger *Logger) *ValidationMiddleware {
 	middleware := &ValidationMiddleware{
 		structType: structType,
 		logger:     logger,
@@ -46,7 +46,7 @@ func NewValidationMiddleware(structType interface{}, logger *Logger) *Validation
 }
 
 // ValidateStruct validates structure and returns validation errors
-func (vm *ValidationMiddleware) ValidateStruct(s interface{}) error {
+func (vm *ValidationMiddleware) ValidateStruct(s any) error {
 	return validate.Struct(s)
 }
 

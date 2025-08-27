@@ -85,22 +85,22 @@ type ImageServiceInterface interface {
 }
 
 type ImageHandlerInterface interface {
-	UploadImage(c interface{}) error
-	EditImage(c interface{}) error
-	ProcessImage(c interface{}) error
-	GenerateSchema(c interface{}) error
-	GetImageStatus(c interface{}) error
+	UploadImage(c any) error
+	EditImage(c any) error
+	ProcessImage(c any) error
+	GenerateSchema(c any) error
+	GetImageStatus(c any) error
 
-	GetQueue(c interface{}) error
-	GetTaskByID(c interface{}) error
-	AddToQueue(c interface{}) error
-	StartProcessing(c interface{}) error
-	CompleteProcessing(c interface{}) error
-	FailProcessing(c interface{}) error
-	RetryTask(c interface{}) error
-	DeleteTask(c interface{}) error
-	GetStatistics(c interface{}) error
-	GetNextTask(c interface{}) error
+	GetQueue(c any) error
+	GetTaskByID(c any) error
+	AddToQueue(c any) error
+	StartProcessing(c any) error
+	CompleteProcessing(c any) error
+	FailProcessing(c any) error
+	RetryTask(c any) error
+	DeleteTask(c any) error
+	GetStatistics(c any) error
+	GetNextTask(c any) error
 }
 
 type ImageValidatorInterface interface {
@@ -122,8 +122,8 @@ type QueueManagerInterface interface {
 }
 
 type CacheInterface interface {
-	Get(key string) (interface{}, error)
-	Set(key string, value interface{}, ttl time.Duration) error
+	Get(key string) (any, error)
+	Set(key string, value any, ttl time.Duration) error
 	Delete(key string) error
 	Exists(key string) bool
 }
@@ -136,10 +136,10 @@ type MetricsInterface interface {
 }
 
 type LoggerInterface interface {
-	Info(msg string, fields ...interface{})
-	Error(msg string, err error, fields ...interface{})
-	Warn(msg string, fields ...interface{})
-	Debug(msg string, fields ...interface{})
+	Info(msg string, fields ...any)
+	Error(msg string, err error, fields ...any)
+	Warn(msg string, fields ...any)
+	Debug(msg string, fields ...any)
 }
 
 type ConfigInterface interface {
@@ -159,7 +159,7 @@ type HealthCheckerInterface interface {
 	CheckS3Storage() error
 	CheckStableDiffusion() error
 	CheckEmailService() error
-	GetOverallHealth() map[string]interface{}
+	GetOverallHealth() map[string]any
 }
 
 type BackupInterface interface {
@@ -179,7 +179,7 @@ type AnalyticsInterface interface {
 	TrackImageUpload(couponID uuid.UUID, userEmail string) error
 	TrackImageProcessing(imageID uuid.UUID, style string, useAI bool) error
 	TrackSchemaGeneration(imageID uuid.UUID, successful bool) error
-	GetProcessingStatistics(from, to time.Time) (map[string]interface{}, error)
+	GetProcessingStatistics(from, to time.Time) (map[string]any, error)
 }
 
 type RateLimiterInterface interface {
