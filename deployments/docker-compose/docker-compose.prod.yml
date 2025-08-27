@@ -80,6 +80,15 @@ services:
       args:
         - BUILDKIT_INLINE_CACHE=1
     container_name: backend
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+      minio:
+        condition: service_healthy
+      createbuckets:
+        condition: service_completed_successfully
     expose:
       - "8080"
       - "8091"
@@ -132,11 +141,6 @@ services:
       - ../../backend/scripts/pallete_fl.xlsx:/app/scripts/pallete_fl.xlsx:ro
       - ../../backend/scripts/pallete_tl.xlsx:/app/scripts/pallete_tl.xlsx:ro
       - ../../backend/scripts/pallete_max.xlsx:/app/scripts/pallete_max.xlsx:ro
-    depends_on:
-      - postgres
-      - redis
-      - minio
-      - createbuckets
     restart: unless-stopped
 
   dashboards:
