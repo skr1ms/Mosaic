@@ -1,7 +1,6 @@
 FROM golang:1.24-alpine AS builder
 
-RUN apk add --no-cache git ca-certificates python3 py3-pip && \
-    pip3 install --no-cache-dir numpy pandas pillow openpyxl
+RUN apk add --no-cache git ca-certificates python3 py3-pip py3-numpy py3-pandas py3-pillow py3-openpyxl
 
 WORKDIR /app
     
@@ -20,8 +19,7 @@ RUN CGO_ENABLED=0 go build -o main ./cmd
 
 FROM alpine:latest
 
-RUN apk add --no-cache ca-certificates python3 py3-pip && \
-    pip3 install --no-cache-dir numpy pandas pillow openpyxl
+RUN apk add --no-cache ca-certificates python3 py3-pip py3-numpy py3-pandas py3-pillow py3-openpyxl
 
 WORKDIR /app
 
