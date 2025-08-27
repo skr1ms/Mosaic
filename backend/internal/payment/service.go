@@ -192,6 +192,19 @@ func (s *PaymentService) getWebhookURL() string {
 
 // PurchaseCoupon purchases coupon online with card payment
 func (s *PaymentService) PurchaseCoupon(ctx context.Context, req *PurchaseCouponRequest) (*PurchaseCouponResponse, error) {
+	if s.deps.PaymentRepository == nil {
+		return nil, fmt.Errorf("payment repository is not initialized")
+	}
+	if s.deps.CouponRepository == nil {
+		return nil, fmt.Errorf("coupon repository is not initialized")
+	}
+	if s.deps.PartnerRepository == nil {
+		return nil, fmt.Errorf("partner repository is not initialized")
+	}
+	if s.deps.Config == nil {
+		return nil, fmt.Errorf("config is not initialized")
+	}
+
 	supportedSizes := map[string]bool{
 		Size21x30: true,
 		Size30x40: true,
