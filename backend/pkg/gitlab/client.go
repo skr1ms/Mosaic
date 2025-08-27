@@ -53,7 +53,6 @@ func (c *Client) TriggerPipeline(req TriggerPipelineRequest) (*PipelineResponse,
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-
 	httpReq, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
@@ -89,7 +88,6 @@ func (c *Client) TriggerDomainUpdate(ref string) (*PipelineResponse, error) {
 	data := url.Values{}
 	data.Set("ref", ref)
 	data.Set("token", c.triggerToken)
-	data.Set("variables[PIPELINE_TYPE]", "domain_update")
 
 	httpReq, err := http.NewRequest("POST", apiURL, strings.NewReader(data.Encode()))
 	if err != nil {
