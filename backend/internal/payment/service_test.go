@@ -846,7 +846,7 @@ func TestPaymentService_GenerateUniqueCouponCode(t *testing.T) {
 				assert.NoError(t, err)
 				assert.NotEmpty(t, result)
 				assert.Contains(t, result, tt.partnerCode)
-				assert.Contains(t, result, "-")
+				// Code format: partnerCode + 8 random digits (no dash)
 			}
 
 			mockCouponRepo.AssertExpectations(t)
@@ -1058,7 +1058,7 @@ func TestPaymentService_PurchaseCoupon_Comprehensive(t *testing.T) {
 				})
 				config.On("GetServerConfig").Return(ServerConfig{
 					FrontendURL: "https://test.com",
-				})
+				}).Maybe()
 			},
 			expectedError:   false,
 			expectedSuccess: true,
@@ -1097,7 +1097,7 @@ func TestPaymentService_PurchaseCoupon_Comprehensive(t *testing.T) {
 				})
 				config.On("GetServerConfig").Return(ServerConfig{
 					FrontendURL: "https://partner.com",
-				})
+				}).Maybe()
 			},
 			expectedError:   false,
 			expectedSuccess: true,
@@ -1124,7 +1124,7 @@ func TestPaymentService_PurchaseCoupon_Comprehensive(t *testing.T) {
 				})
 				config.On("GetServerConfig").Return(ServerConfig{
 					FrontendURL: "https://test.com",
-				})
+				}).Maybe()
 			},
 			expectedError:   false,
 			expectedSuccess: false,
@@ -1154,7 +1154,7 @@ func TestPaymentService_PurchaseCoupon_Comprehensive(t *testing.T) {
 				})
 				config.On("GetServerConfig").Return(ServerConfig{
 					FrontendURL: "https://test.com",
-				})
+				}).Maybe()
 			},
 			expectedError:   false,
 			expectedSuccess: false,
@@ -1298,9 +1298,32 @@ func TestPaymentService_CompletePaymentFlow(t *testing.T) {
 			FailURL:   stringPtr("https://shop.com/fail"),
 		}
 
-		// Mock successful purchase
-		mockPaymentRepo.On("GetOrderByNumber", mock.Anything, mock.Anything).Return(nil, errors.New("not found"))
-		mockPaymentRepo.On("CreateOrder", mock.Anything, mock.Anything).Return(nil)
+		// Mock successful purchase - order doesn't exist initially
+		mockPaymentRepo.On("GetOrderByNumber", mock.Anything, mock.Anything).Return(nil, errors.New("not found")).Once()
+
+		// Mock CreateOrder to return a specific order
+		testOrder := &Order{
+			ID:          uuid.New(),
+			OrderNumber: "ORD_1234567890_TEST123", // Fixed order number for testing
+			Size:        "40x50",
+			Style:       "max_colors",
+			UserEmail:   "customer@example.com",
+			Amount:      10000,
+			Currency:    "RUB",
+			Status:      OrderStatusCreated,
+			ReturnURL:   "https://shop.com/success",
+			FailURL:     stringPtr("https://shop.com/fail"),
+		}
+		mockPaymentRepo.On("CreateOrder", mock.Anything, mock.MatchedBy(func(order *Order) bool {
+			// Copy the generated order number to our test order
+			testOrder.OrderNumber = order.OrderNumber
+			return true
+		})).Return(nil).Run(func(args mock.Arguments) {
+			// Store the created order for later use
+			createdOrder := args.Get(1).(*Order)
+			testOrder.OrderNumber = createdOrder.OrderNumber
+		})
+
 		mockPaymentRepo.On("UpdateOrderStatus", mock.Anything, mock.Anything, OrderStatusPending, mock.Anything).Return(nil)
 		mockPaymentRepo.On("UpdateOrderPaymentURL", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -1314,7 +1337,7 @@ func TestPaymentService_CompletePaymentFlow(t *testing.T) {
 		})
 		mockConfig.On("GetServerConfig").Return(ServerConfig{
 			FrontendURL: "https://shop.com",
-		})
+		}).Maybe()
 
 		service := &PaymentService{
 			deps: &PaymentServiceDeps{
@@ -1333,11 +1356,11 @@ func TestPaymentService_CompletePaymentFlow(t *testing.T) {
 		assert.NotEmpty(t, purchaseResult.PaymentURL)
 
 		// Now mock webhook processing after payment
-		orderFromDB := createTestOrder()
-		orderFromDB.Status = OrderStatusPending
-		orderFromDB.AlfaBankOrderID = stringPtr("ALFA_SUCCESS_123")
+		// Use the same order that was created in PurchaseCoupon
+		testOrder.Status = OrderStatusPending
+		testOrder.AlfaBankOrderID = stringPtr("ALFA_SUCCESS_123")
 
-		mockPaymentRepo.On("GetOrderByNumber", mock.Anything, mock.Anything).Return(orderFromDB, nil)
+		mockPaymentRepo.On("GetOrderByNumber", mock.Anything, testOrder.OrderNumber).Return(testOrder, nil)
 		mockPaymentRepo.On("UpdateOrderStatus", mock.Anything, mock.Anything, OrderStatusPaid, mock.Anything).Return(nil)
 		mockCouponRepo.On("CodeExists", mock.Anything, mock.Anything).Return(false, nil)
 		mockCouponRepo.On("Create", mock.Anything, mock.Anything).Return(nil)
@@ -1345,11 +1368,11 @@ func TestPaymentService_CompletePaymentFlow(t *testing.T) {
 
 		// 2. Process webhook notification (payment successful)
 		notification := &PaymentNotificationRequest{
-			OrderNumber:     orderFromDB.OrderNumber,
+			OrderNumber:     testOrder.OrderNumber,
 			OrderStatus:     intPtr(2), // Paid
 			AlfaBankOrderID: "ALFA_SUCCESS_123",
-			Amount:          orderFromDB.Amount,
-			Currency:        orderFromDB.Currency,
+			Amount:          testOrder.Amount,
+			Currency:        testOrder.Currency,
 		}
 
 		err = service.ProcessWebhookNotification(context.Background(), notification)

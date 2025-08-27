@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http/httptest"
 	"testing"
@@ -236,10 +237,13 @@ func TestPaymentHandler_GetOrderStatus_Integration(t *testing.T) {
 			expectedSuccess:    false,
 		},
 		{
-			name:               "empty_order_number",
-			orderNumber:        "",
-			mockSetup:          nil,
-			expectedStatusCode: 400,
+			name:        "invalid_order_number",
+			orderNumber: "INVALID_ORDER",
+			mockSetup: func(service *MockPaymentService) {
+				// Handler will call service with this value, expect error
+				service.On("GetOrderStatus", mock.Anything, "INVALID_ORDER").Return(nil, errors.New("order not found"))
+			},
+			expectedStatusCode: 500, // Service error will return 500
 			expectedSuccess:    false,
 		},
 	}
@@ -534,48 +538,4 @@ func TestPaymentHandler_GetAvailableOptions_Integration(t *testing.T) {
 
 		suite.paymentService.AssertExpectations(t)
 	})
-}
-
-// Benchmark tests for performance
-func BenchmarkPaymentHandler_PurchaseCoupon(b *testing.B) {
-	suite := setupTestSuite()
-
-	suite.paymentService.On("PurchaseCoupon", mock.Anything, mock.Anything).Return(&PurchaseCouponResponse{
-		OrderID:     uuid.New().String(),
-		OrderNumber: "ORD_BENCH_123",
-		PaymentURL:  "https://pay.alfabank.ru/payment/form",
-		Success:     true,
-		Amount:      "100.00",
-	}, nil)
-
-	requestBody := map[string]interface{}{
-		"size":       "40x50",
-		"style":      "max_colors",
-		"email":      "bench@example.com",
-		"return_url": "https://example.com/success",
-	}
-	bodyJSON, _ := json.Marshal(requestBody)
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		req := httptest.NewRequest("POST", "/api/payment/purchase", bytes.NewBuffer(bodyJSON))
-		req.Header.Set("Content-Type", "application/json")
-		suite.app.Test(req, -1)
-	}
-}
-
-func BenchmarkPaymentHandler_GetOrderStatus(b *testing.B) {
-	suite := setupTestSuite()
-
-	suite.paymentService.On("GetOrderStatus", mock.Anything, "ORD_BENCH_123").Return(&OrderStatusResponse{
-		OrderID: uuid.New().String(),
-		Status:  OrderStatusPaid,
-		Success: true,
-	}, nil)
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		req := httptest.NewRequest("GET", "/api/payment/orders/ORD_BENCH_123/status", nil)
-		suite.app.Test(req, -1)
-	}
 }

@@ -271,6 +271,7 @@ func TestAuthService_AdminLogin(t *testing.T) {
 					ID:       uuid.New(),
 					Login:    "admin@example.com",
 					Password: hashedPassword,
+					Role:     "admin",
 				}
 				adminRepo.On("GetByLogin", "admin@example.com").Return(adminData, nil)
 				adminRepo.On("UpdateLastLogin", adminData.ID).Return(nil)

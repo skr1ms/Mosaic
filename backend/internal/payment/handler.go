@@ -3,6 +3,7 @@ package payment
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -106,7 +107,7 @@ func (h *PaymentHandler) PurchaseCoupon(c *fiber.Ctx) error {
 // @Failure 500 {object} map[string]interface{} "Failed to get order status"
 // @Router /payment/orders/{orderNumber}/status [get]
 func (h *PaymentHandler) GetOrderStatus(c *fiber.Ctx) error {
-	orderNumber := c.Params("orderNumber")
+	orderNumber := strings.TrimSpace(c.Params("orderNumber"))
 	if orderNumber == "" {
 		h.deps.Logger.FromContext(c).Warn().
 			Str("handler", "GetOrderStatus").

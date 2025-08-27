@@ -500,9 +500,11 @@ func TestPublicService_ActivateCoupon(t *testing.T) {
 			expectedError: false,
 		},
 		{
-			name:          "empty_email",
-			code:          "123456789012",
-			mockSetup:     nil,
+			name: "empty_code",
+			code: "",
+			mockSetup: func(repo *MockCouponRepository) {
+				repo.On("GetByCode", mock.Anything, "").Return(nil, errors.New("not found"))
+			},
 			expectedError: true,
 		},
 		{

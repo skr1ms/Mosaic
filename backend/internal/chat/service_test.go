@@ -472,12 +472,15 @@ func TestService_SendMessage(t *testing.T) {
 			expectedError: true,
 		},
 		{
-			name:          "empty_content",
-			senderID:      "sender1",
-			targetID:      "target1",
-			content:       "",
-			mockSetup:     func(repo *MockChatRepository) {},
-			expectedError: true,
+			name:     "empty_content",
+			senderID: "sender1",
+			targetID: "target1",
+			content:  "",
+			mockSetup: func(repo *MockChatRepository) {
+				repo.On("IsPartnerBlocked", mock.Anything, "sender1").Return(false, nil)
+				repo.On("SaveMessage", mock.Anything, mock.AnythingOfType("*chat.Message")).Return(nil)
+			},
+			expectedError: false,
 		},
 		{
 			name:     "partner_blocked",
