@@ -335,11 +335,20 @@ func (s *AdminService) CreatePartner(req partner.CreatePartnerRequest) (*partner
 
 // UpdatePartnerWithHistory updates partner data and logs all changes for audit purposes
 func (s *AdminService) UpdatePartnerWithHistory(partnerID uuid.UUID, req partner.UpdatePartnerRequest, adminLogin string, reason string) (*partner.Partner, error) {
+	s.deps.Logger.Info().
+		Str("partner_id", partnerID.String()).
+		Str("admin_login", adminLogin).
+		Str("reason", reason).
+		Interface("request", req).
+		Msg("UpdatePartnerWithHistory called")
 
 	oldPartner, err := s.deps.PartnerRepository.GetByID(context.Background(), partnerID)
 	if err != nil {
 		return nil, fmt.Errorf("partner not found: %w", err)
 	}
+
+	// Save old domain for CI/CD trigger check
+	oldDomain := oldPartner.Domain
 
 	oldValues := map[string]string{
 		"brand_name":       oldPartner.BrandName,
@@ -397,6 +406,38 @@ func (s *AdminService) UpdatePartnerWithHistory(partnerID uuid.UUID, req partner
 		}
 	}
 
+	// Trigger CI/CD pipeline for domain update only if domain was actually changed
+	if req.Domain != nil && *req.Domain != oldDomain {
+		// Domain was changed, trigger CI/CD pipeline
+		s.deps.Logger.Info().
+			Str("old_domain", oldDomain).
+			Str("new_domain", *req.Domain).
+			Msg("Domain changed in UpdatePartnerWithHistory, triggering CI/CD pipeline")
+
+		// Проверяем зависимости
+		if s.deps.GitLabClient == nil {
+			s.deps.Logger.Warn().Msg("GitLabClient is nil, cannot trigger pipeline")
+		}
+		if s.deps.GoroutineManager == nil {
+			s.deps.Logger.Warn().Msg("GoroutineManager is nil, cannot trigger pipeline")
+		}
+
+		if s.deps.GitLabClient != nil && s.deps.GoroutineManager != nil {
+			s.deps.GoroutineManager.StartGoroutineWithTimeout("trigger_domain_update_pipeline", 30*time.Second, func() error {
+				s.deps.Logger.Info().Msg("Starting GitLab pipeline trigger from UpdatePartnerWithHistory")
+				_, err := s.deps.GitLabClient.TriggerDomainUpdate("main")
+				if err != nil {
+					s.deps.Logger.Error().Err(err).Msg("Failed to trigger domain update pipeline from UpdatePartnerWithHistory")
+					return fmt.Errorf("failed to trigger domain update pipeline: %w", err)
+				}
+				s.deps.Logger.Info().Msg("Successfully triggered domain update pipeline from UpdatePartnerWithHistory")
+				return nil
+			})
+		} else {
+			s.deps.Logger.Warn().Msg("GitLabClient or GoroutineManager is nil, cannot trigger pipeline from UpdatePartnerWithHistory")
+		}
+	}
+
 	return oldPartner, nil
 }
 
@@ -407,111 +448,6 @@ func (s *AdminService) GetPartner(id uuid.UUID) (*partner.Partner, error) {
 		return nil, fmt.Errorf("partner not found: %w", err)
 	}
 	return p, nil
-}
-
-// UpdatePartner updates partner data with validation and contact link processing
-func (s *AdminService) UpdatePartner(id uuid.UUID, req partner.UpdatePartnerRequest) (*partner.Partner, error) {
-	existingPartner, err := s.deps.PartnerRepository.GetByID(context.Background(), id)
-	if err != nil {
-		return nil, fmt.Errorf("partner not found: %w", err)
-	}
-
-	// Save old domain for CI/CD trigger check
-	oldDomain := existingPartner.Domain
-
-	if req.Login != nil && *req.Login != existingPartner.Login {
-		if _, err := s.deps.PartnerRepository.GetByLogin(context.Background(), *req.Login); err == nil {
-			return nil, fmt.Errorf("partner already exists: %w", err)
-		}
-		existingPartner.Login = *req.Login
-	}
-
-	if req.Domain != nil && *req.Domain != existingPartner.Domain {
-		if _, err := s.deps.PartnerRepository.GetByDomain(context.Background(), *req.Domain); err == nil {
-			return nil, fmt.Errorf("partner already exists: %w", err)
-		}
-		existingPartner.Domain = *req.Domain
-	}
-
-	if req.Password != nil {
-		hashedPassword, err := bcrypt.HashPassword(*req.Password)
-		if err != nil {
-			return nil, fmt.Errorf("failed to hash password: %w", err)
-		}
-		existingPartner.Password = hashedPassword
-	}
-
-	if req.Telegram != nil || req.Whatsapp != nil {
-		telegram := existingPartner.Telegram
-		whatsapp := existingPartner.Whatsapp
-		if req.Telegram != nil {
-			telegram = *req.Telegram
-		}
-		if req.Whatsapp != nil {
-			whatsapp = *req.Whatsapp
-		}
-		telegramLink := validateData.ProcessTeleramLink(telegram)
-		whatsappLink := validateData.ProcessWhatsappLink(whatsapp)
-		existingPartner.TelegramLink = telegramLink
-		existingPartner.WhatsappLink = whatsappLink
-	}
-
-	if req.BrandColors != nil {
-		colors := *req.BrandColors
-		if len(colors) > 3 {
-			colors = colors[:3]
-		}
-		existingPartner.BrandColors = colors
-	}
-
-	updatePartnerData.UpdatePartnerData(existingPartner, &req)
-
-	if req.Telegram != nil || req.Whatsapp != nil {
-		telegramLink := validateData.ProcessTeleramLink(existingPartner.Telegram)
-		whatsappLink := validateData.ProcessWhatsappLink(existingPartner.Whatsapp)
-		existingPartner.TelegramLink = telegramLink
-		existingPartner.WhatsappLink = whatsappLink
-	}
-
-	if err := s.deps.PartnerRepository.Update(context.Background(), existingPartner); err != nil {
-		return nil, fmt.Errorf("failed to update partner: %w", err)
-	}
-
-	// Trigger CI/CD pipeline for domain update only if domain was actually changed
-	if req.Domain != nil && *req.Domain != oldDomain {
-		// Domain was changed, trigger CI/CD pipeline
-		s.deps.Logger.Info().
-			Str("old_domain", oldDomain).
-			Str("new_domain", *req.Domain).
-			Msg("Domain changed, triggering CI/CD pipeline")
-
-		if s.deps.GitLabClient != nil && s.deps.GoroutineManager != nil {
-			s.deps.GoroutineManager.StartGoroutineWithTimeout("trigger_domain_update_pipeline", 30*time.Second, func() error {
-				s.deps.Logger.Info().Msg("Starting GitLab pipeline trigger")
-				_, err := s.deps.GitLabClient.TriggerDomainUpdate("main")
-				if err != nil {
-					s.deps.Logger.Error().Err(err).Msg("Failed to trigger domain update pipeline")
-					return fmt.Errorf("failed to trigger domain update pipeline: %w", err)
-				}
-				s.deps.Logger.Info().Msg("Successfully triggered domain update pipeline")
-				return nil
-			})
-		} else {
-			s.deps.Logger.Warn().Msg("GitLabClient or GoroutineManager is nil, cannot trigger pipeline")
-		}
-	} else {
-		s.deps.Logger.Info().
-			Str("old_domain", oldDomain).
-			Str("new_domain", func() string {
-				if req.Domain != nil {
-					return *req.Domain
-				}
-				return "nil"
-			}()).
-			Msg("Domain not changed, skipping CI/CD trigger")
-	}
-
-	return existingPartner, nil
 }
 
 // BlockPartner blocks partner and all associated coupons
@@ -1168,65 +1104,6 @@ func (s *AdminService) createBatchArchive(couponArchives map[string][]byte) ([]b
 	filename := fmt.Sprintf("batch_coupon_materials_%s.zip", timestamp)
 
 	return buf.Bytes(), filename, nil
-}
-
-// UpdatePartnerDomain updates partner's domain name
-func (s *AdminService) UpdatePartnerDomain(partnerID uuid.UUID, domain string) error {
-	partner, err := s.deps.PartnerRepository.GetByID(context.Background(), partnerID)
-	if err != nil {
-		return fmt.Errorf("failed to get partner: %w", err)
-	}
-
-	if partner == nil {
-		return fmt.Errorf("partner not found")
-	}
-
-	// Save old domain for CI/CD trigger check
-	oldDomain := partner.Domain
-
-	partner.Domain = domain
-
-	if err := s.deps.PartnerRepository.Update(context.Background(), partner); err != nil {
-		return fmt.Errorf("failed to update partner domain: %w", err)
-	}
-
-	// Trigger CI/CD pipeline if domain was changed
-	s.deps.Logger.Info().
-		Str("partner_id", partnerID.String()).
-		Str("old_domain", oldDomain).
-		Str("new_domain", domain).
-		Bool("domain_changed", domain != oldDomain).
-		Bool("gitlab_client_available", s.deps.GitLabClient != nil).
-		Bool("goroutine_manager_available", s.deps.GoroutineManager != nil).
-		Msg("Checking conditions for domain update pipeline trigger")
-
-	if domain != oldDomain && s.deps.GitLabClient != nil && s.deps.GoroutineManager != nil {
-		s.deps.Logger.Info().
-			Str("partner_id", partnerID.String()).
-			Str("old_domain", oldDomain).
-			Str("new_domain", domain).
-			Msg("Triggering domain update pipeline")
-
-		s.deps.GoroutineManager.StartGoroutineWithTimeout("trigger_domain_update_pipeline", 30*time.Second, func() error {
-			s.deps.Logger.Info().Msg("Starting GitLab pipeline trigger for domain update")
-			_, err := s.deps.GitLabClient.TriggerDomainUpdate("main")
-			if err != nil {
-				s.deps.Logger.Error().Err(err).Msg("Failed to trigger domain update pipeline")
-				return fmt.Errorf("failed to trigger domain update pipeline: %w", err)
-			}
-			s.deps.Logger.Info().Msg("Successfully triggered domain update pipeline")
-			return nil
-		})
-	} else {
-		s.deps.Logger.Warn().
-			Str("partner_id", partnerID.String()).
-			Bool("domain_changed", domain != oldDomain).
-			Bool("gitlab_client_available", s.deps.GitLabClient != nil).
-			Bool("goroutine_manager_available", s.deps.GoroutineManager != nil).
-			Msg("Domain update pipeline not triggered - conditions not met")
-	}
-
-	return nil
 }
 
 // GetActivePartnersWithDomains retrieves all active partners that have domain names configured
