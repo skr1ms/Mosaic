@@ -1,7 +1,6 @@
 package gitlab
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -44,22 +43,27 @@ func NewClient(baseURL, accessToken, triggerToken, projectID string) *Client {
 	}
 }
 
-// TriggerPipeline triggers a new pipeline in GitLab
+// TriggerPipeline triggers a new pipeline in GitLab using trigger token
+// This method uses the trigger token API which doesn't require special permissions
 func (c *Client) TriggerPipeline(req TriggerPipelineRequest) (*PipelineResponse, error) {
-	url := fmt.Sprintf("%s/api/v4/projects/%s/pipeline", c.baseURL, c.projectID)
+	apiURL := fmt.Sprintf("%s/api/v4/projects/%s/trigger/pipeline", c.baseURL, c.projectID)
 
-	jsonBody, err := json.Marshal(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	// Build form data with trigger token
+	data := url.Values{}
+	data.Set("ref", req.Ref)
+	data.Set("token", c.triggerToken)
+	
+	// Add variables if provided
+	for key, value := range req.Variables {
+		data.Set(fmt.Sprintf("variables[%s]", key), value)
 	}
 
-	httpReq, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBody))
+	httpReq, err := http.NewRequest("POST", apiURL, strings.NewReader(data.Encode()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", "Bearer "+c.accessToken)
+	httpReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := c.client.Do(httpReq)
 	if err != nil {
@@ -70,7 +74,7 @@ func (c *Client) TriggerPipeline(req TriggerPipelineRequest) (*PipelineResponse,
 	bodyBytes, _ := io.ReadAll(resp.Body)
 
 	if resp.StatusCode != http.StatusCreated {
-		return nil, fmt.Errorf("pipeline trigger failed with status: %d", resp.StatusCode)
+		return nil, fmt.Errorf("pipeline trigger failed with status: %d, body: %s", resp.StatusCode, string(bodyBytes))
 	}
 
 	var pipelineResp PipelineResponse
@@ -83,37 +87,12 @@ func (c *Client) TriggerPipeline(req TriggerPipelineRequest) (*PipelineResponse,
 
 // TriggerDomainUpdate triggers a pipeline specifically for domain updates
 func (c *Client) TriggerDomainUpdate(ref string) (*PipelineResponse, error) {
-	apiURL := fmt.Sprintf("%s/api/v4/projects/%s/trigger/pipeline", c.baseURL, c.projectID)
-
-	data := url.Values{}
-	data.Set("ref", ref)
-	data.Set("token", c.triggerToken)
-
-	httpReq, err := http.NewRequest("POST", apiURL, strings.NewReader(data.Encode()))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+	// Simply call TriggerPipeline with the appropriate request
+	req := TriggerPipelineRequest{
+		Ref:       ref,
+		Variables: nil, // No additional variables for domain updates
 	}
-
-	httpReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusCreated {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("pipeline trigger failed with status: %d, body: %s", resp.StatusCode, string(body))
-	}
-
-	var pipelineResp PipelineResponse
-	if err := json.NewDecoder(resp.Body).Decode(&pipelineResp); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	return &pipelineResp, nil
+	return c.TriggerPipeline(req)
 }
 
 // GetPipelineStatus gets the status of a pipeline by ID
