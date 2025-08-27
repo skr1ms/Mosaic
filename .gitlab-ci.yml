@@ -221,6 +221,7 @@ deploy:production:
       docker compose --env-file .env -f deployments/docker-compose/docker-compose.prod.yml up -d --build
       
       # Health check
+      chmod +x ./scripts/health-check.sh
       ./scripts/health-check.sh
       
       echo "Deployment completed successfully!"

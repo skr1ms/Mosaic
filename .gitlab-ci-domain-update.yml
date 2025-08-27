@@ -13,10 +13,9 @@ deploy:domains-update:
   variables:
     DEPLOY_SERVER: $PRODUCTION_SERVER_IP
     DEPLOY_USER: $PRODUCTION_USER
-    POSTGRES_PASSWORD: $POSTGRES_PASSWORD
-    POSTGRES_USER: $POSTGRES_USER
-    POSTGRES_DB: $POSTGRES_DB
-    REDIS_URL: $REDIS_URL
+  rules:
+    # Only runs when triggered with PIPELINE_TYPE=domain_update
+    - if: $PIPELINE_TYPE == "domain_update"
   before_script:
     - apt-get update -qq && apt-get install -y -qq git curl openssh-client jq
     - eval $(ssh-agent -s)
@@ -86,9 +85,5 @@ deploy:domains-update:
       EOF
     - scp update_domains.sh $DEPLOY_USER@$DEPLOY_SERVER:/tmp/
     - ssh $DEPLOY_USER@$DEPLOY_SERVER "chmod +x /tmp/update_domains.sh && /tmp/update_domains.sh"
-  rules:
-    # Only runs when triggered from Go code with domain_update type
-    - if: $CI_PIPELINE_SOURCE == "trigger" && $TRIGGER_TYPE == "domain_update"
-      allow_failure: true
   tags:
     - domain-update

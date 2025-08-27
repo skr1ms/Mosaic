@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 )
 
@@ -82,9 +84,39 @@ func (c *Client) TriggerPipeline(req TriggerPipelineRequest) (*PipelineResponse,
 
 // TriggerDomainUpdate triggers a pipeline specifically for domain updates
 func (c *Client) TriggerDomainUpdate(ref string) (*PipelineResponse, error) {
-	return c.TriggerPipeline(TriggerPipelineRequest{
-		Ref: ref,
-	})
+	// Используем специальный API для запуска пайплайна доменов
+	apiURL := fmt.Sprintf("%s/api/v4/projects/%s/trigger/pipeline", c.baseURL, c.projectID)
+
+	data := url.Values{}
+	data.Set("ref", ref)
+	data.Set("token", c.accessToken)
+	data.Set("variables[PIPELINE_TYPE]", "domain_update")
+
+	httpReq, err := http.NewRequest("POST", apiURL, strings.NewReader(data.Encode()))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	httpReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("pipeline trigger failed with status: %d, body: %s", resp.StatusCode, string(body))
+	}
+
+	var pipelineResp PipelineResponse
+	if err := json.NewDecoder(resp.Body).Decode(&pipelineResp); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &pipelineResp, nil
 }
 
 // GetPipelineStatus gets the status of a pipeline by ID
