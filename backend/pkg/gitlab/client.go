@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
-	"strings"
 	"time"
 )
 
@@ -84,20 +82,31 @@ func (c *Client) TriggerPipeline(req TriggerPipelineRequest) (*PipelineResponse,
 
 // TriggerDomainUpdate triggers a pipeline specifically for domain updates
 func (c *Client) TriggerDomainUpdate(ref string) (*PipelineResponse, error) {
-	// Используем специальный API для запуска пайплайна доменов
-	apiURL := fmt.Sprintf("%s/api/v4/projects/%s/trigger/pipeline", c.baseURL, c.projectID)
+	apiURL := fmt.Sprintf("%s/api/v4/projects/%s/pipeline", c.baseURL, c.projectID)
 
-	data := url.Values{}
-	data.Set("ref", ref)
-	data.Set("token", c.accessToken)
-	data.Set("variables[PIPELINE_TYPE]", "domain_update")
+	fmt.Printf("GitLab API URL: %s\n", apiURL)
+	fmt.Printf("Project ID: %s\n", c.projectID)
+	fmt.Printf("Ref: %s\n", ref)
 
-	httpReq, err := http.NewRequest("POST", apiURL, strings.NewReader(data.Encode()))
+	reqBody := map[string]interface{}{
+		"ref": ref,
+		"variables": map[string]string{
+			"PIPELINE_TYPE": "domain_update",
+		},
+	}
+
+	jsonBody, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	httpReq, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	httpReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Authorization", "Bearer "+c.accessToken)
 
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(httpReq)

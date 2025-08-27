@@ -377,7 +377,6 @@ func (s *PublicService) SendSchemaToEmail(imageID string, req SendEmailRequest) 
 
 // PurchaseCoupon purchases new coupon online (coupon creation happens after payment in PaymentService)
 func (s *PublicService) PurchaseCoupon(req PurchaseCouponRequest) (map[string]any, error) {
-	// Проверяем все зависимости
 	if s.deps == nil {
 		return nil, fmt.Errorf("service dependencies are not initialized")
 	}
@@ -388,11 +387,13 @@ func (s *PublicService) PurchaseCoupon(req PurchaseCouponRequest) (map[string]an
 		return nil, fmt.Errorf("config is not initialized")
 	}
 
+	serverConfig := s.deps.Config.GetServerConfig()
+
 	paymentReq := &payment.PurchaseCouponRequest{
 		Size:      req.Size,
 		Style:     req.Style,
 		Email:     req.Email,
-		ReturnURL: s.deps.Config.GetServerConfig().PaymentSuccessURL,
+		ReturnURL: serverConfig.PaymentSuccessURL,
 		Language:  "ru",
 	}
 

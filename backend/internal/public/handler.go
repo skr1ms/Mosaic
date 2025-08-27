@@ -822,7 +822,9 @@ func (h *PublicHandler) PurchaseCoupon(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": "PublicService not initialized"})
 	}
 
+	h.deps.Logger.FromContext(c).Info().Msg("Getting branding from context")
 	branding := middleware.GetBrandingFromContext(c)
+	h.deps.Logger.FromContext(c).Info().Interface("branding", branding).Msg("Branding retrieved")
 	if branding != nil && !branding.AllowPurchases {
 		h.deps.Logger.FromContext(c).Warn().
 			Str("handler", "PurchaseCoupon").
