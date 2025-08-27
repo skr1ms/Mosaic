@@ -25,9 +25,10 @@ RUN apk add --no-cache ca-certificates python3 py3-numpy py3-pandas py3-pillow p
 
 WORKDIR /app
 
-# Copy binary and scripts from builder
+# Copy binary, scripts and docs from builder
 COPY --from=builder /app/main .
 COPY --from=builder /app/scripts ./scripts
+COPY --from=builder /app/docs ./docs
 
 EXPOSE 8080
 
