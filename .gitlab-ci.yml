@@ -1,3 +1,7 @@
+# Main CI/CD Pipeline
+# Full cycle: tests → build → deploy
+# Runs on push to main/develop branches
+
 stages:
   - tests
   - build
@@ -7,7 +11,7 @@ variables:
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
   GO_VERSION: "1.24"
-  NODE_VERSION: "18"
+  NODE_VERSION: "20"
   CI_REGISTRY: "registry.gitlab.com"
   CI_REGISTRY_IMAGE: "registry.gitlab.com/doyoupaint/mosaic"
 
@@ -56,10 +60,10 @@ test:backend-core:
     - go test -v ./internal/auth/... || true
     - go test -v ./internal/types/... || true
     - go test -v ./internal/public/... || true
-  only:
-    - merge_requests
-    - main
-    - develop
+  rules:
+    # Run tests for all branches and merge requests
+    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_MERGE_REQUEST_ID
 
 # Backend Testing - Payment (with integration tests)
 test:backend-payment:
@@ -83,10 +87,10 @@ test:backend-payment:
     # Payment tests with integration
     - go test -v ./internal/payment/... || true
     - go test -v -tags=integration ./internal/payment/... || true
-  only:
-    - merge_requests
-    - main
-    - develop
+  rules:
+    # Run tests for all branches and merge requests
+    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_MERGE_REQUEST_ID
 
 # Backend Testing - Business Logic
 test:backend-business:
@@ -108,16 +112,16 @@ test:backend-business:
     - go mod vendor
   script:
     # Business logic tests
-    - go test -v ./internal/chat/... || true
+    - go test -v ./internal/admin/... || true
+    - go test -v ./internal/partner/... || true
     - go test -v ./internal/coupon/... || true
     - go test -v ./internal/image/... || true
-    - go test -v ./internal/partner/... || true
-    - go test -v ./internal/admin/... || true
     - go test -v ./internal/stats/... || true
-  only:
-    - merge_requests
-    - main
-    - develop
+    - go test -v ./internal/chat/... || true
+  rules:
+    # Run tests for all branches and merge requests
+    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_MERGE_REQUEST_ID
 
 # ========================================
 # BUILD
@@ -126,77 +130,62 @@ test:backend-business:
 # Build Backend
 build:backend:
   stage: build
-  image: docker:24-dind
+  image: docker:latest
   services:
-    - docker:24-dind
+    - docker:dind
   <<: *docker_cache_template
-  variables:
-    DOCKER_HOST: tcp://docker:2376
-    DOCKER_TLS_CERTDIR: "/certs"
-    DOCKER_BUILDKIT: 1
   before_script:
     - docker info
     - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
   script:
-    - docker build --cache-from $CI_REGISTRY_IMAGE/backend:latest -t $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA -f backend/Dockerfile backend/
-    - docker tag $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE/backend:latest
+    - cd backend
+    - docker build -t $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA .
     - docker push $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA
-    - docker push $CI_REGISTRY_IMAGE/backend:latest
-  only:
-    - main
-    - develop
+  rules:
+    # Build only for main and develop branches
+    - if: $CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME == "develop"
 
 # Build Frontend Dashboards
-build:dashboards:
+build:frontend-dashboards:
   stage: build
-  image: docker:24-dind
+  image: docker:latest
   services:
-    - docker:24-dind
+    - docker:dind
   <<: *docker_cache_template
-  variables:
-    DOCKER_HOST: tcp://docker:2376
-    DOCKER_TLS_CERTDIR: "/certs"
-    DOCKER_BUILDKIT: 1
   before_script:
     - docker info
     - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
   script:
-    - docker build --cache-from $CI_REGISTRY_IMAGE/dashboards:latest -t $CI_REGISTRY_IMAGE/dashboards:$CI_COMMIT_SHA -f frontend/dashboards/Dockerfile frontend/dashboards/
-    - docker tag $CI_REGISTRY_IMAGE/dashboards:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE/dashboards:latest
+    - cd frontend/dashboards
+    - docker build -t $CI_REGISTRY_IMAGE/dashboards:$CI_COMMIT_SHA .
     - docker push $CI_REGISTRY_IMAGE/dashboards:$CI_COMMIT_SHA
-    - docker push $CI_REGISTRY_IMAGE/dashboards:latest
-  only:
-    - main
-    - develop
+  rules:
+    # Build only for main and develop branches
+    - if: $CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME == "develop"
 
 # Build Frontend Public Site
-build:public-site:
+build:frontend-public:
   stage: build
-  image: docker:24-dind
+  image: docker:latest
   services:
-    - docker:24-dind
+    - docker:dind
   <<: *docker_cache_template
-  variables:
-    DOCKER_HOST: tcp://docker:2376
-    DOCKER_TLS_CERTDIR: "/certs"
-    DOCKER_BUILDKIT: 1
   before_script:
     - docker info
     - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
   script:
-    - docker build --cache-from $CI_REGISTRY_IMAGE/public-site:latest -t $CI_REGISTRY_IMAGE/public-site:$CI_COMMIT_SHA -f frontend/public-site/Dockerfile frontend/public-site/ --build-arg VITE_PUBLIC_SITE_URL=https://photo.doyoupaint.com
-    - docker tag $CI_REGISTRY_IMAGE/public-site:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE/public-site:latest
+    - cd frontend/public-site
+    - docker build -t $CI_REGISTRY_IMAGE/public-site:$CI_COMMIT_SHA .
     - docker push $CI_REGISTRY_IMAGE/public-site:$CI_COMMIT_SHA
-    - docker push $CI_REGISTRY_IMAGE/public-site:latest
-  only:
-    - main
-    - develop
+  rules:
+    # Build only for main and develop branches
+    - if: $CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME == "develop"
 
 # ========================================
-# DEPLOYMENT
+# DEPLOY
 # ========================================
 
-# Deploy to production server
+# Deploy to Production
 deploy:production:
   stage: deploy
   image: ubuntu:20.04
@@ -204,259 +193,47 @@ deploy:production:
     DEPLOY_SERVER: $PRODUCTION_SERVER_IP
     DEPLOY_USER: $PRODUCTION_USER
   before_script:
-    # Install required packages
-    - apt-get update -qq && apt-get install -y -qq git curl openssh-client rsync
-    
-    # SSH setup
+    - apt-get update -qq && apt-get install -y -qq git openssh-client
     - eval $(ssh-agent -s)
     - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    - ssh-keyscan -H $DEPLOY_SERVER >> ~/.ssh/known_hosts
+    - ssh-keyscan $DEPLOY_SERVER >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
-    - ssh-add -l
-    
-    # Check server availability
-    - ssh -v $DEPLOY_USER@$DEPLOY_SERVER "echo 'Server connection successful'" || (echo "SSH connection failed. Checking SSH agent..." && ssh-add -l && echo "Trying to connect with verbose output..." && ssh -vvv $DEPLOY_USER@$DEPLOY_SERVER "echo 'test'" && exit 1)
   script:
-    # Prepare deployment files
+    # Deploy application
     - |
-      cat > deploy_commands.sh << EOF
+      cat > deploy.sh << EOF
       #!/bin/bash
       set -e
       
-      echo "Starting deployment process..."
+      echo "Deploying to production..."
       
-      # Navigate to project directory
       cd /home/lumirin/Mosaic
       
-      # Create backup of current nginx configuration
-      cp deployments/nginx/production.conf deployments/nginx/production.conf.backup.$(date +%Y%m%d_%H%M%S)
+      # Pull latest changes
+      git pull origin main
       
-      # Get updates from repository (skip if git not configured)
-      git fetch origin || echo "Git fetch skipped - using existing code"
-      git checkout $CI_COMMIT_SHA || echo "Git checkout skipped - using existing code"
+      # Update docker images
+      docker compose --env-file .env -f deployments/docker-compose/docker-compose.prod.yml pull
       
-      # Update .env file (if needed)
-      if [ -f ".env.production" ]; then
-        cp .env.production .env
-      fi
+      # Restart services
+      docker compose --env-file .env -f deployments/docker-compose/docker-compose.prod.yml up -d --build
       
-      # Login to Docker Registry
-      echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
-      
-      # Update images
-      docker pull $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA
-      docker pull $CI_REGISTRY_IMAGE/dashboards:$CI_COMMIT_SHA
-      docker pull $CI_REGISTRY_IMAGE/public-site:$CI_COMMIT_SHA
-      
-      # Update docker-compose with new images
-      sed -i "s|image: .*backend.*|image: $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA|g" deployments/docker-compose/docker-compose.prod.yml
-      sed -i "s|image: .*dashboards.*|image: $CI_REGISTRY_IMAGE/dashboards:$CI_COMMIT_SHA|g" deployments/docker-compose/docker-compose.prod.yml
-      sed -i "s|image: .*public-site.*|image: $CI_REGISTRY_IMAGE/public-site:$CI_COMMIT_SHA|g" deployments/docker-compose/docker-compose.prod.yml
-      
-             # Run nginx configuration update script with partner domains
-       chmod +x ./scripts/update-nginx-domains.sh
-       ./scripts/update-nginx-domains.sh
-      
-      # Test nginx configuration
-      docker exec nginx nginx -t || {
-        echo "Nginx configuration test failed! Rolling back..."
-        cp deployments/nginx/production.conf.backup.* deployments/nginx/production.conf
-        docker exec nginx nginx -s reload
-        exit 1
-      }
-      
-      # Graceful service update (zero-downtime deployment)
-      docker-compose -f deployments/docker-compose/docker-compose.prod.yml up -d --no-deps backend
-      sleep 10
-      
-             # Health check for backend
-       chmod +x ./scripts/health-check.sh
-       ./scripts/health-check.sh http://localhost:8080/api/health || {
-         echo "Backend health check failed! Rolling back..."
-         exit 1
-       }
-      
-      # Update remaining services
-      docker-compose -f deployments/docker-compose/docker-compose.prod.yml up -d --no-deps dashboards public-site
-      
-             # Final check of all services
-       chmod +x ./scripts/health-check.sh
-       ./scripts/health-check.sh https://photo.doyoupaint.com/health
-       ./scripts/health-check.sh https://adm.doyoupaint.com/health
-      
-             # Generate and update SSL certificates for new domains
-       chmod +x ./scripts/update-ssl-certificates.sh
-       ./scripts/update-ssl-certificates.sh
-       
-       # Update monitoring configuration for new domains
-       chmod +x ./scripts/update-monitoring-config.sh
-       ./scripts/update-monitoring-config.sh
-       
-       # Update nginx configuration with new partner domains  
-       chmod +x ./scripts/update-nginx-domains.sh
-       ./scripts/update-nginx-domains.sh
-       
-       # Clean up old Docker images
-      docker image prune -f --filter "until=72h"
+      # Health check
+      ./scripts/health-check.sh
       
       echo "Deployment completed successfully!"
-      
-             # Create deploy.env file for artifacts
-       echo "DEPLOYMENT_STATUS=success" > deploy.env
-       echo "DEPLOYMENT_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> deploy.env
-       echo "COMMIT_SHA=$CI_COMMIT_SHA" >> deploy.env
-       
-       # Clean up temporary files
-       rm -f /tmp/deploy_commands.sh
-       EOF
-    
-    # Copy script to server and execute
-    - scp deploy_commands.sh $DEPLOY_USER@$DEPLOY_SERVER:/tmp/
-    - ssh $DEPLOY_USER@$DEPLOY_SERVER "chmod +x /tmp/deploy_commands.sh && /tmp/deploy_commands.sh"
-        # Copy deploy.env back from server
-    - scp $DEPLOY_USER@$DEPLOY_SERVER:/home/lumirin/Mosaic/deploy.env ./deploy.env || echo "deploy.env not found on server"
-    
-    # Check health of all services after deployment
-    - chmod +x ./scripts/post-deploy-checks.sh
-    - ./scripts/post-deploy-checks.sh
-  after_script:
-    # Cleanup is handled in the main script now
-    - echo "Deployment completed"
-  artifacts:
-    reports:
-      dotenv: deploy.env
+      EOF
+    - scp deploy.sh $DEPLOY_USER@$DEPLOY_SERVER:/tmp/
+    - ssh $DEPLOY_USER@$DEPLOY_SERVER "chmod +x /tmp/deploy.sh && /tmp/deploy.sh"
   environment:
     name: production
     url: https://photo.doyoupaint.com
-  only:
-    - main
+  rules:
+    - if: $CI_COMMIT_REF_NAME == "main"
   allow_failure: false
 
-# Automatic deployment when partner domains are updated
-deploy:domains-update:
-  stage: deploy
-  image: ubuntu:20.04
-  variables:
-    DEPLOY_SERVER: $PRODUCTION_SERVER_IP
-    DEPLOY_USER: $PRODUCTION_USER
-    POSTGRES_PASSWORD: $POSTGRES_PASSWORD
-    POSTGRES_USER: $POSTGRES_USER
-    POSTGRES_DB: $POSTGRES_DB
-    REDIS_URL: $REDIS_URL
-  before_script:
-    - apt-get update -qq && apt-get install -y -qq git curl openssh-client
-    - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - ssh-keyscan $DEPLOY_SERVER >> ~/.ssh/known_hosts
-    - chmod 644 ~/.ssh/known_hosts
-  script:
-    # Update nginx configuration and SSL certificates using Go API
-    - |
-      cat > update_domains.sh << EOF
-      #!/bin/bash
-      set -e
-      
-      echo "Updating partner domains configuration..."
-      
-      cd /home/lumirin/Mosaic
-      
-      # Wait for backend to be ready
-      echo "Waiting for backend to be ready..."
-      until curl -f http://localhost:8080/api/health 2>/dev/null; do
-        sleep 5
-      done
-      
-      # Get admin JWT token
-      echo "Getting admin JWT token..."
-      LOGIN_RESPONSE=\$(curl -s -X POST \\
-        -H "Content-Type: application/json" \\
-        -d "{\\"email\\":\\"\${DEFAULT_ADMIN_EMAIL:-admin@example.com}\\",\\"password\\":\\"\${DEFAULT_ADMIN_PASSWORD}\\"}" \\
-        "http://localhost:8080/api/auth/login")
-      
-      ADMIN_TOKEN=\$(echo "\$LOGIN_RESPONSE" | jq -r '.access_token')
-      
-      if [ "\$ADMIN_TOKEN" = "null" ] || [ -z "\$ADMIN_TOKEN" ]; then
-        echo "Failed to get admin token"
-        exit 1
-      fi
-      
-      # Call Go API to generate nginx config
-      echo "Generating nginx configuration via API..."
-      curl -s -X POST \\
-        -H "Content-Type: application/json" \\
-        -H "Authorization: Bearer \$ADMIN_TOKEN" \\
-        "http://localhost:8080/api/admin/nginx/deploy"
-      
-      # Update SSL certificates
-      echo "Updating SSL certificates..."
-      chmod +x ./scripts/update-ssl-certificates.sh
-      ./scripts/update-ssl-certificates.sh
-      
-      # Update monitoring configuration
-      echo "Updating monitoring configuration..."
-      chmod +x ./scripts/update-monitoring-config.sh
-      ./scripts/update-monitoring-config.sh
-      
-      echo "Domains configuration updated successfully!"
-      EOF
-    - scp update_domains.sh $DEPLOY_USER@$DEPLOY_SERVER:/tmp/
-    - ssh $DEPLOY_USER@$DEPLOY_SERVER "chmod +x /tmp/update_domains.sh && /tmp/update_domains.sh"
-  rules:
-    # Runs when called via API (triggerDeployPipeline) or on protected branches
-    - if: ($CI_PIPELINE_SOURCE == "trigger" && $TRIGGER_TYPE == "domain_update") || $CI_COMMIT_REF_NAME == "main"
-      allow_failure: true
-
-# ========================================
-# UTILITIES AND ADDITIONAL JOBS
-# ========================================
-
-# Rollback last deployment
-rollback:production:
-  stage: deploy
-  image: ubuntu:20.04
-  variables:
-    DEPLOY_SERVER: $PRODUCTION_SERVER_IP
-    DEPLOY_USER: $PRODUCTION_USER  
-  before_script:
-    - apt-get update -qq && apt-get install -y -qq openssh-client
-    - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - ssh-keyscan $DEPLOY_SERVER >> ~/.ssh/known_hosts
-  script:
-    - |
-      cat > rollback.sh << EOF
-      #!/bin/bash
-      set -e
-      
-      echo "Starting rollback process..."
-      cd /home/lumirin/Mosaic
-      
-      # Restore last working nginx configuration
-      LATEST_BACKUP=\$(ls -t deployments/nginx/production.conf.backup.* | head -1)
-      if [ -f "\$LATEST_BACKUP" ]; then
-        cp \$LATEST_BACKUP deployments/nginx/production.conf
-        docker exec nginx nginx -s reload
-        echo "Nginx configuration rolled back"
-      fi
-      
-      # Return to previous commit
-      git log --oneline -n 5
-      echo "Please specify the commit hash to rollback to in ROLLBACK_COMMIT variable"
-      
-      if [ ! -z "\$ROLLBACK_COMMIT" ]; then
-        git checkout \$ROLLBACK_COMMIT
-        docker-compose -f deployments/docker-compose/docker-compose.prod.yml restart
-      fi
-      
-      echo "Rollback completed!"
-      EOF
-    - scp rollback.sh $DEPLOY_USER@$DEPLOY_SERVER:/tmp/
-    - ssh $DEPLOY_USER@$DEPLOY_SERVER "chmod +x /tmp/rollback.sh && ROLLBACK_COMMIT='$ROLLBACK_COMMIT' /tmp/rollback.sh"
-  only:
-    - main
+# Include domain update pipeline
+include:
+  - local: '.gitlab-ci-domain-update.yml'

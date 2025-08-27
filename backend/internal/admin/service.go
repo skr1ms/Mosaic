@@ -523,9 +523,28 @@ func (s *AdminService) UnblockPartner(id uuid.UUID) error {
 
 // DeletePartner permanently deletes partner and all associated coupons
 func (s *AdminService) DeletePartner(id uuid.UUID) error {
+	// Get partner info before deletion to trigger cleanup
+	partner, err := s.deps.PartnerRepository.GetByID(context.Background(), id)
+	if err != nil {
+		return fmt.Errorf("partner not found: %w", err)
+	}
+
+	// Delete partner from database
 	if err := s.deps.PartnerRepository.DeleteWithCoupons(context.Background(), id); err != nil {
 		return fmt.Errorf("failed to delete partner: %w", err)
 	}
+
+	// Trigger CI/CD pipeline for domain cleanup if GitLab client is available
+	if s.deps.GitLabClient != nil && s.deps.GoroutineManager != nil && partner.Domain != "" {
+		s.deps.GoroutineManager.StartGoroutineWithTimeout("trigger_domain_cleanup_pipeline", 30*time.Second, func() error {
+			_, err := s.deps.GitLabClient.TriggerDomainUpdate("main")
+			if err != nil {
+				return fmt.Errorf("failed to trigger domain cleanup pipeline: %w", err)
+			}
+			return nil
+		})
+	}
+
 	return nil
 }
 

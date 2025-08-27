@@ -1,26 +1,8 @@
 {
-    "schemes": [
-        "http",
-        "https"
-    ],
     "swagger": "2.0",
     "info": {
-        "description": "API для системы мозаичных купонов",
-        "title": "Mosaic API",
-        "termsOfService": "http://swagger.io/terms/",
-        "contact": {
-            "name": "API Support",
-            "url": "http://www.swagger.io/support",
-            "email": "support@swagger.io"
-        },
-        "license": {
-            "name": "MIT",
-            "url": "https://opensource.org/licenses/MIT"
-        },
-        "version": "1.0"
+        "contact": {}
     },
-    "host": "localhost:8080",
-    "basePath": "/api",
     "paths": {
         "/admin/admins/{id}/email": {
             "patch": {
@@ -1080,146 +1062,6 @@
                 }
             }
         },
-        "/admin/domains": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Adds domain to partner and automatically updates nginx configuration",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "admin-domains"
-                ],
-                "summary": "Add domain for partner",
-                "parameters": [
-                    {
-                        "description": "Domain data",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Domain added and nginx updated",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Removes partner domain and automatically updates nginx configuration",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "admin-domains"
-                ],
-                "summary": "Remove partner domain",
-                "parameters": [
-                    {
-                        "description": "Domain removal data",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Domain removed and nginx updated",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
         "/admin/images": {
             "get": {
                 "security": [
@@ -1722,7 +1564,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Forces generation and update of nginx configuration",
+                "description": "Forces generation and update of nginx configuration via CI/CD pipeline",
                 "consumes": [
                     "application/json"
                 ],
@@ -7108,6 +6950,34 @@
                 }
             }
         },
+        "/payment/test-integration": {
+            "get": {
+                "description": "Test integration with Alfa Bank API using current configuration",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment"
+                ],
+                "summary": "Test Alfa Bank integration",
+                "responses": {
+                    "200": {
+                        "description": "Integration test results",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Integration test failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/public/images/{id}/edit": {
             "put": {
                 "description": "Applies cropping, rotation and scaling to uploaded image",
@@ -7972,87 +7842,6 @@
                         }
                     }
                 }
-            }
-        },
-        "/ws/chat": {
-            "get": {
-                "description": "WebSocket endpoint for real-time chat communication. Establishes a WebSocket connection for sending and receiving messages, presence notifications, and chat events.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "JWT access token for authentication (can be prefixed with \"Bearer \")",
-                        "name": "token",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "responses": {
-                    "101": {
-                        "description": "WebSocket connection established successfully",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "type": {
-                                    "type": "string",
-                                    "example": "connection_established"
-                                },
-                                "data": {
-                                    "type": "object",
-                                    "properties": {
-                                        "user_id": {
-                                            "type": "string",
-                                            "description": "Authenticated user ID"
-                                        },
-                                        "role": {
-                                            "type": "string",
-                                            "description": "User role (admin, partner, guest, etc.)"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized - invalid or missing token",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "type": {
-                                    "type": "string",
-                                    "example": "error"
-                                },
-                                "data": {
-                                    "type": "string",
-                                    "example": "unauthorized"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "type": {
-                                    "type": "string",
-                                    "example": "error"
-                                },
-                                "data": {
-                                    "type": "string",
-                                    "example": "internal_error"
-                                }
-                            }
-                        }
-                    }
-                },
-                "summary": "WebSocket Chat Connection",
-                "tags": [
-                    "websocket"
-                ],
-                "x-websocket": true
             }
         }
     },
@@ -9516,120 +9305,6 @@
                     "type": "string"
                 }
             }
-        },
-        "websocket.WsEnvelope": {
-            "type": "object",
-            "required": [
-                "type"
-            ],
-            "properties": {
-                "type": {
-                    "type": "string",
-                    "description": "Message type",
-                    "enum": [
-                        "message",
-                        "read",
-                        "update",
-                        "delete",
-                        "presence",
-                        "message_update",
-                        "message_delete",
-                        "error"
-                    ]
-                },
-                "data": {
-                    "type": "object",
-                    "description": "Message data (varies by type)"
-                }
-            }
-        },
-        "websocket.ChatMessage": {
-            "type": "object",
-            "required": [
-                "target_id",
-                "content"
-            ],
-            "properties": {
-                "target_id": {
-                    "type": "string",
-                    "description": "ID of the target user"
-                },
-                "content": {
-                    "type": "string",
-                    "description": "Message content"
-                }
-            }
-        },
-        "websocket.MessageUpdate": {
-            "type": "object",
-            "required": [
-                "id",
-                "content"
-            ],
-            "properties": {
-                "id": {
-                    "type": "integer",
-                    "description": "Message ID"
-                },
-                "content": {
-                    "type": "string",
-                    "description": "New message content"
-                }
-            }
-        },
-        "websocket.MessageDelete": {
-            "type": "object",
-            "required": [
-                "id"
-            ],
-            "properties": {
-                "id": {
-                    "type": "integer",
-                    "description": "Message ID to delete"
-                }
-            }
-        },
-        "websocket.PresenceNotification": {
-            "type": "object",
-            "required": [
-                "userID",
-                "online"
-            ],
-            "properties": {
-                "userID": {
-                    "type": "string",
-                    "description": "User ID"
-                },
-                "online": {
-                    "type": "boolean",
-                    "description": "Online status"
-                }
-            }
-        },
-        "websocket.ReadNotification": {
-            "type": "object",
-            "required": [
-                "by_user_id",
-                "user_id"
-            ],
-            "properties": {
-                "by_user_id": {
-                    "type": "string",
-                    "description": "ID of user who read the message"
-                },
-                "user_id": {
-                    "type": "string",
-                    "description": "ID of user whose message was read"
-                }
-            }
-        }
-    },
-    "securityDefinitions": {
-        "BearerAuth": {
-            "description": "Type \"Bearer\" followed by a space and JWT token.",
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header"
         }
     }
 }

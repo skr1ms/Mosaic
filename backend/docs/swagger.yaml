@@ -1,4 +1,3 @@
-basePath: /api
 definitions:
   admin.CreateAdminRequest:
     properties:
@@ -1016,95 +1015,8 @@ definitions:
         description: URL превью обработанного изображения
         type: string
     type: object
-  websocket.WsEnvelope:
-    properties:
-      data:
-        description: Message data (varies by type)
-        type: object
-      type:
-        description: Message type
-        enum:
-        - message
-        - read
-        - update
-        - delete
-        - presence
-        - message_update
-        - message_delete
-        - error
-        type: string
-    required:
-    - type
-    type: object
-  websocket.ChatMessage:
-    properties:
-      content:
-        description: Message content
-        type: string
-      target_id:
-        description: ID of the target user
-        type: string
-    required:
-    - target_id
-    - content
-    type: object
-  websocket.MessageUpdate:
-    properties:
-      content:
-        description: New message content
-        type: string
-      id:
-        description: Message ID
-        type: integer
-    required:
-    - id
-    - content
-    type: object
-  websocket.MessageDelete:
-    properties:
-      id:
-        description: Message ID to delete
-        type: integer
-    required:
-    - id
-    type: object
-  websocket.PresenceNotification:
-    properties:
-      online:
-        description: Online status
-        type: boolean
-      userID:
-        description: User ID
-        type: string
-    required:
-    - userID
-    - online
-    type: object
-  websocket.ReadNotification:
-    properties:
-      by_user_id:
-        description: ID of user who read the message
-        type: string
-      user_id:
-        description: ID of user whose message was read
-        type: string
-    required:
-    - by_user_id
-    - user_id
-    type: object
-host: localhost:8080
 info:
-  contact:
-    email: support@swagger.io
-    name: API Support
-    url: http://www.swagger.io/support
-  description: API для системы мозаичных купонов
-  license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
-  termsOfService: http://swagger.io/terms/
-  title: Mosaic API
-  version: "1.0"
+  contact: {}
 paths:
   /admin/admins/{id}/email:
     patch:
@@ -1817,99 +1729,6 @@ paths:
       summary: Get admin dashboard
       tags:
       - admin-dashboard
-  /admin/domains:
-    delete:
-      consumes:
-      - application/json
-      description: Removes partner domain and automatically updates nginx configuration
-      parameters:
-      - description: Domain removal data
-        in: body
-        name: request
-        required: true
-        schema:
-          additionalProperties:
-            type: string
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Domain removed and nginx updated
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Invalid request
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "403":
-          description: Forbidden
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Remove partner domain
-      tags:
-      - admin-domains
-    post:
-      consumes:
-      - application/json
-      description: Adds domain to partner and automatically updates nginx configuration
-      parameters:
-      - description: Domain data
-        in: body
-        name: request
-        required: true
-        schema:
-          additionalProperties:
-            type: string
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Domain added and nginx updated
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Invalid request
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "403":
-          description: Forbidden
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Add domain for partner
-      tags:
-      - admin-domains
   /admin/images:
     get:
       description: Returns list of all image processing tasks with filtering
@@ -2244,7 +2063,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Forces generation and update of nginx configuration
+      description: Forces generation and update of nginx configuration via CI/CD pipeline
       produces:
       - application/json
       responses:
@@ -5895,6 +5714,25 @@ paths:
       summary: Process payment return
       tags:
       - payment
+  /payment/test-integration:
+    get:
+      description: Test integration with Alfa Bank API using current configuration
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Integration test results
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Integration test failed
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Test Alfa Bank integration
+      tags:
+      - payment
   /public/images/{id}/edit:
     put:
       consumes:
@@ -6493,68 +6331,4 @@ paths:
       summary: Upload an attachment to a support message (authenticated users)
       tags:
       - support
-  /ws/chat:
-    get:
-      description: WebSocket endpoint for real-time chat communication. Establishes a WebSocket connection for sending and receiving messages, presence notifications, and chat events.
-      parameters:
-      - description: JWT access token for authentication (can be prefixed with "Bearer ")
-        in: query
-        name: token
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "101":
-          description: WebSocket connection established successfully
-          schema:
-            type: object
-            properties:
-              type:
-                type: string
-                example: "connection_established"
-              data:
-                type: object
-                properties:
-                  user_id:
-                    type: string
-                    description: "Authenticated user ID"
-                  role:
-                    type: string
-                    description: "User role (admin, partner, guest, etc.)"
-        "401":
-          description: Unauthorized - invalid or missing token
-          schema:
-            type: object
-            properties:
-              type:
-                type: string
-                example: "error"
-              data:
-                type: string
-                example: "unauthorized"
-        "500":
-          description: Internal server error
-          schema:
-            type: object
-            properties:
-              type:
-                type: string
-                example: "error"
-              data:
-                type: string
-                example: "internal_error"
-      summary: WebSocket Chat Connection
-      tags:
-      - websocket
-      x-websocket: true
-schemes:
-- http
-- https
-securityDefinitions:
-  BearerAuth:
-    description: Type "Bearer" followed by a space and JWT token.
-    in: header
-    name: Authorization
-    type: apiKey
 swagger: "2.0"

@@ -81,9 +81,7 @@ func NewAdminHandler(router fiber.Router, deps *AdminHandlerDeps) {
 	adminRoutes.Delete("/partners/:id", handler.DeletePartner)                // DELETE /api/admin/partners/:id
 	adminRoutes.Get("/partners/:id/statistics", handler.GetPartnerStatistics) // GET /api/admin/partners/:id/statistics
 
-	// Domain management
-	adminRoutes.Post("/domains", handler.AddDomain)              // POST /api/admin/domains
-	adminRoutes.Delete("/domains", handler.RemoveDomain)         // DELETE /api/admin/domains
+	// Nginx management (for CI/CD pipeline)
 	adminRoutes.Post("/nginx/deploy", handler.DeployNginxConfig) // POST /api/admin/nginx/deploy
 
 	// Coupons management
@@ -865,7 +863,7 @@ func (handler *AdminHandler) DeletePartner(c *fiber.Ctx) error {
 		handler.deps.Logger.FromContext(c).Error().Msg("Deletion requires confirmation")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Deletion requires confirmation"})
 	}
-	err = handler.deps.AdminService.GetPartnerRepository().DeleteWithCoupons(context.Background(), partnerID)
+	err = handler.deps.AdminService.DeletePartner(partnerID)
 	if err != nil {
 		handler.deps.Logger.FromContext(c).Error().Err(err).Msg("Failed to delete partner")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -2012,118 +2010,8 @@ func (handler *AdminHandler) RetryImageTask(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "Image task queued for retry"})
 }
 
-// @Summary Add domain for partner
-// @Description Adds domain to partner and automatically updates nginx configuration
-// @Tags admin-domains
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param request body map[string]string true "Domain data"
-// @Success 200 {object} map[string]interface{} "Domain added and nginx updated"
-// @Failure 400 {object} map[string]interface{} "Invalid request"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /admin/domains [post]
-func (handler *AdminHandler) AddDomain(c *fiber.Ctx) error {
-	var req struct {
-		PartnerID string `json:"partner_id" binding:"required"`
-		Domain    string `json:"domain" binding:"required"`
-	}
-
-	if err := c.BodyParser(&req); err != nil {
-		handler.deps.Logger.FromContext(c).Error().Err(err).Msg("Invalid request body")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
-	}
-
-	partnerID, err := uuid.Parse(req.PartnerID)
-	if err != nil {
-		handler.deps.Logger.FromContext(c).Error().Err(err).Msg("Invalid partner ID")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid partner ID",
-		})
-	}
-
-	err = handler.deps.AdminService.UpdatePartnerDomain(partnerID, req.Domain)
-	if err != nil {
-		handler.deps.Logger.FromContext(c).Error().Err(err).Msg("Failed to update partner domain")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to update partner domain",
-		})
-	}
-
-	err = handler.generateAndDeployNginxConfig()
-	if err != nil {
-		handler.deps.Logger.FromContext(c).Error().Err(err).Msg("Failed to update nginx config")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to update nginx config",
-		})
-	}
-
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{
-		"partner_id": partnerID,
-		"domain":     req.Domain,
-	}).Msg("Domain added and nginx updated")
-	return c.JSON(fiber.Map{"message": "Domain added and nginx updated successfully"})
-}
-
-// @Summary Remove partner domain
-// @Description Removes partner domain and automatically updates nginx configuration
-// @Tags admin-domains
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param request body map[string]string true "Domain removal data"
-// @Success 200 {object} map[string]interface{} "Domain removed and nginx updated"
-// @Failure 400 {object} map[string]interface{} "Invalid request"
-// @Failure 401 {object} map[string]interface{} "Unauthorized"
-// @Failure 403 {object} map[string]interface{} "Forbidden"
-// @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /admin/domains [delete]
-func (handler *AdminHandler) RemoveDomain(c *fiber.Ctx) error {
-	var req struct {
-		PartnerID string `json:"partner_id" binding:"required"`
-	}
-
-	if err := c.BodyParser(&req); err != nil {
-		handler.deps.Logger.FromContext(c).Error().Err(err).Msg("Invalid request body")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
-	}
-
-	partnerID, err := uuid.Parse(req.PartnerID)
-	if err != nil {
-		handler.deps.Logger.FromContext(c).Error().Err(err).Msg("Invalid partner ID")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid partner ID",
-		})
-	}
-
-	err = handler.deps.AdminService.UpdatePartnerDomain(partnerID, "")
-	if err != nil {
-		handler.deps.Logger.FromContext(c).Error().Err(err).Msg("Failed to remove partner domain")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to remove partner domain",
-		})
-	}
-
-	err = handler.generateAndDeployNginxConfig()
-	if err != nil {
-		handler.deps.Logger.FromContext(c).Error().Err(err).Msg("Failed to update nginx config")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to update nginx config",
-		})
-	}
-
-	handler.deps.Logger.FromContext(c).Info().Interface("context", map[string]interface{}{"partner_id": partnerID}).Msg("Domain removed and nginx updated")
-	return c.JSON(fiber.Map{"message": "Domain removed and nginx updated successfully"})
-}
-
 // @Summary Force nginx update
-// @Description Forces generation and update of nginx configuration
+// @Description Forces generation and update of nginx configuration via CI/CD pipeline
 // @Tags admin-domains
 // @Accept json
 // @Produce json

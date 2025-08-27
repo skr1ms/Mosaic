@@ -153,6 +153,7 @@ type AdminServiceInterface interface {
 	GetPartners(search, status, sortBy, order string) ([]*partner.Partner, error)
 	GetPartnerDetail(partnerID uuid.UUID) (*PartnerDetailResponse, error)
 	CreatePartner(req partner.CreatePartnerRequest) (*partner.Partner, error)
+	UpdatePartner(id uuid.UUID, req partner.UpdatePartnerRequest) (*partner.Partner, error)
 	UpdatePartnerWithHistory(partnerID uuid.UUID, req partner.UpdatePartnerRequest, adminLogin, reason string) (*partner.Partner, error)
 	ExportCouponsAdvanced(options coupon.ExportOptionsRequest) ([]byte, string, string, error)
 	DownloadCouponMaterials(couponID uuid.UUID) ([]byte, string, error)
@@ -168,6 +169,7 @@ type AdminServiceInterface interface {
 
 	UpdatePartnerDomain(partnerID uuid.UUID, domain string) error
 	GetActivePartnersWithDomains() ([]partner.Partner, error)
+	DeletePartner(id uuid.UUID) error
 
 	GetPartnerRepository() PartnerRepositoryInterface
 	GetCouponRepository() CouponRepositoryInterface
