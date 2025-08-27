@@ -1,0 +1,9 @@
+frontend/
+deployments/
+monitoring/
+*.sh
+*.yml
+*.yaml
+.env*
+.git*
+README.md

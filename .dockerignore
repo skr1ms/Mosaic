@@ -1,0 +1,9 @@
+*.sh
+*.yml
+*.yaml
+.env*
+.git*
+README.md
+node_modules/
+dist/
+build/
