@@ -174,18 +174,17 @@ func (handler *ChatHandler) Socket(c *websocket.Conn) {
 	})
 
 	// Ping/pong keepalive
-	handler.deps.GoroutineManager.StartGoroutineWithTimeout("websocket_ping_pong", 0, func() error {
+	go func(conn *websocket.Conn) {
 		ticker := time.NewTicker(30 * time.Second)
 		defer ticker.Stop()
 
 		for range ticker.C {
-			if err := c.WriteControl(websocket.PingMessage, []byte("ping"), time.Now().Add(10*time.Second)); err != nil {
-				_ = c.Close()
-				return err
+			if err := conn.WriteControl(websocket.PingMessage, []byte("ping"), time.Now().Add(10*time.Second)); err != nil {
+				_ = conn.Close()
+				return
 			}
 		}
-		return nil
-	})
+	}(c)
 
 	for {
 		_, msg, err := c.ReadMessage()
