@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 )
@@ -49,6 +50,9 @@ func (c *Client) TriggerPipeline(req TriggerPipelineRequest) (*PipelineResponse,
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
+	fmt.Printf("GitLab API Request: %s\n", url)
+	fmt.Printf("GitLab API Body: %s\n", string(jsonBody))
+
 	httpReq, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
@@ -63,12 +67,16 @@ func (c *Client) TriggerPipeline(req TriggerPipelineRequest) (*PipelineResponse,
 	}
 	defer resp.Body.Close()
 
+	bodyBytes, _ := io.ReadAll(resp.Body)
+	fmt.Printf("GitLab API Response Status: %d\n", resp.StatusCode)
+	fmt.Printf("GitLab API Response Body: %s\n", string(bodyBytes))
+
 	if resp.StatusCode != http.StatusCreated {
 		return nil, fmt.Errorf("pipeline trigger failed with status: %d", resp.StatusCode)
 	}
 
 	var pipelineResp PipelineResponse
-	if err := json.NewDecoder(resp.Body).Decode(&pipelineResp); err != nil {
+	if err := json.Unmarshal(bodyBytes, &pipelineResp); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
