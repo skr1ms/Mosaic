@@ -12,6 +12,7 @@ COPY pkg/ ./pkg/
 COPY cmd/ ./cmd/
 COPY config/ ./config/
 COPY migrations/ ./migrations/
+COPY docs/ ./docs/
 
 COPY scripts/ ./scripts/
 
