@@ -55,7 +55,6 @@ temp/
 .next
 .nuxt
 .cache/
-public
 .out
 .storybook-out
 tmp/
