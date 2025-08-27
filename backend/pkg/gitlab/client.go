@@ -6,14 +6,17 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 )
 
 type Client struct {
-	baseURL     string
-	accessToken string
-	projectID   string
-	client      *http.Client
+	baseURL      string
+	accessToken  string
+	triggerToken string
+	projectID    string
+	client       *http.Client
 }
 
 type TriggerPipelineRequest struct {
@@ -29,11 +32,12 @@ type PipelineResponse struct {
 	WebURL string `json:"web_url"`
 }
 
-func NewClient(baseURL, accessToken, projectID string) *Client {
+func NewClient(baseURL, accessToken, triggerToken, projectID string) *Client {
 	return &Client{
-		baseURL:     baseURL,
-		accessToken: accessToken,
-		projectID:   projectID,
+		baseURL:      baseURL,
+		accessToken:  accessToken,
+		triggerToken: triggerToken,
+		projectID:    projectID,
 		client: &http.Client{
 			Timeout: 30 * time.Second,
 		},
@@ -42,7 +46,6 @@ func NewClient(baseURL, accessToken, projectID string) *Client {
 
 // TriggerPipeline triggers a new pipeline in GitLab
 func (c *Client) TriggerPipeline(req TriggerPipelineRequest) (*PipelineResponse, error) {
-	// Используем обычный API для запуска пайплайна
 	url := fmt.Sprintf("%s/api/v4/projects/%s/pipeline", c.baseURL, c.projectID)
 
 	jsonBody, err := json.Marshal(req)
@@ -50,7 +53,6 @@ func (c *Client) TriggerPipeline(req TriggerPipelineRequest) (*PipelineResponse,
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	// Логирование убрано - API работает корректно
 
 	httpReq, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBody))
 	if err != nil {
@@ -82,30 +84,19 @@ func (c *Client) TriggerPipeline(req TriggerPipelineRequest) (*PipelineResponse,
 
 // TriggerDomainUpdate triggers a pipeline specifically for domain updates
 func (c *Client) TriggerDomainUpdate(ref string) (*PipelineResponse, error) {
-	apiURL := fmt.Sprintf("%s/api/v4/projects/%s/pipeline", c.baseURL, c.projectID)
+	apiURL := fmt.Sprintf("%s/api/v4/projects/%s/trigger/pipeline", c.baseURL, c.projectID)
 
-	reqBody := map[string]interface{}{
-		"ref": ref,
-		"variables": []map[string]string{
-			{
-				"key":   "PIPELINE_TYPE",
-				"value": "domain_update",
-			},
-		},
-	}
+	data := url.Values{}
+	data.Set("ref", ref)
+	data.Set("token", c.triggerToken)
+	data.Set("variables[PIPELINE_TYPE]", "domain_update")
 
-	jsonBody, err := json.Marshal(reqBody)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	httpReq, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(jsonBody))
+	httpReq, err := http.NewRequest("POST", apiURL, strings.NewReader(data.Encode()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", "Bearer "+c.accessToken)
+	httpReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(httpReq)

@@ -125,9 +125,10 @@ type DefaultPartnerConfig struct {
 }
 
 type GitLabConfig struct {
-	BaseURL   string
-	APIToken  string
-	ProjectID string
+	BaseURL      string
+	APIToken     string
+	TriggerToken string
+	ProjectID    string
 }
 
 func NewConfig() (*Config, error) {
@@ -221,9 +222,10 @@ func NewConfig() (*Config, error) {
 			DefaultWildberriesLink: "https://wildberries.ru/seller/mosaic",
 		},
 		GitLabConfig: GitLabConfig{
-			BaseURL:   os.Getenv("GITLAB_BASE_URL"),
-			APIToken:  os.Getenv("GITLAB_API_TOKEN"),
-			ProjectID: os.Getenv("GITLAB_PROJECT_ID"),
+			BaseURL:      os.Getenv("GITLAB_BASE_URL"),
+			APIToken:     os.Getenv("GITLAB_API_TOKEN"),
+			TriggerToken: os.Getenv("GITLAB_TRIGGER_TOKEN"),
+			ProjectID:    os.Getenv("GITLAB_PROJECT_ID"),
 		},
 	}
 
@@ -373,6 +375,9 @@ func validateConfig(config *Config) error {
 	// GitLab configuration validation
 	if config.GitLabConfig.APIToken == "" {
 		missingVars = append(missingVars, "GITLAB_API_TOKEN")
+	}
+	if config.GitLabConfig.TriggerToken == "" {
+		missingVars = append(missingVars, "GITLAB_TRIGGER_TOKEN")
 	}
 	if config.GitLabConfig.ProjectID == "" {
 		missingVars = append(missingVars, "GITLAB_PROJECT_ID")

@@ -819,6 +819,9 @@ func (h *PublicHandler) PurchaseCoupon(c *fiber.Ctx) error {
 	if h.deps == nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Handler not initialized"})
 	}
+	if h.deps.Logger == nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Logger not initialized"})
+	}
 
 	h.deps.Logger.FromContext(c).Info().Msg("PurchaseCoupon called")
 	if h.deps.PublicService == nil {
@@ -830,10 +833,16 @@ func (h *PublicHandler) PurchaseCoupon(c *fiber.Ctx) error {
 	branding := middleware.GetBrandingFromContext(c)
 	h.deps.Logger.FromContext(c).Info().Interface("branding", branding).Msg("Branding retrieved")
 	if branding != nil && !branding.AllowPurchases {
+		partnerCode := ""
+		domain := ""
+		if branding.Partner != nil {
+			partnerCode = branding.Partner.PartnerCode
+			domain = branding.Partner.Domain
+		}
 		h.deps.Logger.FromContext(c).Warn().
 			Str("handler", "PurchaseCoupon").
-			Str("partner_code", branding.Partner.PartnerCode).
-			Str("domain", branding.Partner.Domain).
+			Str("partner_code", partnerCode).
+			Str("domain", domain).
 			Msg("Purchase not allowed for this partner")
 
 		errorResponse := fiber.Map{

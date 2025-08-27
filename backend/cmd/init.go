@@ -96,6 +96,13 @@ func InitializeApp() *fiber.App {
 		panic(fmt.Sprintf("Failed to create S3 client: %v", err))
 	}
 
+	gitlabClient := gitlab.NewClient(
+		cfg.GitLabConfig.BaseURL,
+		cfg.GitLabConfig.APIToken,
+		cfg.GitLabConfig.TriggerToken,
+		cfg.GitLabConfig.ProjectID,
+	)
+	
 	stableDiffusionClient := stableDiffusion.NewStableDiffusionClient(cfg.StableDiffusionConfig, appLogger)
 
 	queueManager := queue.NewQueueManager(redisClient, appLogger)
@@ -206,13 +213,6 @@ func InitializeApp() *fiber.App {
 		MailSender:        mailSender,
 		Config:            cfg,
 	})
-
-	// Initialize GitLab client for CI/CD triggers
-	gitlabClient := gitlab.NewClient(
-		cfg.GitLabConfig.BaseURL,
-		cfg.GitLabConfig.APIToken,
-		cfg.GitLabConfig.ProjectID,
-	)
 
 	// Initialize goroutine manager
 	goroutineManager := goroutine.NewManager(context.Background())
