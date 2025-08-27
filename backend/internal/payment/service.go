@@ -192,6 +192,10 @@ func (s *PaymentService) getWebhookURL() string {
 
 // PurchaseCoupon purchases coupon online with card payment
 func (s *PaymentService) PurchaseCoupon(ctx context.Context, req *PurchaseCouponRequest) (*PurchaseCouponResponse, error) {
+	// Проверяем все зависимости
+	if s.deps == nil {
+		return nil, fmt.Errorf("service dependencies are not initialized")
+	}
 	if s.deps.PaymentRepository == nil {
 		return nil, fmt.Errorf("payment repository is not initialized")
 	}

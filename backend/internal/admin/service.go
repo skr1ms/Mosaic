@@ -1191,14 +1191,39 @@ func (s *AdminService) UpdatePartnerDomain(partnerID uuid.UUID, domain string) e
 	}
 
 	// Trigger CI/CD pipeline if domain was changed
+	s.deps.Logger.Info().
+		Str("partner_id", partnerID.String()).
+		Str("old_domain", oldDomain).
+		Str("new_domain", domain).
+		Bool("domain_changed", domain != oldDomain).
+		Bool("gitlab_client_available", s.deps.GitLabClient != nil).
+		Bool("goroutine_manager_available", s.deps.GoroutineManager != nil).
+		Msg("Checking conditions for domain update pipeline trigger")
+
 	if domain != oldDomain && s.deps.GitLabClient != nil && s.deps.GoroutineManager != nil {
+		s.deps.Logger.Info().
+			Str("partner_id", partnerID.String()).
+			Str("old_domain", oldDomain).
+			Str("new_domain", domain).
+			Msg("Triggering domain update pipeline")
+
 		s.deps.GoroutineManager.StartGoroutineWithTimeout("trigger_domain_update_pipeline", 30*time.Second, func() error {
+			s.deps.Logger.Info().Msg("Starting GitLab pipeline trigger for domain update")
 			_, err := s.deps.GitLabClient.TriggerDomainUpdate("main")
 			if err != nil {
+				s.deps.Logger.Error().Err(err).Msg("Failed to trigger domain update pipeline")
 				return fmt.Errorf("failed to trigger domain update pipeline: %w", err)
 			}
+			s.deps.Logger.Info().Msg("Successfully triggered domain update pipeline")
 			return nil
 		})
+	} else {
+		s.deps.Logger.Warn().
+			Str("partner_id", partnerID.String()).
+			Bool("domain_changed", domain != oldDomain).
+			Bool("gitlab_client_available", s.deps.GitLabClient != nil).
+			Bool("goroutine_manager_available", s.deps.GoroutineManager != nil).
+			Msg("Domain update pipeline not triggered - conditions not met")
 	}
 
 	return nil

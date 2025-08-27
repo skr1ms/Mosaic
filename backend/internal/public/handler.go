@@ -813,6 +813,15 @@ func (h *PublicHandler) GetProcessingStatus(c *fiber.Ctx) error {
 // @Failure 500 {object} map[string]any "Internal server error during coupon purchase"
 // @Router /api/coupons/purchase [post]
 func (h *PublicHandler) PurchaseCoupon(c *fiber.Ctx) error {
+	// Добавляем проверки для отладки
+	if h.deps == nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Handler not initialized"})
+	}
+	if h.deps.PublicService == nil {
+		h.deps.Logger.FromContext(c).Error().Msg("PublicService is nil")
+		return c.Status(500).JSON(fiber.Map{"error": "PublicService not initialized"})
+	}
+
 	branding := middleware.GetBrandingFromContext(c)
 	if branding != nil && !branding.AllowPurchases {
 		h.deps.Logger.FromContext(c).Warn().
