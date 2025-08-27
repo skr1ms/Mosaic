@@ -364,15 +364,14 @@ func InitializeApp() *fiber.App {
 	// Prometheus metrics endpoint
 	app.Get("/metrics", adaptor.HTTPHandler(promhttp.Handler()))
 
-	// Running the metrics server on a separate port
-	goroutineManager.StartGoroutineWithTimeout("metrics_server", 0, func() error {
+	// Running the metrics server on a separate port - используем обычную горутину для долгоживущего процесса
+	go func() {
 		metricsApp := fiber.New()
 		metricsApp.Get("/metrics", adaptor.HTTPHandler(promhttp.Handler()))
 
-		// Metrics server is running on port - это долгоживущий процесс
+		// Metrics server is running on port
 		metricsApp.Listen(":" + cfg.MetricsConfig.Port)
-		return nil
-	})
+	}()
 
 	// Server is running on port
 

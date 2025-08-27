@@ -87,9 +87,6 @@ func (c *Client) TriggerPipeline(req TriggerPipelineRequest) (*PipelineResponse,
 func (c *Client) TriggerDomainUpdate(ref string) (*PipelineResponse, error) {
 	return c.TriggerPipeline(TriggerPipelineRequest{
 		Ref: ref,
-		Variables: map[string]string{
-			"TRIGGER_TYPE": "domain_update",
-		},
 	})
 }
 
