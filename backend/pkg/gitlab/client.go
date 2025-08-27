@@ -84,14 +84,13 @@ func (c *Client) TriggerPipeline(req TriggerPipelineRequest) (*PipelineResponse,
 func (c *Client) TriggerDomainUpdate(ref string) (*PipelineResponse, error) {
 	apiURL := fmt.Sprintf("%s/api/v4/projects/%s/pipeline", c.baseURL, c.projectID)
 
-	fmt.Printf("GitLab API URL: %s\n", apiURL)
-	fmt.Printf("Project ID: %s\n", c.projectID)
-	fmt.Printf("Ref: %s\n", ref)
-
 	reqBody := map[string]interface{}{
 		"ref": ref,
-		"variables": map[string]string{
-			"PIPELINE_TYPE": "domain_update",
+		"variables": []map[string]string{
+			{
+				"key":   "PIPELINE_TYPE",
+				"value": "domain_update",
+			},
 		},
 	}
 
