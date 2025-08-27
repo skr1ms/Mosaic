@@ -9,10 +9,10 @@ import (
 )
 
 type Client struct {
-	baseURL   string
-	token     string
-	projectID string
-	client    *http.Client
+	baseURL     string
+	accessToken string
+	projectID   string
+	client      *http.Client
 }
 
 type TriggerPipelineRequest struct {
@@ -28,11 +28,11 @@ type PipelineResponse struct {
 	WebURL string `json:"web_url"`
 }
 
-func NewClient(baseURL, token, projectID string) *Client {
+func NewClient(baseURL, accessToken, projectID string) *Client {
 	return &Client{
-		baseURL:   baseURL,
-		token:     token,
-		projectID: projectID,
+		baseURL:     baseURL,
+		accessToken: accessToken,
+		projectID:   projectID,
 		client: &http.Client{
 			Timeout: 30 * time.Second,
 		},
@@ -41,13 +41,8 @@ func NewClient(baseURL, token, projectID string) *Client {
 
 // TriggerPipeline triggers a new pipeline in GitLab
 func (c *Client) TriggerPipeline(req TriggerPipelineRequest) (*PipelineResponse, error) {
-	url := fmt.Sprintf("%s/api/v4/projects/%s/trigger/pipeline", c.baseURL, c.projectID)
-
-	// Add trigger token to variables
-	if req.Variables == nil {
-		req.Variables = make(map[string]string)
-	}
-	req.Variables["token"] = c.token
+	// Используем обычный API для запуска пайплайна
+	url := fmt.Sprintf("%s/api/v4/projects/%s/pipeline", c.baseURL, c.projectID)
 
 	jsonBody, err := json.Marshal(req)
 	if err != nil {
@@ -60,7 +55,7 @@ func (c *Client) TriggerPipeline(req TriggerPipelineRequest) (*PipelineResponse,
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", "Bearer "+c.token)
+	httpReq.Header.Set("Authorization", "Bearer "+c.accessToken)
 
 	resp, err := c.client.Do(httpReq)
 	if err != nil {
@@ -99,7 +94,7 @@ func (c *Client) GetPipelineStatus(pipelineID int) (*PipelineResponse, error) {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Set("Authorization", "Bearer "+c.token)
+	req.Header.Set("Authorization", "Bearer "+c.accessToken)
 
 	resp, err := c.client.Do(req)
 	if err != nil {

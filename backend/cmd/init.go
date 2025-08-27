@@ -369,8 +369,9 @@ func InitializeApp() *fiber.App {
 		metricsApp := fiber.New()
 		metricsApp.Get("/metrics", adaptor.HTTPHandler(promhttp.Handler()))
 
-		// Metrics server is running on port
-		return metricsApp.Listen(":" + cfg.MetricsConfig.Port)
+		// Metrics server is running on port - это долгоживущий процесс
+		metricsApp.Listen(":" + cfg.MetricsConfig.Port)
+		return nil
 	})
 
 	// Server is running on port
