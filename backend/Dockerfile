@@ -16,7 +16,7 @@ RUN mkdir -p /app/scripts && \
     cp -r scripts/* /app/scripts/ || true
 
 # Build the application
-RUN CGO_ENABLED=0 go build -o main ./app/cmd
+RUN CGO_ENABLED=0 go build -o main ./cmd
 
 # Final stage
 FROM alpine:latest
