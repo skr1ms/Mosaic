@@ -222,3 +222,24 @@ The backend follows a clean architecture pattern:
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## ⚠️ Important Note
+
+**This is an open-source version of the Mosaic project. The mosaic generation functionality requires proprietary commercial components that are not included:**
+
+- Python scripts for mosaic generation
+- Excel palette files with color schemes
+- These components must be obtained separately to enable full mosaic generation capabilities
+
+**Required directory structure for mosaic generation:**
+```
+backend/
+└── scripts/
+    ├── mosaic_cli.py          # Main Python script
+    ├── pallete_bw.xlsx        # Black & White palette
+    ├── pallete_fl.xlsx        # Full color palette
+    ├── pallete_max.xlsx       # Maximum color palette
+    └── pallete_tl.xlsx        # Limited color palette
+```
+
+**All other functionality works normally without these commercial components.**
