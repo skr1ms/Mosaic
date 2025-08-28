@@ -1,0 +1,122 @@
+# Domain Update Pipeline
+# Triggered automatically when partner domains are created/updated/deleted
+
+stages:
+  - domain-update
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+  GIT_STRATEGY: fetch
+  GIT_DEPTH: "1"
+
+# Domain Update Pipeline - Triggered by backend API
+deploy:domains-update:
+  stage: domain-update
+  image: ubuntu:22.04
+  variables:
+    DEPLOY_SERVER: $PRODUCTION_SERVER_IP
+    DEPLOY_USER: $PRODUCTION_USER
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq git curl openssh-client jq
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan $DEPLOY_SERVER >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    # Deploy script for domain updates
+    - |
+      cat > deploy_domains.sh << 'EOF'
+      #!/bin/bash
+      set -e
+      
+      echo "=========================================="
+      echo "🚀 Starting Partner Domain Update Pipeline"
+      echo "=========================================="
+      
+      # Function for logging
+      log() {
+          echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+      }
+      
+      cd /home/lumirin/Mosaic
+      
+      # Load environment variables
+      if [ -f .env ]; then
+          export $(cat .env | grep -v '^#' | xargs)
+      fi
+      
+      log "📦 Pulling latest code changes..."
+      git pull origin main
+      
+      log "🔧 Making scripts executable..."
+      chmod +x ./scripts/*.sh
+      
+      # Determine operation type based on trigger variables
+      OPERATION="${DOMAIN_OPERATION:-refresh}"
+      OLD_DOMAIN="${OLD_DOMAIN:-}"
+      NEW_DOMAIN="${NEW_DOMAIN:-}"
+      
+      log "Operation: $OPERATION"
+      [ -n "$OLD_DOMAIN" ] && log "Old Domain: $OLD_DOMAIN"
+      [ -n "$NEW_DOMAIN" ] && log "New Domain: $NEW_DOMAIN"
+      
+      # Execute domain management script
+      log "🌐 Managing partner domains..."
+      sudo ./scripts/manage-partner-domains.sh "$OPERATION" "$OLD_DOMAIN" "$NEW_DOMAIN"
+      
+      # Update monitoring configuration for new domains
+      log "📊 Updating monitoring configuration..."
+      ./scripts/update-monitoring-config.sh
+      
+      # Run health checks
+      log "🏥 Running health checks..."
+      ./scripts/health-check.sh
+      
+      # Send notification about successful update
+      if [ -n "$SLACK_WEBHOOK_URL" ]; then
+          curl -X POST $SLACK_WEBHOOK_URL \
+            -H 'Content-Type: application/json' \
+            -d "{\"text\":\"✅ Partner domain update completed successfully. Operation: $OPERATION\"}"
+      fi
+      
+      log "✅ Domain update pipeline completed successfully!"
+      EOF
+      
+    # Copy and execute the deployment script
+    - scp deploy_domains.sh $DEPLOY_USER@$DEPLOY_SERVER:/tmp/
+    - ssh $DEPLOY_USER@$DEPLOY_SERVER "chmod +x /tmp/deploy_domains.sh && /tmp/deploy_domains.sh"
+    
+    # Cleanup
+    - ssh $DEPLOY_USER@$DEPLOY_SERVER "rm -f /tmp/deploy_domains.sh"
+    
+  after_script:
+    - |
+      if [ "$CI_JOB_STATUS" == "failed" ]; then
+        echo "❌ Domain update pipeline failed!"
+        if [ -n "$SLACK_WEBHOOK_URL" ]; then
+          curl -X POST $SLACK_WEBHOOK_URL \
+            -H 'Content-Type: application/json' \
+            -d '{"text":"❌ Partner domain update pipeline failed! Check GitLab for details."}'
+        fi
+      fi
+      
+  rules:
+    # Only run when triggered with DOMAIN_UPDATE variable
+    - if: '$CI_PIPELINE_SOURCE == "trigger" && $DOMAIN_UPDATE == "true"'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "pipeline"'
+      when: never
+    - when: never
+      
+  tags:
+    - docker
+  
+  timeout: 30 minutes
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure

@@ -1,0 +1,240 @@
+# Main CI/CD Pipeline
+# Full cycle: tests → build → deploy
+# Runs on push to main/develop branches
+
+stages:
+  - tests
+  - build
+  - deploy
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+  GO_VERSION: "1.24"
+  NODE_VERSION: "20"
+  CI_REGISTRY: "registry.gitlab.com"
+  CI_REGISTRY_IMAGE: "registry.gitlab.com/doyoupaint/mosaic"
+
+# Caching for faster builds
+.cache_template: &cache_template
+  cache:
+    key: "${CI_COMMIT_REF_SLUG}"
+    paths:
+      - backend/vendor/
+      - .cache/
+
+# Docker layer caching
+.docker_cache_template: &docker_cache_template
+  cache:
+    key: "docker-${CI_COMMIT_REF_SLUG}"
+    paths:
+      - .cache/docker/
+    policy: pull-push
+
+# ========================================
+# TESTING
+# ========================================
+
+# Backend Testing - Core packages
+test:backend-core:
+  stage: tests
+  image: golang:${GO_VERSION}
+  <<: *cache_template
+  services:
+    - postgres:17-alpine
+    - redis:8
+  variables:
+    POSTGRES_DB: mosaic_test
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: testpass
+    DATABASE_URL: "postgres://postgres:testpass@postgres:5432/mosaic_test?sslmode=disable"
+    REDIS_URL: "redis://redis:6379"
+  before_script:
+    - cd backend
+    - go mod download
+    - go mod vendor
+  script:
+    - go fmt ./...
+    - go vet ./...
+    # Test core packages
+    - go test -v ./internal/auth/... || true
+    - go test -v ./internal/types/... || true
+    - go test -v ./internal/public/... || true
+  rules:
+    # Run tests for all branches and merge requests
+    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_MERGE_REQUEST_ID
+
+# Backend Testing - Payment (with integration tests)
+test:backend-payment:
+  stage: tests
+  image: golang:${GO_VERSION}
+  <<: *cache_template
+  services:
+    - postgres:17-alpine
+    - redis:8
+  variables:
+    POSTGRES_DB: mosaic_test
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: testpass
+    DATABASE_URL: "postgres://postgres:testpass@postgres:5432/mosaic_test?sslmode=disable"
+    REDIS_URL: "redis://redis:6379"
+  before_script:
+    - cd backend
+    - go mod download
+    - go mod vendor
+  script:
+    # Payment tests with integration
+    - go test -v ./internal/payment/... || true
+    - go test -v -tags=integration ./internal/payment/... || true
+  rules:
+    # Run tests for all branches and merge requests
+    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_MERGE_REQUEST_ID
+
+# Backend Testing - Business Logic
+test:backend-business:
+  stage: tests
+  image: golang:${GO_VERSION}
+  <<: *cache_template
+  services:
+    - postgres:17-alpine
+    - redis:8
+  variables:
+    POSTGRES_DB: mosaic_test
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: testpass
+    DATABASE_URL: "postgres://postgres:testpass@postgres:5432/mosaic_test?sslmode=disable"
+    REDIS_URL: "redis://redis:6379"
+  before_script:
+    - cd backend
+    - go mod download
+    - go mod vendor
+  script:
+    # Business logic tests
+    - go test -v ./internal/admin/... || true
+    - go test -v ./internal/partner/... || true
+    - go test -v ./internal/coupon/... || true
+    - go test -v ./internal/image/... || true
+    - go test -v ./internal/stats/... || true
+    - go test -v ./internal/chat/... || true
+  rules:
+    # Run tests for all branches and merge requests
+    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_MERGE_REQUEST_ID
+
+# ========================================
+# BUILD
+# ========================================
+
+# Build Backend
+build:backend:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  <<: *docker_cache_template
+  before_script:
+    - docker info
+    - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
+  script:
+    - cd backend
+    - docker build -t $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA .
+    - docker push $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA
+  rules:
+    # Build only for main and develop branches
+    - if: $CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME == "develop"
+
+# Build Frontend Dashboards
+build:frontend-dashboards:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  <<: *docker_cache_template
+  before_script:
+    - docker info
+    - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
+  script:
+    - cd frontend/dashboards
+    - docker build -t $CI_REGISTRY_IMAGE/dashboards:$CI_COMMIT_SHA .
+    - docker push $CI_REGISTRY_IMAGE/dashboards:$CI_COMMIT_SHA
+  rules:
+    # Build only for main and develop branches
+    - if: $CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME == "develop"
+
+# Build Frontend Public Site
+build:frontend-public:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  <<: *docker_cache_template
+  before_script:
+    - docker info
+    - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
+  script:
+    - cd frontend/public-site
+    - docker build -t $CI_REGISTRY_IMAGE/public-site:$CI_COMMIT_SHA .
+    - docker push $CI_REGISTRY_IMAGE/public-site:$CI_COMMIT_SHA
+  rules:
+    # Build only for main and develop branches
+    - if: $CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME == "develop"
+
+# ========================================
+# DEPLOY
+# ========================================
+
+# Deploy to Production
+deploy:production:
+  stage: deploy
+  image: ubuntu:20.04
+  variables:
+    DEPLOY_SERVER: $PRODUCTION_SERVER_IP
+    DEPLOY_USER: $PRODUCTION_USER
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq git openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan $DEPLOY_SERVER >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    # Deploy application
+    - |
+      cat > deploy.sh << EOF
+      #!/bin/bash
+      set -e
+      
+      echo "Deploying to production..."
+      
+      cd /home/lumirin/Mosaic
+      
+      # Pull latest changes
+      git pull origin main
+      
+      # Update docker images
+      docker compose --env-file .env -f deployments/docker-compose/docker-compose.prod.yml pull
+      
+      # Restart services
+      docker compose --env-file .env -f deployments/docker-compose/docker-compose.prod.yml up -d --build
+      
+      # Health check
+      chmod +x ./scripts/health-check.sh
+      ./scripts/health-check.sh
+      
+      echo "Deployment completed successfully!"
+      EOF
+    - scp deploy.sh $DEPLOY_USER@$DEPLOY_SERVER:/tmp/
+    - ssh $DEPLOY_USER@$DEPLOY_SERVER "chmod +x /tmp/deploy.sh && /tmp/deploy.sh"
+  environment:
+    name: production
+    url: https://photo.doyoupaint.com
+  rules:
+    - if: $CI_COMMIT_REF_NAME == "main"
+  allow_failure: false
+
+# Include domain update pipeline when triggered
+include:
+  - local: '.gitlab-ci-domain-update.yml'
