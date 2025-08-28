@@ -1,0 +1,93 @@
+# Domain Update Pipeline
+# Triggered automatically when partner domains are created/updated/deleted
+# Usage: Include this file in main .gitlab-ci.yml with specific rules
+
+stages:
+  - domain-update
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+
+# Domain Update Pipeline - Only for domain changes
+deploy:domains-update:
+  stage: domain-update
+  image: ubuntu:20.04
+  variables:
+    DEPLOY_SERVER: $PRODUCTION_SERVER_IP
+    DEPLOY_USER: $PRODUCTION_USER
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq git curl openssh-client jq
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan $DEPLOY_SERVER >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    # Update nginx configuration and SSL certificates using Go API
+    - |
+      cat > update_domains.sh << EOF
+      #!/bin/bash
+      set -e
+      
+      echo "Updating partner domains configuration..."
+      
+      cd /home/lumirin/Mosaic
+      
+      # Wait for backend to be ready
+      echo "Waiting for backend to be ready..."
+      until curl -f http://localhost:8080/api/health 2>/dev/null; do
+        sleep 5
+      done
+      
+      # Get admin JWT token
+      echo "Getting admin JWT token..."
+      LOGIN_RESPONSE=\$(curl -s -X POST \\
+        -H "Content-Type: application/json" \\
+        -d "{\\"email\\":\\"\${DEFAULT_ADMIN_EMAIL:-admin@example.com}\\",\\"password\\":\\"\${DEFAULT_ADMIN_PASSWORD}\\"}" \\
+        "http://localhost:8080/api/auth/login")
+      
+      ADMIN_TOKEN=\$(echo "\$LOGIN_RESPONSE" | jq -r '.access_token')
+      
+      if [ "\$ADMIN_TOKEN" = "null" ] || [ -z "\$ADMIN_TOKEN" ]; then
+        echo "Failed to get admin token"
+        exit 1
+      fi
+      
+      # Call Go API to generate nginx config
+      echo "Generating nginx configuration via API..."
+      curl -s -X POST \\
+        -H "Content-Type: application/json" \\
+        -H "Authorization: Bearer \$ADMIN_TOKEN" \\
+        "http://localhost:8080/api/admin/nginx/deploy"
+      
+      # Update SSL certificates
+      echo "Updating SSL certificates..."
+      chmod +x ./scripts/update-ssl-certificates.sh
+      ./scripts/update-ssl-certificates.sh
+      
+      # Clean up unused SSL certificates
+      echo "Cleaning up unused SSL certificates..."
+      chmod +x ./scripts/get-active-domains-from-db.sh
+      chmod +x ./scripts/cleanup-unused-ssl-certificates.sh
+      ACTIVE_DOMAINS=\$(./scripts/get-active-domains-from-db.sh)
+      if [ -n "\$ACTIVE_DOMAINS" ]; then
+        ./scripts/cleanup-unused-ssl-certificates.sh "\$ACTIVE_DOMAINS"
+      fi
+      
+      # Update monitoring configuration
+      echo "Updating monitoring configuration..."
+      chmod +x ./scripts/update-monitoring-config.sh
+      ./scripts/update-monitoring-config.sh
+      
+      echo "Domains configuration updated successfully!"
+      EOF
+    - scp update_domains.sh $DEPLOY_USER@$DEPLOY_SERVER:/tmp/
+    - ssh $DEPLOY_USER@$DEPLOY_SERVER "chmod +x /tmp/update_domains.sh && /tmp/update_domains.sh"
+  rules:
+    # Only runs when triggered from Go code with specific variables
+    - if: $CI_PIPELINE_SOURCE == "trigger" && $DOMAIN_UPDATE == "true"
+      allow_failure: true
+  tags:
+    - domain-update

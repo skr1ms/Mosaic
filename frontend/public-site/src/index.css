@@ -1,0 +1,198 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+html, body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Плавные переходы */
+.fade-enter {
+  opacity: 0;
+}
+
+.fade-enter-active {
+  opacity: 1;
+  transition: opacity 300ms ease-in;
+}
+
+.fade-exit {
+  opacity: 1;
+}
+
+.fade-exit-active {
+  opacity: 0;
+  transition: opacity 300ms ease-in;
+}
+
+/* Кастомные стили для компонентов */
+.hero-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.glass-effect {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.hover-lift {
+  transition: transform 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+/* Анимации */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  animation: shimmer 1.5s infinite;
+}
+
+/* Скроллбар */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Mobile viewport fix */
+html {
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+}
+
+/* Мобильная адаптивность */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  /* Предотвращаем горизонтальный скролл */
+  body {
+    overflow-x: hidden;
+  }
+  
+  /* Улучшенные тач-таргеты для мобильных */
+  button, 
+  a, 
+  input[type="submit"], 
+  input[type="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Адаптивные формы */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="tel"],
+  select,
+  textarea {
+    font-size: 16px; /* Предотвращает зум на iOS */
+    -webkit-appearance: none;
+    border-radius: 8px;
+  }
+  
+  /* Адаптивная типографика */
+  h1 {
+    font-size: 2rem !important;
+    line-height: 1.2;
+  }
+  
+  h2 {
+    font-size: 1.75rem !important;
+  }
+  
+  h3 {
+    font-size: 1.5rem !important;
+  }
+  
+  /* Улучшения для карточек на мобильных */
+  .card {
+    margin-bottom: 1rem;
+    border-radius: 1rem;
+  }
+  
+  /* Отступы для мобильных */
+  .mobile-padding {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* Дополнительные адаптивные классы */
+.safe-area-padding {
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
+/* Fix для выпадающих элементов */
+.dropdown-mobile-fix {
+  position: fixed !important;
+  top: auto !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: calc(100vw - 2rem) !important;
+  max-width: 300px !important;
+}
+
+@media (max-width: 480px) {
+  .dropdown-mobile-fix {
+    width: calc(100vw - 1rem) !important;
+    max-width: none !important;
+  }
+}
+
+/* Предотвращение переполнения текста */
+.text-overflow-mobile {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
