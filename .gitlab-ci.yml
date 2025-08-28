@@ -235,8 +235,6 @@ deploy:production:
     - if: $CI_COMMIT_REF_NAME == "main"
   allow_failure: false
 
-# Include domain update pipeline (only when triggered)
+# Include domain update pipeline when triggered
 include:
   - local: '.gitlab-ci-domain-update.yml'
-    rules:
-      - if: $CI_PIPELINE_SOURCE == "trigger" && $DOMAIN_UPDATE == "true"

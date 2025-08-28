@@ -318,7 +318,7 @@ func (s *AdminService) CreatePartner(req partner.CreatePartnerRequest) (*partner
 
 		s.deps.GoroutineManager.StartGoroutineWithTimeout("trigger_domain_update_pipeline", 30*time.Second, func() error {
 			s.deps.Logger.Info().Msg("Starting GitLab pipeline trigger for new partner")
-			_, err := s.deps.GitLabClient.TriggerDomainUpdate("main")
+			_, err := s.deps.GitLabClient.TriggerDomainUpdateWithDetails("main", "add", "", newPartner.Domain)
 			if err != nil {
 				s.deps.Logger.Error().Err(err).Msg("Failed to trigger domain update pipeline for new partner")
 				return fmt.Errorf("failed to trigger domain update pipeline: %w", err)
@@ -424,7 +424,7 @@ func (s *AdminService) UpdatePartnerWithHistory(partnerID uuid.UUID, req partner
 		if s.deps.GitLabClient != nil && s.deps.GoroutineManager != nil {
 			s.deps.GoroutineManager.StartGoroutineWithTimeout("trigger_domain_update_pipeline", 30*time.Second, func() error {
 				s.deps.Logger.Info().Msg("Starting GitLab pipeline trigger from UpdatePartnerWithHistory")
-				_, err := s.deps.GitLabClient.TriggerDomainUpdate("main")
+				_, err := s.deps.GitLabClient.TriggerDomainUpdateWithDetails("main", "update", oldDomain, *req.Domain)
 				if err != nil {
 					s.deps.Logger.Error().Err(err).Msg("Failed to trigger domain update pipeline from UpdatePartnerWithHistory")
 					return fmt.Errorf("failed to trigger domain update pipeline: %w", err)
@@ -503,7 +503,7 @@ func (s *AdminService) DeletePartner(id uuid.UUID) error {
 	// Trigger CI/CD pipeline for domain cleanup if GitLab client is available
 	if s.deps.GitLabClient != nil && s.deps.GoroutineManager != nil && partner.Domain != "" {
 		s.deps.GoroutineManager.StartGoroutineWithTimeout("trigger_domain_cleanup_pipeline", 30*time.Second, func() error {
-			_, err := s.deps.GitLabClient.TriggerDomainUpdate("main")
+			_, err := s.deps.GitLabClient.TriggerDomainUpdateWithDetails("main", "delete", partner.Domain, "")
 			if err != nil {
 				return fmt.Errorf("failed to trigger domain cleanup pipeline: %w", err)
 			}

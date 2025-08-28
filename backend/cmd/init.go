@@ -127,12 +127,28 @@ func InitializeApp() *fiber.App {
 				return true
 			}
 
+			// Check if origin is a partner domain
+			// Extract domain from origin (remove protocol)
+			domain := strings.TrimPrefix(origin, "https://")
+			domain = strings.TrimPrefix(domain, "http://")
+			
+			// Query database for partner domain
+			var count int
+			err := database.QueryRow(context.Background(), 
+				"SELECT COUNT(*) FROM partners WHERE domain = $1 AND status = 'active'", 
+				domain).Scan(&count)
+			
+			if err == nil && count > 0 {
+				return true
+			}
+
 			// Development origins
 			return strings.Contains(origin, "localhost") || strings.Contains(origin, "127.0.0.1")
 		},
 		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
-		AllowHeaders:     "Authorization, Content-Type, Accept, Origin, X-Requested-With, X-CSRF-Token",
+		AllowHeaders:     "Authorization, Content-Type, Accept, Origin, X-Requested-With, X-CSRF-Token, X-Partner-Domain",
 		AllowCredentials: true,
+		ExposeHeaders:    "Content-Length, Content-Type",
 	}))
 
 	app.Use(recover.New())

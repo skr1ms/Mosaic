@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -45,27 +46,36 @@ func NewClient(baseURL, token, projectID string) *Client {
 	}
 }
 
-// TriggerPipeline triggers a new pipeline in GitLab
+// TriggerPipeline triggers a new pipeline in GitLab using trigger token
 func (c *Client) TriggerPipeline(req TriggerPipelineRequest) (*PipelineResponse, error) {
-	// Use the correct API endpoint for triggering pipelines
-	url := fmt.Sprintf("%s/api/v4/projects/%s/pipeline", c.baseURL, c.projectID)
+	// Use trigger token endpoint for domain updates
+	triggerToken := os.Getenv("GITLAB_TRIGGER_TOKEN")
+	if triggerToken == "" {
+		return nil, fmt.Errorf("GITLAB_TRIGGER_TOKEN not set")
+	}
 
-	jsonBody, err := json.Marshal(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	url := fmt.Sprintf("%s/api/v4/projects/%s/trigger/pipeline", c.baseURL, c.projectID)
+
+	// Build form data for trigger endpoint
+	formData := fmt.Sprintf("token=%s&ref=%s", triggerToken, req.Ref)
+	
+	// Add variables if provided
+	if req.Variables != nil {
+		for _, v := range req.Variables {
+			formData += fmt.Sprintf("&variables[%s]=%s", v.Key, v.Value)
+		}
 	}
 
 	// Log the request for debugging
-	fmt.Printf("GitLab API Request URL: %s\n", url)
-	fmt.Printf("GitLab API Request Body: %s\n", string(jsonBody))
+	fmt.Printf("GitLab Trigger API Request URL: %s\n", url)
+	fmt.Printf("GitLab Trigger API Request Data: %s\n", formData)
 
-	httpReq, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBody))
+	httpReq, err := http.NewRequest("POST", url, bytes.NewBufferString(formData))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", "Bearer "+c.token)
+	httpReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := c.client.Do(httpReq)
 	if err != nil {
@@ -73,13 +83,14 @@ func (c *Client) TriggerPipeline(req TriggerPipelineRequest) (*PipelineResponse,
 	}
 	defer resp.Body.Close()
 
+	body, _ := io.ReadAll(resp.Body)
+	
 	if resp.StatusCode != http.StatusCreated {
-		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("pipeline trigger failed with status: %d, body: %s", resp.StatusCode, string(body))
 	}
 
 	var pipelineResp PipelineResponse
-	if err := json.NewDecoder(resp.Body).Decode(&pipelineResp); err != nil {
+	if err := json.Unmarshal(body, &pipelineResp); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
@@ -88,10 +99,27 @@ func (c *Client) TriggerPipeline(req TriggerPipelineRequest) (*PipelineResponse,
 
 // TriggerDomainUpdate triggers a pipeline specifically for domain updates
 func (c *Client) TriggerDomainUpdate(ref string) (*PipelineResponse, error) {
+	return c.TriggerDomainUpdateWithDetails(ref, "refresh", "", "")
+}
+
+// TriggerDomainUpdateWithDetails triggers a pipeline with specific domain operation details
+func (c *Client) TriggerDomainUpdateWithDetails(ref, operation, oldDomain, newDomain string) (*PipelineResponse, error) {
+	variables := []PipelineVariable{
+		{Key: "DOMAIN_UPDATE", Value: "true"},
+		{Key: "DOMAIN_OPERATION", Value: operation},
+	}
+	
+	if oldDomain != "" {
+		variables = append(variables, PipelineVariable{Key: "OLD_DOMAIN", Value: oldDomain})
+	}
+	
+	if newDomain != "" {
+		variables = append(variables, PipelineVariable{Key: "NEW_DOMAIN", Value: newDomain})
+	}
+	
 	return c.TriggerPipeline(TriggerPipelineRequest{
-		Ref: ref,
-		// Don't set variables to avoid permission issues
-		Variables: nil,
+		Ref:       ref,
+		Variables: variables,
 	})
 }
 
