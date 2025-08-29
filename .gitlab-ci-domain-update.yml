@@ -1,9 +1,6 @@
 # Domain Update Pipeline
 # Triggered automatically when partner domains are created/updated/deleted
 
-stages:
-  - domain-update
-
 variables:
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
@@ -12,7 +9,7 @@ variables:
 
 # Domain Update Pipeline - Triggered by backend API
 deploy:domains-update:
-  stage: domain-update
+  stage: deploy
   image: ubuntu:22.04
   variables:
     DEPLOY_SERVER: $PRODUCTION_SERVER_IP
