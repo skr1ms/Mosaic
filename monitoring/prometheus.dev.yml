@@ -1,0 +1,50 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Мониторинг самого Prometheus
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['prometheus:9090']
+
+  # Мониторинг Backend приложения
+  - job_name: 'backend'
+    static_configs:
+      - targets: ['backend:8080']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # Мониторинг Backend метрик (development)
+  - job_name: 'backend-metrics'
+    static_configs:
+      - targets: ['backend:8091']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # Мониторинг Grafana
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # Мониторинг Loki
+  - job_name: 'loki'
+    static_configs:
+      - targets: ['loki:3100']
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # Мониторинг Promtail
+  - job_name: 'promtail'
+    static_configs:
+      - targets: ['promtail:9080']
+    scrape_interval: 30s
+    scrape_timeout: 10s

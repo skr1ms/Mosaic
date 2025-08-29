@@ -1,0 +1,75 @@
+# Prometheus configuration for monitoring partner domains
+# This file should be included in the main prometheus.yml
+
+scrape_configs:
+  # Monitor partner domains health
+  - job_name: 'partner-domains-health'
+    metrics_path: /health
+    scheme: https
+    static_configs:
+      - targets:
+          - 'photo.doyoupaint.com'
+          - 'adm.doyoupaint.com'
+          # Partner domains will be added dynamically
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    
+  # Monitor partner domains API health
+  - job_name: 'partner-domains-api'
+    metrics_path: /api/health
+    scheme: https
+    static_configs:
+      - targets:
+          - 'photo.doyoupaint.com'
+          - 'adm.doyoupaint.com'
+          # Partner domains will be added dynamically
+    scrape_interval: 60s
+    scrape_timeout: 15s
+
+# Alert rules for partner domains
+rule_files:
+  - "partner-domains-alerts.yml"
+
+# Example alerting rules (create partner-domains-alerts.yml)
+groups:
+  - name: partner_domains
+    rules:
+      # Domain unavailable alert
+      - alert: PartnerDomainDown
+        expr: up{job="partner-domains-health"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Partner domain {{ $labels.instance }} is down"
+          description: "Domain {{ $labels.instance }} has been down for more than 2 minutes"
+      
+      # High response time alert
+      - alert: PartnerDomainSlowResponse
+        expr: probe_duration_seconds{job="partner-domains-health"} > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Partner domain {{ $labels.instance }} slow response"
+          description: "Domain {{ $labels.instance }} response time is {{ $value }}s"
+      
+      # SSL certificate expiring soon
+      - alert: PartnerDomainSSLExpiring
+        expr: probe_ssl_earliest_cert_expiry{job="partner-domains-health"} - time() < 86400 * 30
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "SSL certificate expiring for {{ $labels.instance }}"
+          description: "SSL certificate for {{ $labels.instance }} expires in less than 30 days"
+      
+      # API health check failed
+      - alert: PartnerDomainAPIDown
+        expr: up{job="partner-domains-api"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Partner domain API {{ $labels.instance }} is down"
+          description: "API for domain {{ $labels.instance }} has been down for more than 2 minutes"
