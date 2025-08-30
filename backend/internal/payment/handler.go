@@ -3,6 +3,7 @@ package payment
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -38,6 +39,7 @@ func NewPaymentHandler(router fiber.Router, deps *PaymentHandlerDeps) {
 	paymentGroup.Get("/options", handler.GetAvailableOptions)               // GET /api/payment/options
 	paymentGroup.Get("/return", handler.PaymentReturn)                      // GET /api/payment/return
 	paymentGroup.Post("/notification", handler.PaymentNotification)         // POST /api/payment/notification
+	paymentGroup.Get("/notification", handler.PaymentNotificationGet)       // GET /api/payment/notification
 	paymentGroup.Get("/test-integration", handler.TestIntegration)          // GET /api/payment/test-integration
 }
 
@@ -269,6 +271,101 @@ func (h *PaymentHandler) PaymentNotification(c *fiber.Ctx) error {
 		Str("order_number", notification.OrderNumber).
 		Int("order_status", orderStatus).
 		Msg("Payment notification processed successfully")
+
+	return c.JSON(fiber.Map{
+		"success": true,
+	})
+}
+
+// @Summary Process payment notification via GET
+// @Description Handle payment webhook notification from payment gateway via GET request with query parameters
+// @Tags payment
+// @Produce json
+// @Param date query string false "Payment date"
+// @Param amount query string false "Payment amount"
+// @Param orderNumber query string true "Order number"
+// @Param status query string false "Payment status"
+// @Param checksum query string false "Checksum for verification"
+// @Success 200 {object} map[string]any "Notification processed successfully"
+// @Failure 400 {object} map[string]any "Invalid notification data"
+// @Failure 500 {object} map[string]any "Failed to process notification"
+// @Router /payment/notification [get]
+func (h *PaymentHandler) PaymentNotificationGet(c *fiber.Ctx) error {
+	// Parse query parameters into notification struct
+	var notification PaymentNotificationRequest
+
+	// Parse basic fields
+	notification.OrderNumber = c.Query("orderNumber")
+	notification.Currency = c.Query("currency")
+	notification.OrderDescription = c.Query("orderDescription")
+	notification.IP = c.Query("ip")
+	notification.Checksum = c.Query("checksum")
+
+	// Parse amount (convert from string to int64)
+	if amountStr := c.Query("amount"); amountStr != "" {
+		if amount, err := strconv.ParseInt(amountStr, 10, 64); err == nil {
+			notification.Amount = amount
+		}
+	}
+
+	// Parse date (convert from string to int64)
+	if dateStr := c.Query("date"); dateStr != "" {
+		if date, err := strconv.ParseInt(dateStr, 10, 64); err == nil {
+			notification.Date = date
+		}
+	}
+
+	// Parse optional orderStatus
+	if statusStr := c.Query("status"); statusStr != "" {
+		if status, err := strconv.Atoi(statusStr); err == nil {
+			notification.OrderStatus = &status
+		}
+	}
+
+	// Log all received parameters for debugging
+	h.deps.Logger.FromContext(c).Info().
+		Str("handler", "PaymentNotificationGet").
+		Str("order_number", notification.OrderNumber).
+		Int64("amount", notification.Amount).
+		Str("currency", notification.Currency).
+		Str("checksum", notification.Checksum).
+		Interface("all_query_params", c.Queries()).
+		Msg("Received payment notification via GET")
+
+	if notification.OrderNumber == "" {
+		h.deps.Logger.FromContext(c).Warn().
+			Str("handler", "PaymentNotificationGet").
+			Msg("Order number is required")
+
+		errorResponse := fiber.Map{
+			"error":      "Order number is required",
+			"request_id": c.Get("X-Request-ID"),
+		}
+		return c.Status(fiber.StatusBadRequest).JSON(errorResponse)
+	}
+
+	err := h.deps.PaymentService.ProcessWebhookNotification(c.Context(), &notification)
+	if err != nil {
+		h.deps.Logger.FromContext(c).Error().
+			Err(err).
+			Str("handler", "PaymentNotificationGet").
+			Str("order_number", notification.OrderNumber).
+			Msg("Failed to process webhook notification")
+
+		errorResponse := fiber.Map{
+			"error":      "Failed to process webhook notification",
+			"request_id": c.Get("X-Request-ID"),
+		}
+		if os.Getenv("ENVIRONMENT") == "development" || os.Getenv("ENVIRONMENT") == "dev" {
+			errorResponse["details"] = err.Error()
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(errorResponse)
+	}
+
+	h.deps.Logger.FromContext(c).Info().
+		Str("handler", "PaymentNotificationGet").
+		Str("order_number", notification.OrderNumber).
+		Msg("Payment notification via GET processed successfully")
 
 	return c.JSON(fiber.Map{
 		"success": true,
