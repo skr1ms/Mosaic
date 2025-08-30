@@ -20,19 +20,19 @@ const MosaicPreviewPage = () => {
   const [generatedPreview, setGeneratedPreview] = useState(null)
 
   const sizes = [
-    { key: '21x30', title: '21×30 см', desc: 'Компактный размер для начинающих' },
-    { key: '30x40', title: '30×40 см', desc: 'Популярный размер' },
-    { key: '40x40', title: '40×40 см', desc: 'Квадратный формат' },
-    { key: '40x50', title: '40×50 см', desc: 'Прямоугольный формат' },
-    { key: '40x60', title: '40×60 см', desc: 'Широкий формат' },
-    { key: '50x70', title: '50×70 см', desc: 'Максимальный размер' }
+    { key: '21x30', title: t('sections.diamond_art.sizes_and_styles_section.sizes.21x30.title'), desc: t('sections.diamond_art.sizes_and_styles_section.sizes.21x30.description') },
+    { key: '30x40', title: t('sections.diamond_art.sizes_and_styles_section.sizes.30x40.title'), desc: t('sections.diamond_art.sizes_and_styles_section.sizes.30x40.description') },
+    { key: '40x40', title: t('sections.diamond_art.sizes_and_styles_section.sizes.40x40.title'), desc: t('sections.diamond_art.sizes_and_styles_section.sizes.40x40.description') },
+    { key: '40x50', title: t('sections.diamond_art.sizes_and_styles_section.sizes.40x50.title'), desc: t('sections.diamond_art.sizes_and_styles_section.sizes.40x50.description') },
+    { key: '40x60', title: t('sections.diamond_art.sizes_and_styles_section.sizes.40x60.title'), desc: t('sections.diamond_art.sizes_and_styles_section.sizes.40x60.description') },
+    { key: '50x70', title: t('sections.diamond_art.sizes_and_styles_section.sizes.50x70.title'), desc: t('sections.diamond_art.sizes_and_styles_section.sizes.50x70.description') }
   ]
 
   const styles = [
-    { key: 'grayscale', title: 'Черно-белый', desc: 'Классический, элегантный' },
-    { key: 'skin_tones', title: 'Телесные тона', desc: 'Реалистичные оттенки кожи' },
-    { key: 'pop_art', title: 'Поп-арт', desc: 'Яркие, контрастные цвета' },
-    { key: 'max_colors', title: 'Максимум цветов', desc: 'Богатая цветовая палитра' }
+    { key: 'grayscale', title: t('sections.diamond_art.sizes_and_styles_section.styles.grayscale.title'), desc: t('sections.diamond_art.sizes_and_styles_section.styles.grayscale.description') },
+    { key: 'skin_tones', title: t('sections.diamond_art.sizes_and_styles_section.styles.skin_tones.title'), desc: t('sections.diamond_art.sizes_and_styles_section.styles.skin_tones.description') },
+    { key: 'pop_art', title: t('sections.diamond_art.sizes_and_styles_section.styles.pop_art.title'), desc: t('sections.diamond_art.sizes_and_styles_section.styles.pop_art.description') },
+    { key: 'max_colors', title: t('sections.diamond_art.sizes_and_styles_section.styles.max_colors.title'), desc: t('sections.diamond_art.sizes_and_styles_section.styles.max_colors.description') }
   ]
 
   const generatePreviewMutation = useMutation({
@@ -66,27 +66,27 @@ const MosaicPreviewPage = () => {
     const file = event.target.files[0]
     if (!file) return
 
-    // Проверяем тип файла
+        // Check file type
     if (!file.type.startsWith('image/')) {
       addNotification({
         type: 'error',
-        message: 'Пожалуйста, выберите файл изображения'
+        message: 'Please select an image file'
       })
       return
     }
 
-    // Проверяем размер файла (максимум 15MB)
+    // Check file size (max 15MB)
     if (file.size > 15 * 1024 * 1024) {
       addNotification({
         type: 'error',
-        message: 'Размер файла не должен превышать 15MB'
+        message: 'File size should not exceed 15MB'
       })
       return
     }
 
     setSelectedFile(file)
-    
-    // Создаем превью для отображения
+
+    // Create preview for display
     const reader = new FileReader()
     reader.onload = (e) => {
       setPreviewUrl(e.target.result)
@@ -137,14 +137,14 @@ const MosaicPreviewPage = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid lg:grid-cols-2 gap-8">
           
-          {/* Левая колонка - загрузка и настройки */}
+          {/* Left column - upload and settings */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
             className="space-y-6"
           >
-            {/* Загрузка изображения */}
+            {/* Image upload */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
                 <Upload className="w-6 h-6 mr-2 text-brand-primary" />
@@ -164,13 +164,13 @@ const MosaicPreviewPage = () => {
                     <div className="space-y-4">
                       <img
                         src={previewUrl}
-                        alt="Превью загруженного изображения"
+                        alt="Preview of uploaded image"
                         className="max-h-48 mx-auto rounded-lg shadow-md"
                       />
                       <p className="text-sm text-gray-600">
                         {selectedFile?.name} ({Math.round(selectedFile?.size / 1024)}KB)
                       </p>
-                      <p className="text-xs text-brand-primary">Нажмите, чтобы выбрать другое изображение</p>
+                      <p className="text-xs text-brand-primary">Click to select another image</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -187,7 +187,7 @@ const MosaicPreviewPage = () => {
               </div>
             </div>
 
-            {/* Выбор размера */}
+            {/* Size selection */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">{t('mosaic_preview.size_section.title')}</h3>
               <div className="grid grid-cols-2 gap-3">
@@ -208,7 +208,7 @@ const MosaicPreviewPage = () => {
               </div>
             </div>
 
-            {/* Выбор стиля */}
+            {/* Style selection */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">{t('mosaic_preview.style_section.title')}</h3>
               <div className="space-y-3">
@@ -248,7 +248,7 @@ const MosaicPreviewPage = () => {
               </div>
             </div>
 
-            {/* Кнопка генерации */}
+            {/* Generate button */}
             <button
               onClick={handleGeneratePreview}
               disabled={!selectedFile || generatePreviewMutation.isPending}
@@ -268,7 +268,7 @@ const MosaicPreviewPage = () => {
             </button>
           </motion.div>
 
-          {/* Правая колонка - результат */}
+          {/* Right column - result */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -284,7 +284,7 @@ const MosaicPreviewPage = () => {
               <div className="space-y-4">
                 <img
                   src={generatedPreview}
-                  alt="Превью мозаики"
+                  alt="Mosaic preview"
                   className="w-full rounded-lg shadow-lg"
                   onError={(e) => {
                     console.error('Failed to load preview image:', generatedPreview)
@@ -308,7 +308,7 @@ const MosaicPreviewPage = () => {
                   </button>
                   <button
                     onClick={() => {
-                      // Скачивание через специальный endpoint с правильными заголовками
+                      // Download through special endpoint with proper headers
                       const previewId = generatedPreview.split('/').pop().replace('.png', '')
                       const downloadUrl = `/api/preview/${previewId}/download`
                       window.open(downloadUrl, '_blank')
@@ -325,9 +325,9 @@ const MosaicPreviewPage = () => {
                 <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Eye className="w-12 h-12 text-gray-400" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Превью будет здесь</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">{t('mosaic_preview.preview_section.preview_will_be_here')}</h3>
                 <p className="text-gray-600">
-                  Загрузите изображение и нажмите "Сгенерировать превью"
+                  {t('mosaic_preview.preview_section.description')}
                 </p>
               </div>
             )}
