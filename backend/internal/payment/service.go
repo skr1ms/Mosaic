@@ -267,18 +267,20 @@ func (s *PaymentService) PurchaseCoupon(ctx context.Context, req *PurchaseCoupon
 		orderNumber = s.GenerateOrderNumber()
 	}
 
+	style := req.Style
+
 	order := &Order{
 		OrderNumber: orderNumber,
 		PartnerID:   partnerID,
 		Size:        req.Size,
-		Style:       req.Style,
+		Style:       style,
 		UserEmail:   req.Email,
 		Amount:      int64(FixedPriceRub * 100),
 		Currency:    "RUB",
 		Status:      OrderStatusCreated,
 		ReturnURL:   req.ReturnURL,
 		FailURL:     req.FailURL,
-		Description: fmt.Sprintf("Purchase of mosaic coupon %s style %s", req.Size, req.Style),
+		Description: fmt.Sprintf("Purchase of mosaic coupon %s style %s", req.Size, style),
 	}
 
 	err := s.deps.PaymentRepository.CreateOrder(ctx, order)

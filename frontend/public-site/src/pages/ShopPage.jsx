@@ -163,7 +163,7 @@ const ShopPage = () => {
 
   const sizeKeys = ['21x30', '30x40', '40x40', '40x50', '40x60', '50x70']
   // Ключи стилей должны соответствовать бэкенду: grayscale, skin_tone, pop_art, max_colors
-  const styleKeys = ['grayscale', 'skin_tone', 'pop_art', 'full_color']
+  const styleKeys = ['grayscale', 'skin_tone', 'pop_art', 'max_colors']
 
   // Rectangle sizes for visual representation (proportional to actual sizes)
   const rectangleSizes = {
@@ -199,9 +199,12 @@ const ShopPage = () => {
       alert('Пожалуйста, введите email')
       return
     }
+    
+    let finalStyle = selectedStyle
+    
     const payload = {
       size: selectedSize,
-      style: selectedStyle,
+      style: finalStyle,
       email: email,
       return_url: window.location.origin + '/shop',
       fail_url: window.location.origin + '/shop',
@@ -294,7 +297,7 @@ const ShopPage = () => {
                 'grayscale': 'linear-gradient(135deg, #000000, #ffffff)',
                 'skin_tone': 'linear-gradient(135deg, #8B4513, #DEB887)',
                 'pop_art': 'linear-gradient(135deg, #FF6B35, #00FF41, #0099FF, #FF0080)',
-                'full_color': 'linear-gradient(135deg, #FF0080, #00FF41, #0099FF, #FFD700)'
+                'max_colors': 'linear-gradient(135deg, #FF0080, #00FF41, #0099FF, #FFD700)'
               }
 
               return (

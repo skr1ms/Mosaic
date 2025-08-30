@@ -331,7 +331,7 @@
         "title": "Поп-арт",
         "description": "Яркие контрастные цвета"
       },
-      "full_color": {
+      "max_colors": {
         "title": "Максимум цветов",
         "description": "Полноцветная палитра"
       }

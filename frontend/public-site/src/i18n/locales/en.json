@@ -330,9 +330,9 @@
         "title": "Pop Art",
         "description": "Bright contrast colors"
       },
-      "full_color": {
-        "title": "Full Color",
-        "description": "Full color palette"
+      "max_colors": {
+        "title": "Max Color",
+        "description": "Max color palette"
       }
     },
     "steps": {
