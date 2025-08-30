@@ -286,14 +286,9 @@ const MosaicPreviewPage = () => {
                   </button>
                   <button
                     onClick={() => {
-                      // Простой способ скачивания через ссылку
-                      const link = document.createElement('a')
-                      link.href = generatedPreview
-                      link.download = 'mosaic-preview.png'
-                      link.target = '_blank'
-                      document.body.appendChild(link)
-                      link.click()
-                      document.body.removeChild(link)
+                      // Скачивание с параметром download=1 для правильных заголовков
+                      const downloadUrl = `${generatedPreview}?download=1`
+                      window.open(downloadUrl, '_blank')
                     }}
                     className="flex-1 bg-brand-secondary text-white py-3 px-4 rounded-lg hover:bg-brand-secondary/90 font-semibold transition-colors flex items-center justify-center space-x-2"
                   >
