@@ -131,21 +131,6 @@ func (s *CouponService) ValidateCoupon(code string) (*CouponValidationResponse, 
 		}, nil
 	}
 
-	// Извлекаем первые 4 цифры из кода купона
-	couponPrefix := ""
-	if len(code) >= 4 {
-		couponPrefix = code[:4]
-	}
-
-	// Извлекаем первые 4 цифры из кода партнера
-	partnerPrefix := ""
-	if len(partner.PartnerCode) >= 4 {
-		partnerPrefix = partner.PartnerCode[:4]
-	}
-
-	// Проверяем соответствие доменов
-	isCorrectDomain := couponPrefix == partnerPrefix
-
 	size := string(coupon.Size)
 	style := string(coupon.Style)
 
@@ -155,18 +140,12 @@ func (s *CouponService) ValidateCoupon(code string) (*CouponValidationResponse, 
 		Size:    &size,
 		Style:   &style,
 
-		// Информация о партнере
+		// Информация о партнере для валидации доменов
 		PartnerID:        &partner.ID,
 		PartnerCode:      &partner.PartnerCode,
 		PartnerDomain:    &partner.Domain,
 		PartnerBrandName: &partner.BrandName,
-		IsCorrectDomain:  isCorrectDomain,
-	}
-
-	// Если домен не соответствует, добавляем предупреждение
-	if !isCorrectDomain {
-		response.Message = "Coupon is valid, but you're on the wrong partner site"
-		response.CorrectDomain = &partner.Domain
+		IsCorrectDomain:  true, // Всегда true, валидация по домену на фронтенде
 	}
 
 	return response, nil

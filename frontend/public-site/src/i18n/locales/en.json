@@ -36,6 +36,16 @@
       "title": "Learn More",
       "description": "Learn all about diamond art, watch video tutorials and choose your size",
       "button": "Learn More"
+    },
+    "paint_by_numbers": {
+      "title": "Paint by Numbers",
+      "description": "Coming soon: ability to create paint by numbers",
+      "button": "Coming Soon"
+    },
+    "what_is_this": {
+      "title": "What is this",
+      "description": "Learn more about diamond mosaic and how it works",
+      "button": "Learn More"
     }
   },
   "sections": {
@@ -72,7 +82,7 @@
         }
       },
       "purchase_section": {
-        "title": "I want to buy",
+        "title": "Buy Kit",
         "description": "Choose a trusted platform to buy a diamond mosaic kit. After purchase, you will receive a code to create a unique schema.",
         "marketplaces": {
           "ozon": {
@@ -315,7 +325,8 @@
     "email_error": "Email sending error",
     "email_error_desc": "Failed to send schema by email",
     "coupon_validated": "Coupon validated",
-    "coupon_ready_for_use": "Ready to use"
+    "coupon_ready_for_use": "Ready to use",
+    "coupon_wrong_partner": "This coupon belongs to another partner. Please go to the correct website for activation."
   },
   "payment": {
     "title": "Coupon Payment",
@@ -521,5 +532,65 @@
     "attachments_label": "Attachments",
     "message_read": "Read",
     "message_sent": "Sent"
+  },
+  "paint_by_numbers": {
+    "title": "Paint by Numbers",
+    "subtitle": "Create unique paint by numbers with our technology",
+    "back_to_home": "Back to Home",
+    "features": {
+      "creative": {
+        "title": "Creative Process",
+        "description": "Unlock your creative potential by creating paint by numbers"
+      },
+      "quality": {
+        "title": "High Quality",
+        "description": "Use quality materials and accurate patterns for perfect results"
+      },
+      "coming_soon": {
+        "title": "Coming Soon",
+        "description": "The paint by numbers creation feature will be available soon"
+      }
+    },
+    "coming_soon": {
+      "title": "Coming Soon!",
+      "description": "We are working to make paint by numbers creation accessible to everyone",
+      "button": "Back to Home"
+    }
+  },
+  "what_is_this": {
+    "title": "What is Diamond Mosaic?",
+    "subtitle": "Learn more about the amazing technology of creating works of art",
+    "try_diamond_art": "Try Diamond Mosaic",
+    "back_to_home": "Back to Home",
+    "diamond_art": {
+      "title": "What is Diamond Mosaic?",
+      "description": "Diamond mosaic is a modern technique for creating paintings where special rhinestones are used instead of paints, which are glued to an adhesive base according to a pattern.",
+      "step1": "Choose a photo or image",
+      "step2": "Our system automatically creates a pattern",
+      "step3": "Glue rhinestones according to the pattern and get a masterpiece",
+      "highlight_title": "Simple and Beautiful",
+      "highlight_description": "Create complex paintings without artistic skills"
+    },
+    "benefits": {
+      "title": "Benefits of Diamond Mosaic",
+      "subtitle": "Why you should try this technique",
+      "relaxation": {
+        "title": "Relaxation",
+        "description": "The meditative creation process helps you relax and relieve stress"
+      },
+      "creativity": {
+        "title": "Creativity",
+        "description": "Unlock your creative potential and create a unique work of art"
+      },
+      "result": {
+        "title": "Result",
+        "description": "The finished painting will become a beautiful decoration for your interior or a gift"
+      }
+    },
+    "cta": {
+      "title": "Ready to Try?",
+      "description": "Create your first diamond mosaic right now",
+      "button": "Create Mosaic"
+    }
   }
 }

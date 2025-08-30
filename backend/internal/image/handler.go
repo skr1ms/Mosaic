@@ -105,12 +105,8 @@ func (handler *ImageHandler) UploadImage(c *fiber.Ctx) error {
 		})
 	}
 
-	if coupon.Status != "activated" {
-		handler.deps.Logger.FromContext(c).Error().Msg("Coupon not activated")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Coupon not activated",
-		})
-	}
+	// Упрощенная валидация - только проверка существования купона
+	// Убрана проверка статуса
 
 	file, err := c.FormFile("image")
 	if err != nil {
@@ -120,7 +116,13 @@ func (handler *ImageHandler) UploadImage(c *fiber.Ctx) error {
 		})
 	}
 
-	imageRecord, err := handler.deps.ImageService.UploadImage(ctx, coupon.ID, file, *coupon.UserEmail)
+	// Use empty email if not set (removed email requirement)
+	userEmail := ""
+	if coupon.UserEmail != nil && *coupon.UserEmail != "" {
+		userEmail = *coupon.UserEmail
+	}
+
+	imageRecord, err := handler.deps.ImageService.UploadImage(ctx, coupon.ID, file, userEmail)
 	if err != nil {
 		handler.deps.Logger.FromContext(c).Error().Err(err).Msg("Error uploading image")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

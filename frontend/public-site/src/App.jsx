@@ -7,6 +7,8 @@ import EditorPage from './pages/EditorPage'
 import DiamondArtPage from './pages/DiamondArtPage'
 import ShopPage from './pages/ShopPage'
 import NotFoundPage from './pages/NotFoundPage'
+import PaintByNumbersPage from './pages/PaintByNumbersPage'
+import WhatIsThisPage from './pages/WhatIsThisPage'
 import { usePartnerStore } from './store/partnerStore'
 import { useUIStore } from './store/partnerStore'
 import { useBrandingQuery } from './hooks/useBrandingQuery'
@@ -44,7 +46,9 @@ function App() {
       wildberriesLink: brandingData.marketplace_links?.wildberries,
       address: brandingData.contact_address,
       logoUrl: brandingData.logo_url,
-      brandColors: brandingData.brand_colors || []
+      brandColors: brandingData.brand_colors || [],
+      partner_code: brandingData.partner_code,
+      is_default: brandingData.is_default
     }
 
     console.log('App - Mapped partner data:', mappedPartner)
@@ -71,6 +75,8 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/diamond-art" element={<DiamondArtPage />} />
+          <Route path="/paint-by-numbers" element={<PaintByNumbersPage />} />
+          <Route path="/what-is-this" element={<WhatIsThisPage />} />
           <Route path="/mosaic-preview" element={<MosaicPreviewPage />} />
           <Route path="/editor" element={<EditorPage />} />
           <Route path="/shop" element={<ShopPage />} />

@@ -112,7 +112,7 @@ func (s *PublicService) GetCouponByCode(code string) (map[string]any, error) {
 			"size":   coupon.Size,
 			"style":  coupon.Style,
 			"status": coupon.Status,
-			"valid":  coupon.Status == "new",
+			"valid":  true, // Упрощенная валидация - только проверка существования
 		}, nil
 	}
 
@@ -122,7 +122,7 @@ func (s *PublicService) GetCouponByCode(code string) (map[string]any, error) {
 		"size":           coupon.Size,
 		"style":          coupon.Style,
 		"status":         coupon.Status,
-		"valid":          coupon.Status == "new",
+		"valid":          true, // Упрощенная валидация - только проверка существования
 		"partner_id":     partner.ID,
 		"partner_code":   partner.PartnerCode,
 		"partner_domain": partner.Domain,
