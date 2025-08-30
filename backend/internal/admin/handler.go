@@ -2310,6 +2310,10 @@ http {
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
             proxy_cache_bypass $http_upgrade;
+            
+            # Force correct content type for images
+            add_header Content-Type "image/png" always;
+            add_header Cache-Control "public, max-age=31536000" always;
         }
 
         location / {
@@ -2422,6 +2426,10 @@ http {
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
             proxy_cache_bypass $http_upgrade;
+            
+            # Force correct content type for images
+            add_header Content-Type "image/png" always;
+            add_header Cache-Control "public, max-age=31536000" always;
         }
     }
 }`
