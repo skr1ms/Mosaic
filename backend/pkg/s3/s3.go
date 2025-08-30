@@ -496,24 +496,27 @@ func (s *S3Client) UploadToPreviewBucket(ctx context.Context, objectKey string, 
 	return nil
 }
 
-// GetPreviewURL returns public URL for preview file
+// GetPreviewURL returns public URL for preview file (copied logic from GetFileURL)
 func (s *S3Client) GetPreviewURL(objectKey string) string {
 	bucket := s.previewBucket
 	if bucket == "" {
 		return ""
 	}
 
-	// Use direct public URL through Nginx proxy
-	if s.publicURL != "" {
-		// Clean up the public URL - remove /minio/browser path if present
-		cleanPublicURL := strings.TrimSuffix(s.publicURL, "/minio/browser")
-		cleanPublicURL = strings.TrimSuffix(cleanPublicURL, "/minio")
-		cleanPublicURL = strings.TrimSuffix(cleanPublicURL, "/")
+	// Debug logging
+	fmt.Printf("DEBUG: publicURL = '%s'\n", s.publicURL)
+	fmt.Printf("DEBUG: preview bucket = '%s'\n", bucket)
+	fmt.Printf("DEBUG: objectKey = '%s'\n", objectKey)
 
-		return fmt.Sprintf("%s/%s/%s", cleanPublicURL, bucket, objectKey)
+	// If public URL is configured, return direct URL (same logic as GetFileURL)
+	if s.publicURL != "" {
+		// Form direct URL to preview file
+		directURL := fmt.Sprintf("%s/%s/%s", s.publicURL, bucket, objectKey)
+		fmt.Printf("DEBUG: Generated direct URL = '%s'\n", directURL)
+		return directURL
 	}
 
-	// Fallback to presigned URLs if public URL not configured
+	// Otherwise, generate presigned URL for MinIO (same logic as GetFileURL)
 	ctx := context.Background()
 	url, err := s.client.PresignedGetObject(ctx, bucket, objectKey, 7*24*time.Hour, nil)
 	if err != nil {
@@ -525,5 +528,7 @@ func (s *S3Client) GetPreviewURL(objectKey string) string {
 		return ""
 	}
 
-	return url.String()
+	presignedURL := url.String()
+	fmt.Printf("DEBUG: Generated presigned URL = '%s'\n", presignedURL)
+	return presignedURL
 }
