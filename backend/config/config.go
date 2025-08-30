@@ -214,7 +214,7 @@ func NewConfig() (*Config, error) {
 			DefaultLogin:           "doyoupaint",
 			DefaultEmail:           "info@mosaic.ru",
 			DefaultPassword:        os.Getenv("DEFAULT_PASSWORD"),
-			DefaultAddress:         "Москва, ул. Примерная, 123",
+			DefaultAddress:         "Псковская обл., г.Великие Луки, ул.Запрудная д.4в3",
 			DefaultPhone:           "74951234567",
 			DefaultContactTelegram: "@mosaic_support",
 			DefaultWhatsapp:        "79991234567",

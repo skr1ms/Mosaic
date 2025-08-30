@@ -72,9 +72,11 @@ services:
       /usr/bin/mc mb myminio/${MINIO_IMAGE_BUCKET} --ignore-existing;
       /usr/bin/mc mb myminio/${MINIO_LOGOS_BUCKET} --ignore-existing;
       /usr/bin/mc mb myminio/${MINIO_CHAT_BUCKET} --ignore-existing;
+      /usr/bin/mc mb myminio/${MINIO_PREVIEW_BUCKET} --ignore-existing;
       /usr/bin/mc anonymous set public myminio/${MINIO_IMAGE_BUCKET};
       /usr/bin/mc anonymous set public myminio/${MINIO_LOGOS_BUCKET};
       /usr/bin/mc anonymous set public myminio/${MINIO_CHAT_BUCKET};
+      /usr/bin/mc anonymous set public myminio/${MINIO_PREVIEW_BUCKET};
       echo 'Buckets initialized successfully';
       exit 0;
       "
@@ -84,6 +86,7 @@ services:
       - MINIO_IMAGE_BUCKET=${MINIO_IMAGE_BUCKET}
       - MINIO_LOGOS_BUCKET=${MINIO_LOGOS_BUCKET}
       - MINIO_CHAT_BUCKET=${MINIO_CHAT_BUCKET}
+      - MINIO_PREVIEW_BUCKET=${MINIO_PREVIEW_BUCKET}
     restart: "no"
 
   backend:
@@ -120,6 +123,7 @@ services:
       MINIO_IMAGE_BUCKET: ${MINIO_IMAGE_BUCKET}
       MINIO_LOGOS_BUCKET: ${MINIO_LOGOS_BUCKET}
       MINIO_CHAT_BUCKET: ${MINIO_CHAT_BUCKET}
+      MINIO_PREVIEW_BUCKET: ${MINIO_PREVIEW_BUCKET}
       MINIO_USE_SSL: "false"
       MINIO_REGION: "us-east-1"
       STABLE_DIFFUSION_URL: ${STABLE_DIFFUSION_URL}
