@@ -41,6 +41,7 @@ const CreatePartner = lazy(() => import('./Partners/CreatePartner'));
 const EditPartner = lazy(() => import('./Partners/EditPartner'));
 const PartnerDetails = lazy(() => import('./Partners/PartnerDetails'));
 const BlockedPartners = lazy(() => import('./Partners/BlockedPartners'));
+const PartnerArticlesGrid = lazy(() => import('./Partners/PartnerArticlesGrid'));
 
 const CreateCoupons = lazy(() => import('./Coupons/CreateCoupons'));
 const ManageCoupons = lazy(() => import('./Coupons/ManageCoupons'));
@@ -89,6 +90,7 @@ const AdminPages = () => {
                                 <Route path="/partners/edit/:id" element={<EditPartner />} />
                                 <Route path="/partners/view/:id" element={<PartnerDetails />} />
                                 <Route path="/partners/blocked" element={<BlockedPartners />} />
+                                <Route path="/partners/:partnerId/articles" element={<PartnerArticlesGrid />} />
 
                                 <Route path="/coupons/create" element={<CreateCoupons />} />
                                 <Route path="/coupons/manage" element={<ManageCoupons />} />

@@ -1,407 +1,347 @@
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Ruler, Palette, ShoppingCart, ExternalLink, Download, Eye } from 'lucide-react'
-import { usePartnerStore } from '../store/partnerStore'
-import MosaicAPI from '../api/client'
+import { Palette, Ruler, ShoppingCart, ArrowRight, Download, Eye, Loader2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { useMutation } from '@tanstack/react-query'
+import { MosaicAPI } from '../api/client'
+import { useUIStore, usePartnerStore } from '../store/partnerStore'
 
 const MosaicPreviewPage = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const { addNotification } = useUIStore()
   const { partner } = usePartnerStore()
   
-  const [selectedSize, setSelectedSize] = useState('')
-  const [selectedStyle, setSelectedStyle] = useState('')
+  const [selectedSize, setSelectedSize] = useState('30x40')
+  const [selectedStyle, setSelectedStyle] = useState('max_colors')
   const [previewImage, setPreviewImage] = useState(null)
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [marketplaceLinks, setMarketplaceLinks] = useState([])
+  const [couponCode, setCouponCode] = useState('')
+  const [showActivation, setShowActivation] = useState(false)
 
-  // Доступные размеры и стили
   const sizes = [
-    { key: '20x20', title: '20×20', description: 'Небольшой размер, идеально для начинающих' },
-    { key: '30x40', title: '30×40', description: 'Средний размер, популярный выбор' },
-    { key: '40x40', title: '40×40', description: 'Квадратный формат, сбалансированный' },
-    { key: '40x50', title: '40×50', description: 'Прямоугольный, для пейзажей' },
-    { key: '40x60', title: '40×60', description: 'Широкий формат, для панорам' },
-    { key: '50x70', title: '50×70', description: 'Большой размер, для опытных мастеров' }
+    { key: '20x20', title: '20×20 см', description: 'Компактный размер для начинающих', stones: '~400 камней' },
+    { key: '30x40', title: '30×40 см', description: 'Популярный размер', stones: '~1200 камней' },
+    { key: '40x40', title: '40×40 см', description: 'Квадратный формат', stones: '~1600 камней' },
+    { key: '40x50', title: '40×50 см', description: 'Прямоугольный формат', stones: '~2000 камней' },
+    { key: '40x60', title: '40×60 см', description: 'Широкий формат', stones: '~2400 камней' },
+    { key: '50x70', title: '50×70 см', description: 'Максимальный размер', stones: '~3500 камней' }
   ]
 
   const styles = [
-    { key: 'grayscale', title: 'Черно-белый', description: 'Классический стиль, элегантный' },
-    { key: 'skin_tones', title: 'Телесные тона', description: 'Реалистичные оттенки кожи' },
-    { key: 'pop_art', title: 'Поп-арт', description: 'Яркие, контрастные цвета' },
-    { key: 'max_colors', title: 'Максимум цветов', description: 'Богатая цветовая палитра' }
+    { key: 'grayscale', title: 'Черно-белый', description: 'Классический стиль', colors: '~20 оттенков' },
+    { key: 'skin_tones', title: 'Телесные тона', description: 'Реалистичные оттенки', colors: '~30 оттенков' },
+    { key: 'pop_art', title: 'Поп-арт', description: 'Яркие цвета', colors: '~50 оттенков' },
+    { key: 'max_colors', title: 'Максимум цветов', description: 'Полная палитра', colors: '~100 оттенков' }
   ]
 
-  // Получаем размер и стиль из URL параметров
-  useEffect(() => {
-    const size = searchParams.get('size')
-    const style = searchParams.get('style')
-    if (size && style) {
-      setSelectedSize(size)
-      setSelectedStyle(style)
-      generatePreview(size, style)
-    }
-  }, [searchParams])
-
-  // Генерируем превью мозаики
-  const generatePreview = async (size, style) => {
-    if (!size || !style) return
-
-    setIsGenerating(true)
-    try {
-      // Вызываем API для генерации превью
-      const response = await fetch('/api/preview/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          size: size,
-          style: style,
-          partner_id: partner?.id || 'default',
-          user_email: 'preview@example.com' // В реальности можно брать из формы
-        })
+  // Генерация превью
+  const generatePreviewMutation = useMutation({
+    mutationFn: async ({ size, style }) => {
+      const response = await MosaicAPI.generateMosaicPreview({
+        size,
+        style,
+        sample_image: 'default' // Используем дефолтное изображение для превью
       })
-
-      if (!response.ok) {
-        throw new Error('Failed to generate preview')
+      return response
+    },
+    onSuccess: (data) => {
+      if (data.preview_url) {
+        setPreviewImage(data.preview_url)
       }
+    },
+    onError: (error) => {
+      addNotification({
+        type: 'error',
+        message: 'Не удалось создать превью'
+      })
+    }
+  })
 
-      const data = await response.json()
-      setPreviewImage(data.preview_url)
+  // Генерируем превью при изменении размера или стиля
+  useEffect(() => {
+    generatePreviewMutation.mutate({ size: selectedSize, style: selectedStyle })
+  }, [selectedSize, selectedStyle])
+
+  // Активация купона
+  const activateCouponMutation = useMutation({
+    mutationFn: async (code) => {
+      const info = await MosaicAPI.validateCoupon(code)
       
-      // Генерируем ссылки на маркетплейсы
-      generateMarketplaceLinks(size, style)
-    } catch (error) {
-      console.error('Failed to generate preview:', error)
-      // В случае ошибки показываем заглушку
-      setPreviewImage('/api/preview-placeholder')
-    } finally {
-      setIsGenerating(false)
+      // Проверка домена партнёра
+      if (info?.partner_domain && window.location.hostname !== info.partner_domain) {
+        const protocol = window.location.protocol
+        const redirectUrl = `${protocol}//${info.partner_domain}/mosaic-preview?coupon=${code}&size=${selectedSize}&style=${selectedStyle}`
+        window.location.href = redirectUrl
+        return info
+      }
+      
+      await MosaicAPI.activateCoupon(code)
+      return info || {}
+    },
+    onSuccess: (couponData) => {
+      if (couponData?.partner_domain && window.location.hostname !== couponData.partner_domain) {
+        return
+      }
+      
+      addNotification({
+        type: 'success',
+        message: 'Купон активирован! Переходим к созданию мозаики...'
+      })
+      
+      setTimeout(() => {
+        navigate(`/editor?coupon=${couponCode.replace(/-/g, '')}&size=${selectedSize}&style=${selectedStyle}`)
+      }, 1500)
+    },
+    onError: (error) => {
+      addNotification({
+        type: 'error',
+        message: 'Неверный номер купона'
+      })
+    }
+  })
+
+  const handleCouponInput = (e) => {
+    const digitsOnly = e.target.value.replace(/[^0-9]/g, '').substring(0, 12)
+    let formattedCode = ''
+    if (digitsOnly.length > 0) {
+      formattedCode = digitsOnly
+      if (digitsOnly.length > 4) {
+        formattedCode = digitsOnly.substring(0, 4) + '-' + digitsOnly.substring(4)
+      }
+      if (digitsOnly.length > 8) {
+        formattedCode = digitsOnly.substring(0, 4) + '-' + digitsOnly.substring(4, 8) + '-' + digitsOnly.substring(8)
+      }
+    }
+    setCouponCode(formattedCode)
+  }
+
+  const handleActivateCoupon = () => {
+    if (couponCode.replace(/-/g, '').length === 12) {
+      activateCouponMutation.mutate(couponCode.replace(/-/g, ''))
     }
   }
 
-  // Генерируем ссылки на маркетплейсы на основе размера и стиля
-  const generateMarketplaceLinks = async (size, style) => {
-    if (!partner) return
-
-    try {
-      // Получаем артикулы партнера
-      const response = await MosaicAPI.getPartnerArticleGrid(partner.id)
-      const articleGrid = response.data || {}
-      
-      const links = []
-      
-      // OZON
-      if (partner.ozonLink) {
-        const ozonSKU = articleGrid.ozon?.[style]?.[size]
-        const ozonUrl = ozonSKU 
-          ? `${partner.ozonLink}?sku=${ozonSKU}&size=${size}&style=${style}`
-          : partner.ozonLink
-        
-        links.push({
-          name: 'OZON',
-          url: ozonUrl,
-          description: `Купить набор ${size} в стиле ${style}`,
-          color: 'from-orange-500 to-red-500',
-          icon: '🟠',
-          hasSpecificSKU: !!ozonSKU
-        })
-      }
-      
-      // Wildberries
-      if (partner.wildberriesLink) {
-        const wbSKU = articleGrid.wildberries?.[style]?.[size]
-        const wbUrl = wbSKU 
-          ? `${partner.wildberriesLink}?sku=${wbSKU}&size=${size}&style=${style}`
-          : partner.wildberriesLink
-        
-        links.push({
-          name: 'Wildberries',
-          url: wbUrl,
-          description: `Купить набор ${size} в стиле ${style}`,
-          color: 'from-purple-500 to-pink-500',
-          icon: '🟣',
-          hasSpecificSKU: !!wbSKU
-        })
-      }
-
-      setMarketplaceLinks(links)
-    } catch (error) {
-      console.error('Failed to get partner articles:', error)
-      // Fallback к базовым ссылкам
-      const links = []
-      
-      if (partner.ozonLink) {
-        links.push({
-          name: 'OZON',
-          url: partner.ozonLink,
-          description: `Купить набор ${size} в стиле ${style}`,
-          color: 'from-orange-500 to-red-500',
-          icon: '🟠',
-          hasSpecificSKU: false
-        })
-      }
-      
-      if (partner.wildberriesLink) {
-        links.push({
-          name: 'Wildberries',
-          url: partner.wildberriesLink,
-          description: `Купить набор ${size} в стиле ${style}`,
-          color: 'from-purple-500 to-pink-500',
-          icon: '🟣',
-          hasSpecificSKU: false
-        })
-      }
-      
-      setMarketplaceLinks(links)
+  // Получение ссылок на маркетплейсы с артикулами партнёра
+  const getMarketplaceLink = (marketplace) => {
+    if (!partner) return null
+    
+    // TODO: Здесь будет логика получения артикулов из базы данных
+    // Пока используем прямые ссылки из партнёра
+    if (marketplace === 'ozon' && partner.ozonLink) {
+      return partner.ozonLink
     }
-  }
-
-  // Обработчик выбора размера и стиля
-  const handleSizeStyleSelect = (size, style) => {
-    setSelectedSize(size)
-    setSelectedStyle(style)
-    generatePreview(size, style)
-  }
-
-  // Переход к редактору с выбранными параметрами
-  const goToEditor = () => {
-    if (selectedSize && selectedStyle) {
-      navigate(`/editor?size=${selectedSize}&style=${selectedStyle}`)
+    if (marketplace === 'wildberries' && partner.wildberriesLink) {
+      return partner.wildberriesLink
     }
-  }
-
-  // Проверяем доступность артикулов для конкретного размера и стиля
-  const checkArticleAvailability = (size, style) => {
-    const articleGrid = partner?.articleGrid || {}
-    return {
-      ozon: articleGrid.ozon?.[style]?.[size] !== undefined,
-      wildberries: articleGrid.wildberries?.[style]?.[size] !== undefined
-    }
+    
+    return null
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => navigate('/diamond-art')}
-              className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span>Назад к алмазной мозаике</span>
-            </button>
-            <h1 className="text-2xl font-bold text-gray-900">Превью мозаики</h1>
-          </div>
-        </div>
-      </div>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid lg:grid-cols-2 gap-8">
-          
-          {/* Левая колонка - Выбор размера и стиля */}
-          <div className="space-y-8">
-            
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-8"
+        >
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            Превью алмазной мозаики
+          </h1>
+          <p className="text-xl text-gray-600">
+            Выберите размер и стиль, чтобы увидеть, как будет выглядеть ваша мозаика
+          </p>
+        </motion.div>
+
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Левая колонка - выбор параметров */}
+          <div className="lg:col-span-1 space-y-6">
             {/* Выбор размера */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
               className="bg-white rounded-2xl shadow-lg p-6"
             >
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-brand-primary/10 rounded-xl flex items-center justify-center">
-                  <Ruler className="w-5 h-5 text-brand-primary" />
-                </div>
-                <h2 className="text-xl font-bold text-gray-900">Выберите размер</h2>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                <Ruler className="w-5 h-5 mr-2 text-brand-primary" />
+                Выберите размер
+              </h3>
+              <div className="space-y-2">
                 {sizes.map((size) => (
                   <button
                     key={size.key}
-                    onClick={() => handleSizeStyleSelect(size.key, selectedStyle)}
-                    className={`p-4 rounded-xl border-2 transition-all duration-200 text-left relative ${
+                    onClick={() => setSelectedSize(size.key)}
+                    className={`w-full text-left p-3 rounded-lg transition-all ${
                       selectedSize === size.key
-                        ? 'border-brand-primary bg-brand-primary/5'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        ? 'bg-brand-primary text-white'
+                        : 'bg-gray-50 hover:bg-gray-100 text-gray-900'
                     }`}
                   >
-                    <div className="font-semibold text-gray-900 mb-1">{size.title}</div>
-                    <div className="text-sm text-gray-600">{size.description}</div>
-                    
-                    {/* Индикатор доступности артикулов */}
-                    {selectedStyle && (
-                      <div className="mt-2 flex items-center space-x-2">
-                        {checkArticleAvailability(size.key, selectedStyle).ozon && (
-                          <span className="inline-flex items-center px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">
-                            🟠 OZON
-                          </span>
-                        )}
-                        {checkArticleAvailability(size.key, selectedStyle).wildberries && (
-                          <span className="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
-                            🟣 WB
-                          </span>
-                        )}
-                        {!checkArticleAvailability(size.key, selectedStyle).ozon && !checkArticleAvailability(size.key, selectedStyle).wildberries && (
-                          <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                            ⚠️ Нет артикулов
-                          </span>
-                        )}
-                      </div>
-                    )}
+                    <div className="font-semibold">{size.title}</div>
+                    <div className={`text-sm ${selectedSize === size.key ? 'text-white/80' : 'text-gray-600'}`}>
+                      {size.description}
+                    </div>
+                    <div className={`text-xs mt-1 ${selectedSize === size.key ? 'text-white/70' : 'text-brand-primary'}`}>
+                      {size.stones}
+                    </div>
                   </button>
                 ))}
               </div>
             </motion.div>
 
             {/* Выбор стиля */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="bg-white rounded-2xl shadow-lg p-6"
-            >
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-brand-secondary/10 rounded-xl flex items-center justify-center">
-                  <Palette className="w-5 h-5 text-brand-secondary" />
-                </div>
-                <h2 className="text-xl font-bold text-gray-900">Выберите стиль</h2>
-              </div>
-              
-              <div className="space-y-3">
-                {styles.map((style) => (
-                  <button
-                    key={style.key}
-                    onClick={() => handleSizeStyleSelect(selectedSize, style.key)}
-                    className={`w-full p-4 rounded-xl border-2 transition-all duration-200 text-left ${
-                      selectedStyle === style.key
-                        ? 'border-brand-secondary bg-brand-secondary/5'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="font-semibold text-gray-900 mb-1">{style.title}</div>
-                    <div className="text-sm text-gray-600">{style.description}</div>
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* Кнопка перехода к редактору */}
-            {selectedSize && selectedStyle && (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="bg-gradient-to-r from-brand-primary to-brand-secondary rounded-2xl p-6 text-white"
-              >
-                <h3 className="text-lg font-bold mb-3">Готово к созданию!</h3>
-                <p className="text-brand-primary/80 mb-4">
-                  Размер: <strong>{sizes.find(s => s.key === selectedSize)?.title}</strong><br />
-                  Стиль: <strong>{styles.find(s => s.key === selectedStyle)?.title}</strong>
-                </p>
-                <button
-                  onClick={goToEditor}
-                  className="w-full inline-flex items-center justify-center px-6 py-3 bg-white text-brand-primary rounded-xl hover:bg-brand-primary/10 font-semibold transition-all duration-200"
-                >
-                  <Eye className="w-5 h-5 mr-2" />
-                  Создать мозаику
-                </button>
-              </motion.div>
-            )}
-          </div>
-
-          {/* Правая колонка - Превью и покупка */}
-          <div className="space-y-6">
-            
-            {/* Превью мозаики */}
-            <motion.div 
-              initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
               className="bg-white rounded-2xl shadow-lg p-6"
             >
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Превью мозаики</h2>
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                <Palette className="w-5 h-5 mr-2 text-brand-secondary" />
+                Выберите стиль
+              </h3>
+              <div className="space-y-2">
+                {styles.map((style) => (
+                  <button
+                    key={style.key}
+                    onClick={() => setSelectedStyle(style.key)}
+                    className={`w-full text-left p-3 rounded-lg transition-all ${
+                      selectedStyle === style.key
+                        ? 'bg-brand-secondary text-white'
+                        : 'bg-gray-50 hover:bg-gray-100 text-gray-900'
+                    }`}
+                  >
+                    <div className="font-semibold">{style.title}</div>
+                    <div className={`text-sm ${selectedStyle === style.key ? 'text-white/80' : 'text-gray-600'}`}>
+                      {style.description}
+                    </div>
+                    <div className={`text-xs mt-1 ${selectedStyle === style.key ? 'text-white/70' : 'text-brand-secondary'}`}>
+                      {style.colors}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Центральная колонка - превью */}
+          <div className="lg:col-span-2">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="bg-white rounded-2xl shadow-lg p-6"
+            >
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                <Eye className="w-5 h-5 mr-2 text-brand-primary" />
+                Превью мозаики
+              </h3>
               
-              {isGenerating ? (
-                <div className="aspect-square bg-gray-100 rounded-xl flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary mx-auto mb-4"></div>
-                    <p className="text-gray-600">Генерируем превью...</p>
+              <div className="relative aspect-square bg-gray-100 rounded-xl overflow-hidden mb-6">
+                {generatePreviewMutation.isPending ? (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Loader2 className="w-12 h-12 text-brand-primary animate-spin" />
+                    <span className="ml-3 text-gray-600">Создаём превью...</span>
                   </div>
-                </div>
-              ) : previewImage ? (
-                <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden">
-                  <img 
-                    src={previewImage} 
-                    alt="Превью мозаики" 
+                ) : previewImage ? (
+                  <img
+                    src={previewImage}
+                    alt="Превью мозаики"
                     className="w-full h-full object-cover"
                   />
-                </div>
-              ) : (
-                <div className="aspect-square bg-gray-100 rounded-xl flex items-center justify-center">
-                  <div className="text-center text-gray-500">
-                    <Eye className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                    <p>Выберите размер и стиль для просмотра превью</p>
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <Eye className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-500">Превью будет здесь</p>
+                    </div>
                   </div>
+                )}
+              </div>
+
+              {/* Кнопка активации купона */}
+              {!showActivation ? (
+                <button
+                  onClick={() => setShowActivation(true)}
+                  className="w-full bg-gradient-to-r from-brand-primary to-brand-secondary text-white py-4 rounded-xl hover:from-brand-primary/90 hover:to-brand-secondary/90 font-semibold text-lg transition-all duration-200 flex items-center justify-center"
+                >
+                  <span>Мне нравится! Хочу создать такую мозаику</span>
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </button>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-gray-600 text-center">
+                    Введите код купона для создания мозаики с выбранными параметрами
+                  </p>
+                  <input
+                    type="text"
+                    value={couponCode}
+                    onChange={handleCouponInput}
+                    placeholder="XXXX-XXXX-XXXX"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent text-center text-lg tracking-wider"
+                    maxLength={14}
+                  />
+                  <button
+                    onClick={handleActivateCoupon}
+                    disabled={couponCode.replace(/-/g, '').length !== 12 || activateCouponMutation.isPending}
+                    className="w-full bg-brand-primary text-white py-3 rounded-lg hover:bg-brand-primary/90 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all duration-200 flex items-center justify-center"
+                  >
+                    {activateCouponMutation.isPending ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <>
+                        <span>Активировать купон и создать мозаику</span>
+                        <ArrowRight className="w-5 h-5 ml-2" />
+                      </>
+                    )}
+                  </button>
                 </div>
               )}
             </motion.div>
 
-            {/* Ссылки на покупку */}
-            {marketplaceLinks.length > 0 && (
-              <motion.div 
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="bg-white rounded-2xl shadow-lg p-6"
-              >
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Купить набор</h2>
+            {/* Ссылки на маркетплейсы */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="bg-white rounded-2xl shadow-lg p-6 mt-6"
+            >
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                <ShoppingCart className="w-5 h-5 mr-2 text-brand-secondary" />
+                Где купить набор
+              </h3>
+              
+              <div className="grid sm:grid-cols-2 gap-4">
+                {/* OZON */}
+                <a
+                  href={getMarketplaceLink('ozon') || 'https://www.ozon.ru/search/?text=алмазная+мозаика'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center px-4 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:from-orange-600 hover:to-red-600 font-semibold transition-all duration-200"
+                >
+                  <span>Купить на OZON</span>
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </a>
                 
-                <div className="space-y-4">
-                  {marketplaceLinks.map((marketplace, index) => (
-                    <motion.div 
-                      key={marketplace.name}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: 0.4 + index * 0.1 }}
-                      className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <span className="text-2xl">{marketplace.icon}</span>
-                          <div>
-                            <h3 className="font-semibold text-gray-900">{marketplace.name}</h3>
-                            <p className="text-sm text-gray-600">{marketplace.description}</p>
-                            {marketplace.hasSpecificSKU && (
-                              <span className="inline-block mt-1 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                                ✓ Специальный артикул
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <a
-                          href={marketplace.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-brand-primary to-brand-secondary text-white rounded-lg hover:from-brand-primary/90 hover:to-brand-secondary/90 font-medium transition-all duration-200"
-                        >
-                          <ShoppingCart className="w-4 h-4 mr-2" />
-                          Купить
-                          <ExternalLink className="w-4 h-4 ml-2" />
-                        </a>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
+                {/* Wildberries */}
+                <a
+                  href={getMarketplaceLink('wildberries') || 'https://www.wildberries.ru/catalog/0/search.aspx?search=алмазная+мозаика'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 font-semibold transition-all duration-200"
+                >
+                  <span>Купить на Wildberries</span>
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </a>
+              </div>
+              
+              <p className="text-gray-500 text-sm mt-4 text-center">
+                После покупки набора вы получите код для создания уникальной схемы
+              </p>
+            </motion.div>
           </div>
         </div>
       </div>
