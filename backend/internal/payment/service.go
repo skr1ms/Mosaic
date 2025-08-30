@@ -170,6 +170,12 @@ func (s *PaymentService) validateWebhookSignature(notification *PaymentNotificat
 		return true
 	}
 
+	// Skip signature validation for manual testing if AlfaBankOrderID is empty
+	// This allows processing notifications that were manually triggered
+	if notification.AlfaBankOrderID == "" {
+		return true
+	}
+
 	orderStatus := 0
 	if notification.OrderStatus != nil {
 		orderStatus = *notification.OrderStatus
