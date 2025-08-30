@@ -644,5 +644,39 @@
       "description": "Create your first diamond mosaic right now",
       "button": "Create Mosaic"
     }
+  },
+  "mosaic_preview": {
+    "title": "Mosaic Preview",
+    "upload_section": {
+      "title": "Upload Image",
+      "description": "Select an image",
+      "formats": "PNG, JPG up to 15MB",
+      "drop_text": "Drop file here or click to select"
+    },
+    "preview_section": {
+      "title": "Mosaic Preview",
+      "description": "Upload an image and click \"Generate Preview\"",
+      "preview_will_be_here": "Preview will be here"
+    },
+    "size_section": {
+      "title": "Mosaic Size"
+    },
+    "style_section": {
+      "title": "Mosaic Style"
+    },
+    "ai_section": {
+      "title": "AI Processing",
+      "description": "Enhance image with artificial intelligence (as in coupon activation)"
+    },
+    "generate_button": "Generate Preview",
+    "generating": "Generating...",
+    "view_full": "Open in Full Size",
+    "download": "Download",
+    "back": "Back to Diamond Art",
+    "notifications": {
+      "select_image": "Please select an image",
+      "success": "Mosaic preview generated successfully!",
+      "error": "Error generating preview"
+    }
   }
 }

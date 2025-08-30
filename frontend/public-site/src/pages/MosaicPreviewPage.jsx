@@ -50,14 +50,14 @@ const MosaicPreviewPage = () => {
       setGeneratedPreview(data.preview_url)
       addNotification({
         type: 'success',
-        message: 'Превью мозаики успешно сгенерировано!'
+        message: t('mosaic_preview.notifications.success')
       })
     },
     onError: (error) => {
       addNotification({
         type: 'error',
-        title: 'Ошибка генерации',
-        message: error?.message || 'Не удалось сгенерировать превью'
+        title: t('mosaic_preview.notifications.error'),
+        message: error?.message || t('mosaic_preview.notifications.error')
       })
     }
   })
@@ -98,7 +98,7 @@ const MosaicPreviewPage = () => {
     if (!selectedFile) {
       addNotification({
         type: 'error',
-        message: 'Пожалуйста, выберите изображение'
+        message: t('mosaic_preview.notifications.select_image')
       })
       return
     }
@@ -126,10 +126,10 @@ const MosaicPreviewPage = () => {
               className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
             >
               <ArrowLeft className="w-5 h-5 mr-2" />
-              Назад к алмазной мозаике
+              {t('mosaic_preview.back')}
             </button>
             <div className="h-6 w-px bg-gray-300" />
-            <h1 className="text-2xl font-bold text-gray-900">Превью мозаики</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t('mosaic_preview.title')}</h1>
           </div>
         </div>
       </div>
@@ -148,7 +148,7 @@ const MosaicPreviewPage = () => {
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
                 <Upload className="w-6 h-6 mr-2 text-brand-primary" />
-                Загрузите изображение
+                {t('mosaic_preview.upload_section.title')}
               </h2>
               
               <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-brand-primary transition-colors">
@@ -176,9 +176,9 @@ const MosaicPreviewPage = () => {
                     <div className="space-y-4">
                       <Upload className="w-12 h-12 text-gray-400 mx-auto" />
                       <div>
-                        <p className="text-lg font-medium text-gray-900">Выберите изображение</p>
+                        <p className="text-lg font-medium text-gray-900">{t('mosaic_preview.upload_section.description')}</p>
                         <p className="text-sm text-gray-600 mt-1">
-                          PNG, JPG до 15MB
+                          {t('mosaic_preview.upload_section.formats')}
                         </p>
                       </div>
                     </div>
@@ -189,7 +189,7 @@ const MosaicPreviewPage = () => {
 
             {/* Выбор размера */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Размер мозаики</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">{t('mosaic_preview.size_section.title')}</h3>
               <div className="grid grid-cols-2 gap-3">
                 {sizes.map((size) => (
                   <button
@@ -210,7 +210,7 @@ const MosaicPreviewPage = () => {
 
             {/* Выбор стиля */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Стиль мозаики</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">{t('mosaic_preview.style_section.title')}</h3>
               <div className="space-y-3">
                 {styles.map((style) => (
                   <button
@@ -240,9 +240,9 @@ const MosaicPreviewPage = () => {
                   className="w-4 h-4 text-brand-primary bg-gray-100 border-gray-300 rounded focus:ring-brand-primary focus:ring-2"
                 />
                 <label htmlFor="useAI" className="flex-1">
-                  <div className="font-semibold text-gray-900">AI обработка</div>
+                  <div className="font-semibold text-gray-900">{t('mosaic_preview.ai_section.title')}</div>
                   <div className="text-sm text-gray-600">
-                    Улучшить изображение с помощью искусственного интеллекта (как при активации купона)
+                    {t('mosaic_preview.ai_section.description')}
                   </div>
                 </label>
               </div>
@@ -257,12 +257,12 @@ const MosaicPreviewPage = () => {
               {generatePreviewMutation.isPending ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Генерация превью...</span>
+                  <span>{t('mosaic_preview.generating')}</span>
                 </>
               ) : (
                 <>
                   <Eye className="w-5 h-5" />
-                  <span>Сгенерировать превью</span>
+                  <span>{t('mosaic_preview.generate_button')}</span>
                 </>
               )}
             </button>
@@ -277,7 +277,7 @@ const MosaicPreviewPage = () => {
           >
             <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
               <Eye className="w-6 h-6 mr-2 text-brand-secondary" />
-              Превью мозаики
+              {t('mosaic_preview.preview_section.title')}
             </h2>
             
             {generatedPreview ? (
@@ -304,7 +304,7 @@ const MosaicPreviewPage = () => {
                     className="flex-1 bg-brand-primary text-white py-3 px-4 rounded-lg hover:bg-brand-primary/90 font-semibold transition-colors flex items-center justify-center space-x-2"
                   >
                     <Eye className="w-4 h-4" />
-                    <span>Открыть в полном размере</span>
+                    <span>{t('mosaic_preview.view_full')}</span>
                   </button>
                   <button
                     onClick={() => {
@@ -316,7 +316,7 @@ const MosaicPreviewPage = () => {
                     className="flex-1 bg-brand-secondary text-white py-3 px-4 rounded-lg hover:bg-brand-secondary/90 font-semibold transition-colors flex items-center justify-center space-x-2"
                   >
                     <Download className="w-4 h-4" />
-                    <span>Скачать</span>
+                    <span>{t('mosaic_preview.download')}</span>
                   </button>
                 </div>
               </div>
