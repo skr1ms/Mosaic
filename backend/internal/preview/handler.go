@@ -23,7 +23,7 @@ func NewPreviewHandler(api fiber.Router, deps *PreviewHandlerDependencies) {
 		deps: deps,
 	}
 
-	// Регистрируем роуты
+	// Register routes
 	previewGroup := api.Group("/preview")
 	previewGroup.Post("/generate", handler.GeneratePreview)
 }

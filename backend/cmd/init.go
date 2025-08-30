@@ -2,7 +2,7 @@ package main
 
 //	@title			Mosaic API
 //	@version		1.0
-//	@description	API для системы мозаичных купонов
+//	@description	API for mosaic coupon system
 //	@termsOfService	http://swagger.io/terms/
 
 //	@contact.name	API Support

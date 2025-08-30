@@ -32,25 +32,25 @@ func NewPreviewService(deps *PreviewServiceDeps) *PreviewService {
 	}
 }
 
-// GeneratePreview создает превью мозаики из загруженного файла
+// GeneratePreview creates a mosaic preview from uploaded file
 func (s *PreviewService) GeneratePreview(ctx context.Context, file *multipart.FileHeader, size, style string) (map[string]any, error) {
 	previewID := uuid.New()
 
-	// Создаем временную директорию для превью
+	// Create temporary directory for preview
 	tempDir := filepath.Join(s.deps.WorkingDir, "preview", previewID.String())
 	if err := os.MkdirAll(tempDir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create temp directory: %w", err)
 	}
 	defer os.RemoveAll(tempDir)
 
-	// Сохраняем загруженный файл во временную директорию
+	// Save uploaded file to temporary directory
 	src, err := file.Open()
 	if err != nil {
 		return nil, fmt.Errorf("failed to open uploaded file: %w", err)
 	}
 	defer src.Close()
 
-	// Определяем расширение файла
+	// Determine file extension
 	ext := ".jpg"
 	if file.Header.Get("Content-Type") == "image/png" {
 		ext = ".png"
@@ -67,43 +67,43 @@ func (s *PreviewService) GeneratePreview(ctx context.Context, file *multipart.Fi
 		return nil, fmt.Errorf("failed to copy file: %w", err)
 	}
 
-	// Получаем путь к палитре для выбранного стиля
+	// Get palette path for selected style
 	palettePath, err := s.deps.PaletteService.GetPalettePath(palette.Style(style))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get palette path: %w", err)
 	}
 
-	// Определяем размеры мозаики на основе выбранного размера
+	// Determine mosaic dimensions based on selected size
 	stonesX, stonesY := s.getSizeDimensions(size)
 
-	// Создаем запрос для генерации мозаики
+	// Create request for mosaic generation
 	generationReq := &mosaic.GenerationRequest{
 		ImagePath:   tempImagePath,
 		StonesX:     stonesX,
 		StonesY:     stonesY,
-		StoneSizeMM: 2.52, // Стандартный размер камня
+		StoneSizeMM: 2.52, // Standard stone size
 		DPI:         150,
-		PreviewDPI:  120,       // DPI для превью
-		SchemeDPI:   0,         // Не генерируем схему
-		Mode:        "preview", // Режим только для превью
+		PreviewDPI:  120,       // DPI for preview
+		SchemeDPI:   0,         // Don't generate scheme
+		Mode:        "preview", // Preview mode only
 		Style:       s.mapStyleToMosaicStyle(style),
-		WithLegend:  false, // Не нужна легенда для превью
+		WithLegend:  false, // No legend needed for preview
 		Threads:     4,
 		PalettePath: palettePath,
 	}
 
-	// Генерируем мозаику (только превью)
+	// Generate mosaic (preview only)
 	result, err := s.deps.MosaicGenerator.Generate(ctx, generationReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate mosaic preview: %w", err)
 	}
 
-	// Проверяем, что превью было создано
+	// Check that preview was created
 	if result.PreviewPath == "" {
 		return nil, fmt.Errorf("preview file not generated")
 	}
 
-	// Загружаем превью в S3 (в бакет preview-images)
+	// Upload preview to S3 (to preview-images bucket)
 	previewFile, err := os.Open(result.PreviewPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open preview file: %w", err)
@@ -115,16 +115,16 @@ func (s *PreviewService) GeneratePreview(ctx context.Context, file *multipart.Fi
 		return nil, fmt.Errorf("failed to get file info: %w", err)
 	}
 
-	// Создаем ключ для файла в формате: previews/{uuid}.png
+	// Create file key in format: previews/{uuid}.png
 	objectKey := fmt.Sprintf("previews/%s.png", previewID.String())
 
-	// Загружаем в бакет preview-images
+	// Upload to preview-images bucket
 	err = s.deps.S3Client.UploadToPreviewBucket(ctx, objectKey, previewFile, fileInfo.Size(), "image/png")
 	if err != nil {
 		return nil, fmt.Errorf("failed to upload preview to S3: %w", err)
 	}
 
-	// Получаем публичную ссылку на превью
+	// Get public URL for preview
 	previewURL := s.deps.S3Client.GetPreviewURL(objectKey)
 
 	return map[string]any{
@@ -136,7 +136,7 @@ func (s *PreviewService) GeneratePreview(ctx context.Context, file *multipart.Fi
 	}, nil
 }
 
-// getSizeDimensions возвращает размеры мозаики в камнях для выбранного размера
+// getSizeDimensions returns mosaic dimensions in stones for selected size
 func (s *PreviewService) getSizeDimensions(size string) (int, int) {
 	switch size {
 	case "21x30":
@@ -152,11 +152,11 @@ func (s *PreviewService) getSizeDimensions(size string) (int, int) {
 	case "50x70":
 		return 50, 70
 	default:
-		return 30, 40 // По умолчанию
+		return 30, 40 // Default
 	}
 }
 
-// mapStyleToMosaicStyle конвертирует стиль API в стиль мозаики
+// mapStyleToMosaicStyle converts API style to mosaic style
 func (s *PreviewService) mapStyleToMosaicStyle(style string) string {
 	switch style {
 	case "grayscale":

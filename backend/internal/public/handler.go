@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/skr1ms/mosaic/internal/admin"
 	"github.com/skr1ms/mosaic/internal/image"
-	"github.com/skr1ms/mosaic/internal/preview"
 	"github.com/skr1ms/mosaic/internal/types"
 	"github.com/skr1ms/mosaic/pkg/goroutine"
 	"github.com/skr1ms/mosaic/pkg/middleware"
@@ -58,7 +57,6 @@ func NewPublicHandler(router fiber.Router, deps *PublicHandlerDeps) *PublicHandl
 	router.Get("/images/:id/download", handler.DownloadSchema)         // GET /api/images/:id/download
 	router.Get("/sizes", handler.GetAvailableSizes)                    // GET /api/sizes
 	router.Get("/styles", handler.GetAvailableStyles)                  // GET /api/styles
-	router.Post("/preview/generate", handler.GenerateMosaicPreview)    // POST /api/preview/generate
 	router.Get("/config/recaptcha", handler.GetRecaptchaSiteKey)       // GET /api/config/recaptcha
 
 	return handler
@@ -997,80 +995,7 @@ func (h *PublicHandler) GetAvailableStyles(c *fiber.Ctx) error {
 	return c.JSON(styles)
 }
 
-// @Summary Generate mosaic preview
-// @Description Generates a preview of the mosaic pattern for given size and style
-// @Tags preview
-// @Accept json
-// @Produce json
-// @Param request body map[string]any true "Preview generation parameters (size, style, partner_id, user_email)"
-// @Success 200 {object} map[string]any "Preview generated successfully"
-// @Failure 400 {object} map[string]any "Bad request: invalid parameters"
-// @Failure 500 {object} map[string]any "Internal server error during preview generation"
-// @Router /api/preview/generate [post]
-func (h *PublicHandler) GenerateMosaicPreview(c *fiber.Ctx) error {
-	var req map[string]any
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Failed to parse request body",
-		})
-	}
-
-	// Валидация параметров
-	size, ok := req["size"].(string)
-	if !ok || size == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Size is required",
-		})
-	}
-
-	style, ok := req["style"].(string)
-	if !ok || style == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Style is required",
-		})
-	}
-
-	// Получаем информацию о партнере из контекста
-	brandingData := middleware.GetBrandingFromContext(c)
-	partnerID := ""
-	if brandingData != nil && brandingData.Partner != nil {
-		partnerID = brandingData.Partner.ID.String()
-	}
-
-	// Создаем запрос для сервиса превью
-	previewReq := &preview.PreviewRequest{
-		Size:      size,
-		Style:     style,
-		PartnerID: partnerID,
-		UserEmail: "preview@example.com", // В реальности можно брать из формы
-	}
-
-	// Генерируем превью используя сервис
-	previewResponse, err := h.deps.PublicService.GetPreviewService().GeneratePreview(c.Context(), previewReq)
-	if err != nil {
-		h.deps.Logger.FromContext(c).Error().
-			Err(err).
-			Str("handler", "GenerateMosaicPreview").
-			Str("size", size).
-			Str("style", style).
-			Msg("Failed to generate preview")
-
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":   "Failed to generate preview",
-			"details": err.Error(),
-		})
-	}
-
-	h.deps.Logger.FromContext(c).Info().
-		Str("handler", "GenerateMosaicPreview").
-		Str("size", size).
-		Str("style", style).
-		Str("partner_id", partnerID).
-		Str("preview_id", previewResponse.PreviewID).
-		Msg("Preview generation completed")
-
-	return c.JSON(previewResponse)
-}
+// GenerateMosaicPreview method removed - replaced by dedicated preview handler
 
 // @Summary Get reCAPTCHA site key
 // @Description Returns the public reCAPTCHA v3 site key for frontend

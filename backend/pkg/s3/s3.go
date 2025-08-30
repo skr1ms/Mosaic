@@ -498,7 +498,7 @@ func (s *S3Client) GetPreviewURL(objectKey string) string {
 		return ""
 	}
 
-	// Возвращаем публичную ссылку на файл
-	// Предполагаем что бакет preview-images настроен как публичный
+	// Return public URL for file
+	// Assume preview-images bucket is configured as public
 	return fmt.Sprintf("%s/%s/%s", s.publicURL, bucket, objectKey)
 }

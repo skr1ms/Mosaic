@@ -5,7 +5,7 @@ import (
 	"mime/multipart"
 )
 
-// PreviewServiceInterface определяет методы для сервиса превью
+// PreviewServiceInterface defines methods for preview service
 type PreviewServiceInterface interface {
 	GeneratePreview(ctx context.Context, file *multipart.FileHeader, size, style string) (map[string]any, error)
 }
