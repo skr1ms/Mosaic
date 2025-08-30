@@ -73,26 +73,28 @@ func (s *PreviewService) GeneratePreview(ctx context.Context, file *multipart.Fi
 		return nil, fmt.Errorf("failed to get palette path: %w", err)
 	}
 
-	// Determine mosaic dimensions based on selected size
-	stonesX, stonesY := s.getSizeDimensions(size)
+	// Determine mosaic dimensions based on selected size (same logic as ImageService)
+	width, height := s.getSizeDimensions(size)
+	stonesX := width / 4 // Convert pixels to stones count
+	stonesY := height / 4
 
 	// Create request for mosaic generation
 	generationReq := &mosaic.GenerationRequest{
 		ImagePath:   tempImagePath,
 		StonesX:     stonesX,
 		StonesY:     stonesY,
-		StoneSizeMM: 2.52,      // Standard stone size
-		DPI:         150,       // Same as working schema generation
-		PreviewDPI:  120,       // Same as working schema generation
-		SchemeDPI:   0,         // Don't generate scheme
-		Mode:        "preview", // Preview mode only
+		StoneSizeMM: 2.52,   // Standard stone size
+		DPI:         150,    // Same as working schema generation
+		PreviewDPI:  120,    // Same as working schema generation
+		SchemeDPI:   150,    // Same as working schema generation
+		Mode:        "both", // Generate both preview and schema (same as ImageService)
 		Style:       s.mapStyleToMosaicStyle(style),
-		WithLegend:  false, // No legend needed for preview
+		WithLegend:  true, // Same as working schema generation
 		Threads:     4,
 		PalettePath: palettePath,
 	}
 
-	// Generate mosaic (preview only)
+	// Generate mosaic (same as working schema generation)
 	result, err := s.deps.MosaicGenerator.Generate(ctx, generationReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate mosaic preview: %w", err)
@@ -135,23 +137,41 @@ func (s *PreviewService) GeneratePreview(ctx context.Context, file *multipart.Fi
 	}, nil
 }
 
-// getSizeDimensions returns mosaic dimensions in stones for selected size
+// GetPreviewDownloadURL returns the download URL for a preview by ID
+func (s *PreviewService) GetPreviewDownloadURL(previewID string) (string, error) {
+	// Extract UUID from filename (assuming format: previews/uuid.png)
+	objectKey := fmt.Sprintf("previews/%s.png", previewID)
+
+	// Get URL from S3 client
+	downloadURL := s.deps.S3Client.GetPreviewURL(objectKey)
+	if downloadURL == "" {
+		return "", fmt.Errorf("failed to get preview download URL for key: %s", objectKey)
+	}
+
+	return downloadURL, nil
+}
+
+// getSizeDimensions returns width and height in pixels for the given size (same as ImageService)
 func (s *PreviewService) getSizeDimensions(size string) (int, int) {
+	if size == "" {
+		size = "30x40" // Default value
+	}
+
 	switch size {
 	case "21x30":
-		return 21, 30
+		return 840, 1200
 	case "30x40":
-		return 30, 40
+		return 1200, 1600
 	case "40x40":
-		return 40, 40
+		return 1600, 1600
 	case "40x50":
-		return 40, 50
+		return 1600, 2000
 	case "40x60":
-		return 40, 60
+		return 1600, 2400
 	case "50x70":
-		return 50, 70
+		return 2000, 2800
 	default:
-		return 30, 40 // Default
+		return 1200, 1600
 	}
 }
 

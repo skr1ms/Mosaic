@@ -26,6 +26,7 @@ func NewPreviewHandler(api fiber.Router, deps *PreviewHandlerDependencies) {
 	// Register routes
 	previewGroup := api.Group("/preview")
 	previewGroup.Post("/generate", handler.GeneratePreview)
+	previewGroup.Get("/:id/download", handler.DownloadPreview)
 }
 
 // @Summary Generate mosaic preview
@@ -155,4 +156,42 @@ func (h *PreviewHandler) GeneratePreview(c *fiber.Ctx) error {
 		Msg("Preview generated successfully")
 
 	return c.JSON(result)
+}
+
+// @Summary Download mosaic preview
+// @Description Downloads the generated mosaic preview with proper headers for file download
+// @Tags preview
+// @Produce image/png
+// @Param id path string true "Preview ID (UUID)"
+// @Success 200 {file} file "Preview image file"
+// @Failure 400 {object} map[string]any "Invalid preview ID format"
+// @Failure 404 {object} map[string]any "Preview not found"
+// @Failure 500 {object} map[string]any "Internal server error during preview download"
+// @Router /api/preview/{id}/download [get]
+func (h *PreviewHandler) DownloadPreview(c *fiber.Ctx) error {
+	previewID := c.Params("id")
+
+	// Get preview URL from S3
+	previewURL, err := h.deps.PreviewService.GetPreviewDownloadURL(previewID)
+	if err != nil {
+		h.deps.Logger.FromContext(c).Error().
+			Err(err).
+			Str("handler", "DownloadPreview").
+			Str("preview_id", previewID).
+			Msg("Failed to get preview download URL")
+
+		return c.Status(fiber.StatusNotFound).JSON(errors.NotFoundError("Preview not found"))
+	}
+
+	// Set download headers
+	c.Set("Content-Disposition", "attachment; filename=mosaic-preview.png")
+	c.Set("Content-Type", "image/png")
+
+	h.deps.Logger.FromContext(c).Info().
+		Str("handler", "DownloadPreview").
+		Str("preview_id", previewID).
+		Msg("Preview download started")
+
+	// Redirect to the actual file URL
+	return c.Redirect(previewURL)
 }

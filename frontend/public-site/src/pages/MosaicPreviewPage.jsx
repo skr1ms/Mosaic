@@ -286,8 +286,9 @@ const MosaicPreviewPage = () => {
                   </button>
                   <button
                     onClick={() => {
-                      // Скачивание с параметром download=1 для правильных заголовков
-                      const downloadUrl = `${generatedPreview}?download=1`
+                      // Скачивание через специальный endpoint с правильными заголовками
+                      const previewId = generatedPreview.split('/').pop().replace('.png', '')
+                      const downloadUrl = `/api/preview/${previewId}/download`
                       window.open(downloadUrl, '_blank')
                     }}
                     className="flex-1 bg-brand-secondary text-white py-3 px-4 rounded-lg hover:bg-brand-secondary/90 font-semibold transition-colors flex items-center justify-center space-x-2"
