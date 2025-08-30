@@ -3,7 +3,7 @@ package payment
 // Request для покупки купона онлайн
 type PurchaseCouponRequest struct {
 	Size      string  `json:"size" validate:"required,oneof=21x30 30x40 40x40 40x50 40x60 50x70"`
-	Style     string  `json:"style" validate:"required,oneof=grayscale skin_tone pop_art max_colors"`
+	Style     string  `json:"style" validate:"required,oneof=grayscale skin_tone pop_art max_colors full_color"`
 	Email     string  `json:"email" validate:"required,email"`
 	ReturnURL string  `json:"return_url" validate:"required,url"`
 	FailURL   *string `json:"fail_url,omitempty" validate:"omitempty,url"`
