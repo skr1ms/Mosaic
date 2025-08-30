@@ -36,7 +36,7 @@ type ImageServiceDeps struct {
 	ZipService            ZipServiceInterface
 	MosaicGenerator       MosaicGeneratorInterface
 	PaletteService        *palette.PaletteService
-	WorkingDir            string 
+	WorkingDir            string
 }
 
 type ImageService struct {
@@ -106,20 +106,18 @@ func (s *ImageService) GetQueueWithFilters(status, dateFrom, dateTo string) ([]*
 
 // UploadImage uploads and saves image to S3
 func (s *ImageService) UploadImage(ctx context.Context, couponID uuid.UUID, file *multipart.FileHeader, userEmail string) (*Image, error) {
-	coupon, err := s.deps.CouponRepository.GetByID(ctx, couponID)
+	_, err := s.deps.CouponRepository.GetByID(ctx, couponID)
 	if err != nil {
 		return nil, fmt.Errorf("coupon not found: %w", err)
 	}
 
-	if coupon.Status != "activated" {
-		return nil, fmt.Errorf("coupon not activated")
-	}
-
 	existingImage, err := s.deps.ImageRepository.GetByCouponID(ctx, couponID)
 	if err == nil && existingImage != nil {
-		if existingImage.Status == "uploaded" || existingImage.Status == "edited" || existingImage.Status == "processing" {
-			return nil, fmt.Errorf("image already uploaded for this coupon")
+		// Разрешаем перезагрузку изображения если оно не в процессе обработки
+		if existingImage.Status == "processing" || existingImage.Status == "completed" {
+			return nil, fmt.Errorf("image already uploaded for this coupon and is being processed")
 		}
+		// Удаляем старое изображение для перезагрузки
 		if err := s.deps.ImageRepository.Delete(ctx, existingImage.ID); err != nil {
 			log.Warn().Err(err).Str("image_id", existingImage.ID.String()).Msg("Failed to delete old image record")
 		}
@@ -942,7 +940,6 @@ func (s *ImageService) GetMetrics() goroutine.Metrics {
 	}
 	return goroutine.Metrics{}
 }
-
 
 // openFromStorage opens file from local path (file://) or downloads from S3
 func (s *ImageService) openFromStorage(ctx context.Context, key string) (io.ReadCloser, error) {
