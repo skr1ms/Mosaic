@@ -415,6 +415,11 @@ func InitializeApp() *fiber.App {
 		Logger:        appLogger,
 	})
 
+	preview.NewPreviewHandler(api, &preview.PreviewHandlerDependencies{
+		PreviewService: previewService,
+		Logger:         appLogger,
+	})
+
 	// Prometheus metrics endpoint
 	app.Get("/metrics", adaptor.HTTPHandler(promhttp.Handler()))
 

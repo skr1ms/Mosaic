@@ -33,9 +33,9 @@
       "activate": "Activate"
     },
     "shop_banner": {
-      "title": "Learn More",
-      "description": "Learn all about diamond art, watch video tutorials and choose your size",
-      "button": "Learn More"
+      "title": "Buy Coupon",
+      "description": "Purchase a coupon to create diamond art from your image",
+      "button": "Buy"
     },
     "paint_by_numbers": {
       "title": "Paint by Numbers",
@@ -98,6 +98,58 @@
           "title": "Useful tip",
           "content": "When buying, pay attention to the number of colors and the size of the painting. For beginners, we recommend kits with a small number of colors (up to 20) and a size of 30×40 cm."
         }
+      },
+      "sizes_and_styles_section": {
+        "title": "Mosaic Sizes and Styles",
+        "description": "Choose size and style to see how your mosaic will look",
+        "available_sizes": "Available Sizes",
+        "available_styles": "Available Styles",
+        "sizes": {
+          "21x30": {
+            "title": "21×30 cm",
+            "desc": "Compact size for beginners"
+          },
+          "30x40": {
+            "title": "30×40 cm",
+            "desc": "Popular size"
+          },
+          "40x40": {
+            "title": "40×40 cm",
+            "desc": "Square format"
+          },
+          "40x50": {
+            "title": "40×50 cm",
+            "desc": "Rectangular format"
+          },
+          "40x60": {
+            "title": "40×60 cm",
+            "desc": "Wide format"
+          },
+          "50x70": {
+            "title": "50×70 cm",
+            "desc": "Maximum size"
+          }
+        },
+        "styles": {
+          "grayscale": {
+            "title": "Black and White",
+            "desc": "Classic, elegant"
+          },
+          "skin_tones": {
+            "title": "Skin Tones",
+            "desc": "Realistic skin shades"
+          },
+          "pop_art": {
+            "title": "Pop Art",
+            "desc": "Bright, contrasting colors"
+          },
+          "max_colors": {
+            "title": "Maximum Colors",
+            "desc": "Rich color palette"
+          }
+        },
+        "preview_button": "View Mosaic Preview",
+        "preview_description": "Choose size and style to see how your mosaic will look"
       }
     },
     "paint_by_numbers": {

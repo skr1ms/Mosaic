@@ -132,84 +132,17 @@ const DiamondArtPage = () => {
         </div>
       </section>
 
-      {/* Два основных блока на одном уровне */}
+      {/* Центральная секция с блоками по центру */}
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-8 items-start">
+          <div className="flex flex-col items-center space-y-8">
             
-            {/* Блок "Активация купона" */}
+            {/* Блок "Покупка купона" - переместили наверх */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }} 
               animate={{ opacity: 1, y: 0 }} 
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="bg-gradient-to-r from-brand-primary to-brand-secondary rounded-3xl shadow-2xl p-8 lg:p-10 text-white"
-            >
-              <div className="flex items-center space-x-4 mb-6">
-                <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-                  <Ticket className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl lg:text-3xl font-bold">{t('sections.diamond_art.coupon_section.title')}</h2>
-                  <p className="text-brand-primary/80 text-base lg:text-lg mt-2">{t('sections.diamond_art.coupon_section.description')}</p>
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                <input
-                  type="text"
-                  value={couponCode}
-                  onChange={handleCouponInput}
-                  onBlur={() => validateCouponDomain(couponCode)}
-                  placeholder={t('hero.coupon_banner.placeholder')}
-                  maxLength={14}
-                  className="w-full px-4 lg:px-6 py-3 lg:py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl focus:ring-2 focus:ring-white/50 focus:border-transparent text-center text-lg lg:text-xl tracking-wider text-white placeholder-brand-primary/60"
-                />
-                
-                <button
-                  onClick={goToEditor}
-                  disabled={couponCode.replace(/-/g, '').length !== 12}
-                  className="w-full inline-flex items-center justify-center px-6 lg:px-8 py-3 lg:py-4 bg-white text-brand-primary rounded-xl hover:bg-brand-primary/10 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-base lg:text-lg transition-all duration-200"
-                >
-                  <span>{t('hero.coupon_banner.activate')}</span>
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </button>
-                
-                {/* Предупреждение о неправильном домене */}
-                {domainWarning && (
-                  <div className="bg-yellow-500/20 border border-yellow-400/30 rounded-xl p-4">
-                    <div className="flex items-start space-x-3">
-                      <AlertTriangle className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
-                      <div className="flex-1">
-                        <p className="text-yellow-100 text-sm font-medium mb-2">
-                          {domainWarning.message}
-                        </p>
-                        <p className="text-yellow-200/80 text-xs mb-3">
-                          Этот купон предназначен для сайта партнера: <strong>{domainWarning.partnerBrandName}</strong>
-                        </p>
-                        <button
-                          onClick={goToPartnerSite}
-                          className="inline-flex items-center px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium rounded-lg transition-colors duration-200"
-                        >
-                          Перейти на сайт партнера
-                          <ExternalLink className="w-4 h-4 ml-2" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                <p className="text-brand-primary/70 text-sm text-center">
-                  {t('sections.diamond_art.coupon_section.code_hint')}
-                </p>
-              </div>
-            </motion.div>
-
-            {/* Блок "Покупка купона" */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }} 
-              animate={{ opacity: 1, y: 0 }} 
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl shadow-2xl p-8 lg:p-10 border border-gray-200"
+              className="w-full max-w-4xl bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl shadow-2xl p-8 lg:p-10 border border-gray-200"
             >
               <div className="flex items-center space-x-4 mb-6">
                 <div className="w-16 h-16 bg-brand-secondary/10 rounded-2xl flex items-center justify-center">
@@ -252,6 +185,73 @@ const DiamondArtPage = () => {
                 ))}
               </div>
             </motion.div>
+            
+            {/* Блок "Я уже купил набор" - по центру */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="w-full max-w-2xl bg-gradient-to-r from-brand-primary to-brand-secondary rounded-3xl shadow-2xl p-8 lg:p-10 text-white"
+            >
+              <div className="flex items-center space-x-4 mb-6">
+                <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                  <Ticket className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl lg:text-3xl font-bold">{t('sections.diamond_art.coupon_section.title')}</h2>
+                  <p className="text-white/80 text-base lg:text-lg mt-2">{t('sections.diamond_art.coupon_section.description')}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  value={couponCode}
+                  onChange={handleCouponInput}
+                  onBlur={() => validateCouponDomain(couponCode)}
+                  placeholder={t('hero.coupon_banner.placeholder')}
+                  maxLength={14}
+                  className="w-full px-4 lg:px-6 py-3 lg:py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl focus:ring-2 focus:ring-white/50 focus:border-transparent text-center text-lg lg:text-xl tracking-wider text-white placeholder-white/60"
+                />
+                
+                <button
+                  onClick={goToEditor}
+                  disabled={couponCode.replace(/-/g, '').length !== 12}
+                  className="w-full inline-flex items-center justify-center px-6 lg:px-8 py-3 lg:py-4 bg-white text-brand-primary rounded-xl hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-base lg:text-lg transition-all duration-200"
+                >
+                  <span>{t('hero.coupon_banner.activate')}</span>
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </button>
+                
+                {/* Предупреждение о неправильном домене */}
+                {domainWarning && (
+                  <div className="bg-yellow-500/20 border border-yellow-400/30 rounded-xl p-4">
+                    <div className="flex items-start space-x-3">
+                      <AlertTriangle className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-yellow-100 text-sm font-medium mb-2">
+                          {domainWarning.message}
+                        </p>
+                        <p className="text-yellow-200/80 text-xs mb-3">
+                          Этот купон предназначен для сайта партнера: <strong>{domainWarning.partnerBrandName}</strong>
+                        </p>
+                        <button
+                          onClick={goToPartnerSite}
+                          className="inline-flex items-center px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium rounded-lg transition-colors duration-200"
+                        >
+                          Перейти на сайт партнера
+                          <ExternalLink className="w-4 h-4 ml-2" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                <p className="text-white/70 text-sm text-center">
+                  {t('sections.diamond_art.coupon_section.code_hint')}
+                </p>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -269,10 +269,10 @@ const DiamondArtPage = () => {
               <div className="w-16 h-16 bg-brand-primary/10 rounded-2xl flex items-center justify-center">
                 <Ruler className="w-8 h-8 text-brand-primary" />
               </div>
-              <h2 className="text-3xl font-bold text-gray-900">Размеры и стили мозаики</h2>
+              <h2 className="text-3xl font-bold text-gray-900">{t('sections.diamond_art.sizes_and_styles_section.title')}</h2>
             </div>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Выберите размер и стиль, чтобы увидеть, как будет выглядеть ваша мозаика
+              {t('sections.diamond_art.sizes_and_styles_section.description')}
             </p>
           </motion.div>
 
@@ -286,21 +286,13 @@ const DiamondArtPage = () => {
             >
               <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
                 <Ruler className="w-5 h-5 mr-2 text-brand-primary" />
-                Доступные размеры
+                {t('sections.diamond_art.sizes_and_styles_section.available_sizes')}
               </h3>
               <div className="grid grid-cols-2 gap-3">
-                {[
-                  { key: '20x20', title: '20×20', desc: 'Для начинающих', stones: '~400 камней' },
-                  { key: '30x40', title: '30×40', desc: 'Популярный', stones: '~1200 камней' },
-                  { key: '40x40', title: '40×40', desc: 'Сбалансированный', stones: '~1600 камней' },
-                  { key: '40x50', title: '40×50', desc: 'Пейзажи', stones: '~2000 камней' },
-                  { key: '40x60', title: '40×60', desc: 'Панорамы', stones: '~2400 камней' },
-                  { key: '50x70', title: '50×70', desc: 'Для опытных', stones: '~3500 камней' }
-                ].map((size) => (
-                  <div key={size.key} className="text-center p-3 bg-gray-50 rounded-lg">
+                {Object.entries(t('sections.diamond_art.sizes_and_styles_section.sizes', { returnObjects: true })).map(([key, size]) => (
+                  <div key={key} className="text-center p-3 bg-gray-50 rounded-lg">
                     <div className="font-semibold text-gray-900">{size.title}</div>
                     <div className="text-sm text-gray-600">{size.desc}</div>
-                    <div className="text-xs text-brand-primary font-medium mt-1">{size.stones}</div>
                   </div>
                 ))}
               </div>
@@ -315,19 +307,13 @@ const DiamondArtPage = () => {
             >
               <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
                 <Palette className="w-5 h-5 mr-2 text-brand-secondary" />
-                Доступные стили
+                {t('sections.diamond_art.sizes_and_styles_section.available_styles')}
               </h3>
               <div className="space-y-3">
-                {[
-                  { key: 'grayscale', title: 'Черно-белый', desc: 'Классический, элегантный', colors: '~20 оттенков' },
-                  { key: 'skin_tones', title: 'Телесные тона', desc: 'Реалистичные оттенки кожи', colors: '~30 оттенков' },
-                  { key: 'pop_art', title: 'Поп-арт', description: 'Яркие, контрастные цвета', colors: '~50 оттенков' },
-                  { key: 'max_colors', title: 'Максимум цветов', description: 'Богатая цветовая палитра', colors: '~100 оттенков' }
-                ].map((style) => (
-                  <div key={style.key} className="p-3 bg-gray-50 rounded-lg">
+                {Object.entries(t('sections.diamond_art.sizes_and_styles_section.styles', { returnObjects: true })).map(([key, style]) => (
+                  <div key={key} className="p-3 bg-gray-50 rounded-lg">
                     <div className="font-semibold text-gray-900">{style.title}</div>
-                    <div className="text-sm text-gray-600">{style.description || style.desc}</div>
-                    <div className="text-xs text-brand-secondary font-medium mt-1">{style.colors}</div>
+                    <div className="text-sm text-gray-600">{style.desc}</div>
                   </div>
                 ))}
               </div>
@@ -346,11 +332,11 @@ const DiamondArtPage = () => {
               className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-brand-primary to-brand-secondary text-white rounded-2xl hover:from-brand-primary/90 hover:to-brand-secondary/90 font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl"
             >
               <Eye className="w-6 h-6 mr-3" />
-              Посмотреть превью мозаики
+              {t('sections.diamond_art.sizes_and_styles_section.preview_button')}
               <ArrowRight className="w-6 h-6 ml-3" />
             </button>
             <p className="text-gray-600 mt-4">
-              Выберите размер и стиль, чтобы увидеть, как будет выглядеть ваша мозаика
+              {t('sections.diamond_art.sizes_and_styles_section.preview_description')}
             </p>
           </motion.div>
         </div>

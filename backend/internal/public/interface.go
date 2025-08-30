@@ -10,7 +10,6 @@ import (
 	"github.com/skr1ms/mosaic/internal/image"
 	"github.com/skr1ms/mosaic/internal/partner"
 	"github.com/skr1ms/mosaic/internal/payment"
-	"github.com/skr1ms/mosaic/internal/preview"
 	"github.com/skr1ms/mosaic/internal/types"
 )
 
@@ -60,7 +59,7 @@ type EmailServiceInterface interface {
 }
 
 type PreviewServiceInterface interface {
-	GeneratePreview(ctx context.Context, req *preview.PreviewRequest) (*preview.PreviewResponse, error)
+	GeneratePreview(ctx context.Context, file *multipart.FileHeader, size, style string) (map[string]any, error)
 }
 
 type ConfigInterface interface {

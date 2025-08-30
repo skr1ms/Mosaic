@@ -461,3 +461,44 @@ func (s *S3Client) DeleteChatData(ctx context.Context, objectKey string) error {
 	s.logger.GetZerologLogger().Info().Str("bucket", bucket).Str("key", key).Msg("Deleting chat object from S3")
 	return s.client.RemoveObject(ctx, bucket, key, minio.RemoveObjectOptions{})
 }
+
+// UploadToPreviewBucket uploads file to preview-images bucket
+func (s *S3Client) UploadToPreviewBucket(ctx context.Context, objectKey string, reader io.Reader, size int64, contentType string) error {
+	bucket := s.previewBucket
+	if bucket == "" {
+		return fmt.Errorf("preview bucket is not configured")
+	}
+
+	s.logger.GetZerologLogger().Info().
+		Str("bucket", bucket).
+		Str("key", objectKey).
+		Int64("size", size).
+		Str("content_type", contentType).
+		Msg("Uploading preview to S3")
+
+	_, err := s.client.PutObject(ctx, bucket, objectKey, reader, size, minio.PutObjectOptions{
+		ContentType: contentType,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to upload preview to S3: %w", err)
+	}
+
+	s.logger.GetZerologLogger().Info().
+		Str("bucket", bucket).
+		Str("key", objectKey).
+		Msg("Preview uploaded successfully to S3")
+
+	return nil
+}
+
+// GetPreviewURL returns public URL for preview file
+func (s *S3Client) GetPreviewURL(objectKey string) string {
+	bucket := s.previewBucket
+	if bucket == "" {
+		return ""
+	}
+
+	// Возвращаем публичную ссылку на файл
+	// Предполагаем что бакет preview-images настроен как публичный
+	return fmt.Sprintf("%s/%s/%s", s.publicURL, bucket, objectKey)
+}
