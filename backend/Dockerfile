@@ -13,6 +13,7 @@ COPY cmd/ ./cmd/
 COPY config/ ./config/
 COPY migrations/ ./migrations/
 COPY docs/ ./docs/
+COPY scripts/ ./scripts/
 
 RUN CGO_ENABLED=0 go build -o main ./cmd
 
@@ -24,7 +25,7 @@ WORKDIR /app
 
 COPY --from=builder /app/main .
 COPY --from=builder /app/docs ./docs
-RUN mkdir -p ./scripts
+COPY scripts/ ./scripts/
 
 EXPOSE 8080
 
