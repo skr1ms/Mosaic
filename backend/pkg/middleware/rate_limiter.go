@@ -21,8 +21,8 @@ type RateLimiterConfig struct {
 // GeneralRateLimiter general limiter for all endpoints
 func GeneralRateLimiter(logger *Logger) fiber.Handler {
 	return limiter.New(limiter.Config{
-		Max:        1000, // increased limit for dev
-		Expiration: 1 * time.Minute,
+		Max:        2000, // increased limit
+		Expiration: 2 * time.Minute, // increased timeout
 		Next: func(c *fiber.Ctx) bool {
 			p := c.Path()
 			if p == "/favicon.ico" || strings.HasPrefix(p, "/static/") || strings.HasPrefix(p, "/swagger") {
@@ -54,8 +54,8 @@ func GeneralRateLimiter(logger *Logger) fiber.Handler {
 // AuthRateLimiter strict limiter for authorization endpoints
 func AuthRateLimiter(logger *Logger) fiber.Handler {
 	return limiter.New(limiter.Config{
-		Max:        5, // 5 attempts
-		Expiration: 5 * time.Minute,
+		Max:        10, // increased to 10 attempts
+		Expiration: 10 * time.Minute, // increased timeout
 		KeyGenerator: func(c *fiber.Ctx) string {
 			return c.IP()
 		},
@@ -66,7 +66,7 @@ func AuthRateLimiter(logger *Logger) fiber.Handler {
 				Str("method", c.Method()).
 				Msg("Auth rate limit exceeded")
 
-			return errors.SendError(c, errors.RateLimitError("Too many authentication attempts. Please try again in 5 minutes."))
+			return errors.SendError(c, errors.RateLimitError("Too many authentication attempts. Please try again in 10 minutes."))
 		},
 	})
 }
@@ -74,8 +74,8 @@ func AuthRateLimiter(logger *Logger) fiber.Handler {
 // PaymentRateLimiter limiter for payment endpoints
 func PaymentRateLimiter(logger *Logger) fiber.Handler {
 	return limiter.New(limiter.Config{
-		Max:        10, // 10 attempts
-		Expiration: 10 * time.Minute,
+		Max:        20, // increased to 20 attempts
+		Expiration: 15 * time.Minute, // increased timeout
 		KeyGenerator: func(c *fiber.Ctx) string {
 			return c.IP()
 		},
@@ -86,7 +86,7 @@ func PaymentRateLimiter(logger *Logger) fiber.Handler {
 				Str("method", c.Method()).
 				Msg("Payment rate limit exceeded")
 
-			return errors.SendError(c, errors.RateLimitError("Too many payment attempts. Please try again in 10 minutes."))
+			return errors.SendError(c, errors.RateLimitError("Too many payment attempts. Please try again in 15 minutes."))
 		},
 	})
 }
@@ -94,8 +94,8 @@ func PaymentRateLimiter(logger *Logger) fiber.Handler {
 // ImageUploadRateLimiter limiter for image uploads
 func ImageUploadRateLimiter(logger *Logger) fiber.Handler {
 	return limiter.New(limiter.Config{
-		Max:        20, // 20 downloads
-		Expiration: 1 * time.Hour,
+		Max:        50, // increased to 50 uploads
+		Expiration: 2 * time.Hour, // increased timeout
 		KeyGenerator: func(c *fiber.Ctx) string {
 			return c.IP()
 		},
@@ -106,7 +106,7 @@ func ImageUploadRateLimiter(logger *Logger) fiber.Handler {
 				Str("method", c.Method()).
 				Msg("Image upload rate limit exceeded")
 
-			return errors.SendError(c, errors.RateLimitError("Too many image uploads. Please try again in 1 hour."))
+			return errors.SendError(c, errors.RateLimitError("Too many image uploads. Please try again in 2 hours."))
 		},
 	})
 }
@@ -114,8 +114,8 @@ func ImageUploadRateLimiter(logger *Logger) fiber.Handler {
 // PublicAPIRateLimiter limiter for public API endpoints
 func PublicAPIRateLimiter(logger *Logger) fiber.Handler {
 	return limiter.New(limiter.Config{
-		Max:        50, // 50 requests
-		Expiration: 1 * time.Minute,
+		Max:        100, // increased to 100 requests
+		Expiration: 2 * time.Minute, // increased timeout
 		KeyGenerator: func(c *fiber.Ctx) string {
 			return c.IP()
 		},

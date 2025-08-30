@@ -3,10 +3,12 @@ import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { Play, Ticket, Ruler, ShoppingCart, ArrowRight, ExternalLink } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { usePartnerStore } from '../store/partnerStore'
 
 const DiamondArtPage = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { partner } = usePartnerStore()
   const [couponCode, setCouponCode] = useState('')
 
   const handleCouponInput = (e) => {
@@ -188,6 +190,7 @@ const DiamondArtPage = () => {
       </section>
 
       {/* Блок "Хочу купить" — переход к выбору площадок для покупки */}
+      {!partner && (
       <section className="py-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
@@ -245,6 +248,7 @@ const DiamondArtPage = () => {
           </motion.div>
         </div>
       </section>
+      )}
     </div>
   )
 }
