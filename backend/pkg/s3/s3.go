@@ -314,6 +314,11 @@ func (s *S3Client) GetBucketName() string {
 	return s.imageBucket
 }
 
+// GetPreviewBucketName returns preview bucket name
+func (s *S3Client) GetPreviewBucketName() string {
+	return s.previewBucket
+}
+
 // UploadLogo uploads partner logo to separate bucket and returns key
 func (s *S3Client) UploadLogo(ctx context.Context, reader io.Reader, size int64, contentType string, partnerID string) (string, error) {
 	bucket := s.logosBucket
@@ -498,7 +503,17 @@ func (s *S3Client) GetPreviewURL(objectKey string) string {
 		return ""
 	}
 
-	// Always use presigned URLs for preview images to avoid CORS and access issues
+	// Use direct public URL through Nginx proxy
+	if s.publicURL != "" {
+		// Clean up the public URL - remove /minio/browser path if present
+		cleanPublicURL := strings.TrimSuffix(s.publicURL, "/minio/browser")
+		cleanPublicURL = strings.TrimSuffix(cleanPublicURL, "/minio")
+		cleanPublicURL = strings.TrimSuffix(cleanPublicURL, "/")
+
+		return fmt.Sprintf("%s/%s/%s", cleanPublicURL, bucket, objectKey)
+	}
+
+	// Fallback to presigned URLs if public URL not configured
 	ctx := context.Background()
 	url, err := s.client.PresignedGetObject(ctx, bucket, objectKey, 7*24*time.Hour, nil)
 	if err != nil {
@@ -507,26 +522,8 @@ func (s *S3Client) GetPreviewURL(objectKey string) string {
 			Str("bucket", bucket).
 			Str("key", objectKey).
 			Msg("Failed to generate presigned URL for preview")
-
-		// Fallback to public URL if presigned fails
-		if s.publicURL != "" {
-			cleanPublicURL := strings.TrimSuffix(s.publicURL, "/minio/browser")
-			cleanPublicURL = strings.TrimSuffix(cleanPublicURL, "/minio")
-			cleanPublicURL = strings.TrimSuffix(cleanPublicURL, "/")
-
-			return fmt.Sprintf("%s/%s/%s", cleanPublicURL, bucket, objectKey)
-		}
-
 		return ""
 	}
 
-	// Replace internal MinIO endpoint with public URL if configured
-	urlStr := url.String()
-	if s.publicURL != "" {
-		// Replace minio:9000 with public domain
-		urlStr = strings.Replace(urlStr, "minio:9000", strings.TrimPrefix(s.publicURL, "https://"), 1)
-		urlStr = strings.Replace(urlStr, "http://", "https://", 1)
-	}
-
-	return urlStr
+	return url.String()
 }
