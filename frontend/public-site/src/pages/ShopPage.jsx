@@ -32,6 +32,31 @@ const ShopPage = () => {
   const [paymentUrl, setPaymentUrl] = useState(null)
   const [orderNumber, setOrderNumber] = useState(null)
   
+  // Проверяем сохраненный заказ при загрузке
+  useEffect(() => {
+    try {
+      const savedOrder = localStorage.getItem('pendingOrder')
+      if (savedOrder) {
+        const order = JSON.parse(savedOrder)
+        // Проверяем что заказ не старше 30 минут
+        const thirtyMinutes = 30 * 60 * 1000
+        if (Date.now() - order.timestamp < thirtyMinutes) {
+          setOrderNumber(order.orderNumber)
+          setPaymentUrl(order.paymentUrl)
+          setEmail(order.email)
+          setSelectedSize(order.size)
+          setSelectedStyle(order.style)
+          console.log('Restored pending order:', order.orderNumber)
+        } else {
+          // Удаляем старый заказ
+          localStorage.removeItem('pendingOrder')
+        }
+      }
+    } catch (error) {
+      console.error('Failed to restore pending order:', error)
+    }
+  }, [])
+  
   const { addNotification } = useUIStore()
   
 
@@ -45,11 +70,29 @@ const ShopPage = () => {
           const statusData = await MosaicAPI.getOrderStatus(orderNumber)
           if (statusData.status === 'paid') {
             setPaymentStatus('success')
-            addNotification({ 
-              type: 'success', 
-              title: 'Оплата прошла успешно!', 
-              message: 'Ваш купон будет отправлен на email в течение 5 минут.' 
-            })
+            
+            // ЕСЛИ ЕСТЬ КУПОН - АВТОМАТИЧЕСКИ ПЕРЕНАПРАВЛЯЕМ!
+            if (statusData.coupon_code) {
+              localStorage.setItem('activeCoupon', statusData.coupon_code)
+              localStorage.removeItem('pendingOrder') // Очищаем pending order
+              
+              addNotification({ 
+                type: 'success', 
+                title: 'Купон готов!', 
+                message: `Ваш купон ${statusData.coupon_code} активирован! Переходим к созданию схемы...` 
+              })
+              
+              // Перенаправляем на редактор с купоном
+              setTimeout(() => {
+                window.location.href = `/editor?coupon=${statusData.coupon_code}&size=${statusData.size}&style=${statusData.style}`
+              }, 2000)
+            } else {
+              addNotification({ 
+                type: 'success', 
+                title: 'Оплата прошла успешно!', 
+                message: 'Ваш купон будет отправлен на email в течение 5 минут.' 
+              })
+            }
           } else if (statusData.status === 'failed' || statusData.status === 'cancelled') {
             setPaymentStatus('fail')
             addNotification({ 
@@ -77,6 +120,22 @@ const ShopPage = () => {
         // Сохраняем номер заказа для проверки статуса
         if (data.order_number) {
           setOrderNumber(data.order_number)
+          
+          // СОХРАНЯЕМ ДАННЫЕ ЗАКАЗА В LOCALSTORAGE
+          try {
+            localStorage.setItem('pendingOrder', JSON.stringify({
+              orderNumber: data.order_number,
+              orderId: data.order_id,
+              size: selectedSize,
+              style: selectedStyle,
+              email: email,
+              amount: data.amount,
+              timestamp: Date.now(),
+              paymentUrl: data.payment_url
+            }))
+          } catch (error) {
+            console.error('Failed to save order to localStorage:', error)
+          }
         }
         // Открываем страницу оплаты в новой вкладке
         window.open(data.payment_url, '_blank')

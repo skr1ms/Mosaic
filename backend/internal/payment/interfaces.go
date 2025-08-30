@@ -68,3 +68,7 @@ type ConfigInterface interface {
 type RandomCouponCodeGeneratorInterface interface {
 	GenerateUniqueCouponCode(partnerCode string, repo CouponRepositoryInterface) (string, error)
 }
+
+type EmailServiceInterface interface {
+	SendCouponPurchaseEmail(to, couponCode, size, style string) error
+}

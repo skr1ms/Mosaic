@@ -27,6 +27,7 @@ type PaymentServiceDeps struct {
 	Config                    ConfigInterface
 	AlfaBankClient            AlfaBankClientInterface
 	RandomCouponCodeGenerator RandomCouponCodeGeneratorInterface
+	EmailService              EmailServiceInterface
 }
 
 type PaymentService struct {
@@ -513,6 +514,14 @@ func (s *PaymentService) createCouponForOrder(ctx context.Context, order *Order)
 		return fmt.Errorf("error linking coupon to order: %w", err)
 	}
 
+	// Send coupon email notification
+	if s.deps.EmailService != nil && order.UserEmail != "" {
+		err = s.deps.EmailService.SendCouponPurchaseEmail(order.UserEmail, couponCode, order.Size, order.Style)
+		if err != nil {
+			fmt.Printf("Failed to send coupon email: %v\n", err)
+		}
+	}
+
 	return nil
 }
 
@@ -526,11 +535,6 @@ func (s *PaymentService) ProcessWebhookNotification(ctx context.Context, notific
 	if err != nil {
 		return fmt.Errorf("order not found: %w", err)
 	}
-
-	// Allow processing for testing - comment out for production
-	// if order.Status != OrderStatusPending {
-	//	return nil
-	// }
 
 	orderStatus := 2
 	if notification.OrderStatus != nil {

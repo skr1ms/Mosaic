@@ -333,3 +333,80 @@ func (m *Mailer) SendStatusUpdateEmail(to, couponCode, status, message string) e
 
 	return m.sendEmail(to, subject, htmlBody, textBody)
 }
+
+// SendCouponPurchaseEmail sends coupon code to user after successful purchase
+func (m *Mailer) SendCouponPurchaseEmail(to, couponCode, size, style string) error {
+	m.logger.GetZerologLogger().Info().Str("to", to).Str("coupon", couponCode).Msg("Sending coupon purchase email")
+
+	templateData := TemplateData{
+		RecipientEmail: to,
+		CouponCode:     couponCode,
+		Size:           size,
+		StyleName:      m.getStyleName(style),
+	}
+
+	subject, htmlBody, textBody, err := m.templates.RenderTemplate("coupon_purchased", templateData)
+	if err != nil {
+		m.logger.GetZerologLogger().Error().Err(err).Msg("Failed to render coupon_purchased template, using fallback")
+		return m.sendCouponPurchaseEmailFallback(to, couponCode, size, style)
+	}
+
+	return m.sendEmail(to, subject, htmlBody, textBody)
+}
+
+// sendCouponPurchaseEmailFallback fallback method with hardcoded HTML template
+func (m *Mailer) sendCouponPurchaseEmailFallback(to, couponCode, size, style string) error {
+	subject := "🎉 Ваш купон готов к использованию!"
+	htmlBody := fmt.Sprintf(
+		"<h2>🎉 Ваш купон готов к использованию!</h2>"+
+			"<p>Спасибо за покупку!</p>"+
+			"<p>Ваш купон: <strong style=\"font-size: 18px; color: #4CAF50;\">%s</strong></p>"+
+			"<p><strong>Размер:</strong> %s см</p>"+
+			"<p><strong>Стиль:</strong> %s</p>"+
+			"<p>Теперь вы можете:</p>"+
+			"<ol>"+
+			"<li>🖼️ Загрузить свое изображение на сайте</li>"+
+			"<li>✨ Ввести код купона: <strong>%s</strong></li>"+
+			"<li>🎨 Получить готовую схему алмазной мозаики</li>"+
+			"</ol>"+
+			"<p><a href=\"https://photo.doyoupaint.com/\" style=\"background-color: #4CAF50; color: white; padding: 14px 20px; text-decoration: none; display: inline-block; border-radius: 4px; margin: 10px 0;\">🚀 Создать схему</a></p>"+
+			"<p><em>Удачного творчества! 🎨✨</em></p>"+
+			"<hr>"+
+			"<p><small>Сохраните этот код купона. Если у вас есть вопросы, обратитесь в службу поддержки.</small></p>",
+		couponCode, size, m.getStyleName(style), couponCode,
+	)
+
+	textBody := fmt.Sprintf(
+		"Ваш купон готов к использованию!\n\n"+
+			"Спасибо за покупку!\n\n"+
+			"Ваш купон: %s\n"+
+			"Размер: %s см\n"+
+			"Стиль: %s\n\n"+
+			"Теперь вы можете:\n"+
+			"1. Загрузить свое изображение на сайте\n"+
+			"2. Ввести код купона: %s\n"+
+			"3. Получить готовую схему алмазной мозаики\n\n"+
+			"Перейти на сайт: https://photo.doyoupaint.com/\n\n"+
+			"Удачного творчества!\n\n"+
+			"Сохраните этот код купона.",
+		couponCode, size, m.getStyleName(style), couponCode,
+	)
+
+	return m.sendEmail(to, subject, htmlBody, textBody)
+}
+
+// getStyleName converts style code to readable name
+func (m *Mailer) getStyleName(style string) string {
+	switch style {
+	case "grayscale":
+		return "Оттенки серого"
+	case "skin_tone":
+		return "Оттенки телесного"
+	case "pop_art":
+		return "Поп-арт"
+	case "max_colors":
+		return "Максимум цветов"
+	default:
+		return style
+	}
+}

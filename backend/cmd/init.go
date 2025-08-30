@@ -314,11 +314,13 @@ func InitializeApp() *fiber.App {
 	})
 
 	paymentService := payment.NewPaymentService(&payment.PaymentServiceDeps{
-		PaymentRepository: paymentRepo,
-		CouponRepository:  couponRepo,
-		PartnerRepository: partnerRepo,
-		Config:            cfg,
-		AlfaBankClient:    alfaBankClient,
+		PaymentRepository:         paymentRepo,
+		CouponRepository:          couponRepo,
+		PartnerRepository:         partnerRepo,
+		Config:                    cfg,
+		AlfaBankClient:            alfaBankClient,
+		RandomCouponCodeGenerator: &RandomCouponCodeGeneratorImpl{},
+		EmailService:              mailSender,
 	})
 
 	previewService := preview.NewPreviewService(&preview.PreviewServiceDeps{

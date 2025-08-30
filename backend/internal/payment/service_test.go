@@ -188,6 +188,16 @@ func (m *MockPartnerRepository) GetByPartnerCode(ctx context.Context, partnerCod
 	return args.Get(0).(*partner.Partner), args.Error(1)
 }
 
+// MockEmailService for testing
+type MockEmailService struct {
+	mock.Mock
+}
+
+func (m *MockEmailService) SendCouponPurchaseEmail(to, couponCode, size, style string) error {
+	args := m.Called(to, couponCode, size, style)
+	return args.Error(0)
+}
+
 func (m *MockPartnerRepository) Update(ctx context.Context, partner *partner.Partner) error {
 	args := m.Called(ctx, partner)
 	return args.Error(0)

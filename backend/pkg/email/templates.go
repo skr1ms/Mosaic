@@ -34,6 +34,7 @@ type TemplateData struct {
 	OriginalURL    string
 	Size           string
 	Style          string
+	StyleName      string
 	ProcessingTime string
 
 	ErrorMessage string

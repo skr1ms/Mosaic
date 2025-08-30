@@ -7,6 +7,8 @@ import (
 	"github.com/skr1ms/mosaic/internal/coupon"
 	"github.com/skr1ms/mosaic/internal/image"
 	"github.com/skr1ms/mosaic/internal/partner"
+	"github.com/skr1ms/mosaic/internal/payment"
+	"github.com/skr1ms/mosaic/pkg/randomCouponCode"
 )
 
 type PartnerRepositoryAdapter struct {
@@ -98,4 +100,18 @@ func (a *CouponRepositoryAdapter) Update(ctx context.Context, imgCoupon *image.C
 		Status: imgCoupon.Status,
 	}
 	return a.couponRepo.Update(ctx, c)
+}
+
+type RandomCouponCodeGeneratorImpl struct{}
+
+func (r *RandomCouponCodeGeneratorImpl) GenerateUniqueCouponCode(partnerCode string, repo payment.CouponRepositoryInterface) (string, error) {
+	return randomCouponCode.GenerateUniqueCouponCode(partnerCode, &RandomCouponRepoAdapter{repo: repo})
+}
+
+type RandomCouponRepoAdapter struct {
+	repo payment.CouponRepositoryInterface
+}
+
+func (a *RandomCouponRepoAdapter) CodeExists(ctx context.Context, code string) (bool, error) {
+	return a.repo.CodeExists(ctx, code)
 }
