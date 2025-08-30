@@ -264,10 +264,23 @@ const MosaicPreviewPage = () => {
                   src={generatedPreview}
                   alt="Превью мозаики"
                   className="w-full rounded-lg shadow-lg"
+                  onError={(e) => {
+                    console.error('Failed to load preview image:', generatedPreview)
+                    e.target.style.display = 'none'
+                  }}
+                  onLoad={() => {
+                    console.log('Preview image loaded successfully:', generatedPreview)
+                  }}
                 />
+                <div className="text-xs text-gray-500 break-all">
+                  URL: {generatedPreview}
+                </div>
                 <div className="flex space-x-3">
                   <button
-                    onClick={() => window.open(generatedPreview, '_blank')}
+                    onClick={() => {
+                      console.log('Opening preview in new tab:', generatedPreview)
+                      window.open(generatedPreview, '_blank')
+                    }}
                     className="flex-1 bg-brand-primary text-white py-3 px-4 rounded-lg hover:bg-brand-primary/90 font-semibold transition-colors flex items-center justify-center space-x-2"
                   >
                     <Eye className="w-4 h-4" />

@@ -498,7 +498,27 @@ func (s *S3Client) GetPreviewURL(objectKey string) string {
 		return ""
 	}
 
-	// Return public URL for file
-	// Assume preview-images bucket is configured as public
-	return fmt.Sprintf("%s/%s/%s", s.publicURL, bucket, objectKey)
+	// If public URL is configured, try direct public URL first
+	if s.publicURL != "" {
+		// Clean up the public URL - remove /minio/browser path if present
+		cleanPublicURL := strings.TrimSuffix(s.publicURL, "/minio/browser")
+		cleanPublicURL = strings.TrimSuffix(cleanPublicURL, "/minio")
+		cleanPublicURL = strings.TrimSuffix(cleanPublicURL, "/")
+
+		return fmt.Sprintf("%s/%s/%s", cleanPublicURL, bucket, objectKey)
+	}
+
+	// Fallback to presigned URL (7 days expiry)
+	ctx := context.Background()
+	url, err := s.client.PresignedGetObject(ctx, bucket, objectKey, 7*24*time.Hour, nil)
+	if err != nil {
+		s.logger.GetZerologLogger().Error().
+			Err(err).
+			Str("bucket", bucket).
+			Str("key", objectKey).
+			Msg("Failed to generate presigned URL for preview")
+		return ""
+	}
+
+	return url.String()
 }
