@@ -1,5 +1,6 @@
 import React, { Fragment, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import {
     Row, Col, Card, CardBody, CardTitle, CardHeader,
     Button, Input, InputGroup, InputGroupText,
@@ -10,6 +11,7 @@ import ConfirmModal from '../../../components/ConfirmModal';
 
 const PartnersList = () => {
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [isFilterOpen, setIsFilterOpen] = useState(false);

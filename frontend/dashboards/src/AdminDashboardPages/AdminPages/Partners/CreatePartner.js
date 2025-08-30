@@ -496,7 +496,7 @@ const CreatePartner = () => {
                                                 placeholder="https://www.ozon.ru/search/?text={sku}+{size}+{style}"
                                             />
                                             <small className="form-text text-muted">
-                                                {t('partners.link_template_help')} {sku}, {size}, {style}
+                                                {t('partners.link_template_help')} {'{sku}'}, {'{size}'}, {'{style}'}
                                             </small>
                                         </FormGroup>
                                     </Col>
@@ -512,7 +512,7 @@ const CreatePartner = () => {
                                                 placeholder="https://www.wildberries.ru/catalog/search?query={sku}+{size}+{style}"
                                             />
                                             <small className="form-text text-muted">
-                                                {t('partners.link_template_help')} {sku}, {size}, {style}
+                                                {t('partners.link_template_help')} {'{sku}'}, {'{size}'}, {'{style}'}
                                             </small>
                                         </FormGroup>
                                     </Col>
