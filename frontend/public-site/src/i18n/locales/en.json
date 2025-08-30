@@ -19,8 +19,7 @@
     "diamond_art": "Diamond Art",
     "paint_by_numbers": "Paint by Numbers",
     "what_is_this": "What is this",
-    "login": "Login",
-    "login_tooltip": "Login to admin panel",
+
     "page_title": "Diamond Mosaic - Create Beautiful Paintings from Rhinestones",
     "page_description": "Create beautiful paintings from rhinestones. An exciting hobby for the whole family. Upload photos, choose style and get ready mosaic pattern."
   },
@@ -34,12 +33,9 @@
       "activate": "Activate"
     },
     "shop_banner": {
-      "title": "I want to buy a coupon",
-      "description": "I have a diamond art kit, I want to buy a coupon",
-      "button": "Go to Shop",
-      "title_details": "Learn More",
-      "description_details": "Learn all about diamond art, watch video tutorials and choose your size",
-      "button_details": "Learn More"
+      "title": "Learn More",
+      "description": "Learn all about diamond art, watch video tutorials and choose your size",
+      "button": "Learn More"
     }
   },
   "sections": {

@@ -296,9 +296,6 @@ func (h *PublicHandler) ActivateCoupon(c *fiber.Ctx) error {
 		if err.Error() == "coupon not found" {
 			errorMsg = "Coupon not found"
 			statusCode = fiber.StatusNotFound
-		} else if err.Error() == "coupon already used" {
-			errorMsg = "Coupon already used"
-			statusCode = fiber.StatusConflict
 		} else {
 			errorMsg = "Failed to activate coupon"
 			statusCode = fiber.StatusInternalServerError

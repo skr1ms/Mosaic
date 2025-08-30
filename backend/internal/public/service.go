@@ -138,10 +138,8 @@ func (s *PublicService) ActivateCoupon(code string) (map[string]any, error) {
 		return nil, fmt.Errorf("coupon not found: %w", err)
 	}
 
-	if coupon.Status == "used" || coupon.Status == "activated" || coupon.Status == "completed" {
-		return nil, fmt.Errorf("coupon already used, activated or completed")
-	}
-
+	// Упрощенная валидация - только проверка существования купона
+	// Убрана проверка статуса и email
 	coupon.Status = "activated"
 	now := time.Now()
 	coupon.ActivatedAt = &now

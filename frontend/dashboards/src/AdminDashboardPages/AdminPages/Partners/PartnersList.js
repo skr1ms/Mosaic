@@ -326,6 +326,14 @@ const PartnersList = () => {
                                                     </Button>
                                                     <Button 
                                                         size="sm" 
+                                                        color="secondary"
+                                                        onClick={() => navigate(`/admin/partners/${partner.id}/articles`)}
+                                                        title="Управление артикулами"
+                                                    >
+                                                        <i className="pe-7s-box2"></i>
+                                                    </Button>
+                                                    <Button 
+                                                        size="sm" 
                                                         color={partner.status === 'active' ? 'warning' : 'success'}
                                                         onClick={() => handleBlock(partner.id, partner.status)}
                                                         title={partner.status === 'active' ? t('partners.block_partner_action') : t('partners.unblock_partner_action')}

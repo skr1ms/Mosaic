@@ -139,7 +139,7 @@ const HeroSection = () => {
   }
 
   const goToShop = () => {
-    navigate('/shop')
+    navigate('/diamond-art')
   }
 
   const containerVariants = {
@@ -241,11 +241,11 @@ const HeroSection = () => {
               </div>
               
               <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 px-2">
-                {partner ? t('hero.shop_banner.title_details') : t('hero.shop_banner.title')}
+                {t('hero.shop_banner.title')}
               </h3>
               
               <p className="text-gray-600 mb-6 px-2 text-sm sm:text-base flex-grow">
-                {partner ? t('hero.shop_banner.description_details') : t('hero.shop_banner.description')}
+                {t('hero.shop_banner.description')}
               </p>
               
               <button
@@ -253,7 +253,7 @@ const HeroSection = () => {
                 className="w-full bg-brand-secondary text-white py-3 px-4 sm:px-6 rounded-lg hover:bg-brand-secondary/90 font-semibold text-base sm:text-lg transition-all duration-200 flex items-center justify-center space-x-2 focus:ring-2 focus:ring-brand-secondary focus:ring-offset-2 min-h-[48px] mt-auto"
               >
                 <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span>{partner ? t('hero.shop_banner.button_details') : t('hero.shop_banner.button')}</span>
+                <span>{t('hero.shop_banner.button')}</span>
               </button>
             </div>
           </motion.div>

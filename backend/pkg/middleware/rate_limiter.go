@@ -21,8 +21,8 @@ type RateLimiterConfig struct {
 // GeneralRateLimiter general limiter for all endpoints
 func GeneralRateLimiter(logger *Logger) fiber.Handler {
 	return limiter.New(limiter.Config{
-		Max:        1000,            // reduced limit
-		Expiration: 2 * time.Minute, // increased timeout
+		Max:        2000,            // increased limit
+		Expiration: 5 * time.Minute, // increased timeout
 		Next: func(c *fiber.Ctx) bool {
 			p := c.Path()
 			if p == "/favicon.ico" || strings.HasPrefix(p, "/static/") || strings.HasPrefix(p, "/swagger") {
@@ -54,8 +54,8 @@ func GeneralRateLimiter(logger *Logger) fiber.Handler {
 // AuthRateLimiter strict limiter for authorization endpoints
 func AuthRateLimiter(logger *Logger) fiber.Handler {
 	return limiter.New(limiter.Config{
-		Max:        5,                // reduced to 5 attempts
-		Expiration: 10 * time.Minute, // increased timeout
+		Max:        10,               // increased to 10 attempts
+		Expiration: 30 * time.Minute, // increased timeout
 		KeyGenerator: func(c *fiber.Ctx) string {
 			return c.IP()
 		},
@@ -74,8 +74,8 @@ func AuthRateLimiter(logger *Logger) fiber.Handler {
 // PaymentRateLimiter limiter for payment endpoints
 func PaymentRateLimiter(logger *Logger) fiber.Handler {
 	return limiter.New(limiter.Config{
-		Max:        10,               // reduced to 10 attempts
-		Expiration: 15 * time.Minute, // increased timeout
+		Max:        20,               // increased to 20 attempts
+		Expiration: 30 * time.Minute, // increased timeout
 		KeyGenerator: func(c *fiber.Ctx) string {
 			return c.IP()
 		},
@@ -94,8 +94,8 @@ func PaymentRateLimiter(logger *Logger) fiber.Handler {
 // ImageUploadRateLimiter limiter for image uploads
 func ImageUploadRateLimiter(logger *Logger) fiber.Handler {
 	return limiter.New(limiter.Config{
-		Max:        25,            // reduced to 25 uploads
-		Expiration: 2 * time.Hour, // increased timeout
+		Max:        50,            // increased to 50 uploads
+		Expiration: 4 * time.Hour, // increased timeout
 		KeyGenerator: func(c *fiber.Ctx) string {
 			return c.IP()
 		},
@@ -114,8 +114,8 @@ func ImageUploadRateLimiter(logger *Logger) fiber.Handler {
 // PublicAPIRateLimiter limiter for public API endpoints
 func PublicAPIRateLimiter(logger *Logger) fiber.Handler {
 	return limiter.New(limiter.Config{
-		Max:        50,              // reduced to 50 requests
-		Expiration: 2 * time.Minute, // increased timeout
+		Max:        100,             // increased to 100 requests
+		Expiration: 5 * time.Minute, // increased timeout
 		KeyGenerator: func(c *fiber.Ctx) string {
 			return c.IP()
 		},
@@ -134,8 +134,8 @@ func PublicAPIRateLimiter(logger *Logger) fiber.Handler {
 // CouponActivationRateLimiter strict limiter for coupon activation endpoints
 func CouponActivationRateLimiter(logger *Logger) fiber.Handler {
 	return limiter.New(limiter.Config{
-		Max:        5,                // Maximum 5 coupon activation attempts
-		Expiration: 30 * time.Minute, // Ban for 30 minutes after limit exceeded
+		Max:        10,              // Maximum 10 coupon activation attempts
+		Expiration: 60 * time.Minute, // Ban for 60 minutes after limit exceeded
 		KeyGenerator: func(c *fiber.Ctx) string {
 			return c.IP()
 		},
