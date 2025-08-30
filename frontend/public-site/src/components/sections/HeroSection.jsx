@@ -158,14 +158,6 @@ const HeroSection = () => {
     navigate('/shop')
   }
 
-  const goToDiamondArt = () => {
-    navigate('/diamond-art')
-  }
-
-  const goToPaintByNumbers = () => {
-    navigate('/paint-by-numbers')
-  }
-
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -213,13 +205,9 @@ const HeroSection = () => {
 
           <motion.div 
             variants={itemVariants}
-            className={`grid gap-6 sm:gap-8 max-w-5xl mx-auto ${
-              isOwnDomain 
-                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4' 
-                : 'grid-cols-1 lg:grid-cols-2'
-            }`}
+            className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto"
           >
-            {/* Coupon Activation Card - всегда показываем */}
+            {/* Coupon Activation Card */}
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 sm:p-8 border border-white/20 mx-4 lg:mx-0 flex flex-col h-full min-h-[400px]">
               <div className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-brand-primary/10 rounded-full mx-auto mb-4 sm:mb-6">
                 <Ticket className="w-7 h-7 sm:w-8 sm:h-8 text-brand-primary" />
@@ -287,50 +275,27 @@ const HeroSection = () => {
               </div>
             )}
 
-            {/* Diamond Art Card - показываем для всех доменов */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 sm:p-8 border border-white/20 mx-4 lg:mx-0 flex flex-col h-full min-h-[400px]">
-              <div className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-green-100 rounded-full mx-auto mb-4 sm:mb-6">
-                <Gem className="w-7 h-7 sm:w-8 sm:h-8 text-green-600" />
-              </div>
-              
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 px-2">
-                {t('sections.diamond_art.title')}
-              </h3>
-              
-              <p className="text-gray-600 mb-6 px-2 text-sm sm:text-base flex-grow">
-                {t('sections.diamond_art.description')}
-              </p>
-              
-              <button
-                onClick={goToDiamondArt}
-                className="w-full bg-green-600 text-white py-3 px-4 sm:px-6 rounded-lg hover:bg-green-700 font-semibold text-base sm:text-lg transition-all duration-200 flex items-center justify-center space-x-2 focus:ring-2 focus:ring-green-600 focus:ring-offset-2 min-h-[48px] mt-auto"
-              >
-                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span>{t('sections.diamond_art.button_details')}</span>
-              </button>
-            </div>
-
-            {/* Paint by Numbers Card - показываем только для собственного домена */}
-            {isOwnDomain && (
+            {/* Diamond Art Card - показываем только для white-label доменов */}
+            {!isOwnDomain && (
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 sm:p-8 border border-white/20 mx-4 lg:mx-0 flex flex-col h-full min-h-[400px]">
-                <div className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-purple-100 rounded-full mx-auto mb-4 sm:mb-6">
-                  <Palette className="w-7 h-7 sm:w-8 sm:h-8 text-purple-600" />
+                <div className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-green-100 rounded-full mx-auto mb-4 sm:mb-6">
+                  <Gem className="w-7 h-7 sm:w-8 sm:h-8 text-green-600" />
                 </div>
                 
                 <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 px-2">
-                  {t('hero.paint_by_numbers.title')}
+                  {t('sections.diamond_art.title')}
                 </h3>
                 
                 <p className="text-gray-600 mb-6 px-2 text-sm sm:text-base flex-grow">
-                  {t('hero.paint_by_numbers.description')}
+                  {t('sections.diamond_art.description')}
                 </p>
                 
                 <button
-                  onClick={goToPaintByNumbers}
-                  className="w-full bg-purple-600 text-white py-3 px-4 sm:px-6 rounded-lg hover:bg-purple-700 font-semibold text-base sm:text-lg transition-all duration-200 flex items-center justify-center space-x-2 focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 min-h-[48px] mt-auto"
+                  onClick={() => navigate('/diamond-art')}
+                  className="w-full bg-green-600 text-white py-3 px-4 sm:px-6 rounded-lg hover:bg-green-700 font-semibold text-base sm:text-lg transition-all duration-200 flex items-center justify-center space-x-2 focus:ring-2 focus:ring-green-600 focus:ring-offset-2 min-h-[48px] mt-auto"
                 >
-                  <Palette className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span>{t('hero.paint_by_numbers.button')}</span>
+                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span>{t('sections.diamond_art.button_details')}</span>
                 </button>
               </div>
             )}
