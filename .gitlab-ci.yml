@@ -1,0 +1,331 @@
+# Global images
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+  GO_IMAGE: golang:1.24-alpine
+  DOCKER_IMAGE: docker:latest
+  UBUNTU_IMAGE: ubuntu:22.04
+
+stages:
+  - test
+  - build
+  - deploy
+
+# ========================================
+# TESTS
+# ========================================
+test:
+  stage: test
+  image: $GO_IMAGE
+  services:
+    - postgres:17-alpine
+    - redis:8
+  variables:
+    POSTGRES_DB: mosaic_test
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: testpass
+    DATABASE_URL: "postgres://postgres:testpass@postgres:5432/mosaic_test?sslmode=disable"
+    REDIS_URL: "redis://redis:6379"
+  before_script:
+    - cd backend
+    - go mod download
+    - go mod vendor
+  script:
+    - go fmt ./...
+    - go vet ./...
+    - go test -v ./... || true
+  cache:
+    key: "go-tests-${CI_COMMIT_REF_SLUG}"
+    paths:
+      - backend/vendor/
+    policy: pull-push
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      when: always
+    - if: '$CI_MERGE_REQUEST_ID'
+      when: always
+
+# ========================================
+# BUILD
+# ========================================
+build:backend:
+  stage: build
+  image: $DOCKER_IMAGE
+  services:
+    - docker:dind
+  before_script:
+    - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token $CI_REGISTRY --password-stdin
+  script:
+    - cd backend
+    - docker build --pull -t "$CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA" .
+    - docker push "$CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA"
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME == "develop"'
+      when: always
+
+build:frontend-dashboards:
+  stage: build
+  image: $DOCKER_IMAGE
+  services:
+    - docker:dind
+  before_script:
+    - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token $CI_REGISTRY --password-stdin
+  script:
+    - cd frontend/dashboards
+    - docker build --pull -t "$CI_REGISTRY_IMAGE/dashboards:$CI_COMMIT_SHA" .
+    - docker push "$CI_REGISTRY_IMAGE/dashboards:$CI_COMMIT_SHA"
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME == "develop"'
+      when: always
+
+build:frontend-public:
+  stage: build
+  image: $DOCKER_IMAGE
+  services:
+    - docker:dind
+  before_script:
+    - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token $CI_REGISTRY --password-stdin
+  script:
+    - cd frontend/public-site
+    - docker build --pull -t "$CI_REGISTRY_IMAGE/public-site:$CI_COMMIT_SHA" .
+    - docker push "$CI_REGISTRY_IMAGE/public-site:$CI_COMMIT_SHA"
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME == "develop"'
+      when: always
+
+# ========================================
+# DEPLOY
+# ========================================
+deploy:production:
+  stage: deploy
+  image: $UBUNTU_IMAGE
+  variables:
+    DEPLOY_SERVER: $PRODUCTION_SERVER_IP
+    DEPLOY_USER: $PRODUCTION_USER
+    CI_REGISTRY: $CI_REGISTRY
+    CI_REGISTRY_IMAGE: $CI_REGISTRY_IMAGE
+    CI_COMMIT_SHA: $CI_COMMIT_SHA
+    CI_REGISTRY_PASSWORD: $CI_JOB_TOKEN
+  before_script:
+    - sudo apt-get update -qq && sudo apt-get install -y -qq git openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan $DEPLOY_SERVER >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - |
+      cat > deploy.sh << EOF
+      #!/bin/bash
+      set -e
+      cd /home/lumirin/Mosaic
+      git pull origin main
+      
+      echo "Debug variables:"
+      echo "CI_REGISTRY_IMAGE: $CI_REGISTRY_IMAGE"
+      echo "CI_COMMIT_SHA: $CI_COMMIT_SHA"
+      echo "CI_REGISTRY: $CI_REGISTRY"
+      
+      # Check if variables are empty and set defaults 
+      if [ -z "$CI_REGISTRY_IMAGE" ]; then
+        echo "CI_REGISTRY_IMAGE is empty, setting default"
+        export CI_REGISTRY_IMAGE="mosaic"
+      fi
+      
+      if [ -z "$CI_COMMIT_SHA" ]; then
+        echo "CI_COMMIT_SHA is empty, setting default"
+        export CI_REGISTRY_SHA="latest"
+      fi
+      
+      echo "Final variables:"
+      echo "CI_REGISTRY_IMAGE: $CI_REGISTRY_IMAGE"
+      echo "CI_COMMIT_SHA: $CI_COMMIT_SHA"
+      
+      # Load existing .env file if it exists
+      if [ -f .env ]; then
+        echo "Loading existing .env file..."
+        export \$(cat .env | grep -v '^#' | xargs)
+        echo ".env file loaded successfully"
+      else
+        echo "No .env file found, using CI/CD variables"
+      fi
+      
+      # Only try docker login if we have registry credentials
+      if [ -n "$CI_REGISTRY" ] && [ -n "$CI_REGISTRY_PASSWORD" ]; then
+        echo "Attempting to login to GitLab registry..."
+        echo "$CI_REGISTRY_PASSWORD" | docker login -u gitlab-ci-token $CI_REGISTRY --password-stdin || echo "Docker login failed, continuing with local build"
+      else
+        echo "No registry credentials, will use local build"
+      fi
+      
+      # Try to pull images first, fallback to local build
+      echo "Starting deployment..."
+      echo "Checking available images..."
+      docker images | grep -E "(mosaic|public-site|backend|dashboards)" || echo "No mosaic images found"
+      
+      if docker compose -f deployments/docker-compose/docker-compose.cicd.yml pull 2>/dev/null; then
+        echo "Images pulled successfully, starting services..."
+        docker compose -f deployments/docker-compose/docker-compose.cicd.yml up -d
+      else
+        echo "Failed to pull images, building locally..."
+        echo "Building images locally..."
+        docker compose -f deployments/docker-compose/docker-compose.cicd.yml up -d --build
+      fi
+      
+      echo "Checking running containers..."
+      docker ps
+      echo "Checking public-site logs..."
+      docker logs public-site --tail 20 || echo "public-site container not found"
+      chmod +x ./scripts/health-check.sh
+      ./scripts/health-check.sh
+      EOF
+    - scp deploy.sh $DEPLOY_USER@$DEPLOY_SERVER:/tmp/
+    - |
+      ssh $DEPLOY_USER@$DEPLOY_SERVER "echo 'Starting deploy.sh...' && chmod +x /tmp/deploy.sh && echo 'Executing deploy.sh...' && /tmp/deploy.sh 2>&1 || echo 'deploy.sh failed with exit code: \$?'"
+  environment:
+    name: production
+    url: https://photo.doyoupaint.com
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME == "develop"'
+      when: always
+  allow_failure: false
+
+# ========================================
+# DOMAIN UPDATE PIPELINE
+# ========================================
+deploy:domains-update:
+  stage: deploy
+  image: $UBUNTU_IMAGE
+  variables:
+    DEPLOY_SERVER: $PRODUCTION_SERVER_IP
+    DEPLOY_USER: $PRODUCTION_USER
+    BACKEND_URL: "https://photo.doyoupaint.com"
+    DEFAULT_ADMIN_EMAIL: $DEFAULT_ADMIN_EMAIL
+    DEFAULT_ADMIN_PASSWORD: $DEFAULT_ADMIN_PASSWORD
+  before_script:
+    - sudo apt-get update -qq && sudo apt-get install -y -qq git curl openssh-client jq
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan $DEPLOY_SERVER >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - |
+      cat > deploy_domains.sh << 'EOF'
+      #!/bin/bash
+      set -e
+      
+      echo "=========================================="
+      echo "Starting Partner Domain Update Pipeline"
+      echo "=========================================="
+      
+      # Function for logging
+      log() {
+          echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+      }
+      
+      cd /home/lumirin/Mosaic
+      
+      # Load environment variables
+      if [ -f .env ]; then
+          export $(cat .env | grep -v '^#' | xargs)
+      fi
+      
+      log "Pulling latest code changes..."
+      git pull gitlab main
+      
+      log "Making scripts executable..."
+      chmod +x ./scripts/*.sh
+      
+      # Determine operation type based on trigger variables
+      OPERATION="${DOMAIN_OPERATION:-refresh}"
+      OLD_DOMAIN="${OLD_DOMAIN:-}"
+      NEW_DOMAIN="${NEW_DOMAIN:-}"
+      
+      log "Operation: $OPERATION"
+      [ -n "$OLD_DOMAIN" ] && log "Old Domain: $OLD_DOMAIN"
+      [ -n "$NEW_DOMAIN" ] && log "New Domain: $NEW_DOMAIN"
+      
+      # Execute domain management script
+      log "Managing partner domains..."
+      sudo ./scripts/manage-partner-domains.sh "$OPERATION" "$OLD_DOMAIN" "$NEW_DOMAIN"
+      
+      # Update nginx configuration via backend API
+      log "Updating nginx configuration via backend API..."
+      if [ -n "$BACKEND_URL" ]; then
+          # Wait for backend to be ready
+          sleep 10
+          
+          # Get admin JWT token
+          log "Getting admin JWT token..."
+          local login_response
+          login_response=$(curl -s -X POST \
+              -H "Content-Type: application/json" \
+              -d "{\"email\":\"${DEFAULT_ADMIN_EMAIL:-admin@example.com}\",\"password\":\"${DEFAULT_ADMIN_PASSWORD}\"}" \
+              "${BACKEND_URL}/api/auth/login" || echo "")
+          
+          if [ -n "$login_response" ]; then
+              local admin_token=$(echo "$login_response" | jq -r '.access_token' 2>/dev/null || echo "")
+              
+              if [ -n "$admin_token" ] && [ "$admin_token" != "null" ]; then
+                  log "Admin token obtained, updating nginx config..."
+                  
+                  # Call backend API to update nginx config
+                  local nginx_response
+                  nginx_response=$(curl -s -X POST \
+                      -H "Content-Type: application/json" \
+                      -H "Authorization: Bearer $admin_token" \
+                      "${BACKEND_URL}/api/admin/nginx/deploy" || echo "")
+                  
+                  if [ -n "$nginx_response" ]; then
+                      log "Nginx configuration updated via API: $nginx_response"
+                  else
+                      log "Failed to update nginx config via API"
+                  fi
+              else
+                  log "Failed to extract admin token"
+              fi
+          else
+              log "Failed to get admin token"
+          fi
+      else
+          log "BACKEND_URL not set, skipping nginx config update via API"
+      fi
+      
+      # Update monitoring configuration for new domains
+      log "Updating monitoring configuration..."
+      ./scripts/update-monitoring-config.sh
+      
+      # Run health checks
+      log "Running health checks..."
+      ./scripts/health-check.sh
+      
+      log "Domain update pipeline completed successfully!"
+      EOF
+      
+    # Copy and execute the deployment script
+    - scp deploy_domains.sh $DEPLOY_USER@$DEPLOY_SERVER:/tmp/
+    - ssh $DEPLOY_USER@$DEPLOY_SERVER "chmod +x /tmp/deploy_domains.sh && /tmp/deploy_domains.sh"
+    
+    # Cleanup
+    - ssh $DEPLOY_USER@$DEPLOY_SERVER "rm -f /tmp/deploy_domains.sh"
+  after_script:
+    - |
+      if [ "$CI_JOB_STATUS" == "failed" ]; then
+        echo "Domain update pipeline failed!"
+      fi
+  rules:
+    - if: '$DOMAIN_UPDATE == "true"'
+      when: always
+    - when: never
+  tags:
+    - docker
+  
+  timeout: 30 minutes
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
