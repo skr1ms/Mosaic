@@ -16,14 +16,17 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/skr1ms/mosaic/config"
+	"github.com/skr1ms/mosaic/internal/coupon"
+	randomCouponCode "github.com/skr1ms/mosaic/pkg/randomCouponCode"
 )
 
 type PaymentServiceDeps struct {
-	PaymentRepository PaymentRepositoryInterface
-	CouponRepository  CouponRepositoryInterface
-	PartnerRepository PartnerRepositoryInterface
-	Config            ConfigInterface
-	AlfaBankClient    AlfaBankClientInterface
+	PaymentRepository         PaymentRepositoryInterface
+	CouponRepository          CouponRepositoryInterface
+	PartnerRepository         PartnerRepositoryInterface
+	Config                    ConfigInterface
+	AlfaBankClient            AlfaBankClientInterface
+	RandomCouponCodeGenerator RandomCouponCodeGeneratorInterface
 }
 
 type PaymentService struct {
@@ -467,19 +470,45 @@ func (s *PaymentService) ProcessPaymentReturn(ctx context.Context, orderNumber s
 	return nil
 }
 
-// createCouponForOrder finds and marks an available coupon as purchased for the order
+// createCouponForOrder generates a new coupon and marks it as purchased for the order
 func (s *PaymentService) createCouponForOrder(ctx context.Context, order *Order) error {
-	availableCoupon, err := s.deps.CouponRepository.FindAvailableCoupon(ctx, order.Size, order.Style, order.PartnerID)
+	// Generate unique coupon code with partner code 0000
+	couponCode, err := randomCouponCode.GenerateUniqueCouponCode("0000", s.deps.CouponRepository)
 	if err != nil {
-		return fmt.Errorf("error finding available coupon: %w", err)
+		return fmt.Errorf("error generating coupon code: %w", err)
 	}
 
-	err = s.deps.CouponRepository.MarkAsPurchased(ctx, availableCoupon.ID, order.UserEmail)
-	if err != nil {
-		return fmt.Errorf("error marking coupon as purchased: %w", err)
+	// Get partner ID - use default 0000 partner if order doesn't have one
+	partnerID := uuid.Nil
+	if order.PartnerID != nil {
+		partnerID = *order.PartnerID
+	} else {
+		// Get default partner (0000)
+		defaultPartner, err := s.deps.PartnerRepository.GetByPartnerCode(ctx, "0000")
+		if err != nil {
+			return fmt.Errorf("error getting default partner: %w", err)
+		}
+		partnerID = defaultPartner.ID
 	}
 
-	err = s.deps.PaymentRepository.UpdateOrderCoupon(ctx, order.OrderNumber, availableCoupon.ID)
+	// Create new coupon in database
+	newCoupon := &coupon.Coupon{
+		Code:          couponCode,
+		PartnerID:     partnerID,
+		Size:          order.Size,
+		Style:         order.Style,
+		Status:        "new",
+		IsPurchased:   true,
+		PurchaseEmail: &order.UserEmail,
+	}
+
+	err = s.deps.CouponRepository.Create(ctx, newCoupon)
+	if err != nil {
+		return fmt.Errorf("error creating coupon: %w", err)
+	}
+
+	// Link coupon to order
+	err = s.deps.PaymentRepository.UpdateOrderCoupon(ctx, order.OrderNumber, newCoupon.ID)
 	if err != nil {
 		return fmt.Errorf("error linking coupon to order: %w", err)
 	}

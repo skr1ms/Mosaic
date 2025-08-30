@@ -39,6 +39,7 @@ type PartnerRepositoryInterface interface {
 	Create(ctx context.Context, partner *partner.Partner) error
 	GetByID(ctx context.Context, id uuid.UUID) (*partner.Partner, error)
 	GetByDomain(ctx context.Context, domain string) (*partner.Partner, error)
+	GetByPartnerCode(ctx context.Context, partnerCode string) (*partner.Partner, error)
 	Update(ctx context.Context, partner *partner.Partner) error
 	Delete(ctx context.Context, id uuid.UUID) error
 	GetAll(ctx context.Context, sortBy string, order string) ([]*partner.Partner, error)
@@ -62,4 +63,8 @@ type PaymentServiceInterface interface {
 type ConfigInterface interface {
 	GetAlfaBankConfig() config.AlphaBankConfig
 	GetServerConfig() config.ServerConfig
+}
+
+type RandomCouponCodeGeneratorInterface interface {
+	GenerateUniqueCouponCode(partnerCode string, repo CouponRepositoryInterface) (string, error)
 }

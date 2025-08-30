@@ -180,6 +180,14 @@ func (m *MockPartnerRepository) GetByDomain(ctx context.Context, domain string) 
 	return args.Get(0).(*partner.Partner), args.Error(1)
 }
 
+func (m *MockPartnerRepository) GetByPartnerCode(ctx context.Context, partnerCode string) (*partner.Partner, error) {
+	args := m.Called(ctx, partnerCode)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*partner.Partner), args.Error(1)
+}
+
 func (m *MockPartnerRepository) Update(ctx context.Context, partner *partner.Partner) error {
 	args := m.Called(ctx, partner)
 	return args.Error(0)
