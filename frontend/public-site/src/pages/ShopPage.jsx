@@ -31,6 +31,8 @@ const ShopPage = () => {
   const [paymentStatus, setPaymentStatus] = useState(null)
   const [paymentUrl, setPaymentUrl] = useState(null)
   const [orderNumber, setOrderNumber] = useState(null)
+  const [couponCode, setCouponCode] = useState(null)
+  const [orderData, setOrderData] = useState(null)
   
   // Проверяем сохраненный заказ при загрузке
   useEffect(() => {
@@ -61,54 +63,78 @@ const ShopPage = () => {
   
 
   
-  // Обрабатываем возврат с оплаты и проверяем статус заказа
+  // АВТОМАТИЧЕСКАЯ ПРОВЕРКА СТАТУСА ЗАКАЗА
   useEffect(() => {
-    // Если есть номер заказа, проверяем его статус
-    if (orderNumber && !paymentStatus) {
-      const checkOrderStatus = async () => {
-        try {
-          const statusData = await MosaicAPI.getOrderStatus(orderNumber)
-          if (statusData.status === 'paid') {
-            setPaymentStatus('success')
+    if (!orderNumber || paymentStatus) return
+    
+    let intervalId = null
+    let attempts = 0
+    const maxAttempts = 60 // 60 попыток = 3 минуты
+    
+    const checkOrderStatus = async () => {
+      try {
+        attempts++
+        console.log(`Checking order status... Attempt ${attempts}/${maxAttempts}`)
+        
+        const statusData = await MosaicAPI.getOrderStatus(orderNumber)
+        
+        if (statusData.status === 'paid') {
+          setPaymentStatus('success')
+          clearInterval(intervalId)
+          
+          // ЕСЛИ ЕСТЬ КУПОН - ПОКАЗЫВАЕМ ЕГО НА СТРАНИЦЕ!
+          if (statusData.coupon_code) {
+            setCouponCode(statusData.coupon_code)
+            setOrderData(statusData)
+            localStorage.setItem('activeCoupon', statusData.coupon_code)
+            localStorage.removeItem('pendingOrder') // Очищаем pending order
             
-            // ЕСЛИ ЕСТЬ КУПОН - АВТОМАТИЧЕСКИ ПЕРЕНАПРАВЛЯЕМ!
-            if (statusData.coupon_code) {
-              localStorage.setItem('activeCoupon', statusData.coupon_code)
-              localStorage.removeItem('pendingOrder') // Очищаем pending order
-              
-              addNotification({ 
-                type: 'success', 
-                title: 'Купон готов!', 
-                message: `Ваш купон ${statusData.coupon_code} активирован! Переходим к созданию схемы...` 
-              })
-              
-              // Перенаправляем на редактор с купоном
-              setTimeout(() => {
-                window.location.href = `/editor?coupon=${statusData.coupon_code}&size=${statusData.size}&style=${statusData.style}`
-              }, 2000)
-            } else {
-              addNotification({ 
-                type: 'success', 
-                title: 'Оплата прошла успешно!', 
-                message: 'Ваш купон будет отправлен на email в течение 5 минут.' 
-              })
-            }
-          } else if (statusData.status === 'failed' || statusData.status === 'cancelled') {
-            setPaymentStatus('fail')
             addNotification({ 
-              type: 'error', 
-              title: 'Ошибка оплаты', 
-              message: 'Попробуйте еще раз или обратитесь в поддержку.' 
+              type: 'success', 
+              title: '🎉 Купон готов!', 
+              message: `Ваш купон ${statusData.coupon_code} готов к использованию!` 
+            })
+          } else {
+            addNotification({ 
+              type: 'success', 
+              title: 'Оплата прошла успешно!', 
+              message: 'Купон генерируется... Обновим страницу через несколько секунд.' 
             })
           }
-        } catch (error) {
-          console.error('Failed to check order status:', error)
+        } else if (statusData.status === 'failed' || statusData.status === 'cancelled') {
+          setPaymentStatus('fail')
+          clearInterval(intervalId)
+          addNotification({ 
+            type: 'error', 
+            title: 'Ошибка оплаты', 
+            message: 'Попробуйте еще раз или обратитесь в поддержку.' 
+          })
+        } else if (attempts >= maxAttempts) {
+          // Превысили максимум попыток
+          clearInterval(intervalId)
+          addNotification({ 
+            type: 'warning', 
+            title: 'Проверка статуса завершена', 
+            message: 'Нажмите "Проверить оплату" для обновления статуса заказа.' 
+          })
+        }
+      } catch (error) {
+        console.error('Failed to check order status:', error)
+        if (attempts >= maxAttempts) {
+          clearInterval(intervalId)
         }
       }
-      
-      // Проверяем статус через 2 секунды после возврата
-      const timer = setTimeout(checkOrderStatus, 2000)
-      return () => clearTimeout(timer)
+    }
+    
+    // Начинаем проверку через 3 секунды, затем каждые 3 секунды
+    const initialTimer = setTimeout(() => {
+      checkOrderStatus() // Первая проверка
+      intervalId = setInterval(checkOrderStatus, 3000) // Последующие проверки каждые 3 сек
+    }, 3000)
+    
+    return () => {
+      clearTimeout(initialTimer)
+      if (intervalId) clearInterval(intervalId)
     }
   }, [orderNumber, paymentStatus, addNotification])
 
@@ -516,6 +542,79 @@ const ShopPage = () => {
             })}
           </div>
         </motion.div>
+
+        {/* ОТОБРАЖЕНИЕ ГОТОВОГО КУПОНА */}
+        {couponCode && orderData && (
+          <motion.section
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="mt-12"
+          >
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-8 text-center shadow-lg">
+              <div className="text-4xl mb-4">🎉</div>
+              <h2 className="text-3xl font-bold text-green-800 mb-4">
+                Ваш купон готов!
+              </h2>
+              
+              <div className="bg-white border-2 border-dashed border-green-300 rounded-xl p-6 mb-6">
+                <div className="text-sm text-gray-600 mb-2">Код купона:</div>
+                <div className="text-3xl font-mono font-bold text-green-700 tracking-wider mb-4">
+                  {couponCode}
+                </div>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(couponCode)
+                    addNotification({
+                      type: 'success',
+                      message: 'Код купона скопирован в буфер обмена!'
+                    })
+                  }}
+                  className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                >
+                  📋 Скопировать код
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-6 text-left">
+                <div className="bg-white rounded-lg p-4">
+                  <div className="text-sm text-gray-600">Размер:</div>
+                  <div className="font-semibold text-gray-800">{orderData.size} см</div>
+                </div>
+                <div className="bg-white rounded-lg p-4">
+                  <div className="text-sm text-gray-600">Стиль:</div>
+                  <div className="font-semibold text-gray-800">
+                    {t(`shop.styles.${orderData.style}.title`)}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <button
+                  onClick={() => {
+                    window.location.href = `/editor?coupon=${couponCode}&size=${orderData.size}&style=${orderData.style}`
+                  }}
+                  className="bg-brand-primary text-white px-8 py-3 rounded-lg hover:bg-brand-primary/90 transition-colors font-semibold text-lg"
+                >
+                  🎨 Создать схему сейчас
+                </button>
+                <button
+                  onClick={() => {
+                    window.location.href = '/'
+                  }}
+                  className="bg-gray-600 text-white px-8 py-3 rounded-lg hover:bg-gray-700 transition-colors font-semibold"
+                >
+                  🏠 На главную
+                </button>
+              </div>
+
+              <div className="mt-6 text-sm text-gray-600">
+                <p>💌 Купон также отправлен на ваш email: <strong>{email}</strong></p>
+                <p>📱 Сохраните код купона в надежном месте</p>
+              </div>
+            </div>
+          </motion.section>
+        )}
       </div>
     </div>
   )
