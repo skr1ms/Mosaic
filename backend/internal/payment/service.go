@@ -512,6 +512,17 @@ func (s *PaymentService) ProcessWebhookNotification(ctx context.Context, notific
 		return nil
 
 	case 1:
+		// Status 1 can also mean "paid" in some Alfa Bank configurations
+		err = s.deps.PaymentRepository.UpdateOrderStatus(ctx, notification.OrderNumber, OrderStatusPaid, &notification.AlfaBankOrderID)
+		if err != nil {
+			return fmt.Errorf("error updating order status to paid: %w", err)
+		}
+
+		err = s.createCouponForOrder(ctx, order)
+		if err != nil {
+			return fmt.Errorf("error creating coupon for order: %w", err)
+		}
+
 		return nil
 
 	case 2:
