@@ -126,13 +126,6 @@ func (s *PreviewService) GeneratePreview(ctx context.Context, file *multipart.Fi
 
 	// Get public URL for preview
 	previewURL := s.deps.S3Client.GetPreviewURL(objectKey)
-
-	// Log the generated URL for debugging
-	fmt.Printf("Preview bucket: %s\n", s.deps.S3Client.GetPreviewBucketName())
-	fmt.Printf("Object key: %s\n", objectKey)
-	fmt.Printf("Generated preview URL: %s\n", previewURL)
-	fmt.Printf("File uploaded successfully to S3\n")
-
 	return map[string]any{
 		"preview_id":   previewID.String(),
 		"preview_url":  previewURL,

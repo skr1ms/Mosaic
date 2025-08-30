@@ -272,14 +272,12 @@ const MosaicPreviewPage = () => {
                     console.log('Preview image loaded successfully:', generatedPreview)
                   }}
                 />
-                <div className="text-xs text-gray-500 break-all">
-                  URL: {generatedPreview}
-                </div>
+
                 <div className="flex space-x-3">
                   <button
                     onClick={() => {
                       console.log('Opening preview in new tab:', generatedPreview)
-                      window.open(generatedPreview, '_blank')
+                      window.open(generatedPreview, '_blank', 'noopener,noreferrer')
                     }}
                     className="flex-1 bg-brand-primary text-white py-3 px-4 rounded-lg hover:bg-brand-primary/90 font-semibold transition-colors flex items-center justify-center space-x-2"
                   >
@@ -288,10 +286,24 @@ const MosaicPreviewPage = () => {
                   </button>
                   <button
                     onClick={() => {
-                      const link = document.createElement('a')
-                      link.href = generatedPreview
-                      link.download = 'mosaic-preview.png'
-                      link.click()
+                      // Создаем временную ссылку для скачивания
+                      fetch(generatedPreview)
+                        .then(response => response.blob())
+                        .then(blob => {
+                          const url = window.URL.createObjectURL(blob)
+                          const link = document.createElement('a')
+                          link.href = url
+                          link.download = 'mosaic-preview.png'
+                          document.body.appendChild(link)
+                          link.click()
+                          document.body.removeChild(link)
+                          window.URL.revokeObjectURL(url)
+                        })
+                        .catch(error => {
+                          console.error('Download failed:', error)
+                          // Fallback - открываем в новой вкладке
+                          window.open(generatedPreview, '_blank', 'noopener,noreferrer')
+                        })
                     }}
                     className="flex-1 bg-brand-secondary text-white py-3 px-4 rounded-lg hover:bg-brand-secondary/90 font-semibold transition-colors flex items-center justify-center space-x-2"
                   >

@@ -503,16 +503,10 @@ func (s *S3Client) GetPreviewURL(objectKey string) string {
 		return ""
 	}
 
-	// Debug logging
-	fmt.Printf("DEBUG: publicURL = '%s'\n", s.publicURL)
-	fmt.Printf("DEBUG: preview bucket = '%s'\n", bucket)
-	fmt.Printf("DEBUG: objectKey = '%s'\n", objectKey)
-
 	// If public URL is configured, return direct URL (same logic as GetFileURL)
 	if s.publicURL != "" {
 		// Form direct URL to preview file
 		directURL := fmt.Sprintf("%s/%s/%s", s.publicURL, bucket, objectKey)
-		fmt.Printf("DEBUG: Generated direct URL = '%s'\n", directURL)
 		return directURL
 	}
 
@@ -529,6 +523,5 @@ func (s *S3Client) GetPreviewURL(objectKey string) string {
 	}
 
 	presignedURL := url.String()
-	fmt.Printf("DEBUG: Generated presigned URL = '%s'\n", presignedURL)
 	return presignedURL
 }
