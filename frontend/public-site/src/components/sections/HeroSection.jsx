@@ -14,7 +14,6 @@ const HeroSection = () => {
   const { addNotification } = useUIStore()
   const { partner } = usePartnerStore()
   const [couponCode, setCouponCode] = useState('')
-  const [email, setEmail] = useState('')
   
   // Check for coupon in URL params (for white-label redirect)
   React.useEffect(() => {
@@ -24,7 +23,7 @@ const HeroSection = () => {
       // Format the coupon code
       const cleanCode = couponFromUrl.replace(/-/g, '')
       if (cleanCode.length === 12) {
-        const formattedCode = couponFromUrl.substring(0, 4) + '-' + couponFromUrl.substring(4, 8) + '-' + couponFromUrl.substring(8)
+        const formattedCode = cleanCode.substring(0, 4) + '-' + cleanCode.substring(4, 8) + '-' + cleanCode.substring(8)
         setCouponCode(formattedCode)
         // Auto-activate the coupon
         setTimeout(() => {
@@ -33,6 +32,9 @@ const HeroSection = () => {
       }
     }
   }, [location.search])
+
+  // Определяем, является ли это собственным доменом (партнер код = 0000 или дефолтный брендинг)
+  const isOwnDomain = partner?.partner_code === '0000' || partner?.is_default
 
   const activateCouponMutation = useMutation({
     mutationFn: async (code) => {
@@ -153,15 +155,15 @@ const HeroSection = () => {
   }
 
   const goToShop = () => {
+    navigate('/shop')
+  }
+
+  const goToDiamondArt = () => {
     navigate('/diamond-art')
   }
 
   const goToPaintByNumbers = () => {
     navigate('/paint-by-numbers')
-  }
-
-  const goToWhatIsThis = () => {
-    navigate('/what-is-this')
   }
 
   const containerVariants = {
@@ -179,9 +181,6 @@ const HeroSection = () => {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 }
   }
-
-  // Определяем, является ли это собственным доменом (партнер код = 0000 или дефолтный брендинг)
-  const isOwnDomain = partner?.partner_code === '0000' || partner?.is_default
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-12 sm:py-16 lg:py-20">
@@ -216,7 +215,7 @@ const HeroSection = () => {
             variants={itemVariants}
             className={`grid gap-6 sm:gap-8 max-w-5xl mx-auto ${
               isOwnDomain 
-                ? 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-4' 
+                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4' 
                 : 'grid-cols-1 lg:grid-cols-2'
             }`}
           >
@@ -288,6 +287,29 @@ const HeroSection = () => {
               </div>
             )}
 
+            {/* Diamond Art Card - показываем для всех доменов */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 sm:p-8 border border-white/20 mx-4 lg:mx-0 flex flex-col h-full min-h-[400px]">
+              <div className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-green-100 rounded-full mx-auto mb-4 sm:mb-6">
+                <Gem className="w-7 h-7 sm:w-8 sm:h-8 text-green-600" />
+              </div>
+              
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 px-2">
+                {t('sections.diamond_art.title')}
+              </h3>
+              
+              <p className="text-gray-600 mb-6 px-2 text-sm sm:text-base flex-grow">
+                {t('sections.diamond_art.description')}
+              </p>
+              
+              <button
+                onClick={goToDiamondArt}
+                className="w-full bg-green-600 text-white py-3 px-4 sm:px-6 rounded-lg hover:bg-green-700 font-semibold text-base sm:text-lg transition-all duration-200 flex items-center justify-center space-x-2 focus:ring-2 focus:ring-green-600 focus:ring-offset-2 min-h-[48px] mt-auto"
+              >
+                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span>{t('sections.diamond_art.button_details')}</span>
+              </button>
+            </div>
+
             {/* Paint by Numbers Card - показываем только для собственного домена */}
             {isOwnDomain && (
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 sm:p-8 border border-white/20 mx-4 lg:mx-0 flex flex-col h-full min-h-[400px]">
@@ -312,54 +334,6 @@ const HeroSection = () => {
                 </button>
               </div>
             )}
-
-            {/* What is This Card - показываем только для собственного домена */}
-            {isOwnDomain && (
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 sm:p-8 border border-white/20 mx-4 lg:mx-0 flex flex-col h-full min-h-[400px]">
-                <div className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-blue-100 rounded-full mx-auto mb-4 sm:mb-6">
-                  <Gem className="w-7 h-7 sm:w-8 sm:h-8 text-blue-600" />
-                </div>
-                
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 px-2">
-                  {t('hero.what_is_this.title')}
-                </h3>
-                
-                <p className="text-gray-600 mb-6 px-2 text-sm sm:text-base flex-grow">
-                  {t('hero.what_is_this.description')}
-                </p>
-                
-                <button
-                  onClick={goToWhatIsThis}
-                  className="w-full bg-blue-600 text-white py-3 px-4 sm:px-6 rounded-lg hover:bg-blue-700 font-semibold text-base sm:text-lg transition-all duration-200 flex items-center justify-center space-x-2 focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 min-h-[48px] mt-auto"
-                >
-                  <Gem className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span>{t('hero.what_is_this.button')}</span>
-                </button>
-              </div>
-            )}
-
-            {/* Diamond Art Card - показываем для всех доменов */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 sm:p-8 border border-white/20 mx-4 lg:mx-0 flex flex-col h-full min-h-[400px]">
-              <div className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-green-100 rounded-full mx-auto mb-4 sm:mb-6">
-                <Gem className="w-7 h-7 sm:w-8 sm:h-8 text-green-600" />
-              </div>
-              
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 px-2">
-                {t('sections.diamond_art.title')}
-              </h3>
-              
-              <p className="text-gray-600 mb-6 px-2 text-sm sm:text-base flex-grow">
-                {t('sections.diamond_art.description')}
-              </p>
-              
-              <button
-                onClick={goToShop}
-                className="w-full bg-green-600 text-white py-3 px-4 sm:px-6 rounded-lg hover:bg-green-700 font-semibold text-base sm:text-lg transition-all duration-200 flex items-center justify-center space-x-2 focus:ring-2 focus:ring-green-600 focus:ring-offset-2 min-h-[48px] mt-auto"
-              >
-                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span>{t('sections.diamond_art.button_details')}</span>
-              </button>
-            </div>
           </motion.div>
         </motion.div>
       </div>
