@@ -543,7 +543,7 @@ const EditPartner = () => {
                             </CardBody>
                         </Card>
 
-                        <ArticleGrid />
+                        <ArticleGrid partnerId={id} />
                     </Col>
 
                     <Col lg="4">

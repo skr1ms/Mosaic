@@ -416,7 +416,7 @@ func (h *PublicHandler) UploadImage(c *fiber.Ctx) error {
 	h.deps.Logger.FromContext(c).Info().
 		Str("handler", "UploadImage").
 		Str("coupon_id", couponID).
-		Str("image_id", result["image_id"].(string)).
+		Str("image_id", result["image_id"].(uuid.UUID).String()).
 		Str("filename", file.Filename).
 		Int("size", int(file.Size)).
 		Msg("Image uploaded successfully")

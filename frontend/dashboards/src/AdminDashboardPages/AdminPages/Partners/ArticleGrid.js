@@ -21,10 +21,10 @@ const ArticleGrid = ({ partnerId, isReadOnly = false }) => {
     const marketplaces = ['ozon', 'wildberries'];
 
     useEffect(() => {
-        if (partnerId) {
+        if (partnerId && !isReadOnly) {
             loadArticleGrid();
         }
-    }, [partnerId]);
+    }, [partnerId, isReadOnly]);
 
     const loadArticleGrid = async () => {
         try {
@@ -105,12 +105,30 @@ const ArticleGrid = ({ partnerId, isReadOnly = false }) => {
         return styleNames[style] || style;
     };
 
-    if (loading) {
+    if (loading && !isReadOnly) {
         return (
             <Card className="main-card mb-3">
                 <CardBody className="text-center">
                     <i className="fa fa-spinner fa-spin fa-2x"></i>
                     <p className="mt-2">{t('common.loading')}...</p>
+                </CardBody>
+            </Card>
+        );
+    }
+
+    if (isReadOnly) {
+        return (
+            <Card className="main-card mb-3">
+                <CardHeader>
+                    <CardTitle>{t('partners.article_grid')}</CardTitle>
+                    <small className="text-muted">{t('partners.article_grid_description')}</small>
+                </CardHeader>
+                <CardBody>
+                    <div className="text-center text-muted">
+                        <i className="fa fa-info-circle fa-2x mb-2"></i>
+                        <p>{t('partners.article_grid_help')}</p>
+                        <small>Сетка артикулов будет доступна после создания партнера</small>
+                    </div>
                 </CardBody>
             </Card>
         );

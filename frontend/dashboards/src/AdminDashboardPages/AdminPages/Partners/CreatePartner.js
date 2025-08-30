@@ -6,6 +6,7 @@ import {
     Alert
 } from 'reactstrap';
 import api from '../../../api/api';
+import ArticleGrid from './ArticleGrid';
 
 const CreatePartner = () => {
     const { t } = useTranslation();
@@ -19,6 +20,8 @@ const CreatePartner = () => {
         logoFile: null,
         ozonLink: '',
         wildberriesLink: '',
+        ozonLinkTemplate: 'https://www.ozon.ru/search/?text={sku}+{size}+{style}',
+        wildberriesLinkTemplate: 'https://www.wildberries.ru/catalog/search?query={sku}+{size}+{style}',
         email: '',
         address: '',
         phone: '',
@@ -145,6 +148,8 @@ const CreatePartner = () => {
                 brand_name: formData.brandName,
                 ozon_link: formData.ozonLink,
                 wildberries_link: formData.wildberriesLink,
+                ozon_link_template: formData.ozonLinkTemplate,
+                wildberries_link_template: formData.wildberriesLinkTemplate,
                 email: formData.email,
                 address: formData.address,
                 phone: formData.phone,
@@ -486,6 +491,117 @@ const CreatePartner = () => {
                                 <Row>
                                     <Col md="6">
                                         <FormGroup>
+                                            <Label for="email">{t('partners.email')}</Label>
+                                            <Input
+                                                type="email"
+                                                id="email"
+                                                name="email"
+                                                value={formData.email}
+                                                onChange={handleInputChange}
+                                                placeholder="partner@example.com"
+                                                invalid={!!errors.email}
+                                            />
+                                            {errors.email && <FormFeedback>{errors.email}</FormFeedback>}
+                                        </FormGroup>
+                                    </Col>
+                                    <Col md="6">
+                                        <FormGroup>
+                                            <Label for="phone">{t('partners.phone')}</Label>
+                                            <Input
+                                                type="text"
+                                                id="phone"
+                                                name="phone"
+                                                value={formData.phone}
+                                                onChange={handleInputChange}
+                                                placeholder="+7 999 123-45-67"
+                                            />
+                                        </FormGroup>
+                                    </Col>
+                                </Row>
+
+                                <Row>
+                                    <Col md="6">
+                                        <FormGroup>
+                                            <Label for="telegram">{t('partners.telegram')}</Label>
+                                            <Input
+                                                type="text"
+                                                id="telegram"
+                                                name="telegram"
+                                                value={formData.telegram}
+                                                onChange={handleInputChange}
+                                                placeholder="@username или https://t.me/username"
+                                            />
+                                        </FormGroup>
+                                    </Col>
+                                    <Col md="6">
+                                        <FormGroup>
+                                            <Label for="whatsapp">{t('partners.whatsapp')}</Label>
+                                            <Input
+                                                type="text"
+                                                id="whatsapp"
+                                                name="whatsapp"
+                                                value={formData.whatsapp}
+                                                onChange={handleInputChange}
+                                                placeholder="+7 999 123-45-67"
+                                            />
+                                        </FormGroup>
+                                    </Col>
+                                </Row>
+
+                                <Row>
+                                    <Col md="12">
+                                        <FormGroup>
+                                            <Label for="address">{t('partners.address')}</Label>
+                                            <Input
+                                                type="text"
+                                                id="address"
+                                                name="address"
+                                                value={formData.address}
+                                                onChange={handleInputChange}
+                                                placeholder="Полный адрес партнера"
+                                            />
+                                        </FormGroup>
+                                    </Col>
+                                </Row>
+
+                                <Row>
+                                    <Col md="6">
+                                        <FormGroup>
+                                            <Label for="ozonLinkTemplate">{t('partners.ozon_link_template')}</Label>
+                                            <Input
+                                                type="url"
+                                                id="ozonLinkTemplate"
+                                                name="ozonLinkTemplate"
+                                                value={formData.ozonLinkTemplate}
+                                                onChange={handleInputChange}
+                                                placeholder="https://www.ozon.ru/search/?text={sku}+{size}+{style}"
+                                            />
+                                            <small className="form-text text-muted">
+                                                {t('partners.link_template_help')} {'{sku}'}, {'{size}'}, {'{style}'}
+                                            </small>
+                                        </FormGroup>
+                                    </Col>
+                                    <Col md="6">
+                                        <FormGroup>
+                                            <Label for="wildberriesLinkTemplate">{t('partners.wildberries_link_template')}</Label>
+                                            <Input
+                                                type="url"
+                                                id="wildberriesLinkTemplate"
+                                                name="wildberriesLinkTemplate"
+                                                value={formData.wildberriesLinkTemplate}
+                                                onChange={handleInputChange}
+                                                placeholder="https://www.wildberries.ru/catalog/search?query={sku}+{size}+{style}"
+                                            />
+                                            <small className="form-text text-muted">
+                                                {t('partners.link_template_help')} {'{sku}'}, {'{size}'}, {'{style}'}
+                                            </small>
+                                        </FormGroup>
+                                    </Col>
+                                </Row>
+
+                                <Row>
+                                    <Col md="6">
+                                        <FormGroup>
                                             <Label for="ozonLinkTemplate">{t('partners.ozon_link_template')}</Label>
                                             <Input
                                                 type="url"
@@ -538,6 +654,8 @@ const CreatePartner = () => {
                                 </FormGroup>
                             </CardBody>
                         </Card>
+
+                        <ArticleGrid partnerId={null} isReadOnly={true} />
                     </Col>
 
                     <Col lg="4">
