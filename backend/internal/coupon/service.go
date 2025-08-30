@@ -116,18 +116,7 @@ func (s *CouponService) ValidateCoupon(code string) (*CouponValidationResponse, 
 		}, nil
 	}
 
-	if coupon.Status == "used" {
-		size := string(coupon.Size)
-		style := string(coupon.Style)
-		return &CouponValidationResponse{
-			Valid:   false,
-			Message: "Coupon already used",
-			UsedAt:  coupon.UsedAt,
-			Size:    &size,
-			Style:   &style,
-		}, nil
-	}
-
+	// Removed check for IsPurchased and email - only check if exists in DB
 	size := string(coupon.Size)
 	style := string(coupon.Style)
 	return &CouponValidationResponse{

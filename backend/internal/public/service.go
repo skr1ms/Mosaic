@@ -97,13 +97,30 @@ func (s *PublicService) GetCouponByCode(code string) (map[string]any, error) {
 		return nil, fmt.Errorf("coupon not found: %w", err)
 	}
 
+	// Get partner information for the coupon
+	partner, err := s.deps.PartnerRepository.GetByID(context.Background(), coupon.PartnerID)
+	if err != nil {
+		// If partner not found, continue without partner info
+		return map[string]any{
+			"id":     coupon.ID,
+			"code":   coupon.Code,
+			"size":   coupon.Size,
+			"style":  coupon.Style,
+			"status": coupon.Status,
+			"valid":  coupon.Status == "new",
+		}, nil
+	}
+
 	return map[string]any{
-		"id":     coupon.ID,
-		"code":   coupon.Code,
-		"size":   coupon.Size,
-		"style":  coupon.Style,
-		"status": coupon.Status,
-		"valid":  coupon.Status == "new",
+		"id":           coupon.ID,
+		"code":         coupon.Code,
+		"size":         coupon.Size,
+		"style":        coupon.Style,
+		"status":       coupon.Status,
+		"valid":        coupon.Status == "new",
+		"partner_id":   partner.ID,
+		"partner_code": partner.PartnerCode,
+		"partner_domain": partner.Domain,
 	}, nil
 }
 
@@ -147,11 +164,13 @@ func (s *PublicService) UploadImage(couponID string, file *multipart.FileHeader)
 		return nil, fmt.Errorf("coupon not found: %w", err)
 	}
 
-	if coupon.UserEmail == nil {
-		return nil, fmt.Errorf("coupon has no user email")
+	// Use empty email if not set (removed email requirement)
+	userEmail := ""
+	if coupon.UserEmail != nil {
+		userEmail = *coupon.UserEmail
 	}
 
-	imageRecord, err := s.deps.ImageService.UploadImage(context.Background(), couponUUID, file, *coupon.UserEmail)
+	imageRecord, err := s.deps.ImageService.UploadImage(context.Background(), couponUUID, file, userEmail)
 	if err != nil {
 		return nil, fmt.Errorf("failed to upload image: %w", err)
 	}

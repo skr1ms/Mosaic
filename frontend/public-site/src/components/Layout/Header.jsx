@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Menu, X, ChevronDown, LogIn } from 'lucide-react'
+import { Menu, X, ChevronDown } from 'lucide-react'
 import { usePartnerStore } from '../../store/partnerStore'
 import LanguageSelector from '../ui/LanguageSelector'
 
@@ -9,8 +9,6 @@ const Header = () => {
   const { t } = useTranslation()
   const location = useLocation()
   const { partner } = usePartnerStore()
-  // Читаем URL из глобального window.__ENV__ если есть (на случай единого .env из корня)
-  const runtimeDashboardUrl = (typeof window !== 'undefined' && window.__ENV__ && window.__ENV__.DASHBOARD_URL) || null
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   // Function to scroll to section
@@ -64,35 +62,12 @@ const Header = () => {
     }
   ]
 
-  const goToDashboard = () => {
-    // Очищаем токен авторизации, чтобы всегда показывалась страница логина
-    localStorage.removeItem('token')
-    localStorage.removeItem('refreshToken')
-    localStorage.removeItem('refresh_token')
-    localStorage.removeItem('user')
-    
-    // Переходим на страницу логина admin dashboard c параметром force=1
-    const adminUrl = runtimeDashboardUrl || import.meta.env.VITE_DASHBOARD_URL || 'https://adm.doyoupaint.com'
-    const target = `${adminUrl.replace(/\/$/, '')}/login?force=1&ts=${Date.now()}`
-    window.open(target, '_blank', 'noopener,noreferrer')
-  }
-
   return (
     <header className="bg-white shadow-sm">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Левая часть: кнопка входа в самом левом углу и логотип */}
-          <div className="flex items-center space-x-2 sm:space-x-4">
-            {/* Кнопка входа в самом левом углу */}
-            <button
-              onClick={goToDashboard}
-              className="inline-flex items-center px-2 py-2 sm:px-3 md:px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-brand-primary hover:bg-brand-primary/90 transition-colors flex-shrink-0"
-              title={t('navigation.login_tooltip')}
-            >
-              <LogIn className="w-4 h-4" />
-              <span className="hidden sm:inline ml-1 md:ml-2">{t('navigation.login')}</span>
-            </button>
-            
+          {/* Левая часть: логотип */}
+          <div className="flex items-center">
             <Link to="/" className="flex items-center flex-shrink-0">
               <img 
                 src={partner?.logoUrl || '/logo.svg'} 

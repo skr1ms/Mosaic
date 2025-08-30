@@ -1,6 +1,6 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Mail, Phone } from 'lucide-react'
+import { Mail, Phone, MapPin } from 'lucide-react'
 import { usePartnerStore } from '../../store/partnerStore'
 
 const Footer = () => {
@@ -84,6 +84,15 @@ const Footer = () => {
                   >
                     {partner.phone}
                   </a>
+                </div>
+              )}
+              
+              {partner?.address && (
+                <div className="flex items-center justify-center sm:justify-start space-x-3">
+                  <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0" />
+                  <span className="text-gray-300 text-sm sm:text-base">
+                    {partner.address}
+                  </span>
                 </div>
               )}
             </div>
