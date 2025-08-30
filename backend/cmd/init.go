@@ -45,6 +45,7 @@ import (
 	"github.com/skr1ms/mosaic/internal/image"
 	"github.com/skr1ms/mosaic/internal/partner"
 	"github.com/skr1ms/mosaic/internal/payment"
+	"github.com/skr1ms/mosaic/internal/preview"
 	"github.com/skr1ms/mosaic/internal/public"
 	"github.com/skr1ms/mosaic/internal/stats"
 	"github.com/skr1ms/mosaic/migrations"
@@ -280,10 +281,14 @@ func InitializeApp() *fiber.App {
 		Config:            cfg,
 	})
 
+	partnerAdapter := NewPartnerRepositoryAdapter(partnerRepo)
+	couponAdapter := NewCouponRepositoryAdapter(couponRepo)
+
 	couponService := coupon.NewCouponService(&coupon.CouponServiceDeps{
-		CouponRepository: couponRepo,
-		RedisClient:      redisClient,
-		S3Client:         s3Client,
+		CouponRepository:  couponRepo,
+		PartnerRepository: partnerAdapter,
+		RedisClient:       redisClient,
+		S3Client:          s3Client,
 	})
 
 	paletteService := palette.NewPaletteService(cfg.MosaicGeneratorConfig.PalettePath, appLogger)
@@ -298,7 +303,7 @@ func InitializeApp() *fiber.App {
 
 	imageService := image.NewImageService(&image.ImageServiceDeps{
 		ImageRepository:       imageRepo,
-		CouponRepository:      couponRepo,
+		CouponRepository:      couponAdapter,
 		S3Client:              s3Client,
 		StableDiffusionClient: stableDiffusionClient,
 		EmailService:          mailSender,
@@ -316,6 +321,13 @@ func InitializeApp() *fiber.App {
 		AlfaBankClient:    alfaBankClient,
 	})
 
+	previewService := preview.NewPreviewService(&preview.PreviewServiceDeps{
+		S3Client:        s3Client,
+		MosaicGenerator: mosaicGenerator,
+		PaletteService:  paletteService,
+		WorkingDir:      "/tmp",
+	})
+
 	publicService := public.NewPublicService(&public.PublicServiceDeps{
 		Config:            cfg,
 		CouponRepository:  couponRepo,
@@ -323,6 +335,7 @@ func InitializeApp() *fiber.App {
 		PartnerRepository: partnerRepo,
 		ImageService:      imageService,
 		PaymentService:    paymentService,
+		PreviewService:    previewService,
 		EmailService:      mailSender,
 		RecaptchaSiteKey:  cfg.RecaptchaConfig.SiteKey,
 	})

@@ -74,15 +74,16 @@ type AlphaBankConfig struct {
 }
 
 type S3MinioConfig struct {
-	Endpoint        string
-	AccessKeyID     string
-	SecretAccessKey string
-	UseSSL          bool
-	BucketName      string
-	Region          string
-	LogosBucketName string
-	ChatBucketName  string
-	PublicURL       string
+	Endpoint          string
+	AccessKeyID       string
+	SecretAccessKey   string
+	UseSSL            bool
+	BucketName        string
+	Region            string
+	LogosBucketName   string
+	ChatBucketName    string
+	PreviewBucketName string
+	PublicURL         string
 }
 
 type StableDiffusionConfig struct {
@@ -180,15 +181,16 @@ func NewConfig() (*Config, error) {
 			Port: "8091",
 		},
 		S3MinioConfig: S3MinioConfig{
-			Endpoint:        os.Getenv("MINIO_ENDPOINT"),
-			AccessKeyID:     os.Getenv("MINIO_ROOT_USER"),
-			SecretAccessKey: os.Getenv("MINIO_ROOT_PASSWORD"),
-			UseSSL:          false,
-			Region:          os.Getenv("MINIO_REGION"),
-			BucketName:      os.Getenv("MINIO_IMAGE_BUCKET"),
-			LogosBucketName: os.Getenv("MINIO_LOGOS_BUCKET"),
-			ChatBucketName:  os.Getenv("MINIO_CHAT_BUCKET"),
-			PublicURL:       os.Getenv("MINIO_PUBLIC_URL"),
+			Endpoint:          os.Getenv("MINIO_ENDPOINT"),
+			AccessKeyID:       os.Getenv("MINIO_ROOT_USER"),
+			SecretAccessKey:   os.Getenv("MINIO_ROOT_PASSWORD"),
+			UseSSL:            false,
+			Region:            os.Getenv("MINIO_REGION"),
+			BucketName:        os.Getenv("MINIO_IMAGE_BUCKET"),
+			LogosBucketName:   os.Getenv("MINIO_LOGOS_BUCKET"),
+			ChatBucketName:    os.Getenv("MINIO_CHAT_BUCKET"),
+			PreviewBucketName: os.Getenv("MINIO_PREVIEW_BUCKET"),
+			PublicURL:         os.Getenv("MINIO_PUBLIC_URL"),
 		},
 		StableDiffusionConfig: StableDiffusionConfig{
 			BaseURL: os.Getenv("STABLE_DIFFUSION_URL"),
@@ -318,6 +320,9 @@ func validateConfig(config *Config) error {
 	if config.S3MinioConfig.ChatBucketName == "" {
 		missingVars = append(missingVars, "MINIO_CHAT_BUCKET")
 	}
+	if config.S3MinioConfig.PreviewBucketName == "" {
+		missingVars = append(missingVars, "MINIO_PREVIEW_BUCKET")
+	}
 
 	// StableDiffusion configuration validation
 	if os.Getenv("STABLE_DIFFUSION_URL") == "" {
@@ -373,6 +378,9 @@ func validateConfig(config *Config) error {
 	}
 	if config.S3MinioConfig.ChatBucketName == "" {
 		missingVars = append(missingVars, "MINIO_CHAT_BUCKET")
+	}
+	if config.S3MinioConfig.PreviewBucketName == "" {
+		missingVars = append(missingVars, "MINIO_PREVIEW_BUCKET")
 	}
 	if config.S3MinioConfig.PublicURL == "" {
 		missingVars = append(missingVars, "MINIO_PUBLIC_URL")

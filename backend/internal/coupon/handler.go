@@ -30,23 +30,25 @@ func NewCouponHandler(router fiber.Router, deps *CouponHandlerDeps) {
 	// Access: public (no authentication required)
 	// ================================================================
 	api := handler.Group("/coupons")
-	api.Get("/", handler.GetCoupons)                              // GET /api/coupons/
-	api.Get("/paginated", handler.GetCouponsPaginated)            // GET /api/coupons/paginated
-	api.Get("/export", handler.ExportCoupons)                     // GET /api/coupons/export
-	api.Get("/export-advanced", handler.ExportCouponsAdvanced)    // GET /api/coupons/export-advanced
-	api.Get("/statistics", handler.GetStatistics)                 // GET /api/coupons/statistics
-	api.Get("/partner/:partner_id", handler.GetCouponsByPartner)  // GET /api/coupons/partner/:partner_id
-	api.Get("/code/:code", handler.GetCouponByCode)               // GET /api/coupons/code/:code
-	api.Post("/code/:code/validate", handler.ValidateCoupon)      // POST /api/coupons/code/:code/validate
-	api.Get("/:id", handler.GetCouponByID)                        // GET /api/coupons/:id
-	api.Put("/:id/activate", handler.ActivateCoupon)              // PUT /api/coupons/:id/activate
-	api.Put("/:id/reset", handler.ResetCoupon)                    // PUT /api/coupons/:id/reset
-	api.Put("/:id/send-schema", handler.SendSchema)               // PUT /api/coupons/:id/send-schema
-	api.Put("/:id/purchase", handler.MarkAsPurchased)             // PUT /api/coupons/:id/purchase
-	api.Get("/:id/download-materials", handler.DownloadMaterials) // GET /api/coupons/:id/download-materials
-	api.Post("/batch/reset", handler.BatchResetCoupons)           // POST /api/coupons/batch/reset
-	api.Post("/batch/delete/preview", handler.PreviewBatchDelete) // POST /api/coupons/batch/delete/preview
-	api.Post("/batch/delete/confirm", handler.ExecuteBatchDelete) // POST /api/coupons/batch/delete/confirm
+	api.Get("/", handler.GetCoupons)                             // GET /api/coupons/
+	api.Get("/paginated", handler.GetCouponsPaginated)           // GET /api/coupons/paginated
+	api.Get("/export", handler.ExportCoupons)                    // GET /api/coupons/export
+	api.Get("/export-advanced", handler.ExportCouponsAdvanced)   // GET /api/coupons/export-advanced
+	api.Get("/statistics", handler.GetStatistics)                // GET /api/coupons/statistics
+	api.Get("/partner/:partner_id", handler.GetCouponsByPartner) // GET /api/coupons/partner/:partner_id
+	api.Get("/code/:code", handler.GetCouponByCode)              // GET /api/coupons/code/:code
+
+	// Apply rate limiting to coupon validation and activation endpoints
+	api.Post("/code/:code/validate", middleware.CouponActivationRateLimiter(deps.Logger), handler.ValidateCoupon)      // POST /api/coupons/code/:code/validate
+	api.Get("/:id", handler.GetCouponByID)                                                                             // GET /api/coupons/:id
+	api.Put("/:id/activate", middleware.CouponActivationRateLimiter(deps.Logger), handler.ActivateCoupon)              // PUT /api/coupons/:id/activate
+	api.Put("/:id/reset", handler.ResetCoupon)                                                                         // PUT /api/coupons/:id/reset
+	api.Put("/:id/send-schema", handler.SendSchema)                                                                    // PUT /api/coupons/:id/send-schema
+	api.Put("/:id/purchase", middleware.CouponActivationRateLimiter(deps.Logger), handler.MarkAsPurchased)             // PUT /api/coupons/:id/purchase
+	api.Get("/:id/download-materials", middleware.CouponActivationRateLimiter(deps.Logger), handler.DownloadMaterials) // GET /api/coupons/:id/download-materials
+	api.Post("/batch/reset", handler.BatchResetCoupons)                                                                // POST /api/coupons/batch/reset
+	api.Post("/batch/delete/preview", handler.PreviewBatchDelete)                                                      // POST /api/coupons/batch/delete/preview
+	api.Post("/batch/delete/confirm", handler.ExecuteBatchDelete)                                                      // POST /api/coupons/batch/delete/confirm
 }
 
 // @Summary Get coupons list with filtering

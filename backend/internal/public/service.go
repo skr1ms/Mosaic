@@ -20,6 +20,7 @@ type PublicServiceDeps struct {
 	PartnerRepository PartnerRepositoryInterface
 	ImageService      ImageServiceInterface
 	PaymentService    PaymentServiceInterface
+	PreviewService    PreviewServiceInterface
 	EmailService      EmailServiceInterface
 	Config            ConfigInterface
 	RecaptchaSiteKey  string
@@ -63,6 +64,10 @@ func (s *PublicService) GetPaymentService() PaymentServiceInterface {
 	return s.deps.PaymentService
 }
 
+func (s *PublicService) GetPreviewService() PreviewServiceInterface {
+	return s.deps.PreviewService
+}
+
 // GetPartnerByDomain returns public partner information by domain
 func (s *PublicService) GetPartnerByDomain(domain string) (map[string]any, error) {
 	partner, err := s.deps.PartnerRepository.GetByDomain(context.Background(), domain)
@@ -97,13 +102,30 @@ func (s *PublicService) GetCouponByCode(code string) (map[string]any, error) {
 		return nil, fmt.Errorf("coupon not found: %w", err)
 	}
 
+	// Get partner information for the coupon
+	partner, err := s.deps.PartnerRepository.GetByID(context.Background(), coupon.PartnerID)
+	if err != nil {
+		// If partner not found, continue without partner info
+		return map[string]any{
+			"id":     coupon.ID,
+			"code":   coupon.Code,
+			"size":   coupon.Size,
+			"style":  coupon.Style,
+			"status": coupon.Status,
+			"valid":  coupon.Status == "new",
+		}, nil
+	}
+
 	return map[string]any{
-		"id":     coupon.ID,
-		"code":   coupon.Code,
-		"size":   coupon.Size,
-		"style":  coupon.Style,
-		"status": coupon.Status,
-		"valid":  coupon.Status == "new",
+		"id":             coupon.ID,
+		"code":           coupon.Code,
+		"size":           coupon.Size,
+		"style":          coupon.Style,
+		"status":         coupon.Status,
+		"valid":          coupon.Status == "new",
+		"partner_id":     partner.ID,
+		"partner_code":   partner.PartnerCode,
+		"partner_domain": partner.Domain,
 	}, nil
 }
 
@@ -147,11 +169,13 @@ func (s *PublicService) UploadImage(couponID string, file *multipart.FileHeader)
 		return nil, fmt.Errorf("coupon not found: %w", err)
 	}
 
-	if coupon.UserEmail == nil {
-		return nil, fmt.Errorf("coupon has no user email")
+	// Use empty email if not set (removed email requirement)
+	userEmail := ""
+	if coupon.UserEmail != nil {
+		userEmail = *coupon.UserEmail
 	}
 
-	imageRecord, err := s.deps.ImageService.UploadImage(context.Background(), couponUUID, file, *coupon.UserEmail)
+	imageRecord, err := s.deps.ImageService.UploadImage(context.Background(), couponUUID, file, userEmail)
 	if err != nil {
 		return nil, fmt.Errorf("failed to upload image: %w", err)
 	}
@@ -442,6 +466,94 @@ func (s *PublicService) GetAvailableStyles() []map[string]any {
 // GetRecaptchaSiteKey returns public reCAPTCHA site key
 func (s *PublicService) GetRecaptchaSiteKey() string {
 	return s.deps.Config.GetRecaptchaConfig().SiteKey
+}
+
+// GetPartnerArticleGrid returns article grid for a partner
+func (s *PublicService) GetPartnerArticleGrid(partnerID uuid.UUID) (map[string]any, error) {
+	// Проверяем, существует ли партнер
+	partner, err := s.deps.PartnerRepository.GetByID(context.Background(), partnerID)
+	if err != nil {
+		return nil, fmt.Errorf("partner not found: %w", err)
+	}
+
+	// Здесь нужно получить артикулы партнера
+	// Пока возвращаем заглушку
+	articleGrid := map[string]map[string]map[string]string{
+		"ozon": {
+			"grayscale": {
+				"20x20": "OZON-GS-20x20",
+				"30x40": "OZON-GS-30x40",
+				"40x40": "OZON-GS-40x40",
+				"40x50": "OZON-GS-40x50",
+				"40x60": "OZON-GS-40x60",
+				"50x70": "OZON-GS-50x70",
+			},
+			"skin_tones": {
+				"20x20": "OZON-ST-20x20",
+				"30x40": "OZON-ST-30x40",
+				"40x40": "OZON-ST-40x40",
+				"40x50": "OZON-ST-40x50",
+				"40x60": "OZON-ST-40x60",
+				"50x70": "OZON-ST-50x70",
+			},
+			"pop_art": {
+				"20x20": "OZON-PA-20x20",
+				"30x40": "OZON-PA-30x40",
+				"40x40": "OZON-PA-40x40",
+				"40x50": "OZON-PA-40x50",
+				"40x60": "OZON-PA-40x60",
+				"50x70": "OZON-PA-50x70",
+			},
+			"max_colors": {
+				"20x20": "OZON-MC-20x20",
+				"30x40": "OZON-MC-30x40",
+				"40x40": "OZON-MC-40x40",
+				"40x50": "OZON-MC-40x50",
+				"40x60": "OZON-MC-40x60",
+				"50x70": "OZON-MC-50x70",
+			},
+		},
+		"wildberries": {
+			"grayscale": {
+				"20x20": "WB-GS-20x20",
+				"30x40": "WB-GS-30x40",
+				"40x40": "WB-GS-40x40",
+				"40x50": "WB-GS-40x50",
+				"40x60": "WB-GS-40x60",
+				"50x70": "WB-GS-50x70",
+			},
+			"skin_tones": {
+				"20x20": "WB-ST-20x20",
+				"30x40": "WB-ST-30x40",
+				"40x40": "WB-ST-40x40",
+				"40x50": "WB-ST-40x50",
+				"40x60": "WB-ST-40x60",
+				"50x70": "WB-ST-50x70",
+			},
+			"pop_art": {
+				"20x20": "WB-PA-20x20",
+				"30x40": "WB-PA-30x40",
+				"40x40": "WB-PA-40x40",
+				"40x50": "WB-PA-40x50",
+				"40x60": "WB-PA-40x60",
+				"50x70": "WB-PA-50x70",
+			},
+			"max_colors": {
+				"20x20": "WB-MC-20x20",
+				"30x40": "WB-MC-30x40",
+				"40x40": "WB-MC-40x40",
+				"40x50": "WB-MC-40x50",
+				"40x60": "WB-MC-40x60",
+				"50x70": "WB-MC-50x70",
+			},
+		},
+	}
+
+	return map[string]any{
+		"partner_id":   partner.ID,
+		"partner_name": partner.BrandName,
+		"article_grid": articleGrid,
+	}, nil
 }
 
 // Close releases service resources

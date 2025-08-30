@@ -25,7 +25,7 @@ const HomePage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
             {...fadeInUp}
-            className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto items-stretch"
+            className="max-w-3xl mx-auto"
           >
             <SectionCard
               icon={<Gem className="w-8 h-8" />}
@@ -39,7 +39,7 @@ const HomePage = () => {
               active
             />
             
-            <div id="paint-by-numbers">
+            {/* <div id="paint-by-numbers">
               <SectionCard
                 icon={<Palette className="w-8 h-8" />}
                 title={t('sections.paint_by_numbers.title')}
@@ -48,7 +48,7 @@ const HomePage = () => {
                 gradient="from-gray-400 to-gray-500"
                 disabled
               />
-            </div>
+            </div> */}
           </motion.div>
         </div>
       </section>

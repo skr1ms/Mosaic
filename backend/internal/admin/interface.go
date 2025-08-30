@@ -52,6 +52,12 @@ type PartnerRepositoryInterface interface {
 	UpdateStatus(ctx context.Context, id uuid.UUID, status string) error
 	Search(ctx context.Context, search, status, sortBy, order string) ([]*partner.Partner, error)
 	GetActivePartners(ctx context.Context) ([]*partner.Partner, error)
+	InitializeArticleGrid(ctx context.Context, partnerID uuid.UUID) error
+	GetArticleGrid(ctx context.Context, partnerID uuid.UUID) (map[string]map[string]map[string]string, error)
+	UpdateArticleSKU(ctx context.Context, partnerID uuid.UUID, size, style, marketplace, sku string) error
+	GetArticleBySizeStyle(ctx context.Context, partnerID uuid.UUID, size, style, marketplace string) (*partner.PartnerArticle, error)
+	GetAllArticlesByPartner(ctx context.Context, partnerID uuid.UUID) ([]*partner.PartnerArticle, error)
+	DeleteArticleGrid(ctx context.Context, partnerID uuid.UUID) error
 }
 
 type CouponRepositoryInterface interface {

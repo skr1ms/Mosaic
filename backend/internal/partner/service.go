@@ -254,3 +254,68 @@ func (s *PartnerService) DownloadCouponMaterials(id uuid.UUID) ([]byte, string, 
 	filename := fmt.Sprintf("coupon_%s_materials.zip", coupon.Code)
 	return data, filename, nil
 }
+
+// InitializeArticleGrid создает пустую сетку артикулов для партнера
+func (s *PartnerService) InitializeArticleGrid(partnerID uuid.UUID) error {
+	return s.deps.PartnerRepository.InitializeArticleGrid(context.Background(), partnerID)
+}
+
+// GetArticleGrid получает сетку артикулов для партнера
+func (s *PartnerService) GetArticleGrid(partnerID uuid.UUID) (map[string]map[string]map[string]string, error) {
+	return s.deps.PartnerRepository.GetArticleGrid(context.Background(), partnerID)
+}
+
+// UpdateArticleSKU обновляет артикул в ячейке сетки
+func (s *PartnerService) UpdateArticleSKU(partnerID uuid.UUID, size, style, marketplace, sku string) error {
+	return s.deps.PartnerRepository.UpdateArticleSKU(context.Background(), partnerID, size, style, marketplace, sku)
+}
+
+// GetArticleBySizeStyle получает артикул по размеру, стилю и маркетплейсу
+func (s *PartnerService) GetArticleBySizeStyle(partnerID uuid.UUID, size, style, marketplace string) (*PartnerArticle, error) {
+	return s.deps.PartnerRepository.GetArticleBySizeStyle(context.Background(), partnerID, size, style, marketplace)
+}
+
+// GenerateProductLink генерирует ссылку на товар по размеру, стилю и маркетплейсу
+func (s *PartnerService) GenerateProductLink(partnerID uuid.UUID, size, style, marketplace string) string {
+	// Получаем партнера
+	partner, err := s.deps.PartnerRepository.GetByID(context.Background(), partnerID)
+	if err != nil {
+		return ""
+	}
+
+	// Ищем артикул в сетке
+	article, err := s.deps.PartnerRepository.GetArticleBySizeStyle(context.Background(), partnerID, size, style, marketplace)
+	if err != nil || article == nil || article.SKU == "" {
+		// Если артикул не найден, возвращаем общую ссылку
+		switch marketplace {
+		case MarketplaceOzon:
+			return partner.OzonLink
+		case MarketplaceWildberries:
+			return partner.WildberriesLink
+		default:
+			return ""
+		}
+	}
+
+	// Генерируем ссылку на основе шаблона и артикула
+	var template string
+	switch marketplace {
+	case MarketplaceOzon:
+		template = partner.OzonLinkTemplate
+	case MarketplaceWildberries:
+		template = partner.WildberriesLinkTemplate
+	default:
+		return ""
+	}
+
+	// Заменяем плейсхолдеры на реальные значения
+	if template != "" {
+		link := template
+		link = strings.Replace(link, "{sku}", article.SKU, -1)
+		link = strings.Replace(link, "{size}", size, -1)
+		link = strings.Replace(link, "{style}", style, -1)
+		return link
+	}
+
+	return ""
+}

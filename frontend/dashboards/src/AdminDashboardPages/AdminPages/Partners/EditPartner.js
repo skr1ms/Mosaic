@@ -7,6 +7,7 @@ import {
     Alert
 } from 'reactstrap';
 import api from '../../../api/api';
+import ArticleGrid from './ArticleGrid';
 
 const EditPartner = () => {
     const { t } = useTranslation();
@@ -21,6 +22,8 @@ const EditPartner = () => {
         logoFile: null,
         ozonLink: '',
         wildberriesLink: '',
+        ozonLinkTemplate: 'https://www.ozon.ru/search/?text={sku}+{size}+{style}',
+        wildberriesLinkTemplate: 'https://www.wildberries.ru/catalog/search?query={sku}+{size}+{style}',
         email: '',
         address: '',
         phone: '',
@@ -55,6 +58,8 @@ const EditPartner = () => {
                     logoFile: null,
                     ozonLink: p.ozon_link || '',
                     wildberriesLink: p.wildberries_link || '',
+                    ozonLinkTemplate: p.ozon_link_template || 'https://www.ozon.ru/search/?text={sku}+{size}+{style}',
+                    wildberriesLinkTemplate: p.wildberries_link_template || 'https://www.wildberries.ru/catalog/search?query={sku}+{size}+{style}',
                     email: p.email || '',
                     address: p.address || '',
                     phone: p.phone || '',
@@ -172,6 +177,8 @@ const EditPartner = () => {
                 brand_name: formData.brandName,
                 ozon_link: formData.ozonLink,
                 wildberries_link: formData.wildberriesLink,
+                ozon_link_template: formData.ozonLinkTemplate,
+                wildberries_link_template: formData.wildberriesLinkTemplate,
                 email: formData.email,
                 address: formData.address,
                 phone: formData.phone,
@@ -462,7 +469,7 @@ const EditPartner = () => {
                                                 name="ozonLink"
                                                 value={formData.ozonLink}
                                                 onChange={handleInputChange}
-                                                placeholder="https://www.ozon.ru/seller/..."
+                                                placeholder="https://www.ozon.ru/search/?text={sku}+{size}+{style}"
                                             />
                                         </FormGroup>
                                     </Col>
@@ -475,7 +482,7 @@ const EditPartner = () => {
                                                 name="wildberriesLink"
                                                 value={formData.wildberriesLink}
                                                 onChange={handleInputChange}
-                                                placeholder="https://www.wildberries.ru/seller/..."
+                                                placeholder="https://www.wildberries.ru/catalog/search?query={sku}+{size}+{style}"
                                             />
                                         </FormGroup>
                                     </Col>
@@ -535,6 +542,8 @@ const EditPartner = () => {
                                 </FormGroup>
                             </CardBody>
                         </Card>
+
+                        <ArticleGrid />
                     </Col>
 
                     <Col lg="4">

@@ -4,24 +4,59 @@ import { motion } from 'framer-motion'
 import { Ticket, ShoppingCart, ArrowRight } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import { MosaicAPI } from '../../api/client'
-import { useUIStore } from '../../store/partnerStore'
-import { useNavigate } from 'react-router-dom'
+import { useUIStore, usePartnerStore } from '../../store/partnerStore'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 const HeroSection = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const location = useLocation()
   const { addNotification } = useUIStore()
+  const { partner } = usePartnerStore()
   const [couponCode, setCouponCode] = useState('')
   const [email, setEmail] = useState('')
+  
+  // Check for coupon in URL params (for white-label redirect)
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(location.search)
+    const couponFromUrl = urlParams.get('coupon')
+    if (couponFromUrl) {
+      // Format the coupon code
+      const cleanCode = couponFromUrl.replace(/-/g, '')
+      if (cleanCode.length === 12) {
+        const formattedCode = cleanCode.substring(0, 4) + '-' + cleanCode.substring(4, 8) + '-' + cleanCode.substring(8)
+        setCouponCode(formattedCode)
+        // Auto-activate the coupon
+        setTimeout(() => {
+          activateCouponMutation.mutate(cleanCode)
+        }, 500)
+      }
+    }
+  }, [location.search])
 
   const activateCouponMutation = useMutation({
     mutationFn: async (code) => {
       // Не бросаем локальные ошибки по флагам valid, опираемся только на HTTP-статусы
       const info = await MosaicAPI.validateCoupon(code)
+      
+      // Check if coupon belongs to a partner with a different domain
+      if (info?.partner_domain && window.location.hostname !== info.partner_domain) {
+        // Redirect to partner's white-label site with the coupon
+        const protocol = window.location.protocol
+        const redirectUrl = `${protocol}//${info.partner_domain}/?coupon=${code}`
+        window.location.href = redirectUrl
+        return info // Return early to prevent further processing
+      }
+      
       await MosaicAPI.activateCoupon(code)
       return info || {}
     },
     onSuccess: (couponData) => {
+      // Don't process if we're redirecting to partner site
+      if (couponData?.partner_domain && window.location.hostname !== couponData.partner_domain) {
+        return
+      }
+      
       // Показываем уведомление об успешной активации
       addNotification({
         type: 'success',
@@ -206,11 +241,11 @@ const HeroSection = () => {
               </div>
               
               <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 px-2">
-                {t('hero.shop_banner.title')}
+                {partner ? t('hero.shop_banner.title_details') : t('hero.shop_banner.title')}
               </h3>
               
               <p className="text-gray-600 mb-6 px-2 text-sm sm:text-base flex-grow">
-                {t('hero.shop_banner.description')}
+                {partner ? t('hero.shop_banner.description_details') : t('hero.shop_banner.description')}
               </p>
               
               <button
@@ -218,7 +253,7 @@ const HeroSection = () => {
                 className="w-full bg-brand-secondary text-white py-3 px-4 sm:px-6 rounded-lg hover:bg-brand-secondary/90 font-semibold text-base sm:text-lg transition-all duration-200 flex items-center justify-center space-x-2 focus:ring-2 focus:ring-brand-secondary focus:ring-offset-2 min-h-[48px] mt-auto"
               >
                 <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span>{t('hero.shop_banner.button')}</span>
+                <span>{partner ? t('hero.shop_banner.button_details') : t('hero.shop_banner.button')}</span>
               </button>
             </div>
           </motion.div>

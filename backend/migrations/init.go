@@ -30,6 +30,7 @@ func Init(cfg *config.Config) {
 
 	models := []any{
 		(*partner.Partner)(nil),
+		(*partner.PartnerArticle)(nil),
 		(*admin.Admin)(nil),
 		(*admin.ProfileChangeLog)(nil),
 		(*coupon.Coupon)(nil),
@@ -171,6 +172,10 @@ func createIndexes(db *bun.DB, ctx context.Context) error {
 		return fmt.Errorf("error creating index for partners: %w", err)
 	}
 
+	if _, err := db.ExecContext(ctx, partner.CreatePartnerArticlesIndex()); err != nil {
+		return fmt.Errorf("error creating index for partner articles: %w", err)
+	}
+
 	adminModel := &admin.Admin{}
 	if _, err := db.ExecContext(ctx, adminModel.CreateIndex()); err != nil {
 		return fmt.Errorf("error creating index for admins: %w", err)
@@ -249,22 +254,24 @@ func createDefaultPartner(cfg *config.Config, db *bun.DB, ctx context.Context) e
 	}
 
 	defaultPartner := &partner.Partner{
-		PartnerCode:     cfg.DefaultPartnerConfig.DefaultPartnerCode,
-		Domain:          cfg.DefaultPartnerConfig.DefaultDomain,
-		Login:           cfg.DefaultPartnerConfig.DefaultLogin,
-		Email:           cfg.DefaultPartnerConfig.DefaultEmail,
-		Password:        hashedPassword,
-		BrandName:       cfg.DefaultPartnerConfig.DefaultBrandName,
-		LogoURL:         cfg.DefaultPartnerConfig.DefaultLogo,
-		Address:         cfg.DefaultPartnerConfig.DefaultAddress,
-		Phone:           cfg.DefaultPartnerConfig.DefaultPhone,
-		Telegram:        cfg.DefaultPartnerConfig.DefaultContactTelegram,
-		Whatsapp:        cfg.DefaultPartnerConfig.DefaultWhatsapp,
-		TelegramLink:    cfg.DefaultPartnerConfig.DefaultTelegramLink,
-		WhatsappLink:    cfg.DefaultPartnerConfig.DefaultWhatsappLink,
-		OzonLink:        cfg.DefaultPartnerConfig.DefaultOzonLink,
-		WildberriesLink: cfg.DefaultPartnerConfig.DefaultWildberriesLink,
-		Status:          "active",
+		PartnerCode:             cfg.DefaultPartnerConfig.DefaultPartnerCode,
+		Domain:                  cfg.DefaultPartnerConfig.DefaultDomain,
+		Login:                   cfg.DefaultPartnerConfig.DefaultLogin,
+		Email:                   cfg.DefaultPartnerConfig.DefaultEmail,
+		Password:                hashedPassword,
+		BrandName:               cfg.DefaultPartnerConfig.DefaultBrandName,
+		LogoURL:                 cfg.DefaultPartnerConfig.DefaultLogo,
+		Address:                 cfg.DefaultPartnerConfig.DefaultAddress,
+		Phone:                   cfg.DefaultPartnerConfig.DefaultPhone,
+		Telegram:                cfg.DefaultPartnerConfig.DefaultContactTelegram,
+		Whatsapp:                cfg.DefaultPartnerConfig.DefaultWhatsapp,
+		TelegramLink:            cfg.DefaultPartnerConfig.DefaultTelegramLink,
+		WhatsappLink:            cfg.DefaultPartnerConfig.DefaultWhatsappLink,
+		OzonLink:                cfg.DefaultPartnerConfig.DefaultOzonLink,
+		WildberriesLink:         cfg.DefaultPartnerConfig.DefaultWildberriesLink,
+		OzonLinkTemplate:        "https://www.ozon.ru/search/?text={sku}+{size}+{style}",
+		WildberriesLinkTemplate: "https://www.wildberries.ru/catalog/search?query={sku}+{size}+{style}",
+		Status:                  "active",
 	}
 
 	_, err = db.NewInsert().Model(defaultPartner).Exec(ctx)

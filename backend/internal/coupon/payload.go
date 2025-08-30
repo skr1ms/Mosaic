@@ -76,6 +76,14 @@ type CouponValidationResponse struct {
 	Size    *string    `json:"size,omitempty"`
 	Style   *string    `json:"style,omitempty"`
 	UsedAt  *time.Time `json:"used_at,omitempty"`
+	
+	// Информация о партнере для валидации доменов
+	PartnerID       *uuid.UUID `json:"partner_id,omitempty"`
+	PartnerCode     *string    `json:"partner_code,omitempty"`
+	PartnerDomain   *string    `json:"partner_domain,omitempty"`
+	PartnerBrandName *string   `json:"partner_brand_name,omitempty"`
+	IsCorrectDomain bool       `json:"is_correct_domain"`
+	CorrectDomain   *string    `json:"correct_domain,omitempty"`
 }
 
 type CouponStatistics struct {

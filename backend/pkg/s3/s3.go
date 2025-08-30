@@ -17,12 +17,13 @@ import (
 )
 
 type S3Client struct {
-	client      *minio.Client
-	imageBucket string
-	logosBucket string
-	chatBucket  string
-	publicURL   string
-	logger      *middleware.Logger
+	client        *minio.Client
+	imageBucket   string
+	logosBucket   string
+	chatBucket    string
+	previewBucket string
+	publicURL     string
+	logger        *middleware.Logger
 }
 
 // NewS3Client creates new client for MinIO S3 operations
@@ -38,12 +39,13 @@ func NewS3Client(cfg config.S3MinioConfig, logger *middleware.Logger) (*S3Client
 	}
 
 	s3Client := &S3Client{
-		client:      minioClient,
-		imageBucket: cfg.BucketName,
-		logosBucket: cfg.LogosBucketName,
-		chatBucket:  cfg.ChatBucketName,
-		publicURL:   cfg.PublicURL,
-		logger:      logger,
+		client:        minioClient,
+		imageBucket:   cfg.BucketName,
+		logosBucket:   cfg.LogosBucketName,
+		chatBucket:    cfg.ChatBucketName,
+		previewBucket: cfg.PreviewBucketName,
+		publicURL:     cfg.PublicURL,
+		logger:        logger,
 	}
 
 	// Create main bucket (images) if it doesn't exist
@@ -62,6 +64,13 @@ func NewS3Client(cfg config.S3MinioConfig, logger *middleware.Logger) (*S3Client
 	if s3Client.chatBucket != "" {
 		if err := s3Client.ensureBucketExists(context.Background(), s3Client.chatBucket); err != nil {
 			return nil, fmt.Errorf("failed to ensure chat bucket exists: %w", err)
+		}
+	}
+
+	// Create preview bucket if it doesn't exist
+	if s3Client.previewBucket != "" {
+		if err := s3Client.ensureBucketExists(context.Background(), s3Client.previewBucket); err != nil {
+			return nil, fmt.Errorf("failed to ensure preview bucket exists: %w", err)
 		}
 	}
 
@@ -163,6 +172,38 @@ func (s *S3Client) DeleteFile(ctx context.Context, objectKey string) error {
 	return nil
 }
 
+// UploadPreviewFile uploads preview file to preview bucket and returns file path
+func (s *S3Client) UploadPreviewFile(ctx context.Context, reader io.Reader, size int64, contentType, folder string, previewID uuid.UUID) (string, error) {
+	// Generate unique filename for preview
+	fileName := fmt.Sprintf("preview_%s_%d", previewID.String(), time.Now().Unix())
+
+	// Determine extension by content type
+	ext := getExtensionFromContentType(contentType)
+	if ext != "" {
+		fileName += ext
+	}
+
+	// Form full path
+	objectKey := filepath.Join(folder, fileName)
+	objectKey = strings.ReplaceAll(objectKey, "\\", "/")
+
+	// Upload file to preview bucket
+	_, err := s.client.PutObject(ctx, s.previewBucket, objectKey, reader, size, minio.PutObjectOptions{
+		ContentType: contentType,
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to upload preview file to S3: %w", err)
+	}
+
+	s.logger.GetZerologLogger().Info().
+		Str("bucket", s.previewBucket).
+		Str("key", objectKey).
+		Str("preview_id", previewID.String()).
+		Msg("Preview file uploaded to S3")
+
+	return objectKey, nil
+}
+
 // GetFileURL returns signed URL for file access
 func (s *S3Client) GetFileURL(ctx context.Context, objectKey string, expiry time.Duration) (string, error) {
 	// If public URL is configured, return direct URL (assuming bucket is public)
@@ -179,6 +220,12 @@ func (s *S3Client) GetFileURL(ctx context.Context, objectKey string, expiry time
 	}
 
 	return url.String(), nil
+}
+
+// GetSignedURL returns signed URL for file access (alias for GetFileURL for compatibility)
+func (s *S3Client) GetSignedURL(objectKey string, expires time.Duration) (string, error) {
+	ctx := context.Background()
+	return s.GetFileURL(ctx, objectKey, expires)
 }
 
 // ListFiles returns list of files by prefix

@@ -36,6 +36,12 @@ type PartnerRepositoryInterface interface {
 	GetCouponsStatistics(ctx context.Context, partnerID uuid.UUID) (map[string]int64, error)
 	GetPartnerCouponsForExport(ctx context.Context, partnerID uuid.UUID, status string) ([]*ExportCouponRequest, error)
 	GetAllCouponsForExport(ctx context.Context) ([]*ExportCouponRequest, error)
+	InitializeArticleGrid(ctx context.Context, partnerID uuid.UUID) error
+	GetArticleGrid(ctx context.Context, partnerID uuid.UUID) (map[string]map[string]map[string]string, error)
+	UpdateArticleSKU(ctx context.Context, partnerID uuid.UUID, size, style, marketplace, sku string) error
+	GetArticleBySizeStyle(ctx context.Context, partnerID uuid.UUID, size, style, marketplace string) (*PartnerArticle, error)
+	GetAllArticlesByPartner(ctx context.Context, partnerID uuid.UUID) ([]*PartnerArticle, error)
+	DeleteArticleGrid(ctx context.Context, partnerID uuid.UUID) error
 }
 
 type CouponServiceInterface interface {
@@ -68,6 +74,13 @@ type PartnerServiceInterface interface {
 
 	GetPartnerRepository() PartnerRepositoryInterface
 	GetCouponRepository() CouponRepositoryInterface
+	
+	// Новые методы для работы с артикулами
+	InitializeArticleGrid(partnerID uuid.UUID) error
+	GetArticleGrid(partnerID uuid.UUID) (map[string]map[string]map[string]string, error)
+	UpdateArticleSKU(partnerID uuid.UUID, size, style, marketplace, sku string) error
+	GetArticleBySizeStyle(partnerID uuid.UUID, size, style, marketplace string) (*PartnerArticle, error)
+	GenerateProductLink(partnerID uuid.UUID, size, style, marketplace string) string
 }
 
 type CouponRepositoryInterface interface {

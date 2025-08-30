@@ -181,6 +181,45 @@ func (m *MockPartnerRepository) GetActivePartners(ctx context.Context) ([]*partn
 	return args.Get(0).([]*partner.Partner), args.Error(1)
 }
 
+func (m *MockPartnerRepository) InitializeArticleGrid(ctx context.Context, partnerID uuid.UUID) error {
+	args := m.Called(ctx, partnerID)
+	return args.Error(0)
+}
+
+func (m *MockPartnerRepository) GetArticleGrid(ctx context.Context, partnerID uuid.UUID) (map[string]map[string]map[string]string, error) {
+	args := m.Called(ctx, partnerID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(map[string]map[string]map[string]string), args.Error(1)
+}
+
+func (m *MockPartnerRepository) UpdateArticleSKU(ctx context.Context, partnerID uuid.UUID, size, style, marketplace, sku string) error {
+	args := m.Called(ctx, partnerID, size, style, marketplace, sku)
+	return args.Error(0)
+}
+
+func (m *MockPartnerRepository) GetArticleBySizeStyle(ctx context.Context, partnerID uuid.UUID, size, style, marketplace string) (*partner.PartnerArticle, error) {
+	args := m.Called(ctx, partnerID, size, style, marketplace)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*partner.PartnerArticle), args.Error(1)
+}
+
+func (m *MockPartnerRepository) GetAllArticlesByPartner(ctx context.Context, partnerID uuid.UUID) ([]*partner.PartnerArticle, error) {
+	args := m.Called(ctx, partnerID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*partner.PartnerArticle), args.Error(1)
+}
+
+func (m *MockPartnerRepository) DeleteArticleGrid(ctx context.Context, partnerID uuid.UUID) error {
+	args := m.Called(ctx, partnerID)
+	return args.Error(0)
+}
+
 // Mock CouponRepository
 type MockCouponRepository struct {
 	mock.Mock

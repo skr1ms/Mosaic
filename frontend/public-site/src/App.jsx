@@ -16,6 +16,7 @@ import NotificationSystem from './components/ui/NotificationSystem'
 import SupportChatWidget from './components/SupportChatWidget'
 import BrandingProvider from './components/ui/BrandingProvider'
 import './assets/branding.css'
+import MosaicPreviewPage from './pages/MosaicPreviewPage'
 
 function App() {
   const { i18n } = useTranslation()
@@ -70,6 +71,7 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/diamond-art" element={<DiamondArtPage />} />
+          <Route path="/mosaic-preview" element={<MosaicPreviewPage />} />
           <Route path="/editor" element={<EditorPage />} />
           <Route path="/shop" element={<ShopPage />} />
           <Route path="*" element={<NotFoundPage />} />

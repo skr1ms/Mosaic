@@ -9,12 +9,22 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/skr1ms/mosaic/config"
-	"github.com/skr1ms/mosaic/internal/coupon"
 	"github.com/skr1ms/mosaic/internal/types"
 	"github.com/skr1ms/mosaic/pkg/mosaic"
 	"github.com/skr1ms/mosaic/pkg/stableDiffusion"
 	"github.com/skr1ms/mosaic/pkg/zip"
 )
+
+// Coupon - минимальная модель купона для избежания циклических импортов
+type Coupon struct {
+	ID          uuid.UUID  `json:"id"`
+	Code        string     `json:"code"`
+	Size        string     `json:"size"`
+	Style       string     `json:"style"`
+	Status      string     `json:"status"`
+	UserEmail   *string    `json:"user_email"`
+	CompletedAt *time.Time `json:"completed_at"`
+}
 
 type ImageRepositoryInterface interface {
 	Create(ctx context.Context, task *Image) error
@@ -39,16 +49,19 @@ type ImageRepositoryInterface interface {
 }
 
 type CouponRepositoryInterface interface {
-	GetByID(ctx context.Context, id uuid.UUID) (*coupon.Coupon, error)
-	GetByCode(ctx context.Context, code string) (*coupon.Coupon, error)
-	Update(ctx context.Context, coupon *coupon.Coupon) error
+	GetByID(ctx context.Context, id uuid.UUID) (*Coupon, error)
+	GetByCode(ctx context.Context, code string) (*Coupon, error)
+	Update(ctx context.Context, coupon *Coupon) error
 }
 
 type S3ClientInterface interface {
-	UploadFile(ctx context.Context, data io.Reader, size int64, contentType, prefix string, couponID uuid.UUID) (string, error)
-	DownloadFile(ctx context.Context, key string) (io.ReadCloser, error)
+	UploadFile(ctx context.Context, reader io.Reader, size int64, contentType, folder string, couponID uuid.UUID) (string, error)
+	UploadFileWithKey(ctx context.Context, reader io.Reader, size int64, contentType string, objectKey string) (string, error)
+	UploadPreviewFile(ctx context.Context, reader io.Reader, size int64, contentType, folder string, previewID uuid.UUID) (string, error)
+	DownloadFile(ctx context.Context, objectKey string) (io.ReadCloser, error)
+	DeleteFile(ctx context.Context, objectKey string) error
 	GetFileURL(ctx context.Context, objectKey string, expiry time.Duration) (string, error)
-	DeleteFile(ctx context.Context, key string) error
+	GetSignedURL(objectKey string, expires time.Duration) (string, error)
 }
 
 type StableDiffusionClientInterface interface {

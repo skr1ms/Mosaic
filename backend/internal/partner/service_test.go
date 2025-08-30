@@ -102,6 +102,45 @@ func (m *MockPartnerRepository) DeleteWithCoupons(ctx context.Context, id uuid.U
 	return args.Error(0)
 }
 
+func (m *MockPartnerRepository) InitializeArticleGrid(ctx context.Context, partnerID uuid.UUID) error {
+	args := m.Called(ctx, partnerID)
+	return args.Error(0)
+}
+
+func (m *MockPartnerRepository) GetArticleGrid(ctx context.Context, partnerID uuid.UUID) (map[string]map[string]map[string]string, error) {
+	args := m.Called(ctx, partnerID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(map[string]map[string]map[string]string), args.Error(1)
+}
+
+func (m *MockPartnerRepository) UpdateArticleSKU(ctx context.Context, partnerID uuid.UUID, size, style, marketplace, sku string) error {
+	args := m.Called(ctx, partnerID, size, style, marketplace, sku)
+	return args.Error(0)
+}
+
+func (m *MockPartnerRepository) GetArticleBySizeStyle(ctx context.Context, partnerID uuid.UUID, size, style, marketplace string) (*PartnerArticle, error) {
+	args := m.Called(ctx, partnerID, size, style, marketplace)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*PartnerArticle), args.Error(1)
+}
+
+func (m *MockPartnerRepository) GetAllArticlesByPartner(ctx context.Context, partnerID uuid.UUID) ([]*PartnerArticle, error) {
+	args := m.Called(ctx, partnerID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*PartnerArticle), args.Error(1)
+}
+
+func (m *MockPartnerRepository) DeleteArticleGrid(ctx context.Context, partnerID uuid.UUID) error {
+	args := m.Called(ctx, partnerID)
+	return args.Error(0)
+}
+
 func (m *MockPartnerRepository) GetActivePartners(ctx context.Context) ([]*Partner, error) {
 	args := m.Called(ctx)
 	if args.Get(0) == nil {
@@ -649,24 +688,6 @@ func TestPartnerService_ExportCoupons_Formats(t *testing.T) {
 	}
 }
 
-func TestPartnerService_Constants(t *testing.T) {
-	partner := createTestPartner()
-
-	assert.NotEmpty(t, partner.PartnerCode)
-	assert.NotEmpty(t, partner.Login)
-	assert.NotEmpty(t, partner.Domain)
-	assert.NotEmpty(t, partner.BrandName)
-	assert.NotEmpty(t, partner.Email)
-	assert.NotEmpty(t, partner.Status)
-
-	assert.True(t, partner.AllowSales)
-	assert.True(t, partner.AllowPurchases)
-	assert.False(t, partner.IsBlockedInChat)
-
-	assert.NotZero(t, partner.CreatedAt)
-	assert.NotZero(t, partner.UpdatedAt)
-}
-
 func TestPartnerService_ExportCouponRequest_Structure(t *testing.T) {
 	coupon := createTestExportCoupon()
 
@@ -679,4 +700,158 @@ func TestPartnerService_ExportCouponRequest_Structure(t *testing.T) {
 	assert.NotEmpty(t, coupon.BrandName)
 	assert.NotEmpty(t, coupon.Email)
 	assert.NotZero(t, coupon.CreatedAt)
+}
+
+func TestPartnerService_ArticleGrid(t *testing.T) {
+	partnerID := uuid.New()
+
+	t.Run("initialize_article_grid", func(t *testing.T) {
+		mockRepo := new(MockPartnerRepository)
+		mockRepo.On("InitializeArticleGrid", mock.Anything, partnerID).Return(nil)
+
+		deps := &PartnerServiceDeps{
+			PartnerRepository: mockRepo,
+		}
+		service := NewPartnerService(deps)
+
+		err := service.InitializeArticleGrid(partnerID)
+		assert.NoError(t, err)
+
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("get_article_grid", func(t *testing.T) {
+		mockRepo := new(MockPartnerRepository)
+		expectedGrid := map[string]map[string]map[string]string{
+			"ozon": {
+				"grayscale": {
+					"20x20": "SKU001",
+					"30x40": "SKU002",
+				},
+			},
+		}
+		mockRepo.On("GetArticleGrid", mock.Anything, partnerID).Return(expectedGrid, nil)
+
+		deps := &PartnerServiceDeps{
+			PartnerRepository: mockRepo,
+		}
+		service := NewPartnerService(deps)
+
+		grid, err := service.GetArticleGrid(partnerID)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedGrid, grid)
+
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("update_article_sku", func(t *testing.T) {
+		mockRepo := new(MockPartnerRepository)
+		mockRepo.On("UpdateArticleSKU", mock.Anything, partnerID, "20x20", "grayscale", "ozon", "NEW-SKU").Return(nil)
+
+		deps := &PartnerServiceDeps{
+			PartnerRepository: mockRepo,
+		}
+		service := NewPartnerService(deps)
+
+		err := service.UpdateArticleSKU(partnerID, "20x20", "grayscale", "ozon", "NEW-SKU")
+		assert.NoError(t, err)
+
+		mockRepo.AssertExpectations(t)
+	})
+}
+
+func TestPartnerService_GenerateProductLink(t *testing.T) {
+	partnerID := uuid.New()
+	testPartner := &Partner{
+		ID:                      partnerID,
+		OzonLink:                "https://ozon.ru/search?text=алмазная+мозаика",
+		WildberriesLink:         "https://wb.ru/catalog/search?query=алмазная+мозаика",
+		OzonLinkTemplate:        "https://www.ozon.ru/search/?text={sku}+{size}+{style}",
+		WildberriesLinkTemplate: "https://www.wildberries.ru/catalog/search?query={sku}+{size}+{style}",
+	}
+
+	t.Run("generate_ozon_link_with_sku", func(t *testing.T) {
+		mockRepo := new(MockPartnerRepository)
+		mockRepo.On("GetByID", mock.Anything, partnerID).Return(testPartner, nil)
+
+		testArticle := &PartnerArticle{
+			SKU: "DIAMOND-001",
+		}
+		mockRepo.On("GetArticleBySizeStyle", mock.Anything, partnerID, "20x20", "grayscale", "ozon").Return(testArticle, nil)
+
+		deps := &PartnerServiceDeps{
+			PartnerRepository: mockRepo,
+		}
+		service := NewPartnerService(deps)
+
+		link := service.GenerateProductLink(partnerID, "20x20", "grayscale", "ozon")
+		expectedLink := "https://www.ozon.ru/search/?text=DIAMOND-001+20x20+grayscale"
+		assert.Equal(t, expectedLink, link)
+
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("generate_wildberries_link_with_sku", func(t *testing.T) {
+		mockRepo := new(MockPartnerRepository)
+		mockRepo.On("GetByID", mock.Anything, partnerID).Return(testPartner, nil)
+
+		testArticle := &PartnerArticle{
+			SKU: "DIAMOND-002",
+		}
+		mockRepo.On("GetArticleBySizeStyle", mock.Anything, partnerID, "30x40", "modern", "wildberries").Return(testArticle, nil)
+
+		deps := &PartnerServiceDeps{
+			PartnerRepository: mockRepo,
+		}
+		service := NewPartnerService(deps)
+
+		link := service.GenerateProductLink(partnerID, "30x40", "modern", "wildberries")
+		expectedLink := "https://www.wildberries.ru/catalog/search?query=DIAMOND-002+30x40+modern"
+		assert.Equal(t, expectedLink, link)
+
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("fallback_to_general_link_when_no_sku", func(t *testing.T) {
+		mockRepo := new(MockPartnerRepository)
+		mockRepo.On("GetByID", mock.Anything, partnerID).Return(testPartner, nil)
+
+		// Возвращаем nil, имитируя отсутствие артикула
+		mockRepo.On("GetArticleBySizeStyle", mock.Anything, partnerID, "40x40", "vintage", "ozon").Return(nil, errors.New("not found"))
+
+		deps := &PartnerServiceDeps{
+			PartnerRepository: mockRepo,
+		}
+		service := NewPartnerService(deps)
+
+		link := service.GenerateProductLink(partnerID, "40x40", "vintage", "ozon")
+		assert.Equal(t, testPartner.OzonLink, link)
+
+		mockRepo.AssertExpectations(t)
+	})
+}
+
+func TestPartnerService_ArticleConstants(t *testing.T) {
+	// Проверяем константы размеров
+	assert.Equal(t, "20x20", Size20x20)
+	assert.Equal(t, "30x40", Size30x40)
+	assert.Equal(t, "40x40", Size40x40)
+	assert.Equal(t, "40x50", Size40x50)
+	assert.Equal(t, "40x60", Size40x60)
+	assert.Equal(t, "50x70", Size50x70)
+
+	// Проверяем константы стилей
+	assert.Equal(t, "grayscale", StyleGrayscale)
+	assert.Equal(t, "skin_tones", StyleSkinTones)
+	assert.Equal(t, "pop_art", StylePopArt)
+	assert.Equal(t, "max_colors", StyleMaxColors)
+
+	// Проверяем константы маркетплейсов
+	assert.Equal(t, "ozon", MarketplaceOzon)
+	assert.Equal(t, "wildberries", MarketplaceWildberries)
+
+	// Проверяем слайсы
+	assert.Len(t, AvailableSizes, 6)
+	assert.Len(t, AvailableStyles, 4)
+	assert.Len(t, Marketplaces, 2)
 }

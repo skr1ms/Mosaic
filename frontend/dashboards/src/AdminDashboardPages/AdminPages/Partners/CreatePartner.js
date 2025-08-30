@@ -482,6 +482,41 @@ const CreatePartner = () => {
                                         </FormGroup>
                                     </Col>
                                 </Row>
+
+                                <Row>
+                                    <Col md="6">
+                                        <FormGroup>
+                                            <Label for="ozonLinkTemplate">{t('partners.ozon_link_template')}</Label>
+                                            <Input
+                                                type="url"
+                                                id="ozonLinkTemplate"
+                                                name="ozonLinkTemplate"
+                                                value={formData.ozonLinkTemplate}
+                                                onChange={handleInputChange}
+                                                placeholder="https://www.ozon.ru/search/?text={sku}+{size}+{style}"
+                                            />
+                                            <small className="form-text text-muted">
+                                                {t('partners.link_template_help')} {sku}, {size}, {style}
+                                            </small>
+                                        </FormGroup>
+                                    </Col>
+                                    <Col md="6">
+                                        <FormGroup>
+                                            <Label for="wildberriesLinkTemplate">{t('partners.wildberries_link_template')}</Label>
+                                            <Input
+                                                type="url"
+                                                id="wildberriesLinkTemplate"
+                                                name="wildberriesLinkTemplate"
+                                                value={formData.wildberriesLinkTemplate}
+                                                onChange={handleInputChange}
+                                                placeholder="https://www.wildberries.ru/catalog/search?query={sku}+{size}+{style}"
+                                            />
+                                            <small className="form-text text-muted">
+                                                {t('partners.link_template_help')} {sku}, {size}, {style}
+                                            </small>
+                                        </FormGroup>
+                                    </Col>
+                                </Row>
                             </CardBody>
                         </Card>
 

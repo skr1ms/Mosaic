@@ -310,6 +310,18 @@ func (s *AdminService) CreatePartner(req partner.CreatePartnerRequest) (*partner
 		return nil, fmt.Errorf("failed to create partner: %w", err)
 	}
 
+	// Инициализируем сетку артикулов для нового партнера
+	if err := s.deps.PartnerRepository.InitializeArticleGrid(context.Background(), newPartner.ID); err != nil {
+		s.deps.Logger.Error().Err(err).
+			Str("partner_id", newPartner.ID.String()).
+			Msg("Failed to initialize article grid for new partner")
+		// Не возвращаем ошибку, так как партнер уже создан
+	} else {
+		s.deps.Logger.Info().
+			Str("partner_id", newPartner.ID.String()).
+			Msg("Successfully initialized article grid for new partner")
+	}
+
 	// Trigger CI/CD pipeline for domain update if GitLab client is available
 	if s.deps.GitLabClient != nil && s.deps.GoroutineManager != nil {
 		s.deps.Logger.Info().

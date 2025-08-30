@@ -159,23 +159,23 @@ type MockCouponRepository struct {
 	mock.Mock
 }
 
-func (m *MockCouponRepository) GetByID(ctx context.Context, id uuid.UUID) (*coupon.Coupon, error) {
+func (m *MockCouponRepository) GetByID(ctx context.Context, id uuid.UUID) (*Coupon, error) {
 	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*coupon.Coupon), args.Error(1)
+	return args.Get(0).(*Coupon), args.Error(1)
 }
 
-func (m *MockCouponRepository) GetByCode(ctx context.Context, code string) (*coupon.Coupon, error) {
+func (m *MockCouponRepository) GetByCode(ctx context.Context, code string) (*Coupon, error) {
 	args := m.Called(ctx, code)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*coupon.Coupon), args.Error(1)
+	return args.Get(0).(*Coupon), args.Error(1)
 }
 
-func (m *MockCouponRepository) Update(ctx context.Context, coupon *coupon.Coupon) error {
+func (m *MockCouponRepository) Update(ctx context.Context, coupon *Coupon) error {
 	args := m.Called(ctx, coupon)
 	return args.Error(0)
 }
@@ -205,6 +205,21 @@ func (m *MockS3Client) DeleteFile(ctx context.Context, key string) error {
 
 func (m *MockS3Client) GetFileURL(ctx context.Context, key string, expiry time.Duration) (string, error) {
 	args := m.Called(ctx, key, expiry)
+	return args.String(0), args.Error(1)
+}
+
+func (m *MockS3Client) GetSignedURL(key string, expires time.Duration) (string, error) {
+	args := m.Called(key, expires)
+	return args.String(0), args.Error(1)
+}
+
+func (m *MockS3Client) UploadFileWithKey(ctx context.Context, reader io.Reader, size int64, contentType string, objectKey string) (string, error) {
+	args := m.Called(ctx, reader, size, contentType, objectKey)
+	return args.String(0), args.Error(1)
+}
+
+func (m *MockS3Client) UploadPreviewFile(ctx context.Context, reader io.Reader, size int64, contentType, folder string, previewID uuid.UUID) (string, error) {
+	args := m.Called(ctx, reader, size, contentType, folder, previewID)
 	return args.String(0), args.Error(1)
 }
 

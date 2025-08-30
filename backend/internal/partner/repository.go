@@ -351,3 +351,124 @@ func (r *PartnerRepository) GetTopByActivity(ctx context.Context, limit int) ([]
 	}
 	return partners, nil
 }
+
+// InitializeArticleGrid создает пустую сетку артикулов для партнера
+func (r *PartnerRepository) InitializeArticleGrid(ctx context.Context, partnerID uuid.UUID) error {
+	var articles []PartnerArticle
+
+	// Создаем 48 ячеек (4 стиля × 6 размеров × 2 маркетплейса)
+	for _, marketplace := range Marketplaces {
+		for _, style := range AvailableStyles {
+			for _, size := range AvailableSizes {
+				articles = append(articles, PartnerArticle{
+					PartnerID:   partnerID,
+					Size:        size,
+					Style:       style,
+					Marketplace: marketplace,
+					SKU:         "", // пустой артикул
+					IsActive:    true,
+				})
+			}
+		}
+	}
+
+	// Вставляем все ячейки
+	_, err := r.db.NewInsert().Model(&articles).Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to initialize article grid: %w", err)
+	}
+
+	return nil
+}
+
+// GetArticleGrid получает сетку артикулов для партнера
+func (r *PartnerRepository) GetArticleGrid(ctx context.Context, partnerID uuid.UUID) (map[string]map[string]map[string]string, error) {
+	var articles []PartnerArticle
+
+	err := r.db.NewSelect().
+		Model(&articles).
+		Where("partner_id = ? AND is_active = true", partnerID).
+		Scan(ctx)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get article grid: %w", err)
+	}
+
+	// Структура: marketplace -> style -> size -> sku
+	grid := make(map[string]map[string]map[string]string)
+
+	for _, article := range articles {
+		if grid[article.Marketplace] == nil {
+			grid[article.Marketplace] = make(map[string]map[string]string)
+		}
+		if grid[article.Marketplace][article.Style] == nil {
+			grid[article.Marketplace][article.Style] = make(map[string]string)
+		}
+		grid[article.Marketplace][article.Style][article.Size] = article.SKU
+	}
+
+	return grid, nil
+}
+
+// UpdateArticleSKU обновляет артикул в ячейке сетки
+func (r *PartnerRepository) UpdateArticleSKU(ctx context.Context, partnerID uuid.UUID, size, style, marketplace, sku string) error {
+	_, err := r.db.NewUpdate().
+		Model((*PartnerArticle)(nil)).
+		Set("sku = ?, updated_at = CURRENT_TIMESTAMP", sku).
+		Where("partner_id = ? AND size = ? AND style = ? AND marketplace = ?",
+			partnerID, size, style, marketplace).
+		Exec(ctx)
+
+	if err != nil {
+		return fmt.Errorf("failed to update article SKU: %w", err)
+	}
+
+	return nil
+}
+
+// GetArticleBySizeStyle получает артикул по размеру, стилю и маркетплейсу
+func (r *PartnerRepository) GetArticleBySizeStyle(ctx context.Context, partnerID uuid.UUID, size, style, marketplace string) (*PartnerArticle, error) {
+	article := new(PartnerArticle)
+
+	err := r.db.NewSelect().
+		Model(article).
+		Where("partner_id = ? AND size = ? AND style = ? AND marketplace = ? AND is_active = true",
+			partnerID, size, style, marketplace).
+		Scan(ctx)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get article: %w", err)
+	}
+
+	return article, nil
+}
+
+// DeleteArticleGrid удаляет всю сетку артикулов партнера
+func (r *PartnerRepository) DeleteArticleGrid(ctx context.Context, partnerID uuid.UUID) error {
+	_, err := r.db.NewDelete().
+		Model((*PartnerArticle)(nil)).
+		Where("partner_id = ?", partnerID).
+		Exec(ctx)
+
+	if err != nil {
+		return fmt.Errorf("failed to delete article grid: %w", err)
+	}
+
+	return nil
+}
+
+// GetAllArticlesByPartner получает все артикулы партнера
+func (r *PartnerRepository) GetAllArticlesByPartner(ctx context.Context, partnerID uuid.UUID) ([]*PartnerArticle, error) {
+	var articles []*PartnerArticle
+
+	err := r.db.NewSelect().
+		Model(&articles).
+		Where("partner_id = ? AND is_active = true", partnerID).
+		Scan(ctx)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get partner articles: %w", err)
+	}
+
+	return articles, nil
+}

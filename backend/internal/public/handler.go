@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/skr1ms/mosaic/internal/admin"
 	"github.com/skr1ms/mosaic/internal/image"
+	"github.com/skr1ms/mosaic/internal/preview"
 	"github.com/skr1ms/mosaic/internal/types"
 	"github.com/skr1ms/mosaic/pkg/goroutine"
 	"github.com/skr1ms/mosaic/pkg/middleware"
@@ -21,7 +22,6 @@ type PublicHandlerDeps struct {
 	Logger        *middleware.Logger
 }
 
-// PublicHandler обработчик для публичного API
 type PublicHandler struct {
 	fiber.Router
 	deps             *PublicHandlerDeps
@@ -44,6 +44,7 @@ func NewPublicHandler(router fiber.Router, deps *PublicHandlerDeps) *PublicHandl
 	// ================================================================
 	router.Get("/branding", handler.GetBrandingInfo)                   // GET /api/branding
 	router.Get("/partners/:domain/info", handler.GetPartnerByDomain)   // GET /api/partners/:domain/info
+	router.Get("/partners/:id/articles", handler.GetPartnerArticles)   // GET /api/partners/:id/articles
 	router.Get("/coupons/:code", handler.GetCouponByCode)              // GET /api/coupons/:code
 	router.Post("/coupons/:code/activate", handler.ActivateCoupon)     // POST /api/coupons/:code/activate
 	router.Post("/coupons/purchase", handler.PurchaseCoupon)           // POST /api/coupons/purchase
@@ -57,6 +58,7 @@ func NewPublicHandler(router fiber.Router, deps *PublicHandlerDeps) *PublicHandl
 	router.Get("/images/:id/download", handler.DownloadSchema)         // GET /api/images/:id/download
 	router.Get("/sizes", handler.GetAvailableSizes)                    // GET /api/sizes
 	router.Get("/styles", handler.GetAvailableStyles)                  // GET /api/styles
+	router.Post("/preview/generate", handler.GenerateMosaicPreview)    // POST /api/preview/generate
 	router.Get("/config/recaptcha", handler.GetRecaptchaSiteKey)       // GET /api/config/recaptcha
 
 	return handler
@@ -143,6 +145,71 @@ func (h *PublicHandler) GetPartnerByDomain(c *fiber.Ctx) error {
 		Msg("Partner information retrieved successfully")
 
 	return c.JSON(result)
+}
+
+// @Summary Get partner articles
+// @Description Returns articles for a specific partner
+// @Tags partners
+// @Produce json
+// @Param id path string true "Partner ID"
+// @Success 200 {array} map[string]any "List of partner articles"
+// @Failure 404 {object} map[string]any "Partner not found"
+// @Failure 500 {object} map[string]any "Internal server error when retrieving partner articles"
+// @Router /api/partners/{id}/articles [get]
+func (h *PublicHandler) GetPartnerArticles(c *fiber.Ctx) error {
+	partnerID := c.Params("id")
+
+	partnerUUID, err := uuid.Parse(partnerID)
+	if err != nil {
+		h.deps.Logger.FromContext(c).Warn().
+			Err(err).
+			Str("handler", "GetPartnerArticles").
+			Str("partner_id", partnerID).
+			Msg("Invalid partner ID format")
+
+		errorResponse := fiber.Map{
+			"error":      "Invalid partner ID format",
+			"request_id": c.Get("X-Request-ID"),
+		}
+		return c.Status(fiber.StatusBadRequest).JSON(errorResponse)
+	}
+
+	articles, err := h.deps.PublicService.GetPartnerArticleGrid(partnerUUID)
+	if err != nil {
+		h.deps.Logger.FromContext(c).Error().
+			Err(err).
+			Str("handler", "GetPartnerArticles").
+			Str("partner_id", partnerID).
+			Msg("Failed to get partner articles")
+
+		var errorMsg string
+		var statusCode int
+
+		if err.Error() == "partner not found" {
+			errorMsg = "Partner not found"
+			statusCode = fiber.StatusNotFound
+		} else {
+			errorMsg = "Failed to get partner articles"
+			statusCode = fiber.StatusInternalServerError
+		}
+
+		errorResponse := fiber.Map{
+			"error":      errorMsg,
+			"request_id": c.Get("X-Request-ID"),
+		}
+		if os.Getenv("ENVIRONMENT") == "development" || os.Getenv("ENVIRONMENT") == "dev" {
+			errorResponse["details"] = err.Error()
+		}
+		return c.Status(statusCode).JSON(errorResponse)
+	}
+
+	h.deps.Logger.FromContext(c).Info().
+		Str("handler", "GetPartnerArticles").
+		Str("partner_id", partnerID).
+		Int("count", len(articles)).
+		Msg("Partner articles retrieved successfully")
+
+	return c.JSON(articles)
 }
 
 // @Summary Get coupon information by code
@@ -931,6 +998,81 @@ func (h *PublicHandler) GetAvailableStyles(c *fiber.Ctx) error {
 		Msg("Available styles retrieved successfully")
 
 	return c.JSON(styles)
+}
+
+// @Summary Generate mosaic preview
+// @Description Generates a preview of the mosaic pattern for given size and style
+// @Tags preview
+// @Accept json
+// @Produce json
+// @Param request body map[string]any true "Preview generation parameters (size, style, partner_id, user_email)"
+// @Success 200 {object} map[string]any "Preview generated successfully"
+// @Failure 400 {object} map[string]any "Bad request: invalid parameters"
+// @Failure 500 {object} map[string]any "Internal server error during preview generation"
+// @Router /api/preview/generate [post]
+func (h *PublicHandler) GenerateMosaicPreview(c *fiber.Ctx) error {
+	var req map[string]any
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Failed to parse request body",
+		})
+	}
+
+	// Валидация параметров
+	size, ok := req["size"].(string)
+	if !ok || size == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Size is required",
+		})
+	}
+
+	style, ok := req["style"].(string)
+	if !ok || style == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Style is required",
+		})
+	}
+
+	// Получаем информацию о партнере из контекста
+	brandingData := middleware.GetBrandingFromContext(c)
+	partnerID := ""
+	if brandingData != nil && brandingData.Partner != nil {
+		partnerID = brandingData.Partner.ID.String()
+	}
+
+	// Создаем запрос для сервиса превью
+	previewReq := &preview.PreviewRequest{
+		Size:      size,
+		Style:     style,
+		PartnerID: partnerID,
+		UserEmail: "preview@example.com", // В реальности можно брать из формы
+	}
+
+	// Генерируем превью используя сервис
+	previewResponse, err := h.deps.PublicService.GetPreviewService().GeneratePreview(c.Context(), previewReq)
+	if err != nil {
+		h.deps.Logger.FromContext(c).Error().
+			Err(err).
+			Str("handler", "GenerateMosaicPreview").
+			Str("size", size).
+			Str("style", style).
+			Msg("Failed to generate preview")
+
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   "Failed to generate preview",
+			"details": err.Error(),
+		})
+	}
+
+	h.deps.Logger.FromContext(c).Info().
+		Str("handler", "GenerateMosaicPreview").
+		Str("size", size).
+		Str("style", style).
+		Str("partner_id", partnerID).
+		Str("preview_id", previewResponse.PreviewID).
+		Msg("Preview generation completed")
+
+	return c.JSON(previewResponse)
 }
 
 // @Summary Get reCAPTCHA site key

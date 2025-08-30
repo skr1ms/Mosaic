@@ -10,6 +10,7 @@ import (
 	"github.com/skr1ms/mosaic/internal/image"
 	"github.com/skr1ms/mosaic/internal/partner"
 	"github.com/skr1ms/mosaic/internal/payment"
+	"github.com/skr1ms/mosaic/internal/preview"
 	"github.com/skr1ms/mosaic/internal/types"
 )
 
@@ -58,6 +59,10 @@ type EmailServiceInterface interface {
 	SendSchemaEmail(email, schemaURL, couponCode string) error
 }
 
+type PreviewServiceInterface interface {
+	GeneratePreview(ctx context.Context, req *preview.PreviewRequest) (*preview.PreviewResponse, error)
+}
+
 type ConfigInterface interface {
 	GetServerConfig() config.ServerConfig
 	GetRecaptchaConfig() config.RecaptchaConfig
@@ -65,6 +70,7 @@ type ConfigInterface interface {
 
 type PublicServiceInterface interface {
 	GetPartnerByDomain(domain string) (map[string]any, error)
+	GetPartnerArticleGrid(partnerID uuid.UUID) (map[string]any, error)
 
 	GetCouponByCode(code string) (map[string]any, error)
 	ActivateCoupon(code string) (map[string]any, error)
@@ -87,6 +93,7 @@ type PublicServiceInterface interface {
 	GetPartnerRepository() PartnerRepositoryInterface
 	GetImageService() ImageServiceInterface
 	GetPaymentService() PaymentServiceInterface
+	GetPreviewService() PreviewServiceInterface
 }
 
 type CouponValidatorInterface interface {

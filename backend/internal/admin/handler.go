@@ -107,6 +107,10 @@ func NewAdminHandler(router fiber.Router, deps *AdminHandlerDeps) {
 	adminRoutes.Get("/images/:id", handler.GetImageDetails)       // GET /api/admin/images/:id
 	adminRoutes.Delete("/images/:id", handler.DeleteImageTask)    // DELETE /api/admin/images/:id
 	adminRoutes.Post("/images/:id/retry", handler.RetryImageTask) // POST /api/admin/images/:id/retry
+
+	// Эндпоинты для работы с артикулами партнеров
+	adminRoutes.Get("/partners/:id/articles/grid", handler.GetPartnerArticleGrid)  // GET /api/admin/partners/:id/articles/grid
+	adminRoutes.Put("/partners/:id/articles/sku", handler.UpdatePartnerArticleSKU) // PUT /api/admin/partners/:id/articles/sku
 }
 
 // @Summary Create a new admin
@@ -2417,4 +2421,56 @@ func (handler *AdminHandler) saveNginxConfig(config string) error {
 	return nil
 }
 
-// CI/CD pipeline triggering is now handled automatically in AdminService methods
+// GetPartnerArticleGrid получает сетку артикулов партнера
+func (handler *AdminHandler) GetPartnerArticleGrid(c *fiber.Ctx) error {
+	partnerID, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid partner ID",
+		})
+	}
+
+	grid, err := handler.deps.AdminService.GetPartnerRepository().GetArticleGrid(c.Context(), partnerID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to get article grid",
+		})
+	}
+
+	return c.JSON(grid)
+}
+
+// UpdatePartnerArticleSKU обновляет артикул в сетке партнера
+func (handler *AdminHandler) UpdatePartnerArticleSKU(c *fiber.Ctx) error {
+	partnerID, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid partner ID",
+		})
+	}
+
+	var req struct {
+		Marketplace string `json:"marketplace"`
+		Style       string `json:"style"`
+		Size        string `json:"size"`
+		SKU         string `json:"sku"`
+	}
+
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request body",
+		})
+	}
+
+	err = handler.deps.AdminService.GetPartnerRepository().UpdateArticleSKU(
+		c.Context(), partnerID, req.Size, req.Style, req.Marketplace, req.SKU)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to update article SKU",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "SKU updated successfully",
+	})
+}

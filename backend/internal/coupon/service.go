@@ -17,9 +17,10 @@ import (
 )
 
 type CouponServiceDeps struct {
-	CouponRepository CouponRepositoryInterface
-	RedisClient      RedisClientInterface
-	S3Client         S3Interface
+	CouponRepository  CouponRepositoryInterface
+	PartnerRepository PartnerRepositoryInterface
+	RedisClient       RedisClientInterface
+	S3Client          S3Interface
 }
 
 type CouponService struct {
@@ -65,7 +66,7 @@ func (s *CouponService) GetCouponByCode(code string) (*Coupon, error) {
 	return coupon, nil
 }
 
-// ActivateCoupon activates coupon by setting activation time (simplified activation)
+// ActivateCoupon activates coupon (changes status to 'completed')
 func (s *CouponService) ActivateCoupon(id uuid.UUID, zipURL string) error {
 	if err := s.deps.CouponRepository.ActivateCoupon(context.Background(), id, zipURL); err != nil {
 		return fmt.Errorf("failed to activate coupon: %w", err)
@@ -106,26 +107,69 @@ func (s *CouponService) GetStatistics(partnerID *uuid.UUID) (map[string]int64, e
 	return stats, nil
 }
 
-// ValidateCoupon validates coupon existence in database (simplified validation)
+// ValidateCoupon validates coupon and returns validation response
 func (s *CouponService) ValidateCoupon(code string) (*CouponValidationResponse, error) {
 	coupon, err := s.deps.CouponRepository.GetByCode(context.Background(), code)
 	if err != nil {
 		return &CouponValidationResponse{
 			Valid:   false,
-			Message: "Coupon not found in database",
+			Message: "Coupon not found",
 		}, nil
 	}
 
-	// Убираем проверку статуса - купон валиден, если он существует в БД
+	// Получаем информацию о партнере
+	partner, err := s.deps.PartnerRepository.GetByID(context.Background(), coupon.PartnerID)
+	if err != nil {
+		// Если не удалось получить партнера, возвращаем базовую валидацию
+		size := string(coupon.Size)
+		style := string(coupon.Style)
+		return &CouponValidationResponse{
+			Valid:   true,
+			Message: "Coupon is valid and ready to use",
+			Size:    &size,
+			Style:   &style,
+		}, nil
+	}
+
+	// Извлекаем первые 4 цифры из кода купона
+	couponPrefix := ""
+	if len(code) >= 4 {
+		couponPrefix = code[:4]
+	}
+
+	// Извлекаем первые 4 цифры из кода партнера
+	partnerPrefix := ""
+	if len(partner.PartnerCode) >= 4 {
+		partnerPrefix = partner.PartnerCode[:4]
+	}
+
+	// Проверяем соответствие доменов
+	isCorrectDomain := couponPrefix == partnerPrefix
 
 	size := string(coupon.Size)
 	style := string(coupon.Style)
-	return &CouponValidationResponse{
+
+	response := &CouponValidationResponse{
 		Valid:   true,
-		Message: "Coupon exists and is ready to use",
+		Message: "Coupon is valid and ready to use",
 		Size:    &size,
 		Style:   &style,
-	}, nil
+
+		// Информация о партнере
+		PartnerID:        &partner.ID,
+		PartnerCode:      &partner.PartnerCode,
+		PartnerDomain:    &partner.Domain,
+		PartnerBrandName: &partner.BrandName,
+		IsCorrectDomain:  isCorrectDomain,
+	}
+
+	// Если домен не соответствует, добавляем предупреждение
+	if !isCorrectDomain {
+		response.Message = "Coupon is valid, but you're on the wrong partner site"
+		response.CorrectDomain = &partner.Domain
+	}
+
+	return response, nil
 }
 
 // ExportCoupons exports coupons to text file
@@ -163,11 +207,15 @@ func (s *CouponService) ExportCoupons(partnerID *uuid.UUID, status, format strin
 	return content.String(), nil
 }
 
-// DownloadMaterials downloads ZIP archive with coupon materials (validates only coupon existence)
+// DownloadMaterials downloads ZIP archive with coupon materials
 func (s *CouponService) DownloadMaterials(id uuid.UUID) ([]byte, string, error) {
 	coupon, err := s.deps.CouponRepository.GetByID(context.Background(), id)
 	if err != nil {
 		return nil, "", fmt.Errorf("coupon not found: %w", err)
+	}
+
+	if coupon.Status != "used" && coupon.Status != "completed" {
+		return nil, "", fmt.Errorf("coupon must be used or completed to download materials")
 	}
 
 	if coupon.ZipURL == nil || *coupon.ZipURL == "" {

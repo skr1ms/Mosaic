@@ -160,6 +160,12 @@ export class MosaicAPI {
     const { data } = await apiClient.get('/styles')
     return data
   }
+
+  // Получение сетки артикулов партнера
+  static async getPartnerArticleGrid(partnerId) {
+    const { data } = await apiClient.get(`/admin/partners/${partnerId}/articles/grid`)
+    return data
+  }
 }
 
 export default apiClient
