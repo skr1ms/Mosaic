@@ -81,9 +81,9 @@ func (s *PreviewService) GeneratePreview(ctx context.Context, file *multipart.Fi
 		ImagePath:   tempImagePath,
 		StonesX:     stonesX,
 		StonesY:     stonesY,
-		StoneSizeMM: 2.52, // Standard stone size
-		DPI:         150,
-		PreviewDPI:  120,       // DPI for preview
+		StoneSizeMM: 2.52,      // Standard stone size
+		DPI:         150,       // Same as working schema generation
+		PreviewDPI:  120,       // Same as working schema generation
 		SchemeDPI:   0,         // Don't generate scheme
 		Mode:        "preview", // Preview mode only
 		Style:       s.mapStyleToMosaicStyle(style),

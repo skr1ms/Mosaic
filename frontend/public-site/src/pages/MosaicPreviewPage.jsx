@@ -286,24 +286,14 @@ const MosaicPreviewPage = () => {
                   </button>
                   <button
                     onClick={() => {
-                      // Создаем временную ссылку для скачивания
-                      fetch(generatedPreview)
-                        .then(response => response.blob())
-                        .then(blob => {
-                          const url = window.URL.createObjectURL(blob)
-                          const link = document.createElement('a')
-                          link.href = url
-                          link.download = 'mosaic-preview.png'
-                          document.body.appendChild(link)
-                          link.click()
-                          document.body.removeChild(link)
-                          window.URL.revokeObjectURL(url)
-                        })
-                        .catch(error => {
-                          console.error('Download failed:', error)
-                          // Fallback - открываем в новой вкладке
-                          window.open(generatedPreview, '_blank', 'noopener,noreferrer')
-                        })
+                      // Простой способ скачивания через ссылку
+                      const link = document.createElement('a')
+                      link.href = generatedPreview
+                      link.download = 'mosaic-preview.png'
+                      link.target = '_blank'
+                      document.body.appendChild(link)
+                      link.click()
+                      document.body.removeChild(link)
                     }}
                     className="flex-1 bg-brand-secondary text-white py-3 px-4 rounded-lg hover:bg-brand-secondary/90 font-semibold transition-colors flex items-center justify-center space-x-2"
                   >
