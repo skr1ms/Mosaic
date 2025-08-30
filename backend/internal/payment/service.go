@@ -518,15 +518,11 @@ func (s *PaymentService) createCouponForOrder(ctx context.Context, order *Order)
 
 	// Send coupon email notification
 	if s.deps.EmailService != nil && order.UserEmail != "" {
-		fmt.Printf("SENDING COUPON EMAIL: to=%s, coupon=%s, size=%s, style=%s\n", order.UserEmail, couponCode, order.Size, order.Style)
 		err = s.deps.EmailService.SendCouponPurchaseEmail(order.UserEmail, couponCode, order.Size, order.Style)
 		if err != nil {
-			fmt.Printf("❌ FAILED to send coupon email: %v\n", err)
-		} else {
-			fmt.Printf("COUPON EMAIL sent successfully!\n")
+			// Log error but don't fail the transaction
+			fmt.Printf("Failed to send coupon email: %v\n", err)
 		}
-	} else {
-		fmt.Printf("EMAIL SERVICE NOT AVAILABLE: EmailService=%v, UserEmail='%s'\n", s.deps.EmailService != nil, order.UserEmail)
 	}
 
 	return nil

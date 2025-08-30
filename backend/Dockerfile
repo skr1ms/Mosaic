@@ -25,6 +25,7 @@ WORKDIR /app
 
 COPY --from=builder /app/main .
 COPY --from=builder /app/docs ./docs
+COPY --from=builder /app/pkg/email/templates ./pkg/email/templates
 COPY scripts/ ./scripts/
 
 EXPOSE 8080
