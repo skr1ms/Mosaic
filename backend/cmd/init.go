@@ -322,10 +322,11 @@ func InitializeApp() *fiber.App {
 	})
 
 	previewService := preview.NewPreviewService(&preview.PreviewServiceDeps{
-		S3Client:        s3Client,
-		MosaicGenerator: mosaicGenerator,
-		PaletteService:  paletteService,
-		WorkingDir:      "/tmp",
+		S3Client:              s3Client,
+		MosaicGenerator:       mosaicGenerator,
+		PaletteService:        paletteService,
+		StableDiffusionClient: stableDiffusionClient,
+		WorkingDir:            "/tmp",
 	})
 
 	publicService := public.NewPublicService(&public.PublicServiceDeps{

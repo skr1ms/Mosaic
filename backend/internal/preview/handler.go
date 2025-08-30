@@ -2,6 +2,7 @@ package preview
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -49,6 +50,7 @@ func (h *PreviewHandler) GeneratePreview(c *fiber.Ctx) error {
 	// Get form values
 	size := c.FormValue("size")
 	style := c.FormValue("style")
+	useAI := c.FormValue("use_ai") == "true"
 
 	if size == "" || style == "" {
 		h.deps.Logger.FromContext(c).Warn().
@@ -138,7 +140,7 @@ func (h *PreviewHandler) GeneratePreview(c *fiber.Ctx) error {
 		Msg("Starting preview generation")
 
 	// Generate preview
-	result, err := h.deps.PreviewService.GeneratePreview(ctx, file, size, style)
+	result, err := h.deps.PreviewService.GeneratePreview(ctx, file, size, style, useAI)
 	if err != nil {
 		h.deps.Logger.FromContext(c).Error().
 			Err(err).
@@ -171,27 +173,30 @@ func (h *PreviewHandler) GeneratePreview(c *fiber.Ctx) error {
 func (h *PreviewHandler) DownloadPreview(c *fiber.Ctx) error {
 	previewID := c.Params("id")
 
-	// Get preview URL from S3
-	previewURL, err := h.deps.PreviewService.GetPreviewDownloadURL(previewID)
+	// Get preview data from service
+	previewData, err := h.deps.PreviewService.GetPreviewData(previewID)
 	if err != nil {
 		h.deps.Logger.FromContext(c).Error().
 			Err(err).
 			Str("handler", "DownloadPreview").
 			Str("preview_id", previewID).
-			Msg("Failed to get preview download URL")
+			Msg("Failed to get preview data")
 
 		return c.Status(fiber.StatusNotFound).JSON(errors.NotFoundError("Preview not found"))
 	}
 
-	// Set download headers
+	// Set download headers - FORCE DOWNLOAD
 	c.Set("Content-Disposition", "attachment; filename=mosaic-preview.png")
-	c.Set("Content-Type", "image/png")
+	c.Set("Content-Type", "application/octet-stream") // Force download
+	c.Set("Content-Length", fmt.Sprintf("%d", len(previewData)))
+	c.Set("Cache-Control", "no-cache")
 
 	h.deps.Logger.FromContext(c).Info().
 		Str("handler", "DownloadPreview").
 		Str("preview_id", previewID).
+		Int("data_size", len(previewData)).
 		Msg("Preview download started")
 
-	// Redirect to the actual file URL
-	return c.Redirect(previewURL)
+	// Send the actual file data
+	return c.Send(previewData)
 }

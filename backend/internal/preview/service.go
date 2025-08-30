@@ -13,13 +13,23 @@ import (
 	"github.com/skr1ms/mosaic/pkg/mosaic"
 	"github.com/skr1ms/mosaic/pkg/palette"
 	"github.com/skr1ms/mosaic/pkg/s3"
+	"github.com/skr1ms/mosaic/pkg/stableDiffusion"
 )
 
 type PreviewServiceDeps struct {
-	S3Client        *s3.S3Client
-	MosaicGenerator *mosaic.MosaicGenerator
-	PaletteService  *palette.PaletteService
-	WorkingDir      string
+	S3Client              *s3.S3Client
+	MosaicGenerator       *mosaic.MosaicGenerator
+	PaletteService        *palette.PaletteService
+	StableDiffusionClient StableDiffusionClientInterface
+	WorkingDir            string
+}
+
+// StableDiffusionClientInterface defines methods for Stable Diffusion processing
+type StableDiffusionClientInterface interface {
+	ProcessImage(ctx context.Context, req stableDiffusion.ProcessImageRequest) (string, error)
+	EncodeImageToBase64(imageData []byte) string
+	DecodeBase64Image(base64Image string) ([]byte, error)
+	CheckHealth(ctx context.Context) error
 }
 
 type PreviewService struct {
@@ -33,7 +43,7 @@ func NewPreviewService(deps *PreviewServiceDeps) *PreviewService {
 }
 
 // GeneratePreview creates a mosaic preview from uploaded file
-func (s *PreviewService) GeneratePreview(ctx context.Context, file *multipart.FileHeader, size, style string) (map[string]any, error) {
+func (s *PreviewService) GeneratePreview(ctx context.Context, file *multipart.FileHeader, size, style string, useAI bool) (map[string]any, error) {
 	previewID := uuid.New()
 
 	// Create temporary directory for preview
@@ -67,6 +77,18 @@ func (s *PreviewService) GeneratePreview(ctx context.Context, file *multipart.Fi
 		return nil, fmt.Errorf("failed to copy file: %w", err)
 	}
 
+	// Apply AI processing if requested (same logic as ImageService)
+	processedImagePath := tempImagePath
+	if useAI && s.deps.StableDiffusionClient != nil {
+		processedPath, err := s.processImageWithAI(ctx, tempImagePath, size, style)
+		if err != nil {
+			// Log error but continue without AI processing
+			fmt.Printf("AI processing failed, using original image: %v\n", err)
+		} else {
+			processedImagePath = processedPath
+		}
+	}
+
 	// Get palette path for selected style
 	palettePath, err := s.deps.PaletteService.GetPalettePath(palette.Style(style))
 	if err != nil {
@@ -80,7 +102,7 @@ func (s *PreviewService) GeneratePreview(ctx context.Context, file *multipart.Fi
 
 	// Create request for mosaic generation
 	generationReq := &mosaic.GenerationRequest{
-		ImagePath:   tempImagePath,
+		ImagePath:   processedImagePath, // Use processed image if AI was applied
 		StonesX:     stonesX,
 		StonesY:     stonesY,
 		StoneSizeMM: 2.52,   // Standard stone size
@@ -149,6 +171,82 @@ func (s *PreviewService) GetPreviewDownloadURL(previewID string) (string, error)
 	}
 
 	return downloadURL, nil
+}
+
+// GetPreviewData downloads and returns preview image data for download
+func (s *PreviewService) GetPreviewData(previewID string) ([]byte, error) {
+	// Extract UUID from filename (assuming format: previews/uuid.png)
+	objectKey := fmt.Sprintf("previews/%s.png", previewID)
+
+	// Download file data from S3 (need to use preview bucket method)
+	ctx := context.Background()
+	reader, err := s.downloadFromPreviewBucket(ctx, objectKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to download preview data: %w", err)
+	}
+	defer reader.Close()
+
+	// Read all data
+	previewData, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read preview data: %w", err)
+	}
+
+	return previewData, nil
+}
+
+// downloadFromPreviewBucket downloads file from preview bucket
+func (s *PreviewService) downloadFromPreviewBucket(ctx context.Context, objectKey string) (io.ReadCloser, error) {
+	// Use S3Client method to download from preview bucket
+	return s.deps.S3Client.DownloadFromPreviewBucket(ctx, objectKey)
+}
+
+// processImageWithAI applies AI processing to the image (same logic as ImageService)
+func (s *PreviewService) processImageWithAI(ctx context.Context, imagePath, size, style string) (string, error) {
+	// Read original image
+	imageData, err := os.ReadFile(imagePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read image file: %w", err)
+	}
+
+	// Get image dimensions
+	width, height := s.getSizeDimensions(size)
+
+	// Encode to base64
+	base64Image := s.deps.StableDiffusionClient.EncodeImageToBase64(imageData)
+
+	// Create Stable Diffusion request (same as ImageService)
+	sdRequest := stableDiffusion.ProcessImageRequest{
+		ImageBase64: base64Image,
+		Style:       stableDiffusion.ProcessingStyle(style),
+		UseAI:       true,
+		Lighting:    stableDiffusion.LightingSun, // Default lighting
+		Contrast:    stableDiffusion.ContrastLow, // Default contrast
+		Brightness:  0.0,                         // Default brightness
+		Saturation:  0.0,                         // Default saturation
+		Width:       width,
+		Height:      height,
+	}
+
+	// Process image through Stable Diffusion
+	processedBase64, err := s.deps.StableDiffusionClient.ProcessImage(ctx, sdRequest)
+	if err != nil {
+		return "", fmt.Errorf("stable diffusion processing failed: %w", err)
+	}
+
+	// Decode processed image
+	processedData, err := s.deps.StableDiffusionClient.DecodeBase64Image(processedBase64)
+	if err != nil {
+		return "", fmt.Errorf("failed to decode processed image: %w", err)
+	}
+
+	// Save processed image
+	processedPath := filepath.Join(filepath.Dir(imagePath), "processed.jpg")
+	if err := os.WriteFile(processedPath, processedData, 0644); err != nil {
+		return "", fmt.Errorf("failed to save processed image: %w", err)
+	}
+
+	return processedPath, nil
 }
 
 // getSizeDimensions returns width and height in pixels for the given size (same as ImageService)

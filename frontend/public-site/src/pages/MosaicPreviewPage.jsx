@@ -16,6 +16,7 @@ const MosaicPreviewPage = () => {
   const [previewUrl, setPreviewUrl] = useState(null)
   const [selectedSize, setSelectedSize] = useState('30x40')
   const [selectedStyle, setSelectedStyle] = useState('max_colors')
+  const [useAI, setUseAI] = useState(false)
   const [generatedPreview, setGeneratedPreview] = useState(null)
 
   const sizes = [
@@ -35,11 +36,12 @@ const MosaicPreviewPage = () => {
   ]
 
   const generatePreviewMutation = useMutation({
-    mutationFn: async ({ file, size, style }) => {
+    mutationFn: async ({ file, size, style, useAI }) => {
       const formData = new FormData()
       formData.append('image', file)
       formData.append('size', size)
       formData.append('style', style)
+      formData.append('use_ai', useAI ? 'true' : 'false')
       
       const response = await MosaicAPI.generatePreview(formData)
       return response
@@ -104,7 +106,8 @@ const MosaicPreviewPage = () => {
     generatePreviewMutation.mutate({
       file: selectedFile,
       size: selectedSize,
-      style: selectedStyle
+      style: selectedStyle,
+      useAI: useAI
     })
   }
 
@@ -223,6 +226,25 @@ const MosaicPreviewPage = () => {
                     <div className="text-sm text-gray-600">{style.desc}</div>
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* AI Processing Option */}
+            <div className="mb-6">
+              <div className="flex items-center space-x-3 p-4 border rounded-lg bg-gray-50">
+                <input
+                  type="checkbox"
+                  id="useAI"
+                  checked={useAI}
+                  onChange={(e) => setUseAI(e.target.checked)}
+                  className="w-4 h-4 text-brand-primary bg-gray-100 border-gray-300 rounded focus:ring-brand-primary focus:ring-2"
+                />
+                <label htmlFor="useAI" className="flex-1">
+                  <div className="font-semibold text-gray-900">AI обработка</div>
+                  <div className="text-sm text-gray-600">
+                    Улучшить изображение с помощью искусственного интеллекта (как при активации купона)
+                  </div>
+                </label>
               </div>
             </div>
 

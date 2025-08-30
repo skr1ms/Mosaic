@@ -59,7 +59,7 @@ type EmailServiceInterface interface {
 }
 
 type PreviewServiceInterface interface {
-	GeneratePreview(ctx context.Context, file *multipart.FileHeader, size, style string) (map[string]any, error)
+	GeneratePreview(ctx context.Context, file *multipart.FileHeader, size, style string, useAI bool) (map[string]any, error)
 }
 
 type ConfigInterface interface {

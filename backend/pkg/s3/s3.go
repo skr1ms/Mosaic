@@ -319,6 +319,20 @@ func (s *S3Client) GetPreviewBucketName() string {
 	return s.previewBucket
 }
 
+// DownloadFromPreviewBucket downloads file from preview bucket
+func (s *S3Client) DownloadFromPreviewBucket(ctx context.Context, objectKey string) (io.ReadCloser, error) {
+	if s.previewBucket == "" {
+		return nil, fmt.Errorf("preview bucket not configured")
+	}
+
+	object, err := s.client.GetObject(ctx, s.previewBucket, objectKey, minio.GetObjectOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to download from preview bucket: %w", err)
+	}
+
+	return object, nil
+}
+
 // UploadLogo uploads partner logo to separate bucket and returns key
 func (s *S3Client) UploadLogo(ctx context.Context, reader io.Reader, size int64, contentType string, partnerID string) (string, error) {
 	bucket := s.logosBucket
