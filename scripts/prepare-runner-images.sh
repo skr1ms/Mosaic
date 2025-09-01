@@ -1,25 +1,25 @@
 #!/bin/bash
 
-# Скрипт для предварительной загрузки Docker образов на GitLab Runner
-# Запустите этот скрипт на сервере где установлен GitLab Runner
+# Script for preloading Docker images to GitLab Runner
+# Run this script on the server where GitLab Runner is installed
 
-echo "🚀 Подготавливаем Docker образы для CI/CD..."
+echo "🚀 Preparing Docker images for CI/CD..."
 
-# Базовые образы для build процессов
-echo "📥 Загружаем базовые образы..."
+# Base images for build processes
+echo "📥 Downloading base images..."
 docker pull golang:1.24-alpine
 docker pull node:20-alpine
 docker pull nginx:alpine
 docker pull docker:latest
 docker pull ubuntu:22.04
 
-# Образы для services (база данных, кеш)
-echo "📥 Загружаем образы для сервисов..."
+# Images for services (database, cache)
+echo "📥 Downloading images for services..."
 docker pull postgres:17-alpine
-docker pull redis:8
+docker pull redis:8-alpine
 
-echo "✅ Все образы загружены! Список:"
+echo "✅ All images downloaded! List:"
 docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
 
 echo ""
-echo "🔧 Настройка завершена! Теперь GitLab CI не будет обращаться к Docker Hub."
+echo "🔧 Setup completed! Now GitLab CI will not access Docker Hub."
