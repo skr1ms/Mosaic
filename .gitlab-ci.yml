@@ -1,16 +1,12 @@
 # Global images
 variables:
   DOCKER_DRIVER: overlay2
-  # Безопасная Docker DinD конфигурация  
-  DOCKER_TLS_CERTDIR: "/certs"
-  DOCKER_HOST: tcp://docker:2376
-  DOCKER_TLS_VERIFY: 1
+  DOCKER_HOST: unix:///var/run/docker.sock
   GO_IMAGE: golang:1.24-alpine
   DOCKER_IMAGE: docker:latest
   UBUNTU_IMAGE: ubuntu:22.04
-  # Локальный GitLab Container Registry
-  CI_REGISTRY: "194.6.222.30:5050"
-  CI_REGISTRY_IMAGE: "194.6.222.30:5050/root/mosaic"
+  CI_REGISTRY: "194.6.222.30:9080"
+  CI_REGISTRY_IMAGE: "194.6.222.30:9080/root/mosaic"
 
 stages:
   - test
@@ -56,27 +52,18 @@ test:
 # ========================================
 build:backend:
   stage: build
-  image: 
-    name: $DOCKER_IMAGE
-    pull_policy: if-not-present
-  services:
-    - name: docker:dind
-      pull_policy: if-not-present
+  image: $DOCKER_IMAGE
   variables:
     DOCKER_DRIVER: overlay2
-    # Используем безопасную TLS конфигурацию 
-    DOCKER_TLS_CERTDIR: "/certs"
-    DOCKER_HOST: tcp://docker:2376
-    DOCKER_TLS_VERIFY: 1
+    DOCKER_HOST: unix:///var/run/docker.sock
   before_script:
-    # Login to GitLab Container Registry
     - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token $CI_REGISTRY --password-stdin
     - export DOCKER_BUILDKIT=1
     - export BUILDKIT_PROGRESS=plain
   script:
     - cd backend
     - echo "Registry info - CI_REGISTRY=$CI_REGISTRY, CI_REGISTRY_IMAGE=$CI_REGISTRY_IMAGE"
-    - docker build --network=host -t "$CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA" .
+    - docker build -t "$CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA" .
     - docker push "$CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA"
     - echo "✅ Backend build and push completed successfully!"
   rules:
@@ -85,26 +72,17 @@ build:backend:
 
 build:frontend-dashboards:
   stage: build
-  image: 
-    name: $DOCKER_IMAGE
-    pull_policy: if-not-present
-  services:
-    - name: docker:dind
-      pull_policy: if-not-present
+  image: $DOCKER_IMAGE
   variables:
     DOCKER_DRIVER: overlay2
-    # Используем безопасную TLS конфигурацию 
-    DOCKER_TLS_CERTDIR: "/certs"
-    DOCKER_HOST: tcp://docker:2376
-    DOCKER_TLS_VERIFY: 1
+    DOCKER_HOST: unix:///var/run/docker.sock
   before_script:
-    # Login to GitLab Container Registry
     - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token $CI_REGISTRY --password-stdin
     - export DOCKER_BUILDKIT=1
     - export BUILDKIT_PROGRESS=plain
   script:
     - cd frontend/dashboards
-    - docker build --network=host -t "$CI_REGISTRY_IMAGE/dashboards:$CI_COMMIT_SHA" .
+    - docker build -t "$CI_REGISTRY_IMAGE/dashboards:$CI_COMMIT_SHA" .
     - docker push "$CI_REGISTRY_IMAGE/dashboards:$CI_COMMIT_SHA"
     - echo "✅ Dashboards build and push completed successfully!"
   rules:
@@ -113,26 +91,17 @@ build:frontend-dashboards:
 
 build:frontend-public:
   stage: build
-  image: 
-    name: $DOCKER_IMAGE
-    pull_policy: if-not-present
-  services:
-    - name: docker:dind
-      pull_policy: if-not-present
+  image: $DOCKER_IMAGE
   variables:
     DOCKER_DRIVER: overlay2
-    # Используем безопасную TLS конфигурацию 
-    DOCKER_TLS_CERTDIR: "/certs"
-    DOCKER_HOST: tcp://docker:2376
-    DOCKER_TLS_VERIFY: 1
+    DOCKER_HOST: unix:///var/run/docker.sock
   before_script:
-    # Login to GitLab Container Registry
     - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token $CI_REGISTRY --password-stdin
     - export DOCKER_BUILDKIT=1
     - export BUILDKIT_PROGRESS=plain
   script:
     - cd frontend/public-site
-    - docker build --network=host -t "$CI_REGISTRY_IMAGE/public-site:$CI_COMMIT_SHA" .
+    - docker build -t "$CI_REGISTRY_IMAGE/public-site:$CI_COMMIT_SHA" .
     - docker push "$CI_REGISTRY_IMAGE/public-site:$CI_COMMIT_SHA"
     - echo "✅ Public site build and push completed successfully!"
   rules:
