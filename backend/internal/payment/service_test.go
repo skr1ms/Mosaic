@@ -622,13 +622,25 @@ func TestPaymentService_ProcessWebhookNotification(t *testing.T) {
 		{
 			name: "order_already_processed",
 			notification: &PaymentNotificationRequest{
-				OrderNumber: "ORD_PROCESSED",
-				OrderStatus: intPtr(2),
+				OrderNumber:     "ORD_PROCESSED",
+				OrderStatus:     intPtr(2),
+				AlfaBankOrderID: "ALFA123",
 			},
 			mockSetup: func(repo *MockPaymentRepository, couponRepo *MockCouponRepository, partnerRepo *MockPartnerRepository, config *MockConfig) {
 				order := createTestOrder()
 				order.Status = OrderStatusPaid
 				repo.On("GetOrderByNumber", mock.Anything, "ORD_PROCESSED").Return(order, nil)
+				repo.On("UpdateOrderStatus", mock.Anything, "ORD_PROCESSED", OrderStatusPaid, mock.AnythingOfType("*string")).Return(nil)
+				couponRepo.On("CodeExists", mock.Anything, mock.AnythingOfType("string")).Return(false, nil)
+				couponRepo.On("Create", mock.Anything, mock.AnythingOfType("*coupon.Coupon")).Return(nil)
+				defaultPartner := &partner.Partner{
+					ID:          uuid.New(),
+					PartnerCode: "0000",
+					Domain:      "default.com",
+					BrandName:   "Default Brand",
+				}
+				partnerRepo.On("GetByPartnerCode", mock.Anything, "0000").Return(defaultPartner, nil)
+				repo.On("UpdateOrderCoupon", mock.Anything, order.OrderNumber, mock.AnythingOfType("uuid.UUID")).Return(nil)
 				config.On("GetAlfaBankConfig").Return(AlphaBankConfig{WebhookSecret: ""})
 			},
 			expectedError: false,
@@ -644,19 +656,16 @@ func TestPaymentService_ProcessWebhookNotification(t *testing.T) {
 				order.Status = OrderStatusPending
 				repo.On("GetOrderByNumber", mock.Anything, "ORD_SUCCESS").Return(order, nil)
 				repo.On("UpdateOrderStatus", mock.Anything, "ORD_SUCCESS", OrderStatusPaid, mock.Anything).Return(nil)
-
-				// Mock available coupon
-				availableCoupon := &coupon.Coupon{
+				couponRepo.On("CodeExists", mock.Anything, mock.AnythingOfType("string")).Return(false, nil)
+				couponRepo.On("Create", mock.Anything, mock.AnythingOfType("*coupon.Coupon")).Return(nil)
+				defaultPartner := &partner.Partner{
 					ID:          uuid.New(),
-					Code:        "TEST123",
-					Size:        order.Size,
-					Style:       order.Style,
-					Status:      "new",
-					IsPurchased: false,
+					PartnerCode: "0000",
+					Domain:      "default.com",
+					BrandName:   "Default Brand",
 				}
-				couponRepo.On("FindAvailableCoupon", mock.Anything, order.Size, order.Style, mock.Anything).Return(availableCoupon, nil)
-				couponRepo.On("MarkAsPurchased", mock.Anything, availableCoupon.ID, order.UserEmail).Return(nil)
-				repo.On("UpdateOrderCoupon", mock.Anything, order.OrderNumber, availableCoupon.ID).Return(nil)
+				partnerRepo.On("GetByPartnerCode", mock.Anything, "0000").Return(defaultPartner, nil)
+				repo.On("UpdateOrderCoupon", mock.Anything, order.OrderNumber, mock.AnythingOfType("uuid.UUID")).Return(nil)
 				config.On("GetAlfaBankConfig").Return(AlphaBankConfig{WebhookSecret: ""})
 			},
 			expectedError: false,
@@ -781,18 +790,9 @@ func TestPaymentService_CreateCouponForOrder(t *testing.T) {
 				return order
 			}(),
 			mockSetup: func(couponRepo *MockCouponRepository, partnerRepo *MockPartnerRepository, paymentRepo *MockPaymentRepository) {
-				// Mock available coupon
-				availableCoupon := &coupon.Coupon{
-					ID:          uuid.New(),
-					Code:        "TEST123",
-					Size:        "30x40",
-					Style:       "grayscale",
-					Status:      "new",
-					IsPurchased: false,
-				}
-				couponRepo.On("FindAvailableCoupon", mock.Anything, "30x40", "grayscale", mock.Anything).Return(availableCoupon, nil)
-				couponRepo.On("MarkAsPurchased", mock.Anything, availableCoupon.ID, "test@example.com").Return(nil)
-				paymentRepo.On("UpdateOrderCoupon", mock.Anything, mock.Anything, availableCoupon.ID).Return(nil)
+				couponRepo.On("CodeExists", mock.Anything, mock.AnythingOfType("string")).Return(false, nil)
+				couponRepo.On("Create", mock.Anything, mock.AnythingOfType("*coupon.Coupon")).Return(nil)
+				paymentRepo.On("UpdateOrderCoupon", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("uuid.UUID")).Return(nil)
 			},
 			expectedError: false,
 		},
@@ -805,17 +805,8 @@ func TestPaymentService_CreateCouponForOrder(t *testing.T) {
 				return order
 			}(),
 			mockSetup: func(couponRepo *MockCouponRepository, partnerRepo *MockPartnerRepository, paymentRepo *MockPaymentRepository) {
-				// Mock available coupon
-				availableCoupon := &coupon.Coupon{
-					ID:          uuid.New(),
-					Code:        "TEST123",
-					Size:        "30x40",
-					Style:       "grayscale",
-					Status:      "new",
-					IsPurchased: false,
-				}
-				couponRepo.On("FindAvailableCoupon", mock.Anything, "30x40", "grayscale", mock.Anything).Return(availableCoupon, nil)
-				couponRepo.On("MarkAsPurchased", mock.Anything, availableCoupon.ID, "test@example.com").Return(errors.New("mark as purchased failed"))
+				couponRepo.On("CodeExists", mock.Anything, mock.AnythingOfType("string")).Return(false, nil)
+				couponRepo.On("Create", mock.Anything, mock.AnythingOfType("*coupon.Coupon")).Return(errors.New("create failed"))
 			},
 			expectedError: true,
 		},

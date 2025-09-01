@@ -17,6 +17,26 @@ type MockCouponRepository struct {
 	mock.Mock
 }
 
+type MockPartnerRepository struct {
+	mock.Mock
+}
+
+func (m *MockPartnerRepository) GetByID(ctx context.Context, id uuid.UUID) (*Partner, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*Partner), args.Error(1)
+}
+
+func (m *MockPartnerRepository) GetByPartnerCode(ctx context.Context, code string) (*Partner, error) {
+	args := m.Called(ctx, code)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*Partner), args.Error(1)
+}
+
 func (m *MockCouponRepository) Create(ctx context.Context, coupon *Coupon) error {
 	args := m.Called(ctx, coupon)
 	return args.Error(0)
@@ -865,22 +885,30 @@ func TestCouponService_ValidateCoupon(t *testing.T) {
 	tests := []struct {
 		name          string
 		code          string
-		mockSetup     func(*MockCouponRepository, *MockRedisClient)
+		mockSetup     func(*MockCouponRepository, *MockRedisClient, *MockPartnerRepository)
 		expectedError bool
 		expectedValid bool
 	}{
 		{
 			name: "valid_coupon",
 			code: "123456789012",
-			mockSetup: func(repo *MockCouponRepository, redis *MockRedisClient) {
+			mockSetup: func(repo *MockCouponRepository, redis *MockRedisClient, partnerRepo *MockPartnerRepository) {
 				coupon := &Coupon{
-					ID:     uuid.New(),
-					Code:   "123456789012",
-					Status: "active",
-					Size:   "40x50",
-					Style:  "diamond",
+					ID:        uuid.New(),
+					Code:      "123456789012",
+					Status:    "active",
+					Size:      "40x50",
+					Style:     "diamond",
+					PartnerID: uuid.New(),
+				}
+				partner := &Partner{
+					ID:          coupon.PartnerID,
+					PartnerCode: "TEST_PARTNER",
+					Domain:      "example.com",
+					BrandName:   "Test Brand",
 				}
 				repo.On("GetByCode", mock.Anything, "123456789012").Return(coupon, nil)
+				partnerRepo.On("GetByID", mock.Anything, coupon.PartnerID).Return(partner, nil)
 			},
 			expectedError: false,
 			expectedValid: true,
@@ -888,7 +916,7 @@ func TestCouponService_ValidateCoupon(t *testing.T) {
 		{
 			name: "invalid_coupon_not_found",
 			code: "nonexistent",
-			mockSetup: func(repo *MockCouponRepository, redis *MockRedisClient) {
+			mockSetup: func(repo *MockCouponRepository, redis *MockRedisClient, partnerRepo *MockPartnerRepository) {
 				repo.On("GetByCode", mock.Anything, "nonexistent").Return(nil, errors.New("not found"))
 			},
 			expectedError: false,
@@ -900,14 +928,16 @@ func TestCouponService_ValidateCoupon(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(MockCouponRepository)
 			mockRedis := new(MockRedisClient)
+			mockPartnerRepo := new(MockPartnerRepository)
 
 			if tt.mockSetup != nil {
-				tt.mockSetup(mockRepo, mockRedis)
+				tt.mockSetup(mockRepo, mockRedis, mockPartnerRepo)
 			}
 
 			deps := &CouponServiceDeps{
-				CouponRepository: mockRepo,
-				RedisClient:      mockRedis,
+				CouponRepository:  mockRepo,
+				RedisClient:       mockRedis,
+				PartnerRepository: mockPartnerRepo,
 			}
 			service := NewCouponService(deps)
 
@@ -923,6 +953,7 @@ func TestCouponService_ValidateCoupon(t *testing.T) {
 			}
 
 			mockRepo.AssertExpectations(t)
+			mockPartnerRepo.AssertExpectations(t)
 		})
 	}
 }
