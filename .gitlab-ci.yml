@@ -26,6 +26,8 @@ test:
     POSTGRES_PASSWORD: testpass
     DATABASE_URL: "postgres://postgres:testpass@postgres:5432/mosaic_test?sslmode=disable"
     REDIS_URL: "redis://redis:6379"
+  before_script:
+    - apk add --no-cache make
   script:
     - make test-full
   cache:
