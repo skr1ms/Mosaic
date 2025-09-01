@@ -69,7 +69,7 @@ type StyleInfo struct {
 type GenerateProductURLRequest struct {
 	Marketplace string `json:"marketplace" validate:"required,oneof=ozon wildberries"`
 	Style       string `json:"style" validate:"required,oneof=grayscale skin_tones pop_art max_colors"`
-	Size        string `json:"size" validate:"required,oneof='20x20' '30x40' '40x40' '40x50' '40x60' '50x70'"`
+	Size        string `json:"size" validate:"required,oneof='21x30' '30x40' '40x40' '40x50' '40x60' '50x70'"`
 }
 
 type GenerateProductURLResponse struct {

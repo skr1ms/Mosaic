@@ -70,7 +70,7 @@ type ExportCouponRequest struct {
 
 type PartnerCouponFilterRequest struct {
 	Status string `json:"status" query:"status" validate:"omitempty,oneof=new activated used completed"`
-	Size   string `json:"size" query:"size" validate:"omitempty,oneof=20x20 30x30 40x40 50x50 60x60"`
+	Size   string `json:"size" query:"size" validate:"omitempty,oneof=21x30 30x30 40x40 50x50 60x60"`
 	Style  string `json:"style" query:"style" validate:"omitempty,oneof=classic modern vintage"`
 
 	CreatedFrom   *time.Time `json:"created_from" query:"created_from"`

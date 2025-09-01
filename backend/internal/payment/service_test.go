@@ -1359,18 +1359,17 @@ func TestPaymentService_CompletePaymentFlow(t *testing.T) {
 		mockPaymentRepo.On("GetOrderByNumber", mock.Anything, testOrder.OrderNumber).Return(testOrder, nil)
 		mockPaymentRepo.On("UpdateOrderStatus", mock.Anything, mock.Anything, OrderStatusPaid, mock.Anything).Return(nil)
 
-		// Mock available coupon
-		availableCoupon := &coupon.Coupon{
+		// Mock coupon generation and creation
+		mockCouponRepo.On("CodeExists", mock.Anything, mock.AnythingOfType("string")).Return(false, nil)
+		mockCouponRepo.On("Create", mock.Anything, mock.AnythingOfType("*coupon.Coupon")).Return(nil)
+		defaultPartner := &partner.Partner{
 			ID:          uuid.New(),
-			Code:        "TEST123",
-			Size:        "40x50",
-			Style:       "max_colors",
-			Status:      "new",
-			IsPurchased: false,
+			PartnerCode: "0000",
+			Domain:      "default.com",
+			BrandName:   "Default Brand",
 		}
-		mockCouponRepo.On("FindAvailableCoupon", mock.Anything, "40x50", "max_colors", mock.Anything).Return(availableCoupon, nil)
-		mockCouponRepo.On("MarkAsPurchased", mock.Anything, availableCoupon.ID, "customer@example.com").Return(nil)
-		mockPaymentRepo.On("UpdateOrderCoupon", mock.Anything, mock.Anything, availableCoupon.ID).Return(nil)
+		mockPartnerRepo.On("GetByPartnerCode", mock.Anything, "0000").Return(defaultPartner, nil)
+		mockPaymentRepo.On("UpdateOrderCoupon", mock.Anything, mock.Anything, mock.AnythingOfType("uuid.UUID")).Return(nil)
 
 		// 2. Process webhook notification (payment successful)
 		notification := &PaymentNotificationRequest{

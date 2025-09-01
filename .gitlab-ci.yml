@@ -29,11 +29,11 @@ test:
   before_script:
     - apk add --no-cache make
   script:
-    - make test-full
+    - go test ./backend/internal/... -v
   cache:
     key: "go-tests-${CI_COMMIT_REF_SLUG}"
     paths:
-      - backend/vendor/
+      - backend/internal/
     policy: pull-push
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push"'

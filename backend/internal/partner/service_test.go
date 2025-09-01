@@ -800,7 +800,7 @@ func TestPartnerService_GenerateProductLink(t *testing.T) {
 		service := NewPartnerService(deps)
 
 		link := service.GenerateProductLink(partnerID, "21x30", "grayscale", "ozon")
-		expectedLink := "https://www.ozon.ru/search/?text=DIAMOND-001+20x20+grayscale"
+		expectedLink := "https://www.ozon.ru/search/?text=DIAMOND-001+21x30+grayscale"
 		assert.Equal(t, expectedLink, link)
 
 		mockRepo.AssertExpectations(t)
@@ -847,7 +847,7 @@ func TestPartnerService_GenerateProductLink(t *testing.T) {
 }
 
 func TestPartnerService_ArticleConstants(t *testing.T) {
-			// Check size constants
+	// Check size constants
 	assert.Equal(t, "21x30", Size21x30)
 	assert.Equal(t, "30x40", Size30x40)
 	assert.Equal(t, "40x40", Size40x40)
@@ -855,17 +855,17 @@ func TestPartnerService_ArticleConstants(t *testing.T) {
 	assert.Equal(t, "40x60", Size40x60)
 	assert.Equal(t, "50x70", Size50x70)
 
-			// Check style constants
+	// Check style constants
 	assert.Equal(t, "grayscale", StyleGrayscale)
 	assert.Equal(t, "skin_tones", StyleSkinTones)
 	assert.Equal(t, "pop_art", StylePopArt)
 	assert.Equal(t, "max_colors", StyleMaxColors)
 
-			// Check marketplace constants
+	// Check marketplace constants
 	assert.Equal(t, "ozon", MarketplaceOzon)
 	assert.Equal(t, "wildberries", MarketplaceWildberries)
 
-			// Check slices
+	// Check slices
 	assert.Len(t, AvailableSizes, 6)
 	assert.Len(t, AvailableStyles, 4)
 	assert.Len(t, Marketplaces, 2)
