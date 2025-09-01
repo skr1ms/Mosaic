@@ -26,14 +26,8 @@ test:
     POSTGRES_PASSWORD: testpass
     DATABASE_URL: "postgres://postgres:testpass@postgres:5432/mosaic_test?sslmode=disable"
     REDIS_URL: "redis://redis:6379"
-  before_script:
-    - cd backend
-    - go mod download
-    - go mod vendor
   script:
-    - go fmt ./...
-    - go vet ./...
-    - go test -v ./... || true
+    - make test-full
   cache:
     key: "go-tests-${CI_COMMIT_REF_SLUG}"
     paths:
