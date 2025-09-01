@@ -1,0 +1,52 @@
+services:
+  gitlab:
+    image: gitlab/gitlab-ce:latest
+    container_name: gitlab
+    hostname: ${SERVER_IP_ADDRESS}
+    restart: unless-stopped
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://${SERVER_IP_ADDRESS}:9080'
+        gitlab_rails['gitlab_shell_ssh_port'] = 9022
+        gitlab_rails['initial_root_password'] = 'CHANGEME123'
+        gitlab_rails['gitlab_signup_enabled'] = false
+        nginx['listen_port'] = 80
+        nginx['listen_https'] = false
+    ports:
+      - "9080:80"
+      - "9022:22"
+    volumes:
+      - "/srv/gitlab/config:/etc/gitlab"
+      - "/srv/gitlab/logs:/var/log/gitlab"
+      - "/srv/gitlab/data:/var/opt/gitlab"
+    shm_size: "256m"
+    networks:
+      - gitlab_net
+
+  gitlab-runner:
+    image: gitlab/gitlab-runner:latest
+    container_name: gitlab-runner
+    restart: unless-stopped
+    depends_on:
+      - gitlab
+    volumes:
+      - "/srv/gitlab-runner/config:/etc/gitlab-runner"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    networks:
+      - gitlab_net
+
+# before docker compose up, you need to register runner in gitlab UI
+# than run docker exec -it gitlab-runner gitlab-runner register 
+#  --url http://${SERVER_IP_ADDRESS}:9080 
+#  --token ${GITLAB_RUNNER_TOKEN} 
+#  --executor docker 
+#  --description "Docker Runner for Mosaic" 
+#  --docker-image alpine:latest 
+#  --docker-privileged=true 
+#  --docker-volumes /var/run/docker.sock:/var/run/docker.sock --non-interactive
+
+networks:
+  gitlab_net:
+    name: gitlab_net

@@ -1,0 +1,103 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker-logs
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      - target_label: env
+        replacement: production
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/(backend|nginx|postgres|redis|grafana|prometheus|loki|minio|dashboards|public-site|createbuckets|promtail)"
+        target_label: __tmp_docker_container_name
+      - source_labels: ["__tmp_docker_container_name"]
+        regex: ""
+        action: drop
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/backend"
+        target_label: job
+        replacement: "backend"
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/nginx"
+        target_label: job
+        replacement: "nginx"
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/postgres"
+        target_label: job
+        replacement: "postgres"
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/redis"
+        target_label: job
+        replacement: "redis"
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/grafana"
+        target_label: job
+        replacement: "grafana"
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/prometheus"
+        target_label: job
+        replacement: "prometheus"
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/loki"
+        target_label: job
+        replacement: "loki"
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/minio"
+        target_label: job
+        replacement: "minio"
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/dashboards"
+        target_label: job
+        replacement: "dashboards"
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/public-site"
+        target_label: job
+        replacement: "public-site"
+      - source_labels: ["job"]
+        target_label: service_name
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/(.*)"
+        target_label: container_name
+        replacement: "${1}"
+      - source_labels: ["__meta_docker_container_log_stream"]
+        target_label: stream
+      - target_label: app
+        replacement: "mosaic"
+    pipeline_stages:
+      - match:
+          selector: '{job="backend"}'
+          stages:
+            - regex:
+                expression: '^(?P<timestamp>\d{1,2}:\d{2}[AP]M)\s+(?P<level>\w+)\s+(?P<caller>\S+)\s+>\s+(?P<message>.*)$'
+            - labels:
+                level:
+                caller:
+                service_name:
+                container_name:
+                app:
+                env:
+            - timestamp:
+                source: timestamp
+                format: "3:04PM"
+                location: "Local"
+      - match:
+          selector: '{job!="backend"}'
+          stages:
+            - labels:
+                service:
+                container_name:
+                app:
+                env:
+            - output:
+                source: message
+
+
