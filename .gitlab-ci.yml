@@ -55,11 +55,12 @@ build:backend:
     - docker:dind
   before_script:
     - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token $CI_REGISTRY --password-stdin
-    # Login to Docker Hub to avoid rate limiting (if credentials are available)
-    - if [ -n "$DOCKER_HUB_USER" ] && [ -n "$DOCKER_HUB_TOKEN" ]; then echo "$DOCKER_HUB_TOKEN" | docker login -u "$DOCKER_HUB_USER" --password-stdin; fi
+    # Skip Docker Hub - assume images are pre-cached on runner
+    - export DOCKER_BUILDKIT=1
+    - export BUILDKIT_PROGRESS=plain
   script:
     - cd backend
-    - docker build -t "$CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA" .
+    - docker build --network=host -t "$CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA" .
     - docker push "$CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA"
   rules:
     - if: '$CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME == "develop"'
@@ -72,11 +73,12 @@ build:frontend-dashboards:
     - docker:dind
   before_script:
     - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token $CI_REGISTRY --password-stdin
-    # Login to Docker Hub to avoid rate limiting (if credentials are available)
-    - if [ -n "$DOCKER_HUB_USER" ] && [ -n "$DOCKER_HUB_TOKEN" ]; then echo "$DOCKER_HUB_TOKEN" | docker login -u "$DOCKER_HUB_USER" --password-stdin; fi
+    # Skip Docker Hub - assume images are pre-cached on runner
+    - export DOCKER_BUILDKIT=1
+    - export BUILDKIT_PROGRESS=plain
   script:
     - cd frontend/dashboards
-    - docker build -t "$CI_REGISTRY_IMAGE/dashboards:$CI_COMMIT_SHA" .
+    - docker build --network=host -t "$CI_REGISTRY_IMAGE/dashboards:$CI_COMMIT_SHA" .
     - docker push "$CI_REGISTRY_IMAGE/dashboards:$CI_COMMIT_SHA"
   rules:
     - if: '$CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME == "develop"'
@@ -89,11 +91,12 @@ build:frontend-public:
     - docker:dind
   before_script:
     - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token $CI_REGISTRY --password-stdin
-    # Login to Docker Hub to avoid rate limiting (if credentials are available)
-    - if [ -n "$DOCKER_HUB_USER" ] && [ -n "$DOCKER_HUB_TOKEN" ]; then echo "$DOCKER_HUB_TOKEN" | docker login -u "$DOCKER_HUB_USER" --password-stdin; fi
+    # Skip Docker Hub - assume images are pre-cached on runner
+    - export DOCKER_BUILDKIT=1
+    - export BUILDKIT_PROGRESS=plain
   script:
     - cd frontend/public-site
-    - docker build -t "$CI_REGISTRY_IMAGE/public-site:$CI_COMMIT_SHA" .
+    - docker build --network=host -t "$CI_REGISTRY_IMAGE/public-site:$CI_COMMIT_SHA" .
     - docker push "$CI_REGISTRY_IMAGE/public-site:$CI_COMMIT_SHA"
   rules:
     - if: '$CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME == "develop"'
