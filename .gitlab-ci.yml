@@ -5,8 +5,8 @@ variables:
   GO_IMAGE: golang:1.24-alpine
   DOCKER_IMAGE: docker:latest
   UBUNTU_IMAGE: ubuntu:22.04
-  CI_REGISTRY: "194.6.222.30:9080"
-  CI_REGISTRY_IMAGE: "194.6.222.30:9080/root/mosaic"
+  CI_REGISTRY: "${SERVER_IP_ADDRESS}:9080"
+  CI_REGISTRY_IMAGE: "${SERVER_IP_ADDRESS}:9080/root/mosaic"
 
 stages:
   - test
@@ -21,7 +21,7 @@ test:
   image: $GO_IMAGE
   services:
     - postgres:17-alpine
-    - redis:8
+    - redis:8-alpine
   variables:
     POSTGRES_DB: mosaic_test
     POSTGRES_USER: postgres
@@ -57,6 +57,8 @@ build:backend:
     DOCKER_DRIVER: overlay2
     DOCKER_HOST: unix:///var/run/docker.sock
   before_script:
+    - mkdir -p /etc/docker
+    - echo '{"insecure-registries":["'$CI_REGISTRY'"]}' > /etc/docker/daemon.json
     - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token $CI_REGISTRY --password-stdin
     - export DOCKER_BUILDKIT=1
     - export BUILDKIT_PROGRESS=plain
@@ -65,7 +67,7 @@ build:backend:
     - echo "Registry info - CI_REGISTRY=$CI_REGISTRY, CI_REGISTRY_IMAGE=$CI_REGISTRY_IMAGE"
     - docker build -t "$CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA" .
     - docker push "$CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA"
-    - echo "✅ Backend build and push completed successfully!"
+    - echo "Backend build and push completed successfully!"
   rules:
     - if: '$CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME == "develop"'
       when: always
@@ -77,14 +79,14 @@ build:frontend-dashboards:
     DOCKER_DRIVER: overlay2
     DOCKER_HOST: unix:///var/run/docker.sock
   before_script:
-    - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token $CI_REGISTRY --password-stdin
+    - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token http://$CI_REGISTRY --password-stdin
     - export DOCKER_BUILDKIT=1
     - export BUILDKIT_PROGRESS=plain
   script:
     - cd frontend/dashboards
     - docker build -t "$CI_REGISTRY_IMAGE/dashboards:$CI_COMMIT_SHA" .
     - docker push "$CI_REGISTRY_IMAGE/dashboards:$CI_COMMIT_SHA"
-    - echo "✅ Dashboards build and push completed successfully!"
+    - echo "Dashboards build and push completed successfully!"
   rules:
     - if: '$CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME == "develop"'
       when: always
@@ -96,14 +98,14 @@ build:frontend-public:
     DOCKER_DRIVER: overlay2
     DOCKER_HOST: unix:///var/run/docker.sock
   before_script:
-    - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token $CI_REGISTRY --password-stdin
+    - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token http://$CI_REGISTRY --password-stdin
     - export DOCKER_BUILDKIT=1
     - export BUILDKIT_PROGRESS=plain
   script:
     - cd frontend/public-site
     - docker build -t "$CI_REGISTRY_IMAGE/public-site:$CI_COMMIT_SHA" .
     - docker push "$CI_REGISTRY_IMAGE/public-site:$CI_COMMIT_SHA"
-    - echo "✅ Public site build and push completed successfully!"
+    - echo "Public site build and push completed successfully!"
   rules:
     - if: '$CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME == "develop"'
       when: always
@@ -142,7 +144,6 @@ deploy:production:
       echo "CI_COMMIT_SHA: $CI_COMMIT_SHA"
       echo "CI_REGISTRY: $CI_REGISTRY"
       
-      # Check if variables are empty and set defaults 
       if [ -z "$CI_REGISTRY_IMAGE" ]; then
         echo "CI_REGISTRY_IMAGE is empty, setting default"
         export CI_REGISTRY_IMAGE="mosaic"
@@ -157,7 +158,6 @@ deploy:production:
       echo "CI_REGISTRY_IMAGE: $CI_REGISTRY_IMAGE"
       echo "CI_COMMIT_SHA: $CI_COMMIT_SHA"
       
-      # Load existing .env file if it exists
       if [ -f .env ]; then
         echo "Loading existing .env file..."
         export \$(cat .env | grep -v '^#' | xargs)
@@ -166,7 +166,6 @@ deploy:production:
         echo "No .env file found, using CI/CD variables"
       fi
       
-      # Only try docker login if we have registry credentials
       if [ -n "$CI_REGISTRY" ] && [ -n "$CI_REGISTRY_PASSWORD" ]; then
         echo "Attempting to login to GitLab registry..."
         echo "$CI_REGISTRY_PASSWORD" | docker login -u gitlab-ci-token $CI_REGISTRY --password-stdin || echo "Docker login failed, continuing with local build"
@@ -174,12 +173,10 @@ deploy:production:
         echo "No registry credentials, will use local build"
       fi
       
-      # Try to pull images first, fallback to local build
       echo "Starting deployment..."
       echo "Checking available images..."
       docker images | grep -E "(mosaic|public-site|backend|dashboards)" || echo "No mosaic images found"
       
-      # Stop containers before updating
       echo "Stopping existing containers..."
       docker compose -f deployments/docker-compose/docker-compose.cicd.yml down || echo "No containers to stop"
       
@@ -192,11 +189,9 @@ deploy:production:
         docker compose -f deployments/docker-compose/docker-compose.cicd.yml up -d --build
       fi
       
-      # Wait for services to be ready
       echo "Waiting for services to be ready..."
       sleep 30
       
-      # Reload nginx configuration if it exists
       if docker ps --filter "name=nginx" --filter "status=running" | grep -q nginx; then
         echo "Reloading nginx configuration..."
         docker exec nginx nginx -t && docker exec nginx nginx -s reload || echo "Nginx reload failed"
@@ -250,14 +245,12 @@ deploy:domains-update:
       echo "Starting Partner Domain Update Pipeline"
       echo "=========================================="
       
-      # Function for logging
       log() {
           echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
       }
       
       cd /home/lumirin/Mosaic
       
-      # Load environment variables
       if [ -f .env ]; then
           export $(cat .env | grep -v '^#' | xargs)
       fi
@@ -268,7 +261,6 @@ deploy:domains-update:
       log "Making scripts executable..."
       chmod +x ./scripts/*.sh
       
-      # Determine operation type based on trigger variables
       OPERATION="${DOMAIN_OPERATION:-refresh}"
       OLD_DOMAIN="${OLD_DOMAIN:-}"
       NEW_DOMAIN="${NEW_DOMAIN:-}"
@@ -277,17 +269,13 @@ deploy:domains-update:
       [ -n "$OLD_DOMAIN" ] && log "Old Domain: $OLD_DOMAIN"
       [ -n "$NEW_DOMAIN" ] && log "New Domain: $NEW_DOMAIN"
       
-      # Execute domain management script
       log "Managing partner domains..."
       sudo ./scripts/manage-partner-domains.sh "$OPERATION" "$OLD_DOMAIN" "$NEW_DOMAIN"
       
-      # Update nginx configuration via backend API
       log "Updating nginx configuration via backend API..."
       if [ -n "$BACKEND_URL" ]; then
-          # Wait for backend to be ready
           sleep 10
           
-          # Get admin JWT token
           log "Getting admin JWT token..."
           local login_response
           login_response=$(curl -s -X POST \
@@ -301,7 +289,6 @@ deploy:domains-update:
               if [ -n "$admin_token" ] && [ "$admin_token" != "null" ]; then
                   log "Admin token obtained, updating nginx config..."
                   
-                  # Call backend API to update nginx config
                   local nginx_response
                   nginx_response=$(curl -s -X POST \
                       -H "Content-Type: application/json" \
@@ -323,13 +310,11 @@ deploy:domains-update:
           log "BACKEND_URL not set, skipping nginx config update via API"
       fi
       
-      # Restart nginx container to apply new configuration
       log "Restarting nginx container..."
       if docker ps --filter "name=nginx" --filter "status=running" | grep -q nginx; then
           docker restart nginx
           sleep 10
           
-          # Test nginx configuration
           if docker exec nginx nginx -t; then
               log "Nginx configuration is valid"
           else
@@ -340,26 +325,21 @@ deploy:domains-update:
           log "WARNING: Nginx container not found or not running"
       fi
       
-      # Update SSL certificates for new domains
       log "Updating SSL certificates..."
       ./scripts/update-ssl-certificates.sh
       
-      # Update monitoring configuration for new domains
       log "Updating monitoring configuration..."
       ./scripts/update-monitoring-config.sh
       
-      # Run health checks
       log "Running health checks..."
       ./scripts/health-check.sh
       
       log "Domain update pipeline completed successfully!"
       EOF
       
-    # Copy and execute the deployment script
     - scp deploy_domains.sh $DEPLOY_USER@$DEPLOY_SERVER:/tmp/
     - ssh $DEPLOY_USER@$DEPLOY_SERVER "chmod +x /tmp/deploy_domains.sh && /tmp/deploy_domains.sh"
     
-    # Cleanup
     - ssh $DEPLOY_USER@$DEPLOY_SERVER "rm -f /tmp/deploy_domains.sh"
   after_script:
     - |
