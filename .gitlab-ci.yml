@@ -5,8 +5,8 @@ variables:
   GO_IMAGE: golang:1.24-alpine
   DOCKER_IMAGE: docker:latest
   UBUNTU_IMAGE: ubuntu:22.04
-  CI_REGISTRY: "${SERVER_IP_ADDRESS}:9080"
-  CI_REGISTRY_IMAGE: "${SERVER_IP_ADDRESS}:9080/root/mosaic"
+  CI_REGISTRY: "${PRODUCTION_SERVER_IP}:9080"
+  CI_REGISTRY_IMAGE: "${PRODUCTION_SERVER_IP}:9080/root/mosaic"
 
 stages:
   - test
@@ -57,8 +57,6 @@ build:backend:
     DOCKER_DRIVER: overlay2
     DOCKER_HOST: unix:///var/run/docker.sock
   before_script:
-    - mkdir -p /etc/docker
-    - echo '{"insecure-registries":["'$CI_REGISTRY'"]}' > /etc/docker/daemon.json
     - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token $CI_REGISTRY --password-stdin
     - export DOCKER_BUILDKIT=1
     - export BUILDKIT_PROGRESS=plain
