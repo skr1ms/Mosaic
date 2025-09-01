@@ -27,9 +27,13 @@ test:
     DATABASE_URL: "postgres://postgres:testpass@postgres:5432/mosaic_test?sslmode=disable"
     REDIS_URL: "redis://redis:6379"
   before_script:
-    - apk add --no-cache make
+    - cd backend
   script:
-    - go test ./backend/internal/... -v
+    - go mod download
+    - go mod vendor  
+    - go fmt ./...
+    - go vet ./...
+    - go test ./internal/... -v
   cache:
     key: "go-tests-${CI_COMMIT_REF_SLUG}"
     paths:
