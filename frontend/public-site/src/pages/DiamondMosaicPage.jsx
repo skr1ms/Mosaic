@@ -99,24 +99,9 @@ const DiamondMosaicPage = () => {
         baseImgWidth = maxImageSize * imgAspectRatio
       }
       
-      // Область кадрирования изначально соответствует размерам изображения
+      // Область кадрирования изначально точно равна размерам изображения
       let cropWidth = baseImgWidth
       let cropHeight = baseImgHeight
-      
-      // Если размер мозаики выбран, корректируем область кадрирования под его пропорции
-      if (selectedSize) {
-        const [mosaicWidth, mosaicHeight] = selectedSize.split('x').map(Number)
-        const mosaicAspectRatio = mosaicWidth / mosaicHeight
-        
-        if (mosaicAspectRatio > imgAspectRatio) {
-          // Мозаика шире изображения - расширяем область кадрирования по горизонтали
-          cropWidth = cropHeight * mosaicAspectRatio
-        } else if (mosaicAspectRatio < imgAspectRatio) {
-          // Мозаика выше изображения - расширяем область кадрирования по вертикали
-          cropHeight = cropWidth / mosaicAspectRatio
-        }
-        // Если пропорции совпадают, оставляем как есть
-      }
       
       // Применяем пользовательский масштаб к базовым размерам
       const imgWidth = baseImgWidth * scale
