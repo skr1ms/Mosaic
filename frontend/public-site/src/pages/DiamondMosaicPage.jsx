@@ -30,7 +30,6 @@ const DiamondMosaicPage = () => {
   const [cropSize, setCropSize] = useState({ width: 0, height: 0 })
   const [isResizingCrop, setIsResizingCrop] = useState(false)
   const [resizeHandle, setResizeHandle] = useState(null) // 'corner', 'top', 'bottom', 'left', 'right'
-  const [cropStartSize, setCropStartSize] = useState({ width: 0, height: 0 })
 
   // Очистка localStorage при загрузке страницы
   useEffect(() => {
@@ -396,8 +395,8 @@ const DiamondMosaicPage = () => {
           canvasY >= handle.y - handleSize/2 && canvasY <= handle.y + handleSize/2) {
         setIsResizingCrop(true)
         setResizeHandle(handle)
-        setCropStartSize({ width: cropWidth, height: cropHeight })
         setLastMousePos({ x: e.clientX, y: e.clientY })
+        canvas.style.cursor = 'grabbing'
         return
       }
     }
@@ -408,58 +407,105 @@ const DiamondMosaicPage = () => {
   }
 
   const handleMouseMove = (e) => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    
+    // Проверяем наведение на ручки для изменения курсора
+    if (!isDragging && !isResizingCrop) {
+      const rect = canvas.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+      
+      const scaleX = canvas.width / rect.width
+      const scaleY = canvas.height / rect.height
+      const canvasX = x * scaleX
+      const canvasY = y * scaleY
+      
+      const canvasWidth = canvas.width
+      const canvasHeight = canvas.height
+      const cropWidth = cropSize.width || 0
+      const cropHeight = cropSize.height || 0
+      const cropX = (canvasWidth - cropWidth) / 2
+      const cropY = (canvasHeight - cropHeight) / 2
+      const handleSize = 8
+      
+      const handles = [
+        { x: cropX, y: cropY, cursor: 'nw-resize' }, // top-left
+        { x: cropX + cropWidth, y: cropY, cursor: 'ne-resize' }, // top-right
+        { x: cropX, y: cropY + cropHeight, cursor: 'sw-resize' }, // bottom-left
+        { x: cropX + cropWidth, y: cropY + cropHeight, cursor: 'se-resize' }, // bottom-right
+        { x: cropX + cropWidth/2, y: cropY, cursor: 'n-resize' }, // top
+        { x: cropX + cropWidth/2, y: cropY + cropHeight, cursor: 's-resize' }, // bottom
+        { x: cropX, y: cropY + cropHeight/2, cursor: 'w-resize' }, // left
+        { x: cropX + cropWidth, y: cropY + cropHeight/2, cursor: 'e-resize' }, // right
+      ]
+      
+      let foundHandle = false
+      for (const handle of handles) {
+        if (canvasX >= handle.x - handleSize/2 && canvasX <= handle.x + handleSize/2 &&
+            canvasY >= handle.y - handleSize/2 && canvasY <= handle.y + handleSize/2) {
+          canvas.style.cursor = handle.cursor
+          foundHandle = true
+          break
+        }
+      }
+      
+      if (!foundHandle) {
+        canvas.style.cursor = 'move'
+      }
+    }
+    
+    const deltaX = e.clientX - lastMousePos.x
+    const deltaY = e.clientY - lastMousePos.y
+    
     if (isResizingCrop && resizeHandle) {
       // Обрабатываем изменение размера области кадрирования
-      const deltaX = e.clientX - lastMousePos.x
-      const deltaY = e.clientY - lastMousePos.y
-      
-      let newWidth = cropStartSize.width
-      let newHeight = cropStartSize.height
+      let newWidth = cropSize.width
+      let newHeight = cropSize.height
       
       if (resizeHandle.type === 'corner') {
         // Угловые ручки - пропорциональное изменение
-        const aspectRatio = cropStartSize.width / cropStartSize.height
+        const aspectRatio = cropSize.width / cropSize.height
         
         if (resizeHandle.direction.includes('r')) { // right
-          newWidth = Math.max(50, cropStartSize.width + deltaX)
+          newWidth = Math.max(50, cropSize.width + deltaX)
         } else { // left
-          newWidth = Math.max(50, cropStartSize.width - deltaX)
+          newWidth = Math.max(50, cropSize.width - deltaX)
         }
         
-        newHeight = newWidth / aspectRatio
+        if (resizeHandle.direction.includes('b')) { // bottom
+          newHeight = Math.max(50, cropSize.height + deltaY)
+        } else { // top
+          newHeight = Math.max(50, cropSize.height - deltaY)
+        }
+        
+        // Для угловых ручек используем среднее изменение и сохраняем пропорции
+        const avgScale = (newWidth / cropSize.width + newHeight / cropSize.height) / 2
+        newWidth = cropSize.width * avgScale
+        newHeight = cropSize.height * avgScale
         
       } else if (resizeHandle.type === 'side') {
         // Боковые ручки - изменение только одной стороны
-        if (resizeHandle.direction === 'top' || resizeHandle.direction === 'bottom') {
-          if (resizeHandle.direction === 'bottom') {
-            newHeight = Math.max(50, cropStartSize.height + deltaY)
-          } else {
-            newHeight = Math.max(50, cropStartSize.height - deltaY)
-          }
-        } else {
-          if (resizeHandle.direction === 'right') {
-            newWidth = Math.max(50, cropStartSize.width + deltaX)
-          } else {
-            newWidth = Math.max(50, cropStartSize.width - deltaX)
-          }
+        if (resizeHandle.direction === 'top') {
+          newHeight = Math.max(50, cropSize.height - deltaY)
+        } else if (resizeHandle.direction === 'bottom') {
+          newHeight = Math.max(50, cropSize.height + deltaY)
+        } else if (resizeHandle.direction === 'left') {
+          newWidth = Math.max(50, cropSize.width - deltaX)
+        } else if (resizeHandle.direction === 'right') {
+          newWidth = Math.max(50, cropSize.width + deltaX)
         }
       }
       
       // Ограничиваем размер канвасом
-      const canvas = canvasRef.current
-      if (canvas) {
-        const maxSize = Math.min(canvas.width, canvas.height) * 0.9
-        newWidth = Math.min(newWidth, maxSize)
-        newHeight = Math.min(newHeight, maxSize)
-      }
+      const maxSize = Math.min(canvas.width, canvas.height) * 0.9
+      newWidth = Math.min(newWidth, maxSize)
+      newHeight = Math.min(newHeight, maxSize)
       
       setCropSize({ width: newWidth, height: newHeight })
       
     } else if (isDragging) {
       // Обычное перетаскивание изображения
-      const deltaX = e.clientX - lastMousePos.x
-      const deltaY = e.clientY - lastMousePos.y
-
       // Компенсируем поворот при перетаскивании
       let adjustedDeltaX = deltaX
       let adjustedDeltaY = deltaY
@@ -479,15 +525,22 @@ const DiamondMosaicPage = () => {
         x: prev.x + adjustedDeltaX * 0.5,
         y: prev.y + adjustedDeltaY * 0.5
       }))
-
-      setLastMousePos({ x: e.clientX, y: e.clientY })
     }
+    
+    // Всегда обновляем позицию мыши
+    setLastMousePos({ x: e.clientX, y: e.clientY })
   }
 
   const handleMouseUp = () => {
     setIsDragging(false)
     setIsResizingCrop(false)
     setResizeHandle(null)
+    
+    // Сбрасываем курсор
+    const canvas = canvasRef.current
+    if (canvas) {
+      canvas.style.cursor = 'move'
+    }
   }
 
   const handleReset = () => {
