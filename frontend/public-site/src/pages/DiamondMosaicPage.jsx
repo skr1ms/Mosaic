@@ -20,7 +20,7 @@ const DiamondMosaicPage = () => {
   
   // Параметры редактирования
   const [rotation, setRotation] = useState(0)
-  const [scale, setScale] = useState(1.5) // Увеличиваем начальный масштаб с 1 до 1.5
+  const [scale, setScale] = useState(1) // Увеличиваем начальный масштаб с 1 до 1.5
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 })
@@ -604,13 +604,13 @@ const DiamondMosaicPage = () => {
                       </label>
                       <div className="flex space-x-3">
                         <button
-                          onClick={() => handleScaleChange(scale - 0.2)}
+                          onClick={() => handleScaleChange(scale - 0.1)}
                           className="flex-1 bg-gray-100 text-gray-700 px-4 py-4 rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center text-lg"
                         >
                           <ZoomOut className="w-5 h-5" />
                         </button>
                         <button
-                          onClick={() => handleScaleChange(scale + 0.2)}
+                          onClick={() => handleScaleChange(scale + 0.1)}
                           className="flex-1 bg-gray-100 text-gray-700 px-4 py-4 rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center text-lg"
                         >
                           <ZoomIn className="w-5 h-5" />
