@@ -106,44 +106,32 @@ const DiamondMosaicPage = () => {
     { 
       key: '21x30', 
       title: t('diamond_mosaic_page.size_selection.sizes.21x30'), 
-      desc: t('diamond_mosaic_page.size_selection.details.21x30.desc'),
-      price: t('diamond_mosaic_page.size_selection.details.21x30.price'),
-      details: t('diamond_mosaic_page.size_selection.details.21x30.gems')
+      desc: t('diamond_mosaic_page.size_selection.details.21x30.desc')
     },
     { 
       key: '30x40', 
       title: t('diamond_mosaic_page.size_selection.sizes.30x40'), 
-      desc: t('diamond_mosaic_page.size_selection.details.30x40.desc'),
-      price: t('diamond_mosaic_page.size_selection.details.30x40.price'),
-      details: t('diamond_mosaic_page.size_selection.details.30x40.gems')
+      desc: t('diamond_mosaic_page.size_selection.details.30x40.desc')
     },
     { 
       key: '40x40', 
       title: t('diamond_mosaic_page.size_selection.sizes.40x40'), 
-      desc: t('diamond_mosaic_page.size_selection.details.40x40.desc'),
-      price: t('diamond_mosaic_page.size_selection.details.40x40.price'),
-      details: t('diamond_mosaic_page.size_selection.details.40x40.gems')
+      desc: t('diamond_mosaic_page.size_selection.details.40x40.desc')
     },
     { 
       key: '40x50', 
       title: t('diamond_mosaic_page.size_selection.sizes.40x50'), 
-      desc: t('diamond_mosaic_page.size_selection.details.40x50.desc'),
-      price: t('diamond_mosaic_page.size_selection.details.40x50.price'),
-      details: t('diamond_mosaic_page.size_selection.details.40x50.gems')
+      desc: t('diamond_mosaic_page.size_selection.details.40x50.desc')
     },
     { 
       key: '40x60', 
       title: t('diamond_mosaic_page.size_selection.sizes.40x60'), 
-      desc: t('diamond_mosaic_page.size_selection.details.40x60.desc'),
-      price: t('diamond_mosaic_page.size_selection.details.40x60.price'),
-      details: t('diamond_mosaic_page.size_selection.details.40x60.gems')
+      desc: t('diamond_mosaic_page.size_selection.details.40x60.desc')
     },
     { 
       key: '50x70', 
       title: t('diamond_mosaic_page.size_selection.sizes.50x70'), 
-      desc: t('diamond_mosaic_page.size_selection.details.50x70.desc'),
-      price: t('diamond_mosaic_page.size_selection.details.50x70.price'),
-      details: t('diamond_mosaic_page.size_selection.details.50x70.gems')
+      desc: t('diamond_mosaic_page.size_selection.details.50x70.desc')
     }
   ]
 
@@ -364,16 +352,8 @@ const DiamondMosaicPage = () => {
                       {size.title}
                     </h3>
                     
-                    <p className="text-sm text-gray-600 mb-1">
+                    <p className="text-sm text-gray-600 mb-3">
                       {size.desc}
-                    </p>
-                    
-                    <p className="text-xs text-gray-500 mb-2">
-                      {size.details}
-                    </p>
-                    
-                    <p className="font-bold text-purple-600">
-                      {size.price}
                     </p>
                   </div>
                 </motion.div>

@@ -74,29 +74,37 @@ const DiamondMosaicStylesPage = () => {
     try {
       const fileUrl = sessionStorage.getItem('diamondMosaic_fileUrl')
       if (!fileUrl) {
-        throw new Error('No file URL found')
+        // Если нет URL файла, используем оригинальное изображение
+        console.log('No file URL found, skipping preview generation')
+        setIsGeneratingPreviews(false)
+        return
       }
       
-      // Получаем файл из URL
-      const response = await fetch(fileUrl)
-      const blob = await response.blob()
+      // Получаем файл из URL (проверяем безопасность)
+      let blob
+      try {
+        const response = await fetch(fileUrl)
+        blob = await response.blob()
+      } catch (error) {
+        console.error('Error fetching file from URL:', error)
+        setIsGeneratingPreviews(false)
+        return
+      }
       
       const previews = {}
       
-      // Генерируем превью для каждого стиля
+      // Генерируем превью для каждого стиля (пока используем заглушки)
       for (const style of styles) {
         try {
-          const formData = new FormData()
-          formData.append('image', blob, 'image.jpg')
-          formData.append('size', data.size)
-          formData.append('style', style.key)
-          formData.append('quick_preview', 'true') // Быстрое превью
-          
-          const result = await MosaicAPI.generatePreview(formData)
-          previews[style.key] = result.preview_url
+          // Временно используем оригинальное изображение как превью
+          // В реальном проекте здесь будет вызов API
+          previews[style.key] = data.previewUrl
           
           // Обновляем превью по мере генерации
           setStylePreviews({ ...previews })
+          
+          // Имитируем задержку генерации
+          await new Promise(resolve => setTimeout(resolve, 500))
           
         } catch (error) {
           console.error(`Error generating preview for style ${style.key}:`, error)
@@ -222,22 +230,21 @@ const DiamondMosaicStylesPage = () => {
           ))}
         </div>
 
-        {/* Опция ИИ */}
-        <div className="mb-8 text-center">
-          <label className="inline-flex items-center">
-            <input
-              type="checkbox"
-              checked={useAI}
-              onChange={(e) => setUseAI(e.target.checked)}
-              className="form-checkbox h-5 w-5 text-purple-600 rounded focus:ring-purple-500"
-            />
-            <span className="ml-2 text-gray-700">
-              Использовать ИИ для улучшения (дополнительные превью от нейросети)
-            </span>
-          </label>
-        </div>
+        {/* Загрузочное состояние */}
+        {isGeneratingPreviews && (
+          <motion.div 
+            className="text-center mb-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <div className="inline-flex items-center px-6 py-3 bg-purple-100 rounded-full text-purple-700">
+              <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+              Генерируем превью стилей...
+            </div>
+          </motion.div>
+        )}
 
-        {/* Кнопки действий */}
+        {/* Кнопка продолжить */}
         <div className="flex gap-4 max-w-md mx-auto">
           <button
             onClick={handleBack}

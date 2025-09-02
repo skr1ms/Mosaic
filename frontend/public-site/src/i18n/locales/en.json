@@ -787,34 +787,22 @@
       },
       "details": {
         "21x30": {
-          "desc": "Basic detail level",
-          "price": "from 990 ₽",
-          "gems": "8,000 gems"
+          "desc": "Basic detail level"
         },
         "30x40": {
-          "desc": "Good detail",
-          "price": "from 1,490 ₽",
-          "gems": "16,000 gems"
+          "desc": "Good detail"
         },
         "40x40": {
-          "desc": "High detail",
-          "price": "from 1,990 ₽",
-          "gems": "21,000 gems"
+          "desc": "High detail"
         },
         "40x50": {
-          "desc": "Very high detail",
-          "price": "from 2,490 ₽",
-          "gems": "26,000 gems"
+          "desc": "Very high detail"
         },
         "40x60": {
-          "desc": "Maximum detail",
-          "price": "from 2,990 ₽",
-          "gems": "32,000 gems"
+          "desc": "Maximum detail"
         },
         "50x70": {
-          "desc": "Professional level",
-          "price": "from 3,990 ₽",
-          "gems": "46,000 gems"
+          "desc": "Professional level"
         }
       }
     },

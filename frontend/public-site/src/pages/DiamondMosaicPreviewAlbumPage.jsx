@@ -215,6 +215,10 @@ const DiamondMosaicPreviewAlbumPage = () => {
       
     } catch (error) {
       console.error('Error preparing editor data:', error)
+      addNotification({
+        type: 'error',
+        message: 'Ошибка при подготовке редактора'
+      })
     }
   }
 
