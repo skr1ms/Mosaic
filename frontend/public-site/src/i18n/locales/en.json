@@ -824,6 +824,8 @@
       "instruction": "Select an image and edit it to fit the chosen size",
       "select_image": "Select Image",
       "image_preview": "Image Preview",
+      "formats": "Supported formats: JPG, PNG, GIF (max 10MB)",
+      "button": "Choose File",
       "file_size_error": "File size should not exceed 10MB",
       "file_type_error": "Please select an image",
       "size_and_image_required": "Please select a size and upload an image"
@@ -831,6 +833,10 @@
     "image_editor": {
       "title": "Image Editing",
       "position_controls": "Position Controls",
+      "controls": {
+        "position_x": "Position X",
+        "position_y": "Position Y"
+      },
       "position_x": "Position X",
       "position_y": "Position Y",
       "scale_control": "Scale",

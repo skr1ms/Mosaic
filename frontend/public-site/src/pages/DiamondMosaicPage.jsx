@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
-import { Upload, Ruler, ArrowRight, Info, Image, RotateCw, Move, ZoomIn, ZoomOut, Crop, Check } from 'lucide-react'
+import { Upload, Ruler, ArrowRight, Info, Image as ImageIcon, RotateCw, Move, ZoomIn, ZoomOut, Crop, Check } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useUIStore } from '../store/partnerStore'
 
@@ -325,7 +325,7 @@ const DiamondMosaicPage = () => {
                 '40x40': 'w-12 h-12',
                 '40x50': 'w-12 h-16',
                 '40x60': 'w-12 h-18',
-                '50x70': 'w-14 h-20'
+                '50x70': 'w-14 h-22'
               }
 
               return (
@@ -382,7 +382,7 @@ const DiamondMosaicPage = () => {
           className="mb-12"
         >
           <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center flex items-center justify-center">
-            <Image className="w-6 h-6 mr-2 text-purple-600" />
+            <ImageIcon className="w-6 h-6 mr-2 text-purple-600" />
             {t('diamond_mosaic_page.upload_section.title')}
           </h2>
 
@@ -528,7 +528,7 @@ const DiamondMosaicPage = () => {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-3">
                           <Move className="w-4 h-4 inline mr-1" />
-                          {t('diamond_mosaic_page.image_editor.controls.position_x', { value: Math.round(position.x) })}
+                          {t('diamond_mosaic_page.image_editor.controls.position_x')}: {Math.round(position.x)}
                         </label>
                         <input
                           type="range"
@@ -542,7 +542,7 @@ const DiamondMosaicPage = () => {
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-3">
-                          {t('diamond_mosaic_page.image_editor.controls.position_y', { value: Math.round(position.y) })}
+                          {t('diamond_mosaic_page.image_editor.controls.position_y')}: {Math.round(position.y)}
                         </label>
                         <input
                           type="range"

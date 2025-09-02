@@ -1,21 +1,7 @@
-import React from 'react'
+import React, { Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from './components/Layout/Layout'
-import HomePage from './pages/HomePage'
-import EditorPage from './pages/EditorPage'
-import DiamondArtPage from './pages/DiamondArtPage'
-import ShopPage from './pages/ShopPage'
-import NotFoundPage from './pages/NotFoundPage'
-import PaintByNumbersPage from './pages/PaintByNumbersPage'
-import WhatIsThisPage from './pages/WhatIsThisPage'
-import MosaicPreviewPage from './pages/MosaicPreviewPage'
-import DiamondMosaicPage from './pages/DiamondMosaicPage'
-import DiamondMosaicPreviewPage from './pages/DiamondMosaicPreviewPage'
-import DiamondMosaicPreviewAlbumPage from './pages/DiamondMosaicPreviewAlbumPage'
-import DiamondMosaicEditorPage from './pages/DiamondMosaicEditorPage'
-import DiamondMosaicPurchasePage from './pages/DiamondMosaicPurchasePage'
-import DiamondMosaicSuccessPage from './pages/DiamondMosaicSuccessPage'
 import { usePartnerStore } from './store/partnerStore'
 import { useUIStore } from './store/partnerStore'
 import { useBrandingQuery } from './hooks/useBrandingQuery'
@@ -25,6 +11,22 @@ import NotificationSystem from './components/ui/NotificationSystem'
 import SupportChatWidget from './components/SupportChatWidget'
 import BrandingProvider from './components/ui/BrandingProvider'
 import './assets/branding.css'
+
+// Lazy load страниц для уменьшения размера главного чанка
+const HomePage = React.lazy(() => import('./pages/HomePage'))
+const EditorPage = React.lazy(() => import('./pages/EditorPage'))
+const DiamondArtPage = React.lazy(() => import('./pages/DiamondArtPage'))
+const ShopPage = React.lazy(() => import('./pages/ShopPage'))
+const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'))
+const PaintByNumbersPage = React.lazy(() => import('./pages/PaintByNumbersPage'))
+const WhatIsThisPage = React.lazy(() => import('./pages/WhatIsThisPage'))
+const MosaicPreviewPage = React.lazy(() => import('./pages/MosaicPreviewPage'))
+const DiamondMosaicPage = React.lazy(() => import('./pages/DiamondMosaicPage'))
+const DiamondMosaicPreviewPage = React.lazy(() => import('./pages/DiamondMosaicPreviewPage'))
+const DiamondMosaicPreviewAlbumPage = React.lazy(() => import('./pages/DiamondMosaicPreviewAlbumPage'))
+const DiamondMosaicEditorPage = React.lazy(() => import('./pages/DiamondMosaicEditorPage'))
+const DiamondMosaicPurchasePage = React.lazy(() => import('./pages/DiamondMosaicPurchasePage'))
+const DiamondMosaicSuccessPage = React.lazy(() => import('./pages/DiamondMosaicSuccessPage'))
 
 function App() {
   const { i18n } = useTranslation()
@@ -89,25 +91,27 @@ function App() {
   return (
     <BrandingProvider>
       <Layout>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/diamond-art" element={<DiamondArtPage />} />
-          <Route path="/paint-by-numbers" element={<PaintByNumbersPage />} />
-          <Route path="/what-is-this" element={<WhatIsThisPage />} />
-          <Route path="/mosaic-preview" element={<MosaicPreviewPage />} />
-          <Route path="/editor" element={<EditorPage />} />
-          <Route path="/shop" element={<ShopPage />} />
-          
-          {/* Новые роуты для алмазной мозаики */}
-          <Route path="/diamond-mosaic" element={<DiamondMosaicPage />} />
-          <Route path="/diamond-mosaic/styles" element={<DiamondMosaicPreviewPage />} />
-          <Route path="/diamond-mosaic/preview-album" element={<DiamondMosaicPreviewAlbumPage />} />
-          <Route path="/diamond-mosaic/editor" element={<DiamondMosaicEditorPage />} />
-          <Route path="/diamond-mosaic/purchase" element={<DiamondMosaicPurchasePage />} />
-          <Route path="/diamond-mosaic/success" element={<DiamondMosaicSuccessPage />} />
-          
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
+        <Suspense fallback={<LoadingScreen />}>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/diamond-art" element={<DiamondArtPage />} />
+            <Route path="/paint-by-numbers" element={<PaintByNumbersPage />} />
+            <Route path="/what-is-this" element={<WhatIsThisPage />} />
+            <Route path="/mosaic-preview" element={<MosaicPreviewPage />} />
+            <Route path="/editor" element={<EditorPage />} />
+            <Route path="/shop" element={<ShopPage />} />
+            
+            {/* Новые роуты для алмазной мозаики */}
+            <Route path="/diamond-mosaic" element={<DiamondMosaicPage />} />
+            <Route path="/diamond-mosaic/styles" element={<DiamondMosaicPreviewPage />} />
+            <Route path="/diamond-mosaic/preview-album" element={<DiamondMosaicPreviewAlbumPage />} />
+            <Route path="/diamond-mosaic/editor" element={<DiamondMosaicEditorPage />} />
+            <Route path="/diamond-mosaic/purchase" element={<DiamondMosaicPurchasePage />} />
+            <Route path="/diamond-mosaic/success" element={<DiamondMosaicSuccessPage />} />
+            
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </Suspense>
       </Layout>
       
       <NotificationSystem
