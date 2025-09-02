@@ -19,16 +19,16 @@ const DiamondMosaicPreviewAlbumPage = () => {
   const [isGeneratingAI, setIsGeneratingAI] = useState(false)
   const [isGeneratingVariants, setIsGeneratingVariants] = useState(false)
 
-  // Contrast configuration
+  // Contrast configuration - 4 контраста × 2 уровня = 8 превью
   const contrastVariants = [
-    { name: t('diamond_mosaic_preview_album.contrast_variants.venus'), type: 'soft', label: t('diamond_mosaic_preview_album.contrast_variants.soft') },
-    { name: t('diamond_mosaic_preview_album.contrast_variants.venus'), type: 'strong', label: t('diamond_mosaic_preview_album.contrast_variants.strong') },
-    { name: t('diamond_mosaic_preview_album.contrast_variants.sun'), type: 'soft', label: t('diamond_mosaic_preview_album.contrast_variants.soft') },
-    { name: t('diamond_mosaic_preview_album.contrast_variants.sun'), type: 'strong', label: t('diamond_mosaic_preview_album.contrast_variants.strong') },
-    { name: t('diamond_mosaic_preview_album.contrast_variants.moon'), type: 'soft', label: t('diamond_mosaic_preview_album.contrast_variants.soft') },
-    { name: t('diamond_mosaic_preview_album.contrast_variants.moon'), type: 'strong', label: t('diamond_mosaic_preview_album.contrast_variants.strong') },
-    { name: t('diamond_mosaic_preview_album.contrast_variants.mars'), type: 'soft', label: t('diamond_mosaic_preview_album.contrast_variants.soft') },
-    { name: t('diamond_mosaic_preview_album.contrast_variants.mars'), type: 'strong', label: t('diamond_mosaic_preview_album.contrast_variants.strong') }
+    { name: 'venus', type: 'soft', label: t('diamond_mosaic_preview_album.contrast_variants.soft') },
+    { name: 'venus', type: 'strong', label: t('diamond_mosaic_preview_album.contrast_variants.strong') },
+    { name: 'sun', type: 'soft', label: t('diamond_mosaic_preview_album.contrast_variants.soft') },
+    { name: 'sun', type: 'strong', label: t('diamond_mosaic_preview_album.contrast_variants.strong') },
+    { name: 'moon', type: 'soft', label: t('diamond_mosaic_preview_album.contrast_variants.soft') },
+    { name: 'moon', type: 'strong', label: t('diamond_mosaic_preview_album.contrast_variants.strong') },
+    { name: 'mars', type: 'soft', label: t('diamond_mosaic_preview_album.contrast_variants.soft') },
+    { name: 'mars', type: 'strong', label: t('diamond_mosaic_preview_album.contrast_variants.strong') }
   ]
 
   useEffect(() => {
@@ -91,7 +91,7 @@ const DiamondMosaicPreviewAlbumPage = () => {
           formData.append('image', blob, 'image.jpg')
           formData.append('size', data.size)
           formData.append('style', data.selectedStyle)
-          formData.append('contrast_type', variant.name.toLowerCase())
+          formData.append('contrast_type', variant.name)
           formData.append('contrast_level', variant.type)
           formData.append('use_ai', 'false')
           
@@ -103,7 +103,7 @@ const DiamondMosaicPreviewAlbumPage = () => {
           generatedPreviews.push({
             id: i + 1,
             url: result.preview_url,
-            title: `${variant.name} (${variant.label})`,
+            title: `${t(`diamond_mosaic_preview_album.contrast_variants.${variant.name}`)} (${variant.label})`,
             type: 'contrast',
             variant: variant
           })
@@ -117,7 +117,7 @@ const DiamondMosaicPreviewAlbumPage = () => {
           generatedPreviews.push({
             id: i + 1,
             url: null,
-            title: `${variant.name} (${variant.label})`,
+            title: `${t(`diamond_mosaic_preview_album.contrast_variants.${variant.name}`)} (${variant.label})`,
             type: 'contrast',
             variant: variant,
             error: true
@@ -420,6 +420,7 @@ const DiamondMosaicPreviewAlbumPage = () => {
             
             {/* Кнопки действий */}
             <div className="space-y-4 mb-8">
+              {/* Кнопка редактирования изображения */}
               <button
                 onClick={handleEditImage}
                 className="w-full bg-white text-purple-600 border-2 border-purple-600 px-6 py-3 rounded-xl font-semibold hover:bg-purple-50 transition-all duration-300 flex items-center justify-center"
@@ -428,14 +429,21 @@ const DiamondMosaicPreviewAlbumPage = () => {
                 {t('diamond_mosaic_preview_album.edit_image')}
               </button>
               
-              <button
-                onClick={handlePurchase}
-                disabled={!currentPreview?.url}
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-4 rounded-xl font-semibold text-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-              >
-                <ShoppingCart className="w-5 h-5 mr-2" />
-                {t('diamond_mosaic_preview_album.buy_coupon_and_generate')}
-              </button>
+              {/* Кнопка покупки купона */}
+              {currentPreview?.url && (
+                <div className="text-center">
+                  <p className="text-gray-700 mb-4 text-lg">
+                    {t('diamond_mosaic_preview_album.liked_preview_text')}
+                  </p>
+                  <button
+                    onClick={handlePurchase}
+                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-4 rounded-xl font-semibold text-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center"
+                  >
+                    <ShoppingCart className="w-5 h-5 mr-2" />
+                    {t('diamond_mosaic_preview_album.buy_coupon_and_generate')}
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Магазины */}
