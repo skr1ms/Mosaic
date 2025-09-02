@@ -1,10 +1,12 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
-import { Gem, Palette, ShoppingCart, Ticket, ArrowRight, Sparkles, Image } from 'lucide-react'
+import { Gem, Palette, ShoppingCart, Ticket, ArrowRight, Image, Sparkles } from 'lucide-react'
 import HeroSection from '../components/sections/HeroSection'
 import SectionCard from '../components/cards/SectionCard'
 import FAQ from '../components/sections/FAQ'
+import MarketplaceLinks from '../components/sections/MarketplaceLinks'
+import { usePartnerStore } from '../store/partnerStore'
 import MarketplaceLinks from '../components/sections/MarketplaceLinks'
 import { usePartnerStore } from '../store/partnerStore'
 
@@ -47,9 +49,9 @@ const HomePage = () => {
               
               <SectionCard
                 icon={<Image className="w-8 h-8" />}
-                title="Создать мозаику"
-                description="Загрузите своё изображение и создайте уникальную алмазную мозаику с выбором размера, стиля и AI обработкой"
-                buttonText="Создать мозаику"
+                title="Создать превью мозаики"
+                description="Загрузите своё изображение и создайте превью вашей уникальной алмазной мозаики"
+                buttonText="Создать превью"
                 buttonIcon={<Sparkles className="w-5 h-5" />}
                 onClick={() => window.location.href = '/diamond-mosaic'}
                 className="hover-lift"

@@ -43,7 +43,7 @@ const Header = () => {
       onClick: null
     },
     {
-      name: 'Создать мозаику',
+      name: 'Создать превью мозаики',
       href: '/diamond-mosaic',
       current: location.pathname.startsWith('/diamond-mosaic'),
       onClick: null
