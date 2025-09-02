@@ -20,7 +20,7 @@ const DiamondMosaicPage = () => {
   
   // Параметры редактирования
   const [rotation, setRotation] = useState(0)
-  const [scale, setScale] = useState(1) // Увеличиваем начальный масштаб с 1 до 1.5
+  const [scale, setScale] = useState(1) 
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 })
@@ -83,30 +83,6 @@ const DiamondMosaicPage = () => {
       // Применяем позицию
       ctx.translate(position.x, position.y)
       
-      // Вычисляем размеры изображения для отображения (увеличиваем до полного заполнения)
-      const maxSize = Math.min(canvasWidth, canvasHeight) * 1.2 // Увеличиваем с 0.9 до 1.2
-      let imgWidth, imgHeight
-      
-      if (img.width > img.height) {
-        imgWidth = maxSize
-        imgHeight = (maxSize / img.width) * img.height
-      } else {
-        imgHeight = maxSize
-        imgWidth = (maxSize / img.height) * img.width
-      }
-      
-      // Рисуем изображение
-      ctx.drawImage(
-        img,
-        -imgWidth / 2,
-        -imgHeight / 2,
-        imgWidth,
-        imgHeight
-      )
-      
-      // Восстанавливаем контекст
-      ctx.restore()
-      
       // Рисуем область кадрирования в соответствии с выбранным размером
       let cropWidth, cropHeight
       const maxCropSize = Math.min(canvasWidth, canvasHeight) * 0.8 // Базовый размер
@@ -132,6 +108,39 @@ const DiamondMosaicPage = () => {
         // Если размер не выбран, используем квадрат
         cropWidth = cropHeight = maxCropSize
       }
+      
+      // Вычисляем размеры изображения так, чтобы при scale = 1.0 оно совпадало с областью кадрирования
+      let baseImgWidth, baseImgHeight
+      
+      // Определяем базовый размер изображения относительно области кадрирования
+      const cropAspectRatio = cropWidth / cropHeight
+      const imgAspectRatio = img.width / img.height
+      
+      if (imgAspectRatio > cropAspectRatio) {
+        // Изображение шире чем область кадрирования - подгоняем по высоте
+        baseImgHeight = cropHeight
+        baseImgWidth = (baseImgHeight / img.height) * img.width
+      } else {
+        // Изображение выше чем область кадрирования - подгоняем по ширине
+        baseImgWidth = cropWidth
+        baseImgHeight = (baseImgWidth / img.width) * img.height
+      }
+      
+      // Применяем пользовательский масштаб к базовым размерам
+      const imgWidth = baseImgWidth * scale
+      const imgHeight = baseImgHeight * scale
+      
+      // Рисуем изображение
+      ctx.drawImage(
+        img,
+        -imgWidth / 2,
+        -imgHeight / 2,
+        imgWidth,
+        imgHeight
+      )
+      
+      // Восстанавливаем контекст
+      ctx.restore()
       
       const cropX = (canvasWidth - cropWidth) / 2
       const cropY = (canvasHeight - cropHeight) / 2
@@ -219,12 +228,6 @@ const DiamondMosaicPage = () => {
       ctx.lineTo(cropX + cropWidth, cropY + cropHeight - cornerSize)
       ctx.stroke()
       
-      // Добавляем текст в центр области кадрирования
-      ctx.fillStyle = 'rgba(139, 92, 246, 0.15)'
-      ctx.font = 'bold 14px Arial'
-      ctx.textAlign = 'center'
-      ctx.fillText(t('diamond_mosaic_page.image_editor.crop_area_label'), canvasWidth / 2, canvasHeight / 2 + 6)
-      
       // Добавляем иконку перетаскивания в углу области кадрирования
       ctx.fillStyle = 'rgba(139, 92, 246, 0.6)'
       ctx.font = 'bold 20px Arial'
@@ -308,7 +311,7 @@ const DiamondMosaicPage = () => {
       setPreviewUrl(e.target.result)
       // Сбрасываем параметры редактирования при загрузке нового изображения
       setRotation(0)
-      setScale(1.5) // Новый базовый масштаб
+      setScale(1.0) // Базовый масштаб - изображение точно соответствует области кадрирования
       setPosition({ x: 0, y: 0 })
     }
     reader.readAsDataURL(file)
@@ -348,7 +351,7 @@ const DiamondMosaicPage = () => {
 
   const handleReset = () => {
     setRotation(0)
-    setScale(1.5) // Сбрасываем к новому базовому масштабу
+    setScale(1.0) // Сбрасываем к базовому масштабу
     setPosition({ x: 0, y: 0 })
   }
 
@@ -414,7 +417,7 @@ const DiamondMosaicPage = () => {
     
     // Сбрасываем параметры редактирования
     setRotation(0)
-    setScale(1.5) // Новый базовый масштаб
+    setScale(1.0) // Базовый масштаб
     setPosition({ x: 0, y: 0 })
     
     // Очищаем input
