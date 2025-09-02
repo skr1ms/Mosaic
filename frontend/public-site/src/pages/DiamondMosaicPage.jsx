@@ -64,8 +64,8 @@ const DiamondMosaicPage = () => {
       // Очищаем канвас
       ctx.clearRect(0, 0, canvasWidth, canvasHeight)
       
-      // Рисуем фон
-      ctx.fillStyle = '#f3f4f6'
+      // Рисуем светлый фон
+      ctx.fillStyle = '#f8fafc'
       ctx.fillRect(0, 0, canvasWidth, canvasHeight)
       
       // Сохраняем контекст
@@ -83,8 +83,8 @@ const DiamondMosaicPage = () => {
       // Применяем позицию
       ctx.translate(position.x, position.y)
       
-      // Вычисляем размеры изображения для отображения
-      const maxSize = Math.min(canvasWidth, canvasHeight) * 0.8
+      // Вычисляем размеры изображения для отображения (больше, так как canvas больше)
+      const maxSize = Math.min(canvasWidth, canvasHeight) * 0.9
       let imgWidth, imgHeight
       
       if (img.width > img.height) {
@@ -107,13 +107,13 @@ const DiamondMosaicPage = () => {
       // Восстанавливаем контекст
       ctx.restore()
       
-      // Рисуем область кадрирования (квадрат в центре)
-      const cropSize = Math.min(canvasWidth, canvasHeight) * 0.7
+      // Рисуем область кадрирования (квадрат в центре, больше чем раньше)
+      const cropSize = Math.min(canvasWidth, canvasHeight) * 0.75
       const cropX = (canvasWidth - cropSize) / 2
       const cropY = (canvasHeight - cropSize) / 2
       
       // Затемняем области вне кадрирования
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'
       
       // Верх
       ctx.fillRect(0, 0, canvasWidth, cropY)
@@ -124,16 +124,17 @@ const DiamondMosaicPage = () => {
       // Право
       ctx.fillRect(cropX + cropSize, cropY, canvasWidth - cropX - cropSize, cropSize)
       
-      // Рисуем рамку области кадрирования
+      // Рисуем рамку области кадрирования (более яркую и толстую)
       ctx.strokeStyle = '#8b5cf6'
-      ctx.lineWidth = 2
-      ctx.setLineDash([5, 5])
+      ctx.lineWidth = 3
+      ctx.setLineDash([8, 4])
       ctx.strokeRect(cropX, cropY, cropSize, cropSize)
       
-      // Рисуем углы для лучшей видимости
+      // Рисуем углы для лучшей видимости (больше и ярче)
       ctx.setLineDash([])
-      ctx.lineWidth = 3
-      const cornerSize = 20
+      ctx.lineWidth = 4
+      ctx.strokeStyle = '#7c3aed'
+      const cornerSize = 30
       
       // Верхний левый угол
       ctx.beginPath()
@@ -162,6 +163,12 @@ const DiamondMosaicPage = () => {
       ctx.lineTo(cropX + cropSize, cropY + cropSize)
       ctx.lineTo(cropX + cropSize, cropY + cropSize - cornerSize)
       ctx.stroke()
+      
+      // Добавляем текст в центр области кадрирования
+      ctx.fillStyle = 'rgba(139, 92, 246, 0.2)'
+      ctx.font = 'bold 16px Arial'
+      ctx.textAlign = 'center'
+      ctx.fillText(t('diamond_mosaic_page.image_editor.crop_area_label'), canvasWidth / 2, canvasHeight / 2 + 8)
       
       // Генерируем URL отредактированного изображения (только область кадрирования)
       const tempCanvas = document.createElement('canvas')
@@ -478,31 +485,32 @@ const DiamondMosaicPage = () => {
                 </label>
               </div>
             ) : (
-              <div className="max-w-2xl mx-auto">
-                <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg">
-                  <div className="flex items-center justify-between mb-6">
-                    <h4 className="font-semibold text-gray-800 flex items-center">
-                      <Crop className="w-5 h-5 mr-2 text-purple-600" />
-                      Настройте изображение
+              <div className="max-w-4xl mx-auto">
+                <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg">
+                  <div className="flex items-center justify-between mb-8">
+                    <h4 className="text-xl font-semibold text-gray-800 flex items-center">
+                      <Crop className="w-6 h-6 mr-3 text-purple-600" />
+                      {t('diamond_mosaic_page.image_editor.setup_title')}
                     </h4>
                     <button
                       onClick={handleRemoveImage}
-                      className="text-red-500 hover:text-red-600 flex items-center text-sm"
+                      className="text-red-500 hover:text-red-600 flex items-center text-sm font-medium"
                     >
-                      ✕ Удалить
+                      ✕ {t('diamond_mosaic_page.image_editor.delete_image')}
                     </button>
                   </div>
                   
                   {/* Превью с областью кадрирования */}
-                  <div className="relative mb-6">
-                    <div className="bg-gray-100 rounded-xl p-4 flex justify-center">
+                  <div className="relative mb-8">
+                    <div className="bg-gray-50 rounded-2xl p-6 flex justify-center">
                       <div className="relative inline-block">
                         {/* Canvas для редактирования */}
                         <canvas
                           ref={canvasRef}
-                          width={400}
-                          height={400}
-                          className="rounded-lg border-2 border-dashed border-purple-300 cursor-move max-w-full h-auto"
+                          width={600}
+                          height={600}
+                          className="rounded-xl border-2 border-dashed border-purple-300 cursor-move shadow-lg bg-white"
+                          style={{ maxWidth: '100%', height: 'auto' }}
                           onMouseDown={handleMouseDown}
                           onMouseMove={handleMouseMove}
                           onMouseUp={handleMouseUp}
@@ -510,66 +518,73 @@ const DiamondMosaicPage = () => {
                         />
                         
                         {/* Подсказка */}
-                        <div className="absolute bottom-2 left-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded text-center">
-                          Перетащите для изменения позиции
+                        <div className="absolute bottom-4 left-4 right-4 bg-black/80 text-white text-sm px-4 py-2 rounded-lg text-center backdrop-blur-sm">
+                          🖱️ {t('diamond_mosaic_page.image_editor.drag_instruction')}
                         </div>
                       </div>
                     </div>
                   </div>
 
                   {/* Простые инструменты */}
-                  <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     
                     {/* Поворот */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Поворот
+                    <div className="text-center">
+                      <label className="block text-sm font-medium text-gray-700 mb-3">
+                        🔄 {t('diamond_mosaic_page.image_editor.rotation_section')}
                       </label>
                       <button
                         onClick={handleRotate}
-                        className="w-full bg-purple-100 text-purple-700 px-4 py-3 rounded-lg hover:bg-purple-200 transition-colors font-medium flex items-center justify-center"
+                        className="w-full bg-purple-100 text-purple-700 px-6 py-4 rounded-xl hover:bg-purple-200 transition-colors font-medium flex items-center justify-center text-lg"
                       >
-                        <RotateCw className="w-4 h-4 mr-2" />
-                        Повернуть на 90°
+                        <RotateCw className="w-5 h-5 mr-2" />
+                        {t('diamond_mosaic_page.image_editor.tools.rotate_90')}
                       </button>
                     </div>
 
                     {/* Масштаб */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Масштаб: {Math.round(scale * 100)}%
+                    <div className="text-center">
+                      <label className="block text-sm font-medium text-gray-700 mb-3">
+                        🔍 {t('diamond_mosaic_page.image_editor.scale_section')}: {Math.round(scale * 100)}%
                       </label>
-                      <div className="flex space-x-2">
+                      <div className="flex space-x-3">
                         <button
                           onClick={() => handleScaleChange(scale - 0.2)}
-                          className="flex-1 bg-gray-100 text-gray-700 px-3 py-3 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center"
+                          className="flex-1 bg-gray-100 text-gray-700 px-4 py-4 rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center text-lg"
                         >
-                          <ZoomOut className="w-4 h-4" />
+                          <ZoomOut className="w-5 h-5" />
                         </button>
                         <button
                           onClick={() => handleScaleChange(scale + 0.2)}
-                          className="flex-1 bg-gray-100 text-gray-700 px-3 py-3 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center"
+                          className="flex-1 bg-gray-100 text-gray-700 px-4 py-4 rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center text-lg"
                         >
-                          <ZoomIn className="w-4 h-4" />
+                          <ZoomIn className="w-5 h-5" />
                         </button>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Кнопка сброса */}
-                  <div className="text-center mb-6">
-                    <button
-                      onClick={handleReset}
-                      className="text-purple-600 hover:text-purple-700 text-sm font-medium"
-                    >
-                      ↺ Сбросить изменения
-                    </button>
+                    {/* Сброс */}
+                    <div className="text-center">
+                      <label className="block text-sm font-medium text-gray-700 mb-3">
+                        ⚙️ {t('diamond_mosaic_page.image_editor.settings_section')}
+                      </label>
+                      <button
+                        onClick={handleReset}
+                        className="w-full bg-orange-100 text-orange-700 px-6 py-4 rounded-xl hover:bg-orange-200 transition-colors font-medium text-lg"
+                      >
+                        ↺ {t('diamond_mosaic_page.image_editor.tools.reset')}
+                      </button>
+                    </div>
                   </div>
 
                   {/* Информация о файле */}
-                  <div className="text-center text-sm text-gray-600 mb-4">
-                    <p className="font-medium">{selectedFile?.name}</p>
-                    <p>Выберите область, которая будет использована для мозаики</p>
+                  <div className="text-center bg-blue-50 rounded-xl p-6 border border-blue-200">
+                    <div className="flex items-center justify-center mb-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                      <p className="font-medium text-gray-800">{selectedFile?.name}</p>
+                    </div>
+                    <p className="text-gray-600">Выберите область, которая будет использована для создания мозаики</p>
+                    <p className="text-sm text-blue-600 mt-2">💡 Фиолетовая рамка показывает финальную область</p>
                   </div>
 
                 </div>

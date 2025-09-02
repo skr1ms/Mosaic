@@ -252,10 +252,10 @@ const DiamondMosaicEditorPage = () => {
         {/* Заголовок */}
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Выделите желаемую зону
+            {t('diamond_mosaic_editor.main_title')}
           </h1>
           <h2 className="text-2xl font-bold text-gray-900">
-            на своем снимке
+            {t('diamond_mosaic_editor.subtitle')}
           </h2>
         </div>
 
@@ -358,7 +358,7 @@ const DiamondMosaicEditorPage = () => {
             onClick={handleBack}
             className="flex-1 py-4 px-6 bg-white border-2 border-purple-300 text-gray-700 rounded-full font-medium hover:bg-gray-50 transition-colors"
           >
-            Назад
+            {t('diamond_mosaic_editor.buttons.back')}
           </button>
           
           <button
@@ -366,7 +366,7 @@ const DiamondMosaicEditorPage = () => {
             disabled={!editedImageUrl}
             className="flex-1 py-4 px-6 bg-gradient-to-r from-purple-400 to-purple-600 text-white rounded-full font-medium hover:from-purple-500 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            Далее
+            {t('diamond_mosaic_editor.buttons.continue')}
             <span>→</span>
           </button>
         </div>

@@ -820,6 +820,12 @@
     },
     "image_editor": {
       "title": "Редактирование изображения",
+      "setup_title": "Настройте изображение",
+      "delete_image": "Удалить изображение",
+      "drag_instruction": "Перетаскивайте изображение для изменения позиции",
+      "rotation_section": "Поворот",
+      "scale_section": "Масштаб",
+      "settings_section": "Настройки",
       "position_controls": "Управление позицией",
       "controls": {
         "position_x": "Позиция X",
@@ -831,13 +837,17 @@
       "rotation_control": "Поворот",
       "rotation_value": "{value}°",
       "scale_value": "{value}%",
-      "drag_instruction": "Перетаскивайте изображение мышью для перемещения",
+      "crop_area_label": "ОБЛАСТЬ МОЗАИКИ",
+      "file_info": "Выберите область, которая будет использована для создания мозаики",
+      "crop_hint": "Фиолетовая рамка показывает финальную область",
       "tools": {
         "rotate_left": "Повернуть влево",
         "rotate_right": "Повернуть вправо",
-        "rotate_90": "Повернуть 90°",
+        "rotate_90": "Повернуть на 90°",
         "fit_image": "Вписать изображение",
-        "reset": "Сбросить"
+        "reset": "Сбросить",
+        "zoom_in": "Увеличить",
+        "zoom_out": "Уменьшить"
       }
     },
     "navigation": {
@@ -909,6 +919,8 @@
   },
   "diamond_mosaic_editor": {
     "title": "Редактор алмазной мозаики",
+    "main_title": "Выделите желаемую зону",
+    "subtitle": "на своем снимке",
     "image_required": "Пожалуйста, выберите изображение",
     "processing_error": "Ошибка при обработке изображения",
     "continue": "Продолжить",
@@ -935,6 +947,10 @@
       "reset_changes": "Сбросить все изменения",
       "preview": "Предварительный просмотр",
       "drag_instruction": "Перетаскивайте изображение для изменения позиции"
+    },
+    "buttons": {
+      "back": "Назад",
+      "continue": "Далее"
     }
   },
   "diamond_mosaic_purchase": {

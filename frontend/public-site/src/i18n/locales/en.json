@@ -820,6 +820,12 @@
     },
     "image_editor": {
       "title": "Image Editing",
+      "setup_title": "Set up your image",
+      "delete_image": "Delete image",
+      "drag_instruction": "Drag the image to change position",
+      "rotation_section": "Rotation",
+      "scale_section": "Scale",
+      "settings_section": "Settings",
       "position_controls": "Position Controls",
       "controls": {
         "position_x": "Position X",
@@ -831,13 +837,17 @@
       "rotation_control": "Rotation",
       "rotation_value": "{value}°",
       "scale_value": "{value}%",
-      "drag_instruction": "Drag the image with your mouse to move it",
+      "crop_area_label": "MOSAIC AREA",
+      "file_info": "Choose the area that will be used to create the mosaic",
+      "crop_hint": "Purple frame shows the final area",
       "tools": {
         "rotate_left": "Rotate Left",
         "rotate_right": "Rotate Right",
         "rotate_90": "Rotate 90°",
         "fit_image": "Fit Image",
-        "reset": "Reset"
+        "reset": "Reset",
+        "zoom_in": "Zoom In",
+        "zoom_out": "Zoom Out"
       }
     },
     "navigation": {
@@ -909,7 +919,8 @@
   },
   "diamond_mosaic_editor": {
     "title": "Diamond Mosaic Editor",
-    "subtitle": "Edit your image before creating the mosaic",
+    "main_title": "Select the desired area",
+    "subtitle": "on your image",
     "image_required": "Please select an image",
     "processing_error": "Error processing image",
     "continue": "Continue",
@@ -936,6 +947,10 @@
       "reset_changes": "Reset All Changes",
       "preview": "Preview",
       "drag_instruction": "Drag the image to change position"
+    },
+    "buttons": {
+      "back": "Back",
+      "continue": "Continue"
     }
   },
   "diamond_mosaic_purchase": {
