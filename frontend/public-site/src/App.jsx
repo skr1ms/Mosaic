@@ -9,6 +9,13 @@ import ShopPage from './pages/ShopPage'
 import NotFoundPage from './pages/NotFoundPage'
 import PaintByNumbersPage from './pages/PaintByNumbersPage'
 import WhatIsThisPage from './pages/WhatIsThisPage'
+import MosaicPreviewPage from './pages/MosaicPreviewPage'
+import DiamondMosaicPage from './pages/DiamondMosaicPage'
+import DiamondMosaicStylesPage from './pages/DiamondMosaicStylesPage'
+import DiamondMosaicPreviewAlbumPage from './pages/DiamondMosaicPreviewAlbumPage'
+import DiamondMosaicEditorPage from './pages/DiamondMosaicEditorPage'
+import DiamondMosaicPurchasePage from './pages/DiamondMosaicPurchasePage'
+import DiamondMosaicSuccessPage from './pages/DiamondMosaicSuccessPage'
 import { usePartnerStore } from './store/partnerStore'
 import { useUIStore } from './store/partnerStore'
 import { useBrandingQuery } from './hooks/useBrandingQuery'
@@ -18,7 +25,6 @@ import NotificationSystem from './components/ui/NotificationSystem'
 import SupportChatWidget from './components/SupportChatWidget'
 import BrandingProvider from './components/ui/BrandingProvider'
 import './assets/branding.css'
-import MosaicPreviewPage from './pages/MosaicPreviewPage'
 
 function App() {
   const { i18n } = useTranslation()
@@ -91,6 +97,15 @@ function App() {
           <Route path="/mosaic-preview" element={<MosaicPreviewPage />} />
           <Route path="/editor" element={<EditorPage />} />
           <Route path="/shop" element={<ShopPage />} />
+          
+          {/* Новые роуты для алмазной мозаики */}
+          <Route path="/diamond-mosaic" element={<DiamondMosaicPage />} />
+          <Route path="/diamond-mosaic/styles" element={<DiamondMosaicStylesPage />} />
+          <Route path="/diamond-mosaic/preview-album" element={<DiamondMosaicPreviewAlbumPage />} />
+          <Route path="/diamond-mosaic/editor" element={<DiamondMosaicEditorPage />} />
+          <Route path="/diamond-mosaic/purchase" element={<DiamondMosaicPurchasePage />} />
+          <Route path="/diamond-mosaic/success" element={<DiamondMosaicSuccessPage />} />
+          
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Layout>

@@ -43,6 +43,12 @@ const Header = () => {
       onClick: null
     },
     {
+      name: 'Создать мозаику',
+      href: '/diamond-mosaic',
+      current: location.pathname.startsWith('/diamond-mosaic'),
+      onClick: null
+    },
+    {
       name: t('navigation.paint_by_numbers'),
       href: '#paint-by-numbers',
       current: false,

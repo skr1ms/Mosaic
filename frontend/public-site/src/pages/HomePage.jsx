@@ -1,7 +1,7 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
-import { Gem, Palette, ShoppingCart, Ticket, ArrowRight } from 'lucide-react'
+import { Gem, Palette, ShoppingCart, Ticket, ArrowRight, Sparkles, Image } from 'lucide-react'
 import HeroSection from '../components/sections/HeroSection'
 import SectionCard from '../components/cards/SectionCard'
 import FAQ from '../components/sections/FAQ'
@@ -31,7 +31,7 @@ const HomePage = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div 
               {...fadeInUp}
-              className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto items-stretch"
+              className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch"
             >
               <SectionCard
                 icon={<Gem className="w-8 h-8" />}
@@ -42,6 +42,18 @@ const HomePage = () => {
                 onClick={() => window.location.href = '/diamond-art'}
                 className="hover-lift"
                 gradient="from-brand-primary to-brand-secondary"
+                active
+              />
+              
+              <SectionCard
+                icon={<Image className="w-8 h-8" />}
+                title="Создать мозаику"
+                description="Загрузите своё изображение и создайте уникальную алмазную мозаику с выбором размера, стиля и AI обработкой"
+                buttonText="Создать мозаику"
+                buttonIcon={<Sparkles className="w-5 h-5" />}
+                onClick={() => window.location.href = '/diamond-mosaic'}
+                className="hover-lift"
+                gradient="from-purple-600 to-pink-600"
                 active
               />
               

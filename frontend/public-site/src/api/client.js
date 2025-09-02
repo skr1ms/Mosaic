@@ -110,6 +110,28 @@ export class MosaicAPI {
     return data
   }
 
+  // Генерация вариантов превью с контрастами
+  static async generatePreviewVariant(formData) {
+    const { data } = await apiClient.post('/preview/generate-variant', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      timeout: 120000,
+    })
+    return data
+  }
+
+  // Генерация AI превью
+  static async generateAIPreview(formData) {
+    const { data } = await apiClient.post('/preview/generate-ai', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      timeout: 180000, // 3 минуты для AI обработки
+    })
+    return data
+  }
+
   // Редактирование изображения
   static async editImage(imageId, params) {
     const { data } = await apiClient.post(`/images/${imageId}/edit`, params)
