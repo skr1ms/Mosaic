@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Minus, Plus, RotateCcw, Share2, Upload } from 'lucide-react'
+import { ArrowLeft, Download, Minus, Plus, RotateCcw, Undo2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useUIStore } from '../store/partnerStore'
 
@@ -10,23 +10,23 @@ const DiamondMosaicEditorPage = () => {
   const { addNotification } = useUIStore()
   
   const canvasRef = useRef(null)
-  const fileInputRef = useRef(null)
+  const imageRef = useRef(null)
   const containerRef = useRef(null)
   
   const [editorSettings, setEditorSettings] = useState(null)
   const [currentImage, setCurrentImage] = useState(null)
   const [editedImageUrl, setEditedImageUrl] = useState(null)
   
-  // Editing parameters
+  // Image editing state
   const [scale, setScale] = useState(1)
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [positionStart, setPositionStart] = useState({ x: 0, y: 0 })
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 })
   
-  // Crop area state (fixed center crop)
-  const [cropArea] = useState({ x: 25, y: 25, width: 50, height: 50 })
-
+  // Fixed crop area - центральный квадрат (60% от контейнера)
+  
   useEffect(() => {
     // Load editor settings
     try {
@@ -42,7 +42,14 @@ const DiamondMosaicEditorPage = () => {
       const parsedImageData = JSON.parse(savedImageData)
       
       setEditorSettings(parsedSettings)
-      setCurrentImage(parsedImageData.previewUrl)
+      
+      // Загружаем изображение
+      const img = new Image()
+      img.onload = () => {
+        setImageSize({ width: img.width, height: img.height })
+        setCurrentImage(parsedImageData.previewUrl)
+      }
+      img.src = parsedImageData.previewUrl
       
     } catch (error) {
       console.error('Error loading editor settings:', error)
@@ -50,75 +57,98 @@ const DiamondMosaicEditorPage = () => {
     }
   }, [navigate])
 
+  // Рендер изображения на канвасе
   useEffect(() => {
-    if (currentImage && canvasRef.current) {
-      drawImageOnCanvas()
+    if (currentImage && canvasRef.current && containerRef.current) {
+      renderImage()
     }
   }, [currentImage, scale, position])
 
-  const drawImageOnCanvas = () => {
+  const renderImage = () => {
     const canvas = canvasRef.current
     const container = containerRef.current
     if (!canvas || !currentImage || !container) return
 
     const ctx = canvas.getContext('2d')
-    const img = new Image()
     
+    // Устанавливаем размер канваса равным размеру контейнера
+    canvas.width = container.offsetWidth
+    canvas.height = container.offsetHeight
+    
+    // Очищаем канвас
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    
+    const img = new Image()
     img.onload = () => {
-      const containerRect = container.getBoundingClientRect()
-      canvas.width = containerRect.width
-      canvas.height = containerRect.height
+      // Вычисляем размеры для отображения
+      const containerAspect = canvas.width / canvas.height
+      const imageAspect = img.width / img.height
       
-      // Clear canvas
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      let renderWidth, renderHeight
       
-      // Calculate image dimensions
-      const aspectRatio = img.width / img.height
-      let drawWidth, drawHeight
-      
-      if (aspectRatio > 1) {
-        drawWidth = Math.min(canvas.width * scale, img.width * scale)
-        drawHeight = drawWidth / aspectRatio
+      // Масштабируем изображение чтобы заполнить контейнер
+      if (imageAspect > containerAspect) {
+        renderHeight = canvas.height * scale
+        renderWidth = renderHeight * imageAspect
       } else {
-        drawHeight = Math.min(canvas.height * scale, img.height * scale)
-        drawWidth = drawHeight * aspectRatio
+        renderWidth = canvas.width * scale
+        renderHeight = renderWidth / imageAspect
       }
       
-      // Center the image with offset
-      const centerX = canvas.width / 2 + position.x
-      const centerY = canvas.height / 2 + position.y
-      const drawX = centerX - drawWidth / 2
-      const drawY = centerY - drawHeight / 2
+      // Позиционируем изображение с учетом перетаскивания
+      const x = (canvas.width - renderWidth) / 2 + position.x
+      const y = (canvas.height - renderHeight) / 2 + position.y
       
-      // Draw image
-      ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight)
+      // Рисуем изображение
+      ctx.drawImage(img, x, y, renderWidth, renderHeight)
       
-      // Generate edited image URL
-      const editedDataUrl = canvas.toDataURL('image/jpeg', 0.95)
-      setEditedImageUrl(editedDataUrl)
+      // Создаем обрезанную версию для области кадрирования (20% отступ со всех сторон)
+      createCroppedImage(canvas, ctx)
     }
     
     img.src = currentImage
   }
 
-  // Mouse handlers for dragging
+  const createCroppedImage = (canvas, ctx) => {
+    // Размеры области кадрирования (20% отступ = 60% область)
+    const cropX = canvas.width * 0.2
+    const cropY = canvas.height * 0.2
+    const cropWidth = canvas.width * 0.6
+    const cropHeight = canvas.height * 0.6
+    
+    // Создаем новый канвас для обрезанного изображения
+    const cropCanvas = document.createElement('canvas')
+    cropCanvas.width = cropWidth
+    cropCanvas.height = cropHeight
+    const cropCtx = cropCanvas.getContext('2d')
+    
+    // Копируем область кадрирования
+    const imageData = ctx.getImageData(cropX, cropY, cropWidth, cropHeight)
+    cropCtx.putImageData(imageData, 0, 0)
+    
+    // Создаем URL для обрезанного изображения
+    const croppedDataUrl = cropCanvas.toDataURL('image/jpeg', 0.95)
+    setEditedImageUrl(croppedDataUrl)
+  }
+
+  // Обработчики мыши для перетаскивания
   const handleMouseDown = useCallback((e) => {
     e.preventDefault()
     setIsDragging(true)
     setDragStart({ x: e.clientX, y: e.clientY })
-    setPositionStart(position)
+    setPositionStart({ ...position })
   }, [position])
 
   const handleMouseMove = useCallback((e) => {
-    if (isDragging) {
-      const deltaX = e.clientX - dragStart.x
-      const deltaY = e.clientY - dragStart.y
-      
-      setPosition({
-        x: positionStart.x + deltaX,
-        y: positionStart.y + deltaY
-      })
-    }
+    if (!isDragging) return
+    
+    const deltaX = e.clientX - dragStart.x
+    const deltaY = e.clientY - dragStart.y
+    
+    setPosition({
+      x: positionStart.x + deltaX,
+      y: positionStart.y + deltaY
+    })
   }, [isDragging, dragStart, positionStart])
 
   const handleMouseUp = useCallback(() => {
@@ -136,53 +166,25 @@ const DiamondMosaicEditorPage = () => {
     }
   }, [isDragging, handleMouseMove, handleMouseUp])
 
-  // Scale handlers
-  const handleZoomIn = () => {
-    setScale(prev => Math.min(prev + 0.2, 3))
-  }
-
-  const handleZoomOut = () => {
-    setScale(prev => Math.max(prev - 0.2, 0.2))
-  }
-
+  // Обработчики управления
+  const handleZoomIn = () => setScale(prev => Math.min(prev + 0.2, 3))
+  const handleZoomOut = () => setScale(prev => Math.max(prev - 0.2, 0.3))
+  
   const handleReset = () => {
     setScale(1)
     setPosition({ x: 0, y: 0 })
-  }
-
-  const handleNewImageUpload = (event) => {
-    const file = event.target.files[0]
-    if (!file) return
-
-    if (!file.type.startsWith('image/')) {
-      addNotification({
-        type: 'error',
-        message: t('diamond_mosaic_editor.image_required')
-      })
-      return
-    }
-
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      setCurrentImage(e.target.result)
-      setScale(1)
-      setPosition({ x: 0, y: 0 })
-    }
-    reader.readAsDataURL(file)
   }
 
   const handleContinue = () => {
     if (!editedImageUrl || !editorSettings) return
 
     try {
-      // Конвертируем data URL в файл
       fetch(editedImageUrl)
         .then(res => res.blob())
         .then(blob => {
           const file = new File([blob], 'edited-image.jpg', { type: 'image/jpeg' })
           const fileUrl = URL.createObjectURL(file)
           
-          // Обновляем данные изображения
           const updatedImageData = {
             size: editorSettings.size,
             selectedStyle: editorSettings.style,
@@ -193,11 +195,8 @@ const DiamondMosaicEditorPage = () => {
           
           localStorage.setItem('diamondMosaic_selectedImage', JSON.stringify(updatedImageData))
           sessionStorage.setItem('diamondMosaic_fileUrl', fileUrl)
-          
-          // Очищаем настройки редактора
           localStorage.removeItem('diamondMosaic_editorSettings')
           
-          // Возвращаемся к альбому превью или переходим к следующему шагу
           if (editorSettings.returnTo) {
             navigate(editorSettings.returnTo)
           } else {
@@ -223,138 +222,130 @@ const DiamondMosaicEditorPage = () => {
 
   if (!editorSettings) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-purple-600">{t('diamond_mosaic_editor.loading')}</div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-gray-600">{t('diamond_mosaic_editor.loading')}</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto p-6">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-4xl mx-auto px-6 py-8">
         
         {/* Заголовок */}
-        <div className="mb-6">
-          <button
-            onClick={handleBack}
-            className="flex items-center text-purple-600 hover:text-purple-700 mb-4 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            {t('diamond_mosaic_editor.navigation.back')}
-          </button>
-          
-          <h1 className="text-3xl font-bold text-gray-900 text-center">
-            {t('diamond_mosaic_editor.title')}
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            Выделите желаемую зону
           </h1>
-          <p className="text-gray-600 text-center mt-2">
-            {t('diamond_mosaic_editor.size_label')} <span className="font-semibold">{editorSettings.size} {t('common.cm')}</span> • 
-            {t('diamond_mosaic_editor.style_label')} <span className="font-semibold">{editorSettings.style}</span>
-          </p>
+          <h2 className="text-2xl font-bold text-gray-900">
+            на своем снимке
+          </h2>
         </div>
 
-        {/* Главный редактор */}
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-          
-          {/* Область изображения */}
+        {/* Основная область редактирования */}
+        <div className="bg-gray-200 rounded-lg p-8 mb-8">
           <div 
             ref={containerRef}
-            className="relative bg-gray-100 h-96 md:h-[500px] overflow-hidden"
+            className="relative bg-gray-400 mx-auto rounded-lg overflow-hidden"
+            style={{ 
+              width: '100%', 
+              maxWidth: '500px',
+              height: '400px',
+              margin: '0 auto'
+            }}
           >
+            {/* Канвас с изображением */}
             <canvas
               ref={canvasRef}
-              className="w-full h-full cursor-move select-none"
+              className="absolute inset-0 w-full h-full cursor-move"
               onMouseDown={handleMouseDown}
               style={{ touchAction: 'none' }}
             />
             
-            {/* Сетка кадрирования */}
+            {/* Область кадрирования с сеткой */}
             <div 
               className="absolute border-2 border-white shadow-lg pointer-events-none"
               style={{
-                left: `${cropArea.x}%`,
-                top: `${cropArea.y}%`,
-                width: `${cropArea.width}%`,
-                height: `${cropArea.height}%`,
+                left: '20%',
+                top: '20%',
+                width: '60%',
+                height: '60%',
+                backgroundColor: 'rgba(255,255,255,0.1)'
               }}
             >
               {/* Сетка 3x3 */}
-              <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                <line x1="33.33" y1="0" x2="33.33" y2="100" stroke="white" strokeWidth="0.5" opacity="0.7" />
-                <line x1="66.66" y1="0" x2="66.66" y2="100" stroke="white" strokeWidth="0.5" opacity="0.7" />
-                <line x1="0" y1="33.33" x2="100" y2="33.33" stroke="white" strokeWidth="0.5" opacity="0.7" />
-                <line x1="0" y1="66.66" x2="100" y2="66.66" stroke="white" strokeWidth="0.5" opacity="0.7" />
-              </svg>
+              <div className="relative w-full h-full">
+                {/* Вертикальные линии */}
+                <div className="absolute left-1/3 top-0 w-px h-full bg-white opacity-60"></div>
+                <div className="absolute left-2/3 top-0 w-px h-full bg-white opacity-60"></div>
+                {/* Горизонтальные линии */}
+                <div className="absolute top-1/3 left-0 w-full h-px bg-white opacity-60"></div>
+                <div className="absolute top-2/3 left-0 w-full h-px bg-white opacity-60"></div>
+              </div>
             </div>
           </div>
-
-          {/* Панель управления */}
-          <div className="p-6 bg-white border-t border-gray-200">
-            <div className="flex flex-wrap items-center justify-center gap-4">
-              
-              {/* Загрузка нового изображения */}
-              <label className="flex items-center justify-center w-12 h-12 bg-purple-100 hover:bg-purple-200 rounded-xl cursor-pointer transition-colors">
-                <Upload className="w-5 h-5 text-purple-600" />
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleNewImageUpload}
-                  className="hidden"
-                />
-              </label>
-
-              {/* Уменьшить масштаб */}
-              <button
-                onClick={handleZoomOut}
-                className="flex items-center justify-center w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
-              >
-                <Minus className="w-5 h-5 text-gray-600" />
-              </button>
-
-              {/* Увеличить масштаб */}
-              <button
-                onClick={handleZoomIn}
-                className="flex items-center justify-center w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
-              >
-                <Plus className="w-5 h-5 text-gray-600" />
-              </button>
-
-              {/* Сброс */}
-              <button
-                onClick={handleReset}
-                className="flex items-center justify-center w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
-              >
-                <RotateCcw className="w-5 h-5 text-gray-600" />
-              </button>
-
-              {/* Поделиться (будущий функционал) */}
-              <button className="flex items-center justify-center w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors opacity-50 cursor-not-allowed">
-                <Share2 className="w-5 h-5 text-gray-600" />
-              </button>
-            </div>
-          </div>
-
-          {/* Кнопки действий */}
-          <div className="p-6 bg-gray-50 border-t border-gray-200">
-            <div className="flex gap-4 max-w-md mx-auto">
-              <button
-                onClick={handleBack}
-                className="flex-1 px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
-              >
-                {t('diamond_mosaic_editor.navigation.back')}
-              </button>
-              
-              <button
-                onClick={handleContinue}
-                disabled={!editedImageUrl}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-medium hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {t('diamond_mosaic_editor.continue')} →
-              </button>
-            </div>
-          </div>
-
         </div>
+
+        {/* Панель управления */}
+        <div className="flex justify-center items-center gap-4 mb-8">
+          
+          {/* Загрузить изображение */}
+          <button className="w-12 h-12 bg-purple-200 rounded-xl flex items-center justify-center hover:bg-purple-300 transition-colors">
+            <Download className="w-6 h-6 text-purple-700" />
+          </button>
+
+          {/* Уменьшить */}
+          <button 
+            onClick={handleZoomOut}
+            className="w-12 h-12 bg-purple-200 rounded-xl flex items-center justify-center hover:bg-purple-300 transition-colors"
+          >
+            <Minus className="w-6 h-6 text-purple-700" />
+          </button>
+
+          {/* Увеличить */}
+          <button 
+            onClick={handleZoomIn}
+            className="w-12 h-12 bg-purple-200 rounded-xl flex items-center justify-center hover:bg-purple-300 transition-colors"
+          >
+            <Plus className="w-6 h-6 text-purple-700" />
+          </button>
+
+          {/* Назад */}
+          <button 
+            onClick={handleBack}
+            className="w-12 h-12 bg-purple-200 rounded-xl flex items-center justify-center hover:bg-purple-300 transition-colors"
+          >
+            <ArrowLeft className="w-6 h-6 text-purple-700" />
+          </button>
+
+          {/* Сброс */}
+          <button 
+            onClick={handleReset}
+            className="w-12 h-12 bg-purple-200 rounded-xl flex items-center justify-center hover:bg-purple-300 transition-colors"
+          >
+            <RotateCcw className="w-6 h-6 text-purple-700" />
+          </button>
+        </div>
+
+        {/* Кнопки действий */}
+        <div className="flex gap-4 max-w-md mx-auto">
+          <button
+            onClick={handleBack}
+            className="flex-1 py-4 px-6 bg-white border-2 border-purple-300 text-gray-700 rounded-full font-medium hover:bg-gray-50 transition-colors"
+          >
+            Назад
+          </button>
+          
+          <button
+            onClick={handleContinue}
+            disabled={!editedImageUrl}
+            className="flex-1 py-4 px-6 bg-gradient-to-r from-purple-400 to-purple-600 text-white rounded-full font-medium hover:from-purple-500 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            Далее
+            <span>→</span>
+          </button>
+        </div>
+
       </div>
     </div>
   )
