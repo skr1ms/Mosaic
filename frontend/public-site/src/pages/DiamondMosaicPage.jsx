@@ -20,7 +20,7 @@ const DiamondMosaicPage = () => {
   
   // Параметры редактирования
   const [rotation, setRotation] = useState(0)
-  const [scale, setScale] = useState(1)
+  const [scale, setScale] = useState(1.5) // Увеличиваем начальный масштаб с 1 до 1.5
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 })
@@ -83,8 +83,8 @@ const DiamondMosaicPage = () => {
       // Применяем позицию
       ctx.translate(position.x, position.y)
       
-      // Вычисляем размеры изображения для отображения (больше, так как canvas больше)
-      const maxSize = Math.min(canvasWidth, canvasHeight) * 0.9
+      // Вычисляем размеры изображения для отображения (увеличиваем до полного заполнения)
+      const maxSize = Math.min(canvasWidth, canvasHeight) * 1.2 // Увеличиваем с 0.9 до 1.2
       let imgWidth, imgHeight
       
       if (img.width > img.height) {
@@ -107,8 +107,8 @@ const DiamondMosaicPage = () => {
       // Восстанавливаем контекст
       ctx.restore()
       
-      // Рисуем область кадрирования (квадрат в центре, больше чем раньше)
-      const cropSize = Math.min(canvasWidth, canvasHeight) * 0.75
+      // Рисуем область кадрирования (квадрат в центре, увеличиваем до 90%)
+      const cropSize = Math.min(canvasWidth, canvasHeight) * 0.9 // Увеличиваем с 0.75 до 0.9
       const cropX = (canvasWidth - cropSize) / 2
       const cropY = (canvasHeight - cropSize) / 2
       
@@ -248,7 +248,7 @@ const DiamondMosaicPage = () => {
       setPreviewUrl(e.target.result)
       // Сбрасываем параметры редактирования при загрузке нового изображения
       setRotation(0)
-      setScale(1)
+      setScale(1.5) // Новый базовый масштаб
       setPosition({ x: 0, y: 0 })
     }
     reader.readAsDataURL(file)
@@ -288,7 +288,7 @@ const DiamondMosaicPage = () => {
 
   const handleReset = () => {
     setRotation(0)
-    setScale(1)
+    setScale(1.5) // Сбрасываем к новому базовому масштабу
     setPosition({ x: 0, y: 0 })
   }
 
@@ -354,7 +354,7 @@ const DiamondMosaicPage = () => {
     
     // Сбрасываем параметры редактирования
     setRotation(0)
-    setScale(1)
+    setScale(1.5) // Новый базовый масштаб
     setPosition({ x: 0, y: 0 })
     
     // Очищаем input
@@ -583,8 +583,8 @@ const DiamondMosaicPage = () => {
                       <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
                       <p className="font-medium text-gray-800">{selectedFile?.name}</p>
                     </div>
-                    <p className="text-gray-600">Выберите область, которая будет использована для создания мозаики</p>
-                    <p className="text-sm text-blue-600 mt-2">💡 Фиолетовая рамка показывает финальную область</p>
+                    <p className="text-gray-600">{t('diamond_mosaic_page.image_editor.file_info')}</p>
+                    <p className="text-sm text-blue-600 mt-2">💡 {t('diamond_mosaic_page.image_editor.crop_hint')}</p>
                   </div>
 
                 </div>
