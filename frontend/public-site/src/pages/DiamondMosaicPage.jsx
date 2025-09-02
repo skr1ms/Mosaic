@@ -25,6 +25,12 @@ const DiamondMosaicPage = () => {
   const [isDragging, setIsDragging] = useState(false)
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 })
   const [editedImageUrl, setEditedImageUrl] = useState(null)
+  
+  // Параметры кадрирования
+  const [cropSize, setCropSize] = useState({ width: 0, height: 0 })
+  const [isResizingCrop, setIsResizingCrop] = useState(false)
+  const [resizeHandle, setResizeHandle] = useState(null) // 'corner', 'top', 'bottom', 'left', 'right'
+  const [cropStartSize, setCropStartSize] = useState({ width: 0, height: 0 })
 
   // Очистка localStorage при загрузке страницы
   useEffect(() => {
@@ -99,17 +105,25 @@ const DiamondMosaicPage = () => {
         baseImgWidth = maxImageSize * imgAspectRatio
       }
       
-      // Область кадрирования адаптируется к повороту изображения
+      // Область кадрирования - используем пользовательский размер или размер по умолчанию
       let cropWidth, cropHeight
       
-      if (rotation === 90 || rotation === 270) {
-        // При повороте на 90°/270° меняем местами ширину и высоту области кадрирования
-        cropWidth = baseImgHeight
-        cropHeight = baseImgWidth
+      if (cropSize.width > 0 && cropSize.height > 0) {
+        // Используем пользовательский размер кадрирования
+        cropWidth = cropSize.width
+        cropHeight = cropSize.height
       } else {
-        // При повороте на 0°/180° область кадрирования соответствует изображению
-        cropWidth = baseImgWidth
-        cropHeight = baseImgHeight
+        // Инициализируем размер кадрирования по размеру изображения с учетом поворота
+        if (rotation === 90 || rotation === 270) {
+          cropWidth = baseImgHeight
+          cropHeight = baseImgWidth
+        } else {
+          cropWidth = baseImgWidth
+          cropHeight = baseImgHeight
+        }
+        
+        // Сохраняем начальный размер
+        setCropSize({ width: cropWidth, height: cropHeight })
       }
       
       // Применяем пользовательский масштаб к базовым размерам
@@ -214,6 +228,39 @@ const DiamondMosaicPage = () => {
       ctx.lineTo(cropX + cropWidth, cropY + cropHeight - cornerSize)
       ctx.stroke()
       
+      // Рисуем интерактивные ручки для изменения размера
+      const handleSize = 8
+      ctx.fillStyle = '#8b5cf6'
+      ctx.strokeStyle = '#ffffff'
+      ctx.lineWidth = 2
+      ctx.setLineDash([])
+      
+      // Угловые ручки (для пропорционального изменения размера)
+      const handles = [
+        { x: cropX, y: cropY }, // top-left
+        { x: cropX + cropWidth, y: cropY }, // top-right
+        { x: cropX, y: cropY + cropHeight }, // bottom-left
+        { x: cropX + cropWidth, y: cropY + cropHeight }, // bottom-right
+      ]
+      
+      handles.forEach(handle => {
+        ctx.fillRect(handle.x - handleSize/2, handle.y - handleSize/2, handleSize, handleSize)
+        ctx.strokeRect(handle.x - handleSize/2, handle.y - handleSize/2, handleSize, handleSize)
+      })
+      
+      // Боковые ручки (для изменения только одной стороны)
+      const sideHandles = [
+        { x: cropX + cropWidth/2, y: cropY }, // top
+        { x: cropX + cropWidth/2, y: cropY + cropHeight }, // bottom
+        { x: cropX, y: cropY + cropHeight/2 }, // left
+        { x: cropX + cropWidth, y: cropY + cropHeight/2 }, // right
+      ]
+      
+      sideHandles.forEach(handle => {
+        ctx.fillRect(handle.x - handleSize/2, handle.y - handleSize/2, handleSize, handleSize)
+        ctx.strokeRect(handle.x - handleSize/2, handle.y - handleSize/2, handleSize, handleSize)
+      })
+      
       // Генерируем URL отредактированного изображения (только область кадрирования)
       const tempCanvas = document.createElement('canvas')
       tempCanvas.width = cropWidth
@@ -301,6 +348,7 @@ const DiamondMosaicPage = () => {
   // Функции редактирования
   const handleRotate = () => {
     setRotation(prev => (prev + 90) % 360)
+    setCropSize({ width: 0, height: 0 }) // Сбрасываем размер кадрирования при повороте
   }
 
   const handleScaleChange = (newScale) => {
@@ -308,32 +356,145 @@ const DiamondMosaicPage = () => {
   }
 
   const handleMouseDown = (e) => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    
+    const rect = canvas.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    
+    // Масштабируем координаты к размеру канваса
+    const scaleX = canvas.width / rect.width
+    const scaleY = canvas.height / rect.height
+    const canvasX = x * scaleX
+    const canvasY = y * scaleY
+    
+    // Получаем текущие координаты области кадрирования
+    const canvasWidth = canvas.width
+    const canvasHeight = canvas.height
+    const cropWidth = cropSize.width || 0
+    const cropHeight = cropSize.height || 0
+    const cropX = (canvasWidth - cropWidth) / 2
+    const cropY = (canvasHeight - cropHeight) / 2
+    
+    const handleSize = 8
+    
+    // Проверяем клик по ручкам
+    const handles = [
+      { x: cropX, y: cropY, type: 'corner', direction: 'tl' },
+      { x: cropX + cropWidth, y: cropY, type: 'corner', direction: 'tr' },
+      { x: cropX, y: cropY + cropHeight, type: 'corner', direction: 'bl' },
+      { x: cropX + cropWidth, y: cropY + cropHeight, type: 'corner', direction: 'br' },
+      { x: cropX + cropWidth/2, y: cropY, type: 'side', direction: 'top' },
+      { x: cropX + cropWidth/2, y: cropY + cropHeight, type: 'side', direction: 'bottom' },
+      { x: cropX, y: cropY + cropHeight/2, type: 'side', direction: 'left' },
+      { x: cropX + cropWidth, y: cropY + cropHeight/2, type: 'side', direction: 'right' },
+    ]
+    
+    for (const handle of handles) {
+      if (canvasX >= handle.x - handleSize/2 && canvasX <= handle.x + handleSize/2 &&
+          canvasY >= handle.y - handleSize/2 && canvasY <= handle.y + handleSize/2) {
+        setIsResizingCrop(true)
+        setResizeHandle(handle)
+        setCropStartSize({ width: cropWidth, height: cropHeight })
+        setLastMousePos({ x: e.clientX, y: e.clientY })
+        return
+      }
+    }
+    
+    // Если не попали в ручку, начинаем обычное перетаскивание
     setIsDragging(true)
     setLastMousePos({ x: e.clientX, y: e.clientY })
   }
 
   const handleMouseMove = (e) => {
-    if (!isDragging) return
+    if (isResizingCrop && resizeHandle) {
+      // Обрабатываем изменение размера области кадрирования
+      const deltaX = e.clientX - lastMousePos.x
+      const deltaY = e.clientY - lastMousePos.y
+      
+      let newWidth = cropStartSize.width
+      let newHeight = cropStartSize.height
+      
+      if (resizeHandle.type === 'corner') {
+        // Угловые ручки - пропорциональное изменение
+        const aspectRatio = cropStartSize.width / cropStartSize.height
+        
+        if (resizeHandle.direction.includes('r')) { // right
+          newWidth = Math.max(50, cropStartSize.width + deltaX)
+        } else { // left
+          newWidth = Math.max(50, cropStartSize.width - deltaX)
+        }
+        
+        newHeight = newWidth / aspectRatio
+        
+      } else if (resizeHandle.type === 'side') {
+        // Боковые ручки - изменение только одной стороны
+        if (resizeHandle.direction === 'top' || resizeHandle.direction === 'bottom') {
+          if (resizeHandle.direction === 'bottom') {
+            newHeight = Math.max(50, cropStartSize.height + deltaY)
+          } else {
+            newHeight = Math.max(50, cropStartSize.height - deltaY)
+          }
+        } else {
+          if (resizeHandle.direction === 'right') {
+            newWidth = Math.max(50, cropStartSize.width + deltaX)
+          } else {
+            newWidth = Math.max(50, cropStartSize.width - deltaX)
+          }
+        }
+      }
+      
+      // Ограничиваем размер канвасом
+      const canvas = canvasRef.current
+      if (canvas) {
+        const maxSize = Math.min(canvas.width, canvas.height) * 0.9
+        newWidth = Math.min(newWidth, maxSize)
+        newHeight = Math.min(newHeight, maxSize)
+      }
+      
+      setCropSize({ width: newWidth, height: newHeight })
+      
+    } else if (isDragging) {
+      // Обычное перетаскивание изображения
+      const deltaX = e.clientX - lastMousePos.x
+      const deltaY = e.clientY - lastMousePos.y
 
-    const deltaX = e.clientX - lastMousePos.x
-    const deltaY = e.clientY - lastMousePos.y
+      // Компенсируем поворот при перетаскивании
+      let adjustedDeltaX = deltaX
+      let adjustedDeltaY = deltaY
+      
+      if (rotation === 90) {
+        adjustedDeltaX = deltaY
+        adjustedDeltaY = -deltaX
+      } else if (rotation === 180) {
+        adjustedDeltaX = -deltaX
+        adjustedDeltaY = -deltaY
+      } else if (rotation === 270) {
+        adjustedDeltaX = -deltaY
+        adjustedDeltaY = deltaX
+      }
 
-    setPosition(prev => ({
-      x: prev.x + deltaX * 0.5,
-      y: prev.y + deltaY * 0.5
-    }))
+      setPosition(prev => ({
+        x: prev.x + adjustedDeltaX * 0.5,
+        y: prev.y + adjustedDeltaY * 0.5
+      }))
 
-    setLastMousePos({ x: e.clientX, y: e.clientY })
+      setLastMousePos({ x: e.clientX, y: e.clientY })
+    }
   }
 
   const handleMouseUp = () => {
     setIsDragging(false)
+    setIsResizingCrop(false)
+    setResizeHandle(null)
   }
 
   const handleReset = () => {
     setRotation(0)
     setScale(1.0) // Сбрасываем к базовому масштабу
     setPosition({ x: 0, y: 0 })
+    setCropSize({ width: 0, height: 0 }) // Сбрасываем размер кадрирования
   }
 
   const handleSizeSelect = (sizeKey) => {
