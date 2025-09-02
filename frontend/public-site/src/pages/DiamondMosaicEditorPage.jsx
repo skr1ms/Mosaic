@@ -26,7 +26,15 @@ const DiamondMosaicEditorPage = () => {
   const [positionStart, setPositionStart] = useState({ x: 0, y: 0 })
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 })
   
-  // Fixed crop area - центральный квадрат (60% от контейнера)
+  // Crop area state - изначально весь экран
+  const [cropArea, setCropArea] = useState({
+    x: 0,
+    y: 0, 
+    width: 100,
+    height: 100
+  })
+  
+  // Fixed crop area - изначально весь контейнер
   
   useEffect(() => {
     // Load editor settings
@@ -102,12 +110,12 @@ const DiamondMosaicEditorPage = () => {
       
       let renderWidth, renderHeight
       
-      // Масштабируем изображение чтобы заполнить контейнер
+      // Масштабируем изображение чтобы заполнить контейнер полностью
       if (imageAspect > containerAspect) {
-        renderHeight = canvas.height * 0.9 // Начальный размер 90% от контейнера
+        renderHeight = canvas.height * 1.2 // Изображение больше контейнера для возможности кадрирования
         renderWidth = renderHeight * imageAspect
       } else {
-        renderWidth = canvas.width * 0.9
+        renderWidth = canvas.width * 1.2
         renderHeight = renderWidth / imageAspect
       }
       
@@ -125,11 +133,11 @@ const DiamondMosaicEditorPage = () => {
   }
 
   const createCroppedImage = (canvas, ctx) => {
-    // Размеры области кадрирования (20% отступ = 60% область)
-    const cropX = canvas.width * 0.2
-    const cropY = canvas.height * 0.2
-    const cropWidth = canvas.width * 0.6
-    const cropHeight = canvas.height * 0.6
+    // Размеры области кадрирования в пикселях
+    const cropX = canvas.width * (cropArea.x / 100)
+    const cropY = canvas.height * (cropArea.y / 100)
+    const cropWidth = canvas.width * (cropArea.width / 100)
+    const cropHeight = canvas.height * (cropArea.height / 100)
     
     // Создаем новый канвас для обрезанного изображения
     const cropCanvas = document.createElement('canvas')
@@ -190,6 +198,15 @@ const DiamondMosaicEditorPage = () => {
     setScale(1)
     setPosition({ x: 0, y: 0 })
     setRotation(0)
+  }
+
+  const handleCropToCenter = () => {
+    setCropArea({
+      x: 20,
+      y: 20,
+      width: 60,
+      height: 60
+    })
   }
 
   const handleContinue = () => {
@@ -283,21 +300,21 @@ const DiamondMosaicEditorPage = () => {
             <div 
               className="absolute border-2 border-white shadow-lg pointer-events-none"
               style={{
-                left: '20%',
-                top: '20%',
-                width: '60%',
-                height: '60%',
-                backgroundColor: 'rgba(255,255,255,0.1)'
+                left: `${cropArea.x}%`,
+                top: `${cropArea.y}%`,
+                width: `${cropArea.width}%`,
+                height: `${cropArea.height}%`,
+                backgroundColor: 'rgba(255,255,255,0.05)'
               }}
             >
-              {/* Сетка 3x3 */}
+              {/* Сетка для помощи в кадрировании */}
               <div className="relative w-full h-full">
                 {/* Вертикальные линии */}
-                <div className="absolute left-1/3 top-0 w-px h-full bg-white opacity-60"></div>
-                <div className="absolute left-2/3 top-0 w-px h-full bg-white opacity-60"></div>
+                <div className="absolute left-1/3 top-0 w-px h-full bg-white opacity-30"></div>
+                <div className="absolute left-2/3 top-0 w-px h-full bg-white opacity-30"></div>
                 {/* Горизонтальные линии */}
-                <div className="absolute top-1/3 left-0 w-full h-px bg-white opacity-60"></div>
-                <div className="absolute top-2/3 left-0 w-full h-px bg-white opacity-60"></div>
+                <div className="absolute top-1/3 left-0 w-full h-px bg-white opacity-30"></div>
+                <div className="absolute top-2/3 left-0 w-full h-px bg-white opacity-30"></div>
               </div>
             </div>
           </div>
@@ -349,6 +366,15 @@ const DiamondMosaicEditorPage = () => {
             className="w-12 h-12 bg-purple-200 rounded-xl flex items-center justify-center hover:bg-purple-300 transition-colors"
           >
             <Undo2 className="w-6 h-6 text-purple-700" />
+          </button>
+
+          {/* Кадрирование по центру */}
+          <button 
+            onClick={handleCropToCenter}
+            className="w-12 h-12 bg-orange-200 rounded-xl flex items-center justify-center hover:bg-orange-300 transition-colors"
+            title="Кадрировать по центру"
+          >
+            <span className="text-orange-700 font-bold text-sm">□</span>
           </button>
         </div>
 
