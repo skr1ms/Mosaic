@@ -48,7 +48,7 @@ const DiamondMosaicPage = () => {
     if (previewUrl && canvasRef.current) {
       drawImageOnCanvas()
     }
-  }, [previewUrl, rotation, scale, position])
+  }, [previewUrl, rotation, scale, position, selectedSize])
 
   const drawImageOnCanvas = () => {
     const canvas = canvasRef.current
@@ -107,10 +107,34 @@ const DiamondMosaicPage = () => {
       // Восстанавливаем контекст
       ctx.restore()
       
-      // Рисуем область кадрирования (квадрат в центре, увеличиваем до 90%)
-      const cropSize = Math.min(canvasWidth, canvasHeight) * 0.9 // Увеличиваем с 0.75 до 0.9
-      const cropX = (canvasWidth - cropSize) / 2
-      const cropY = (canvasHeight - cropSize) / 2
+      // Рисуем область кадрирования в соответствии с выбранным размером
+      let cropWidth, cropHeight
+      const maxCropSize = Math.min(canvasWidth, canvasHeight) * 0.8 // Базовый размер
+      
+      if (selectedSize) {
+        // Получаем пропорции выбранного размера
+        const [width, height] = selectedSize.split('x').map(Number)
+        const aspectRatio = width / height
+        
+        if (aspectRatio > 1) {
+          // Горизонтальная ориентация (например, 30x40 -> 40x30)
+          cropWidth = maxCropSize
+          cropHeight = maxCropSize / aspectRatio
+        } else if (aspectRatio < 1) {
+          // Вертикальная ориентация (например, 21x30)
+          cropHeight = maxCropSize
+          cropWidth = maxCropSize * aspectRatio
+        } else {
+          // Квадратная (40x40)
+          cropWidth = cropHeight = maxCropSize
+        }
+      } else {
+        // Если размер не выбран, используем квадрат
+        cropWidth = cropHeight = maxCropSize
+      }
+      
+      const cropX = (canvasWidth - cropWidth) / 2
+      const cropY = (canvasHeight - cropHeight) / 2
       
       // Затемняем области вне кадрирования
       ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'
@@ -118,17 +142,48 @@ const DiamondMosaicPage = () => {
       // Верх
       ctx.fillRect(0, 0, canvasWidth, cropY)
       // Низ
-      ctx.fillRect(0, cropY + cropSize, canvasWidth, canvasHeight - cropY - cropSize)
+      ctx.fillRect(0, cropY + cropHeight, canvasWidth, canvasHeight - cropY - cropHeight)
       // Лево
-      ctx.fillRect(0, cropY, cropX, cropSize)
+      ctx.fillRect(0, cropY, cropX, cropHeight)
       // Право
-      ctx.fillRect(cropX + cropSize, cropY, canvasWidth - cropX - cropSize, cropSize)
+      ctx.fillRect(cropX + cropWidth, cropY, canvasWidth - cropX - cropWidth, cropHeight)
       
       // Рисуем рамку области кадрирования (более яркую и толстую)
       ctx.strokeStyle = '#8b5cf6'
       ctx.lineWidth = 3
       ctx.setLineDash([8, 4])
-      ctx.strokeRect(cropX, cropY, cropSize, cropSize)
+      ctx.strokeRect(cropX, cropY, cropWidth, cropHeight)
+      
+      // Рисуем сетку внутри области кадрирования (правило третей)
+      ctx.strokeStyle = 'rgba(139, 92, 246, 0.4)'
+      ctx.lineWidth = 1
+      ctx.setLineDash([2, 2])
+      
+      // Вертикальные линии сетки
+      const gridVertical1 = cropX + cropWidth / 3
+      const gridVertical2 = cropX + (cropWidth * 2) / 3
+      ctx.beginPath()
+      ctx.moveTo(gridVertical1, cropY)
+      ctx.lineTo(gridVertical1, cropY + cropHeight)
+      ctx.stroke()
+      
+      ctx.beginPath()
+      ctx.moveTo(gridVertical2, cropY)
+      ctx.lineTo(gridVertical2, cropY + cropHeight)
+      ctx.stroke()
+      
+      // Горизонтальные линии сетки
+      const gridHorizontal1 = cropY + cropHeight / 3
+      const gridHorizontal2 = cropY + (cropHeight * 2) / 3
+      ctx.beginPath()
+      ctx.moveTo(cropX, gridHorizontal1)
+      ctx.lineTo(cropX + cropWidth, gridHorizontal1)
+      ctx.stroke()
+      
+      ctx.beginPath()
+      ctx.moveTo(cropX, gridHorizontal2)
+      ctx.lineTo(cropX + cropWidth, gridHorizontal2)
+      ctx.stroke()
       
       // Рисуем углы для лучшей видимости (больше и ярче)
       ctx.setLineDash([])
@@ -145,38 +200,43 @@ const DiamondMosaicPage = () => {
       
       // Верхний правый угол
       ctx.beginPath()
-      ctx.moveTo(cropX + cropSize - cornerSize, cropY)
-      ctx.lineTo(cropX + cropSize, cropY)
-      ctx.lineTo(cropX + cropSize, cropY + cornerSize)
+      ctx.moveTo(cropX + cropWidth - cornerSize, cropY)
+      ctx.lineTo(cropX + cropWidth, cropY)
+      ctx.lineTo(cropX + cropWidth, cropY + cornerSize)
       ctx.stroke()
       
       // Нижний левый угол
       ctx.beginPath()
-      ctx.moveTo(cropX, cropY + cropSize - cornerSize)
-      ctx.lineTo(cropX, cropY + cropSize)
-      ctx.lineTo(cropX + cornerSize, cropY + cropSize)
+      ctx.moveTo(cropX, cropY + cropHeight - cornerSize)
+      ctx.lineTo(cropX, cropY + cropHeight)
+      ctx.lineTo(cropX + cornerSize, cropY + cropHeight)
       ctx.stroke()
       
       // Нижний правый угол
       ctx.beginPath()
-      ctx.moveTo(cropX + cropSize - cornerSize, cropY + cropSize)
-      ctx.lineTo(cropX + cropSize, cropY + cropSize)
-      ctx.lineTo(cropX + cropSize, cropY + cropSize - cornerSize)
+      ctx.moveTo(cropX + cropWidth - cornerSize, cropY + cropHeight)
+      ctx.lineTo(cropX + cropWidth, cropY + cropHeight)
+      ctx.lineTo(cropX + cropWidth, cropY + cropHeight - cornerSize)
       ctx.stroke()
       
       // Добавляем текст в центр области кадрирования
-      ctx.fillStyle = 'rgba(139, 92, 246, 0.2)'
-      ctx.font = 'bold 16px Arial'
+      ctx.fillStyle = 'rgba(139, 92, 246, 0.15)'
+      ctx.font = 'bold 14px Arial'
       ctx.textAlign = 'center'
-      ctx.fillText(t('diamond_mosaic_page.image_editor.crop_area_label'), canvasWidth / 2, canvasHeight / 2 + 8)
+      ctx.fillText(t('diamond_mosaic_page.image_editor.crop_area_label'), canvasWidth / 2, canvasHeight / 2 + 6)
+      
+      // Добавляем иконку перетаскивания в углу области кадрирования
+      ctx.fillStyle = 'rgba(139, 92, 246, 0.6)'
+      ctx.font = 'bold 20px Arial'
+      ctx.fillText('✋', cropX + cropWidth - 25, cropY + 25)
       
       // Генерируем URL отредактированного изображения (только область кадрирования)
       const tempCanvas = document.createElement('canvas')
-      tempCanvas.width = cropSize
-      tempCanvas.height = cropSize
+      tempCanvas.width = cropWidth
+      tempCanvas.height = cropHeight
       const tempCtx = tempCanvas.getContext('2d')
       
-      tempCtx.drawImage(canvas, cropX, cropY, cropSize, cropSize, 0, 0, cropSize, cropSize)
+      tempCtx.drawImage(canvas, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight)
       
       const editedDataUrl = tempCanvas.toDataURL('image/jpeg', 0.9)
       setEditedImageUrl(editedDataUrl)
@@ -516,11 +576,6 @@ const DiamondMosaicPage = () => {
                           onMouseUp={handleMouseUp}
                           onMouseLeave={handleMouseUp}
                         />
-                        
-                        {/* Подсказка */}
-                        <div className="absolute bottom-4 left-4 right-4 bg-black/80 text-white text-sm px-4 py-2 rounded-lg text-center backdrop-blur-sm">
-                          🖱️ {t('diamond_mosaic_page.image_editor.drag_instruction')}
-                        </div>
                       </div>
                     </div>
                   </div>
