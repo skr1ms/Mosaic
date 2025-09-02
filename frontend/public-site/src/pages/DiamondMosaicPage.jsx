@@ -83,36 +83,34 @@ const DiamondMosaicPage = () => {
       // Применяем позицию
       ctx.translate(position.x, position.y)
       
-      // Определяем базовые размеры изображения с учетом поворота
+      // Определяем базовые размеры изображения (без учета поворота)
       const maxImageSize = Math.min(canvasWidth, canvasHeight) * 0.8
-      
-      // Определяем размеры изображения с учетом поворота
-      let effectiveWidth = img.width
-      let effectiveHeight = img.height
-      
-      // При поворотах на 90° и 270° меняем местами ширину и высоту
-      if (rotation === 90 || rotation === 270) {
-        effectiveWidth = img.height
-        effectiveHeight = img.width
-      }
-      
-      const imgAspectRatio = effectiveWidth / effectiveHeight
+      const imgAspectRatio = img.width / img.height
       
       let baseImgWidth, baseImgHeight
       
       if (imgAspectRatio > 1) {
-        // Горизонтальное изображение (с учетом поворота)
+        // Горизонтальное изображение
         baseImgWidth = maxImageSize
         baseImgHeight = maxImageSize / imgAspectRatio
       } else {
-        // Вертикальное или квадратное изображение (с учетом поворота)
+        // Вертикальное или квадратное изображение
         baseImgHeight = maxImageSize
         baseImgWidth = maxImageSize * imgAspectRatio
       }
       
-      // Область кадрирования всегда точно равна размерам повернутого изображения
-      let cropWidth = baseImgWidth
-      let cropHeight = baseImgHeight
+      // Область кадрирования должна охватывать повернутое изображение
+      let cropWidth, cropHeight
+      
+      if (rotation === 90 || rotation === 270) {
+        // При повороте на 90°/270° область кадрирования должна быть по максимальному измерению
+        const maxDimension = Math.max(baseImgWidth, baseImgHeight)
+        cropWidth = cropHeight = maxDimension
+      } else {
+        // При повороте на 0°/180° область кадрирования соответствует изображению
+        cropWidth = baseImgWidth
+        cropHeight = baseImgHeight
+      }
       
       // Применяем пользовательский масштаб к базовым размерам
       const imgWidth = baseImgWidth * scale
