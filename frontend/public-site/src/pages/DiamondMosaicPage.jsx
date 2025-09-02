@@ -494,18 +494,20 @@ const DiamondMosaicPage = () => {
       const adjustedDeltaY = deltaY * sensitivity
       
       if (resizeHandle.type === 'corner') {
-        // Угловые ручки - простое изменение по основному направлению
+        // Угловые ручки - пропорциональное изменение (сохраняем соотношение сторон)
+        const aspectRatio = cropSize.width / cropSize.height
+        
+        // Определяем основное направление изменения
+        let primaryDelta = 0
         if (resizeHandle.direction.includes('r')) { // right
-          newWidth = Math.max(50, cropSize.width + adjustedDeltaX)
+          primaryDelta = adjustedDeltaX
         } else { // left
-          newWidth = Math.max(50, cropSize.width - adjustedDeltaX)
+          primaryDelta = -adjustedDeltaX
         }
         
-        if (resizeHandle.direction.includes('b')) { // bottom
-          newHeight = Math.max(50, cropSize.height + adjustedDeltaY)
-        } else { // top
-          newHeight = Math.max(50, cropSize.height - adjustedDeltaY)
-        }
+        // Применяем изменение пропорционально
+        newWidth = Math.max(50, cropSize.width + primaryDelta)
+        newHeight = newWidth / aspectRatio
         
       } else if (resizeHandle.type === 'side') {
         // Боковые ручки - изменение только одной стороны
