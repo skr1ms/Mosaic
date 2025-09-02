@@ -22,7 +22,7 @@ const PaintByNumbersPage = React.lazy(() => import('./pages/PaintByNumbersPage')
 const WhatIsThisPage = React.lazy(() => import('./pages/WhatIsThisPage'))
 const MosaicPreviewPage = React.lazy(() => import('./pages/MosaicPreviewPage'))
 const DiamondMosaicPage = React.lazy(() => import('./pages/DiamondMosaicPage'))
-const DiamondMosaicPreviewPage = React.lazy(() => import('./pages/DiamondMosaicPreviewPage'))
+const DiamondMosaicStylesPage = React.lazy(() => import('./pages/DiamondMosaicStylesPage'))
 const DiamondMosaicPreviewAlbumPage = React.lazy(() => import('./pages/DiamondMosaicPreviewAlbumPage'))
 const DiamondMosaicEditorPage = React.lazy(() => import('./pages/DiamondMosaicEditorPage'))
 const DiamondMosaicPurchasePage = React.lazy(() => import('./pages/DiamondMosaicPurchasePage'))
@@ -103,7 +103,7 @@ function App() {
             
             {/* Новые роуты для алмазной мозаики */}
             <Route path="/diamond-mosaic" element={<DiamondMosaicPage />} />
-            <Route path="/diamond-mosaic/styles" element={<DiamondMosaicPreviewPage />} />
+            <Route path="/diamond-mosaic/styles" element={<DiamondMosaicStylesPage />} />
             <Route path="/diamond-mosaic/preview-album" element={<DiamondMosaicPreviewAlbumPage />} />
             <Route path="/diamond-mosaic/editor" element={<DiamondMosaicEditorPage />} />
             <Route path="/diamond-mosaic/purchase" element={<DiamondMosaicPurchasePage />} />

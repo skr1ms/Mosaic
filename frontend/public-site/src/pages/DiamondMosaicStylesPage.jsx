@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Palette, Sun, Moon, Venus, Sparkles } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Palette, Sparkles, Sun, Moon, Loader2 } from 'lucide-react'
 import { useUIStore } from '../store/partnerStore'
+import { MosaicAPI } from '../api/client'
 
 const DiamondMosaicStylesPage = () => {
   const { t } = useTranslation()
@@ -11,36 +13,37 @@ const DiamondMosaicStylesPage = () => {
   
   const [imageData, setImageData] = useState(null)
   const [selectedStyle, setSelectedStyle] = useState(null)
-  const [useAI, setUseAI] = useState(false)
+  const [isGeneratingPreviews, setIsGeneratingPreviews] = useState(false)
+  const [stylePreviews, setStylePreviews] = useState({})
 
   const styles = [
     {
       key: 'natural',
       title: 'Натуральный',
-      description: 'Сохраняет оригинальные цвета',
-      icon: <Palette className="w-8 h-8" />,
-      preview: '/images/style-natural.jpg'
+      description: 'Сохраняет оригинальные цвета изображения',
+      icon: <Palette className="w-6 h-6" />,
+      color: 'from-green-400 to-blue-500'
     },
     {
       key: 'enhanced',
-      title: 'Улучшенный',
-      description: 'Яркие и насыщенные цвета',
-      icon: <Sparkles className="w-8 h-8" />,
-      preview: '/images/style-enhanced.jpg'
+      title: 'Яркий',
+      description: 'Усиленные и насыщенные цвета',
+      icon: <Sparkles className="w-6 h-6" />,
+      color: 'from-pink-400 to-purple-500'
     },
     {
       key: 'vintage',
       title: 'Винтажный',
-      description: 'Приглушенные тона',
-      icon: <Sun className="w-8 h-8" />,
-      preview: '/images/style-vintage.jpg'
+      description: 'Приглушенные и теплые тона',
+      icon: <Sun className="w-6 h-6" />,
+      color: 'from-yellow-400 to-orange-500'
     },
     {
       key: 'monochrome',
       title: 'Монохром',
-      description: 'Черно-белый стиль',
-      icon: <Moon className="w-8 h-8" />,
-      preview: '/images/style-monochrome.jpg'
+      description: 'Стильный черно-белый вариант',
+      icon: <Moon className="w-6 h-6" />,
+      color: 'from-gray-400 to-gray-600'
     }
   ]
 
@@ -56,11 +59,61 @@ const DiamondMosaicStylesPage = () => {
       const parsedData = JSON.parse(savedImageData)
       setImageData(parsedData)
       
+      // Генерируем превью для всех стилей
+      generateStylePreviews(parsedData)
+      
     } catch (error) {
       console.error('Error loading image data:', error)
       navigate('/diamond-mosaic')
     }
   }, [navigate])
+
+  const generateStylePreviews = async (data) => {
+    setIsGeneratingPreviews(true)
+    
+    try {
+      const fileUrl = sessionStorage.getItem('diamondMosaic_fileUrl')
+      if (!fileUrl) {
+        throw new Error('No file URL found')
+      }
+      
+      // Получаем файл из URL
+      const response = await fetch(fileUrl)
+      const blob = await response.blob()
+      
+      const previews = {}
+      
+      // Генерируем превью для каждого стиля
+      for (const style of styles) {
+        try {
+          const formData = new FormData()
+          formData.append('image', blob, 'image.jpg')
+          formData.append('size', data.size)
+          formData.append('style', style.key)
+          formData.append('quick_preview', 'true') // Быстрое превью
+          
+          const result = await MosaicAPI.generatePreview(formData)
+          previews[style.key] = result.preview_url
+          
+          // Обновляем превью по мере генерации
+          setStylePreviews({ ...previews })
+          
+        } catch (error) {
+          console.error(`Error generating preview for style ${style.key}:`, error)
+          previews[style.key] = null
+        }
+      }
+      
+    } catch (error) {
+      console.error('Error generating style previews:', error)
+      addNotification({
+        type: 'error',
+        message: 'Ошибка при генерации превью стилей'
+      })
+    } finally {
+      setIsGeneratingPreviews(false)
+    }
+  }
 
   const handleStyleSelect = (styleKey) => {
     setSelectedStyle(styleKey)
@@ -80,7 +133,7 @@ const DiamondMosaicStylesPage = () => {
       const updatedImageData = {
         ...imageData,
         selectedStyle: selectedStyle,
-        useAI: useAI
+        stylePreview: stylePreviews[selectedStyle]
       }
       
       localStorage.setItem('diamondMosaic_selectedImage', JSON.stringify(updatedImageData))
@@ -98,7 +151,7 @@ const DiamondMosaicStylesPage = () => {
   }
 
   const handleBack = () => {
-    navigate('/diamond-mosaic/editor')
+    navigate('/diamond-mosaic')
   }
 
   if (!imageData) {

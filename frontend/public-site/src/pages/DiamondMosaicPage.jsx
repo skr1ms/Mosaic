@@ -247,7 +247,7 @@ const DiamondMosaicPage = () => {
         hasEdits: editedImageUrl !== null
       }))
       
-      // Сохраняем настройки для редактора
+      // Сохраняем настройки для следующего шага
       localStorage.setItem('diamondMosaic_editorSettings', JSON.stringify({
         size: selectedSize,
         style: null, // Будет выбран позже
@@ -272,8 +272,8 @@ const DiamondMosaicPage = () => {
       console.error('Error saving image data:', error)
     }
 
-    // Переходим к редактору вместо стилей
-    navigate('/diamond-mosaic/editor')
+    // Переходим к выбору стилей
+    navigate('/diamond-mosaic/styles')
   }
 
   const handleRemoveImage = () => {
