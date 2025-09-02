@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Download, Minus, Plus, RotateCcw, Undo2 } from 'lucide-react'
+import { ArrowLeft, Download, Minus, Plus, RotateCw, Undo2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useUIStore } from '../store/partnerStore'
 
@@ -19,6 +19,7 @@ const DiamondMosaicEditorPage = () => {
   
   // Image editing state
   const [scale, setScale] = useState(1)
+  const [rotation, setRotation] = useState(0)
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
@@ -62,7 +63,7 @@ const DiamondMosaicEditorPage = () => {
     if (currentImage && canvasRef.current && containerRef.current) {
       renderImage()
     }
-  }, [currentImage, scale, position])
+  }, [currentImage, scale, position, rotation])
 
   const renderImage = () => {
     const canvas = canvasRef.current
@@ -80,6 +81,21 @@ const DiamondMosaicEditorPage = () => {
     
     const img = new Image()
     img.onload = () => {
+      // Сохраняем контекст для трансформаций
+      ctx.save()
+      
+      // Перемещаем точку отсчета в центр канваса
+      ctx.translate(canvas.width / 2, canvas.height / 2)
+      
+      // Применяем поворот
+      ctx.rotate((rotation * Math.PI) / 180)
+      
+      // Применяем масштаб
+      ctx.scale(scale, scale)
+      
+      // Применяем позицию (смещение)
+      ctx.translate(position.x, position.y)
+      
       // Вычисляем размеры для отображения
       const containerAspect = canvas.width / canvas.height
       const imageAspect = img.width / img.height
@@ -88,21 +104,20 @@ const DiamondMosaicEditorPage = () => {
       
       // Масштабируем изображение чтобы заполнить контейнер
       if (imageAspect > containerAspect) {
-        renderHeight = canvas.height * scale
+        renderHeight = canvas.height * 0.8 // Начальный размер 80% от контейнера
         renderWidth = renderHeight * imageAspect
       } else {
-        renderWidth = canvas.width * scale
+        renderWidth = canvas.width * 0.8
         renderHeight = renderWidth / imageAspect
       }
       
-      // Позиционируем изображение с учетом перетаскивания
-      const x = (canvas.width - renderWidth) / 2 + position.x
-      const y = (canvas.height - renderHeight) / 2 + position.y
+      // Рисуем изображение относительно центра
+      ctx.drawImage(img, -renderWidth / 2, -renderHeight / 2, renderWidth, renderHeight)
       
-      // Рисуем изображение
-      ctx.drawImage(img, x, y, renderWidth, renderHeight)
+      // Восстанавливаем контекст
+      ctx.restore()
       
-      // Создаем обрезанную версию для области кадрирования (20% отступ со всех сторон)
+      // Создаем обрезанную версию для области кадрирования (20% отступ = 60% область)
       createCroppedImage(canvas, ctx)
     }
     
@@ -169,10 +184,12 @@ const DiamondMosaicEditorPage = () => {
   // Обработчики управления
   const handleZoomIn = () => setScale(prev => Math.min(prev + 0.2, 3))
   const handleZoomOut = () => setScale(prev => Math.max(prev - 0.2, 0.3))
+  const handleRotate = () => setRotation(prev => (prev + 90) % 360)
   
   const handleReset = () => {
     setScale(1)
     setPosition({ x: 0, y: 0 })
+    setRotation(0)
   }
 
   const handleContinue = () => {
@@ -310,6 +327,14 @@ const DiamondMosaicEditorPage = () => {
             <Plus className="w-6 h-6 text-purple-700" />
           </button>
 
+          {/* Поворот */}
+          <button 
+            onClick={handleRotate}
+            className="w-12 h-12 bg-purple-200 rounded-xl flex items-center justify-center hover:bg-purple-300 transition-colors"
+          >
+            <RotateCw className="w-6 h-6 text-purple-700" />
+          </button>
+
           {/* Назад */}
           <button 
             onClick={handleBack}
@@ -323,7 +348,7 @@ const DiamondMosaicEditorPage = () => {
             onClick={handleReset}
             className="w-12 h-12 bg-purple-200 rounded-xl flex items-center justify-center hover:bg-purple-300 transition-colors"
           >
-            <RotateCcw className="w-6 h-6 text-purple-700" />
+            <Undo2 className="w-6 h-6 text-purple-700" />
           </button>
         </div>
 
@@ -351,4 +376,4 @@ const DiamondMosaicEditorPage = () => {
   )
 }
 
-export default DiamondMosaicEditorPageNew
+export default DiamondMosaicEditorPage

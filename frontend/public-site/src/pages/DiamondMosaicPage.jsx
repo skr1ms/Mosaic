@@ -234,16 +234,24 @@ const DiamondMosaicPage = () => {
       return
     }
 
-    // Сохраняем данные для следующего шага
+    // Сохраняем данные для редактора
     const finalImageUrl = editedImageUrl || previewUrl
 
     try {
+      // Сохраняем данные изображения
       localStorage.setItem('diamondMosaic_selectedImage', JSON.stringify({
         size: selectedSize,
         fileName: selectedFile.name,
         previewUrl: finalImageUrl,
         timestamp: Date.now(),
         hasEdits: editedImageUrl !== null
+      }))
+      
+      // Сохраняем настройки для редактора
+      localStorage.setItem('diamondMosaic_editorSettings', JSON.stringify({
+        size: selectedSize,
+        style: null, // Будет выбран позже
+        returnTo: '/diamond-mosaic/styles'
       }))
       
       // Создаем временный URL для файла
@@ -264,8 +272,8 @@ const DiamondMosaicPage = () => {
       console.error('Error saving image data:', error)
     }
 
-    // Переходим к выбору стиля
-    navigate('/diamond-mosaic/styles')
+    // Переходим к редактору вместо стилей
+    navigate('/diamond-mosaic/editor')
   }
 
   const handleRemoveImage = () => {
