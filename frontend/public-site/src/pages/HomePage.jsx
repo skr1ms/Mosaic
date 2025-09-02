@@ -7,8 +7,6 @@ import SectionCard from '../components/cards/SectionCard'
 import FAQ from '../components/sections/FAQ'
 import MarketplaceLinks from '../components/sections/MarketplaceLinks'
 import { usePartnerStore } from '../store/partnerStore'
-import MarketplaceLinks from '../components/sections/MarketplaceLinks'
-import { usePartnerStore } from '../store/partnerStore'
 
 const HomePage = () => {
   const { t } = useTranslation()
