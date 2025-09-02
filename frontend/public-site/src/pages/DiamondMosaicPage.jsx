@@ -83,47 +83,39 @@ const DiamondMosaicPage = () => {
       // Применяем позицию
       ctx.translate(position.x, position.y)
       
-      // Рисуем область кадрирования в соответствии с выбранным размером
-      let cropWidth, cropHeight
-      const maxCropSize = Math.min(canvasWidth, canvasHeight) * 0.8 // Базовый размер
-      
-      if (selectedSize) {
-        // Получаем пропорции выбранного размера
-        const [width, height] = selectedSize.split('x').map(Number)
-        const aspectRatio = width / height
-        
-        if (aspectRatio > 1) {
-          // Горизонтальная ориентация (например, 30x40 -> 40x30)
-          cropWidth = maxCropSize
-          cropHeight = maxCropSize / aspectRatio
-        } else if (aspectRatio < 1) {
-          // Вертикальная ориентация (например, 21x30)
-          cropHeight = maxCropSize
-          cropWidth = maxCropSize * aspectRatio
-        } else {
-          // Квадратная (40x40)
-          cropWidth = cropHeight = maxCropSize
-        }
-      } else {
-        // Если размер не выбран, используем квадрат
-        cropWidth = cropHeight = maxCropSize
-      }
-      
-      // Вычисляем размеры изображения так, чтобы при scale = 1.0 оно совпадало с областью кадрирования
-      let baseImgWidth, baseImgHeight
-      
-      // Определяем базовый размер изображения относительно области кадрирования
-      const cropAspectRatio = cropWidth / cropHeight
+      // Определяем базовые размеры изображения (до применения пользовательского масштаба)
+      const maxImageSize = Math.min(canvasWidth, canvasHeight) * 0.8
       const imgAspectRatio = img.width / img.height
       
-      if (imgAspectRatio > cropAspectRatio) {
-        // Изображение шире чем область кадрирования - подгоняем по высоте
-        baseImgHeight = cropHeight
-        baseImgWidth = (baseImgHeight / img.height) * img.width
+      let baseImgWidth, baseImgHeight
+      
+      if (imgAspectRatio > 1) {
+        // Горизонтальное изображение
+        baseImgWidth = maxImageSize
+        baseImgHeight = maxImageSize / imgAspectRatio
       } else {
-        // Изображение выше чем область кадрирования - подгоняем по ширине
-        baseImgWidth = cropWidth
-        baseImgHeight = (baseImgWidth / img.width) * img.height
+        // Вертикальное или квадратное изображение
+        baseImgHeight = maxImageSize
+        baseImgWidth = maxImageSize * imgAspectRatio
+      }
+      
+      // Область кадрирования изначально соответствует размерам изображения
+      let cropWidth = baseImgWidth
+      let cropHeight = baseImgHeight
+      
+      // Если размер мозаики выбран, корректируем область кадрирования под его пропорции
+      if (selectedSize) {
+        const [mosaicWidth, mosaicHeight] = selectedSize.split('x').map(Number)
+        const mosaicAspectRatio = mosaicWidth / mosaicHeight
+        
+        if (mosaicAspectRatio > imgAspectRatio) {
+          // Мозаика шире изображения - расширяем область кадрирования по горизонтали
+          cropWidth = cropHeight * mosaicAspectRatio
+        } else if (mosaicAspectRatio < imgAspectRatio) {
+          // Мозаика выше изображения - расширяем область кадрирования по вертикали
+          cropHeight = cropWidth / mosaicAspectRatio
+        }
+        // Если пропорции совпадают, оставляем как есть
       }
       
       // Применяем пользовательский масштаб к базовым размерам
