@@ -18,7 +18,7 @@ const DiamondMosaicEditorPage = () => {
   const [editedImageUrl, setEditedImageUrl] = useState(null)
   
   // Image editing state
-  const [scale, setScale] = useState(1)
+  const [scale, setScale] = useState(1.5) // Увеличиваем начальный масштаб
   const [rotation, setRotation] = useState(0)
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
@@ -33,6 +33,12 @@ const DiamondMosaicEditorPage = () => {
     width: 100,
     height: 100
   })
+  
+  // Crop resizing state
+  const [isResizing, setIsResizing] = useState(false)
+  const [resizeHandle, setResizeHandle] = useState(null)
+  const [resizeStart, setResizeStart] = useState({ x: 0, y: 0 })
+  const [cropStart, setCropStart] = useState(null)
   
   // Fixed crop area - изначально весь контейнер
   
@@ -110,13 +116,13 @@ const DiamondMosaicEditorPage = () => {
       
       let renderWidth, renderHeight
       
-      // Масштабируем изображение чтобы заполнить контейнер полностью
+      // Масштабируем изображение чтобы полностью заполнить контейнер
       if (imageAspect > containerAspect) {
-        renderHeight = canvas.height * 1.2 // Изображение больше контейнера для возможности кадрирования
-        renderWidth = renderHeight * imageAspect
-      } else {
-        renderWidth = canvas.width * 1.2
+        renderWidth = canvas.width * 1.0 // Заполняем контейнер полностью
         renderHeight = renderWidth / imageAspect
+      } else {
+        renderHeight = canvas.height * 1.0 // Заполняем контейнер полностью
+        renderWidth = renderHeight * imageAspect
       }
       
       // Рисуем изображение относительно центра
@@ -178,6 +184,59 @@ const DiamondMosaicEditorPage = () => {
     setIsDragging(false)
   }, [])
 
+  // Обработчики для изменения размеров области кадрирования
+  const handleCropMouseDown = useCallback((e, handle) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsResizing(true)
+    setResizeHandle(handle)
+    setResizeStart({ x: e.clientX, y: e.clientY })
+    setCropStart({ ...cropArea })
+  }, [cropArea])
+
+  const handleCropMouseMove = useCallback((e) => {
+    if (!isResizing || !resizeHandle || !cropStart) return
+    
+    const container = containerRef.current
+    if (!container) return
+    
+    const rect = container.getBoundingClientRect()
+    const deltaX = ((e.clientX - resizeStart.x) / rect.width) * 100
+    const deltaY = ((e.clientY - resizeStart.y) / rect.height) * 100
+    
+    let newCrop = { ...cropStart }
+    
+    switch (resizeHandle) {
+      case 'nw':
+        newCrop.x = Math.max(0, Math.min(cropStart.x + deltaX, cropStart.x + cropStart.width - 5))
+        newCrop.y = Math.max(0, Math.min(cropStart.y + deltaY, cropStart.y + cropStart.height - 5))
+        newCrop.width = cropStart.width - (newCrop.x - cropStart.x)
+        newCrop.height = cropStart.height - (newCrop.y - cropStart.y)
+        break
+      case 'ne':
+        newCrop.y = Math.max(0, Math.min(cropStart.y + deltaY, cropStart.y + cropStart.height - 5))
+        newCrop.width = Math.max(5, Math.min(100 - cropStart.x, cropStart.width + deltaX))
+        newCrop.height = cropStart.height - (newCrop.y - cropStart.y)
+        break
+      case 'sw':
+        newCrop.x = Math.max(0, Math.min(cropStart.x + deltaX, cropStart.x + cropStart.width - 5))
+        newCrop.width = cropStart.width - (newCrop.x - cropStart.x)
+        newCrop.height = Math.max(5, Math.min(100 - cropStart.y, cropStart.height + deltaY))
+        break
+      case 'se':
+        newCrop.width = Math.max(5, Math.min(100 - cropStart.x, cropStart.width + deltaX))
+        newCrop.height = Math.max(5, Math.min(100 - cropStart.y, cropStart.height + deltaY))
+        break
+    }
+    
+    setCropArea(newCrop)
+  }, [isResizing, resizeHandle, resizeStart, cropStart])
+
+  const handleCropMouseUp = useCallback(() => {
+    setIsResizing(false)
+    setResizeHandle(null)
+  }, [])
+
   useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove)
@@ -189,15 +248,27 @@ const DiamondMosaicEditorPage = () => {
     }
   }, [isDragging, handleMouseMove, handleMouseUp])
 
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleCropMouseMove)
+      document.addEventListener('mouseup', handleCropMouseUp)
+      return () => {
+        document.removeEventListener('mousemove', handleCropMouseMove)
+        document.removeEventListener('mouseup', handleCropMouseUp)
+      }
+    }
+  }, [isResizing, handleCropMouseMove, handleCropMouseUp])
+
   // Обработчики управления
   const handleZoomIn = () => setScale(prev => Math.min(prev + 0.2, 3))
   const handleZoomOut = () => setScale(prev => Math.max(prev - 0.2, 0.3))
   const handleRotate = () => setRotation(prev => (prev + 90) % 360)
   
   const handleReset = () => {
-    setScale(1)
+    setScale(1.5)
     setPosition({ x: 0, y: 0 })
     setRotation(0)
+    setCropArea({ x: 0, y: 0, width: 100, height: 100 })
   }
 
   const handleCropToCenter = () => {
@@ -296,9 +367,9 @@ const DiamondMosaicEditorPage = () => {
               style={{ touchAction: 'none' }}
             />
             
-            {/* Область кадрирования с сеткой */}
+            {/* Область кадрирования с сеткой и ручками изменения размера */}
             <div 
-              className="absolute border-2 border-white shadow-lg pointer-events-none"
+              className="absolute border-2 border-white shadow-lg"
               style={{
                 left: `${cropArea.x}%`,
                 top: `${cropArea.y}%`,
@@ -315,6 +386,24 @@ const DiamondMosaicEditorPage = () => {
                 {/* Горизонтальные линии */}
                 <div className="absolute top-1/3 left-0 w-full h-px bg-white opacity-30"></div>
                 <div className="absolute top-2/3 left-0 w-full h-px bg-white opacity-30"></div>
+                
+                {/* Ручки для изменения размера */}
+                <div 
+                  className="absolute w-3 h-3 bg-white border-2 border-purple-500 rounded-full cursor-nw-resize -top-1.5 -left-1.5"
+                  onMouseDown={(e) => handleCropMouseDown(e, 'nw')}
+                />
+                <div 
+                  className="absolute w-3 h-3 bg-white border-2 border-purple-500 rounded-full cursor-ne-resize -top-1.5 -right-1.5"
+                  onMouseDown={(e) => handleCropMouseDown(e, 'ne')}
+                />
+                <div 
+                  className="absolute w-3 h-3 bg-white border-2 border-purple-500 rounded-full cursor-sw-resize -bottom-1.5 -left-1.5"
+                  onMouseDown={(e) => handleCropMouseDown(e, 'sw')}
+                />
+                <div 
+                  className="absolute w-3 h-3 bg-white border-2 border-purple-500 rounded-full cursor-se-resize -bottom-1.5 -right-1.5"
+                  onMouseDown={(e) => handleCropMouseDown(e, 'se')}
+                />
               </div>
             </div>
           </div>
