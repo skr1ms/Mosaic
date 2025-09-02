@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { motion } from 'framer-motion'
-import { ArrowLeft, ArrowRight, RotateCw, Move, ZoomIn, ZoomOut, Crop, Upload } from 'lucide-react'
+import { ArrowLeft, Minus, Plus, RotateCcw, Share2, Upload } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useUIStore } from '../store/partnerStore'
 
@@ -12,18 +11,21 @@ const DiamondMosaicEditorPage = () => {
   
   const canvasRef = useRef(null)
   const fileInputRef = useRef(null)
+  const containerRef = useRef(null)
   
   const [editorSettings, setEditorSettings] = useState(null)
   const [currentImage, setCurrentImage] = useState(null)
   const [editedImageUrl, setEditedImageUrl] = useState(null)
   
   // Editing parameters
-  const [rotation, setRotation] = useState(0)
   const [scale, setScale] = useState(1)
   const [position, setPosition] = useState({ x: 0, y: 0 })
-  const [crop, setCrop] = useState({ x: 0, y: 0, width: 100, height: 100 })
   const [isDragging, setIsDragging] = useState(false)
-  const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 })
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [positionStart, setPositionStart] = useState({ x: 0, y: 0 })
+  
+  // Crop area state (fixed center crop)
+  const [cropArea] = useState({ x: 25, y: 25, width: 50, height: 50 })
 
   useEffect(() => {
     // Load editor settings
@@ -50,60 +52,102 @@ const DiamondMosaicEditorPage = () => {
 
   useEffect(() => {
     if (currentImage && canvasRef.current) {
-      drawImage()
+      drawImageOnCanvas()
     }
-  }, [currentImage, rotation, scale, position, crop])
+  }, [currentImage, scale, position])
 
-  const drawImage = () => {
+  const drawImageOnCanvas = () => {
     const canvas = canvasRef.current
-    if (!canvas || !currentImage) return
+    const container = containerRef.current
+    if (!canvas || !currentImage || !container) return
 
     const ctx = canvas.getContext('2d')
     const img = new Image()
     
     img.onload = () => {
-      const canvasWidth = canvas.width
-      const canvasHeight = canvas.height
+      const containerRect = container.getBoundingClientRect()
+      canvas.width = containerRect.width
+      canvas.height = containerRect.height
       
       // Clear canvas
-      ctx.clearRect(0, 0, canvasWidth, canvasHeight)
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
       
-      // Save context
-      ctx.save()
+      // Calculate image dimensions
+      const aspectRatio = img.width / img.height
+      let drawWidth, drawHeight
       
-      // Center transformations
-      ctx.translate(canvasWidth / 2, canvasHeight / 2)
+      if (aspectRatio > 1) {
+        drawWidth = Math.min(canvas.width * scale, img.width * scale)
+        drawHeight = drawWidth / aspectRatio
+      } else {
+        drawHeight = Math.min(canvas.height * scale, img.height * scale)
+        drawWidth = drawHeight * aspectRatio
+      }
       
-      // Применяем поворот
-      ctx.rotate((rotation * Math.PI) / 180)
+      // Center the image with offset
+      const centerX = canvas.width / 2 + position.x
+      const centerY = canvas.height / 2 + position.y
+      const drawX = centerX - drawWidth / 2
+      const drawY = centerY - drawHeight / 2
       
-      // Применяем масштаб
-      ctx.scale(scale, scale)
+      // Draw image
+      ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight)
       
-      // Применяем позицию
-      ctx.translate(position.x, position.y)
-      
-      // Рисуем изображение
-      const imgWidth = img.width
-      const imgHeight = img.height
-      
-      ctx.drawImage(
-        img,
-        -imgWidth / 2,
-        -imgHeight / 2,
-        imgWidth,
-        imgHeight
-      )
-      
-      // Восстанавливаем контекст
-      ctx.restore()
-      
-      // Генерируем URL отредактированного изображения
-      const editedDataUrl = canvas.toDataURL('image/jpeg', 0.9)
+      // Generate edited image URL
+      const editedDataUrl = canvas.toDataURL('image/jpeg', 0.95)
       setEditedImageUrl(editedDataUrl)
     }
     
     img.src = currentImage
+  }
+
+  // Mouse handlers for dragging
+  const handleMouseDown = useCallback((e) => {
+    e.preventDefault()
+    setIsDragging(true)
+    setDragStart({ x: e.clientX, y: e.clientY })
+    setPositionStart(position)
+  }, [position])
+
+  const handleMouseMove = useCallback((e) => {
+    if (isDragging) {
+      const deltaX = e.clientX - dragStart.x
+      const deltaY = e.clientY - dragStart.y
+      
+      setPosition({
+        x: positionStart.x + deltaX,
+        y: positionStart.y + deltaY
+      })
+    }
+  }, [isDragging, dragStart, positionStart])
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false)
+  }, [])
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+      }
+    }
+  }, [isDragging, handleMouseMove, handleMouseUp])
+
+  // Scale handlers
+  const handleZoomIn = () => {
+    setScale(prev => Math.min(prev + 0.2, 3))
+  }
+
+  const handleZoomOut = () => {
+    setScale(prev => Math.max(prev - 0.2, 0.2))
+  }
+
+  const handleReset = () => {
+    setScale(1)
+    setPosition({ x: 0, y: 0 })
   }
 
   const handleNewImageUpload = (event) => {
@@ -121,51 +165,10 @@ const DiamondMosaicEditorPage = () => {
     const reader = new FileReader()
     reader.onload = (e) => {
       setCurrentImage(e.target.result)
-      // Сброс параметров редактирования
-      setRotation(0)
       setScale(1)
       setPosition({ x: 0, y: 0 })
-      setCrop({ x: 0, y: 0, width: 100, height: 100 })
     }
     reader.readAsDataURL(file)
-  }
-
-  const handleRotate = () => {
-    setRotation(prev => (prev + 90) % 360)
-  }
-
-  const handleScaleChange = (newScale) => {
-    setScale(Math.max(0.1, Math.min(3, newScale)))
-  }
-
-  const handleMouseDown = (e) => {
-    setIsDragging(true)
-    setLastMousePos({ x: e.clientX, y: e.clientY })
-  }
-
-  const handleMouseMove = (e) => {
-    if (!isDragging) return
-
-    const deltaX = e.clientX - lastMousePos.x
-    const deltaY = e.clientY - lastMousePos.y
-
-    setPosition(prev => ({
-      x: prev.x + deltaX * 0.5,
-      y: prev.y + deltaY * 0.5
-    }))
-
-    setLastMousePos({ x: e.clientX, y: e.clientY })
-  }
-
-  const handleMouseUp = () => {
-    setIsDragging(false)
-  }
-
-  const handleReset = () => {
-    setRotation(0)
-    setScale(1)
-    setPosition({ x: 0, y: 0 })
-    setCrop({ x: 0, y: 0, width: 100, height: 100 })
   }
 
   const handleContinue = () => {
@@ -220,22 +223,18 @@ const DiamondMosaicEditorPage = () => {
 
   if (!editorSettings) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center">
-      <div className="text-purple-600">{t('diamond_mosaic_editor.loading')}</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-purple-600">{t('diamond_mosaic_editor.loading')}</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 py-8 px-4">
-      <div className="container mx-auto max-w-6xl">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-6xl mx-auto p-6">
         
-        {/* Заголовок и навигация */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
+        {/* Заголовок */}
+        <div className="mb-6">
           <button
             onClick={handleBack}
             className="flex items-center text-purple-600 hover:text-purple-700 mb-4 transition-colors"
@@ -244,203 +243,121 @@ const DiamondMosaicEditorPage = () => {
             {t('diamond_mosaic_editor.navigation.back')}
           </button>
           
-          <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
-              {t('diamond_mosaic_editor.title')}
-            </h1>
-            <p className="text-lg text-gray-600">
-              {t('diamond_mosaic_editor.size_label')} <span className="font-semibold">{editorSettings.size} {t('common.cm')}</span> • 
-              {t('diamond_mosaic_editor.style_label')} <span className="font-semibold">{editorSettings.style}</span>
-            </p>
-          </div>
-        </motion.div>
+          <h1 className="text-3xl font-bold text-gray-900 text-center">
+            {t('diamond_mosaic_editor.title')}
+          </h1>
+          <p className="text-gray-600 text-center mt-2">
+            {t('diamond_mosaic_editor.size_label')} <span className="font-semibold">{editorSettings.size} {t('common.cm')}</span> • 
+            {t('diamond_mosaic_editor.style_label')} <span className="font-semibold">{editorSettings.style}</span>
+          </p>
+        </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        {/* Главный редактор */}
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           
-          {/* Панель инструментов */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="lg:col-span-1 space-y-6"
+          {/* Область изображения */}
+          <div 
+            ref={containerRef}
+            className="relative bg-gray-100 h-96 md:h-[500px] overflow-hidden"
           >
+            <canvas
+              ref={canvasRef}
+              className="w-full h-full cursor-move select-none"
+              onMouseDown={handleMouseDown}
+              style={{ touchAction: 'none' }}
+            />
             
-            {/* Загрузка нового изображения */}
-            <div className="bg-white rounded-xl p-6 shadow-lg">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <Upload className="w-5 h-5 mr-2 text-purple-600" />
-                {t('diamond_mosaic_editor.sections.new_image')}
-              </h3>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleNewImageUpload}
-                className="hidden"
-              />
+            {/* Сетка кадрирования */}
+            <div 
+              className="absolute border-2 border-white shadow-lg pointer-events-none"
+              style={{
+                left: `${cropArea.x}%`,
+                top: `${cropArea.y}%`,
+                width: `${cropArea.width}%`,
+                height: `${cropArea.height}%`,
+              }}
+            >
+              {/* Сетка 3x3 */}
+              <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <line x1="33.33" y1="0" x2="33.33" y2="100" stroke="white" strokeWidth="0.5" opacity="0.7" />
+                <line x1="66.66" y1="0" x2="66.66" y2="100" stroke="white" strokeWidth="0.5" opacity="0.7" />
+                <line x1="0" y1="33.33" x2="100" y2="33.33" stroke="white" strokeWidth="0.5" opacity="0.7" />
+                <line x1="0" y1="66.66" x2="100" y2="66.66" stroke="white" strokeWidth="0.5" opacity="0.7" />
+              </svg>
+            </div>
+          </div>
+
+          {/* Панель управления */}
+          <div className="p-6 bg-white border-t border-gray-200">
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              
+              {/* Загрузка нового изображения */}
+              <label className="flex items-center justify-center w-12 h-12 bg-purple-100 hover:bg-purple-200 rounded-xl cursor-pointer transition-colors">
+                <Upload className="w-5 h-5 text-purple-600" />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleNewImageUpload}
+                  className="hidden"
+                />
+              </label>
+
+              {/* Уменьшить масштаб */}
               <button
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full bg-purple-100 text-purple-700 px-4 py-2 rounded-lg hover:bg-purple-200 transition-colors"
+                onClick={handleZoomOut}
+                className="flex items-center justify-center w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
               >
-                {t('diamond_mosaic_editor.sections.select_other_image')}
+                <Minus className="w-5 h-5 text-gray-600" />
               </button>
-            </div>
-            
-            {/* Поворот */}
-            <div className="bg-white rounded-xl p-6 shadow-lg">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <RotateCw className="w-5 h-5 mr-2 text-purple-600" />
-                {t('diamond_mosaic_editor.tools.rotate')}
-              </h3>
-              <div className="space-y-3">
-                <button
-                  onClick={handleRotate}
-                  className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
-                >
-                  {t('diamond_mosaic_editor.tools.rotate')} 90°
-                </button>
-                <div>
-                  <label className="block text-sm text-gray-600 mb-2">
-                    {t('diamond_mosaic_editor.controls.rotation_control', { value: rotation })}
-                  </label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="360"
-                    value={rotation}
-                    onChange={(e) => setRotation(Number(e.target.value))}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            {/* Масштаб */}
-            <div className="bg-white rounded-xl p-6 shadow-lg">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <ZoomIn className="w-5 h-5 mr-2 text-purple-600" />
-                {t('diamond_mosaic_editor.tools.scale')}
-              </h3>
-              <div className="space-y-3">
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => handleScaleChange(scale - 0.1)}
-                    className="flex-1 bg-gray-100 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors"
-                  >
-                    <ZoomOut className="w-4 h-4 mx-auto" />
-                  </button>
-                  <button
-                    onClick={() => handleScaleChange(scale + 0.1)}
-                    className="flex-1 bg-gray-100 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors"
-                  >
-                    <ZoomIn className="w-4 h-4 mx-auto" />
-                  </button>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-600 mb-2">
-                    Масштаб: {Math.round(scale * 100)}%
-                  </label>
-                  <input
-                    type="range"
-                    min="0.1"
-                    max="3"
-                    step="0.1"
-                    value={scale}
-                    onChange={(e) => setScale(Number(e.target.value))}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            {/* Позиция */}
-            <div className="bg-white rounded-xl p-6 shadow-lg">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <Move className="w-5 h-5 mr-2 text-purple-600" />
-                {t('diamond_mosaic_editor.tools.position')}
-              </h3>
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm text-gray-600 mb-2">
-                    {t('diamond_mosaic_editor.controls.position_x', { value: Math.round(position.x) })}
-                  </label>
-                  <input
-                    type="range"
-                    min="-200"
-                    max="200"
-                    value={position.x}
-                    onChange={(e) => setPosition(prev => ({ ...prev, x: Number(e.target.value) }))}
-                    className="w-full"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-600 mb-2">
-                    {t('diamond_mosaic_editor.controls.position_y', { value: Math.round(position.y) })}
-                  </label>
-                  <input
-                    type="range"
-                    min="-200"
-                    max="200"
-                    value={position.y}
-                    onChange={(e) => setPosition(prev => ({ ...prev, y: Number(e.target.value) }))}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            {/* Сброс */}
-            <div className="bg-white rounded-xl p-6 shadow-lg">
+
+              {/* Увеличить масштаб */}
+              <button
+                onClick={handleZoomIn}
+                className="flex items-center justify-center w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+              >
+                <Plus className="w-5 h-5 text-gray-600" />
+              </button>
+
+              {/* Сброс */}
               <button
                 onClick={handleReset}
-                className="w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+                className="flex items-center justify-center w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
               >
-                {t('diamond_mosaic_editor.sections.reset_changes')}
+                <RotateCcw className="w-5 h-5 text-gray-600" />
+              </button>
+
+              {/* Поделиться (будущий функционал) */}
+              <button className="flex items-center justify-center w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors opacity-50 cursor-not-allowed">
+                <Share2 className="w-5 h-5 text-gray-600" />
               </button>
             </div>
-          </motion.div>
+          </div>
 
-          {/* Канвас редактора */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="lg:col-span-2"
-          >
-            <div className="bg-white rounded-xl p-6 shadow-lg">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">{t('diamond_mosaic_editor.sections.preview')}</h3>
+          {/* Кнопки действий */}
+          <div className="p-6 bg-gray-50 border-t border-gray-200">
+            <div className="flex gap-4 max-w-md mx-auto">
+              <button
+                onClick={handleBack}
+                className="flex-1 px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+              >
+                {t('diamond_mosaic_editor.navigation.back')}
+              </button>
               
-              <div className="border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50">
-                <canvas
-                  ref={canvasRef}
-                  width={600}
-                  height={600}
-                  className="w-full h-auto cursor-move"
-                  onMouseDown={handleMouseDown}
-                  onMouseMove={handleMouseMove}
-                  onMouseUp={handleMouseUp}
-                  onMouseLeave={handleMouseUp}
-                />
-              </div>
-              
-              <div className="mt-6 text-center">
-                <p className="text-sm text-gray-600 mb-4">
-                  {t('diamond_mosaic_editor.sections.drag_instruction')}
-                </p>
-                
-                <button
-                  onClick={handleContinue}
-                  disabled={!editedImageUrl}
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center mx-auto"
-                >
-                  {t('diamond_mosaic_editor.continue')}
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </button>
-              </div>
+              <button
+                onClick={handleContinue}
+                disabled={!editedImageUrl}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-medium hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {t('diamond_mosaic_editor.continue')} →
+              </button>
             </div>
-          </motion.div>
+          </div>
+
         </div>
       </div>
     </div>
   )
 }
 
-export default DiamondMosaicEditorPage
+export default DiamondMosaicEditorPageNew
