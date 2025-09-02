@@ -99,13 +99,13 @@ const DiamondMosaicPage = () => {
         baseImgWidth = maxImageSize * imgAspectRatio
       }
       
-      // Область кадрирования должна охватывать повернутое изображение
+      // Область кадрирования адаптируется к повороту изображения
       let cropWidth, cropHeight
       
       if (rotation === 90 || rotation === 270) {
-        // При повороте на 90°/270° область кадрирования должна быть по максимальному измерению
-        const maxDimension = Math.max(baseImgWidth, baseImgHeight)
-        cropWidth = cropHeight = maxDimension
+        // При повороте на 90°/270° меняем местами ширину и высоту области кадрирования
+        cropWidth = baseImgHeight
+        cropHeight = baseImgWidth
       } else {
         // При повороте на 0°/180° область кадрирования соответствует изображению
         cropWidth = baseImgWidth
@@ -213,11 +213,6 @@ const DiamondMosaicPage = () => {
       ctx.lineTo(cropX + cropWidth, cropY + cropHeight)
       ctx.lineTo(cropX + cropWidth, cropY + cropHeight - cornerSize)
       ctx.stroke()
-      
-      // Добавляем иконку перетаскивания в углу области кадрирования
-      ctx.fillStyle = 'rgba(139, 92, 246, 0.6)'
-      ctx.font = 'bold 20px Arial'
-      ctx.fillText('✋', cropX + cropWidth - 25, cropY + 25)
       
       // Генерируем URL отредактированного изображения (только область кадрирования)
       const tempCanvas = document.createElement('canvas')
