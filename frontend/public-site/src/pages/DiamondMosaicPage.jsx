@@ -83,23 +83,28 @@ const DiamondMosaicPage = () => {
       // Применяем позицию
       ctx.translate(position.x, position.y)
       
-      // Определяем базовые размеры изображения (до применения пользовательского масштаба)
+      // Определяем базовые размеры изображения с учетом поворота
       const maxImageSize = Math.min(canvasWidth, canvasHeight) * 0.8
-      const imgAspectRatio = img.width / img.height
+      let imgAspectRatio = img.width / img.height
+      
+      // При поворотах на 90° и 270° меняем соотношение сторон
+      if (rotation === 90 || rotation === 270) {
+        imgAspectRatio = img.height / img.width
+      }
       
       let baseImgWidth, baseImgHeight
       
       if (imgAspectRatio > 1) {
-        // Горизонтальное изображение
+        // Горизонтальное изображение (с учетом поворота)
         baseImgWidth = maxImageSize
         baseImgHeight = maxImageSize / imgAspectRatio
       } else {
-        // Вертикальное или квадратное изображение
+        // Вертикальное или квадратное изображение (с учетом поворота)
         baseImgHeight = maxImageSize
         baseImgWidth = maxImageSize * imgAspectRatio
       }
       
-      // Область кадрирования изначально точно равна размерам изображения
+      // Область кадрирования всегда точно равна размерам изображения (с учетом поворота)
       let cropWidth = baseImgWidth
       let cropHeight = baseImgHeight
       
