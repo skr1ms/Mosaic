@@ -104,10 +104,10 @@ const DiamondMosaicEditorPage = () => {
       
       // Масштабируем изображение чтобы заполнить контейнер
       if (imageAspect > containerAspect) {
-        renderHeight = canvas.height * 0.8 // Начальный размер 80% от контейнера
+        renderHeight = canvas.height * 0.9 // Начальный размер 90% от контейнера
         renderWidth = renderHeight * imageAspect
       } else {
-        renderWidth = canvas.width * 0.8
+        renderWidth = canvas.width * 0.9
         renderHeight = renderWidth / imageAspect
       }
       
@@ -266,8 +266,8 @@ const DiamondMosaicEditorPage = () => {
             className="relative bg-gray-400 mx-auto rounded-lg overflow-hidden"
             style={{ 
               width: '100%', 
-              maxWidth: '500px',
-              height: '400px',
+              maxWidth: '800px',
+              height: '600px',
               margin: '0 auto'
             }}
           >

@@ -507,8 +507,8 @@ const DiamondMosaicPage = () => {
                         {/* Canvas для редактирования */}
                         <canvas
                           ref={canvasRef}
-                          width={600}
-                          height={600}
+                          width={800}
+                          height={800}
                           className="rounded-xl border-2 border-dashed border-purple-300 cursor-move shadow-lg bg-white"
                           style={{ maxWidth: '100%', height: 'auto' }}
                           onMouseDown={handleMouseDown}
