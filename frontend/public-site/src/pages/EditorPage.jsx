@@ -140,7 +140,7 @@ const EditorPage = () => {
           })
 
           // Проверяем, был ли купон уже активирован
-          if (activationResult.message === "Купон уже активирован") {
+          if (activationResult.message === t('notifications.coupon_already_activated')) {
           } else {
           }
         } catch (activationError) {

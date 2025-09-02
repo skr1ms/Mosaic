@@ -26,7 +26,7 @@ const DiamondArtPage = () => {
     }
     setCouponCode(formattedCode)
     
-    // Очищаем предупреждение при изменении кода
+    // Clear warning when code changes
     if (domainWarning) {
       setDomainWarning(null)
     }
@@ -35,12 +35,12 @@ const DiamondArtPage = () => {
   const goToEditor = () => {
     const clean = couponCode.replace(/-/g, '')
     if (clean.length === 12) {
-      // ОЧИЩАЕМ localStorage ПЕРЕД ПЕРЕХОДОМ В РЕДАКТОР
+      // CLEAR localStorage BEFORE NAVIGATING TO EDITOR
       try {
         localStorage.removeItem('pendingOrder')
         localStorage.removeItem('activeCoupon')
         
-        // Очищаем временные данные
+        // Clear temporary data
         const keys = Object.keys(localStorage)
         keys.forEach(key => {
           if (key.startsWith('preview_') || key.startsWith('temp_') || key.startsWith('shop_')) {
@@ -89,14 +89,14 @@ const DiamondArtPage = () => {
   const marketplaceLinks = [
     {
       name: 'OZON',
-      url: 'https://www.ozon.ru/search/?text=алмазная+мозаика+набор',
+      url: t('diamond_art.marketplace_links.ozon'),
       description: t('sections.diamond_art.purchase_section.marketplaces.ozon.description'),
       buttonText: t('sections.diamond_art.purchase_section.marketplaces.ozon.button'),
       color: 'from-orange-500 to-red-500'
     },
     {
       name: 'Wildberries',
-      url: 'https://www.wildberries.ru/catalog/0/search.aspx?search=алмазная+мозаика+набор',
+      url: t('diamond_art.marketplace_links.wildberries'),
       description: t('sections.diamond_art.purchase_section.marketplaces.wildberries.description'),
       buttonText: t('sections.diamond_art.purchase_section.marketplaces.wildberries.button'),
       color: 'from-purple-500 to-pink-500'
@@ -118,7 +118,7 @@ const DiamondArtPage = () => {
               <iframe
                 className="w-full h-full"
                 src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                title="Инструкция по созданию алмазной мозаики"
+                title={t('sections.diamond_art.video_section.title')}
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
@@ -165,9 +165,9 @@ const DiamondArtPage = () => {
                   <Eye className="w-8 h-8 text-purple-600" />
                 </div>
                 <div>
-                  <h2 className="text-2xl lg:text-3xl font-bold text-gray-900">Как будет выглядеть ваша мозаика?</h2>
+                  <h2 className="text-2xl lg:text-3xl font-bold text-gray-900">{t('diamond_art.preview_section.title')}</h2>
                   <p className="text-gray-600 text-base lg:text-lg mt-2">
-                    Загрузите своё изображение и создайте превью уникальной алмазной мозаики
+                    {t('diamond_art.preview_section.description')}
                   </p>
                 </div>
               </div>
@@ -177,12 +177,12 @@ const DiamondArtPage = () => {
                 className="inline-flex items-center justify-center px-8 lg:px-12 py-4 lg:py-5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 font-semibold text-lg lg:text-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
               >
                 <Palette className="w-6 h-6 mr-3" />
-                <span>Создать превью мозаики</span>
+                <span>{t('diamond_art.preview_section.create_preview')}</span>
                 <ArrowRight className="w-6 h-6 ml-3" />
               </button>
               
               <p className="text-gray-500 text-sm mt-4">
-                Выберите размер, загрузите изображение и получите превью в разных стилях
+                {t('diamond_art.preview_section.instruction')}
               </p>
             </div>
           </motion.div>
@@ -290,13 +290,13 @@ const DiamondArtPage = () => {
                           {domainWarning.message}
                         </p>
                         <p className="text-yellow-200/80 text-xs mb-3">
-                          Этот купон предназначен для сайта партнера: <strong>{domainWarning.partnerBrandName}</strong>
+                          {t('sections.diamond_art.coupon_section.wrong_domain', { partnerBrandName: domainWarning.partnerBrandName })}
                         </p>
                         <button
                           onClick={goToPartnerSite}
                           className="inline-flex items-center px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium rounded-lg transition-colors duration-200"
                         >
-                          Перейти на сайт партнера
+                          {t('diamond_art.coupon_section.go_to_partner_site')}
                           <ExternalLink className="w-4 h-4 ml-2" />
                         </button>
                       </div>

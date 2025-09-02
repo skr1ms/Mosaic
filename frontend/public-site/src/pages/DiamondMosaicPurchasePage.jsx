@@ -14,48 +14,30 @@ const DiamondMosaicPurchasePage = () => {
   const [selectedPackage, setSelectedPackage] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
 
-  // Пакеты для покупки
-  const packages = [
+  // Packages for purchase
+  const getPackages = () => [
     {
       id: 'basic',
-      name: 'Базовый',
+      name: t('diamond_mosaic_purchase.packages.basic.name'),
       price: 299,
       originalPrice: 499,
-      features: [
-        'Схема алмазной мозаики',
-        'Инструкция по сборке',
-        'Поддержка 24/7'
-      ],
+      features: t('diamond_mosaic_purchase.packages.basic.features'),
       popular: false
     },
     {
       id: 'premium',
-      name: 'Премиум',
+      name: t('diamond_mosaic_purchase.packages.premium.name'),
       price: 499,
       originalPrice: 799,
-      features: [
-        'Схема алмазной мозаики',
-        'Инструкция по сборке',
-        'Поддержка 24/7',
-        'HD качество схемы',
-        'Дополнительные варианты обработки'
-      ],
+      features: t('diamond_mosaic_purchase.packages.premium.features'),
       popular: true
     },
     {
       id: 'professional',
-      name: 'Профессиональный',
+      name: t('diamond_mosaic_purchase.packages.professional.name'),
       price: 799,
       originalPrice: 1299,
-      features: [
-        'Схема алмазной мозаики',
-        'Инструкция по сборке',
-        'Поддержка 24/7',
-        'HD качество схемы',
-        'Дополнительные варианты обработки',
-        'Файлы для печати',
-        'Персональная консультация'
-      ],
+      features: t('diamond_mosaic_purchase.packages.professional.features'),
       popular: false
     }
   ]
@@ -90,7 +72,7 @@ const DiamondMosaicPurchasePage = () => {
     if (!selectedPackage || !purchaseData) {
       addNotification({
         type: 'error',
-        message: 'Выберите пакет для покупки'
+        message: t('diamond_mosaic_purchase.select_package')
       })
       return
     }
@@ -124,8 +106,8 @@ const DiamondMosaicPurchasePage = () => {
       
       addNotification({
         type: 'success',
-        title: 'Покупка завершена!',
-        message: 'Купон активирован. Переходим к генерации схемы...'
+        title: t('diamond_mosaic_purchase.notifications.purchase_success_title'),
+        message: t('diamond_mosaic_purchase.notifications.purchase_success_message')
       })
       
       // Переходим к странице генерации схемы или результата
@@ -137,8 +119,8 @@ const DiamondMosaicPurchasePage = () => {
       console.error('Error processing purchase:', error)
       addNotification({
         type: 'error',
-        title: 'Ошибка покупки',
-        message: 'Не удалось завершить покупку. Попробуйте ещё раз.'
+        title: t('diamond_mosaic_purchase.purchase_error'),
+        message: t('diamond_mosaic_purchase.notifications.purchase_failed_message')
       })
     } finally {
       setIsProcessing(false)
@@ -151,10 +133,10 @@ const DiamondMosaicPurchasePage = () => {
 
   const getStyleTitle = (styleKey) => {
     const styleMap = {
-      'max_colors': 'Максимум цветов',
-      'pop_art': 'Поп-арт',
-      'grayscale': 'Чёрно-белый',
-      'skin_tones': 'Телесные тона'
+      'max_colors': t('diamond_mosaic_preview.style_selection.styles.realistic.title'),
+      'pop_art': t('diamond_mosaic_preview.style_selection.styles.bright.title'),
+      'grayscale': t('diamond_mosaic_preview.style_selection.styles.monochrome.title'),
+      'skin_tones': t('diamond_mosaic_preview.style_selection.styles.warm.title')
     }
     return styleMap[styleKey] || styleKey
   }
@@ -162,7 +144,7 @@ const DiamondMosaicPurchasePage = () => {
   if (!purchaseData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center">
-        <div className="text-purple-600">Загрузка...</div>
+        <div className="text-purple-600">{t('diamond_mosaic_purchase.notifications.loading')}</div>
       </div>
     )
   }
@@ -184,15 +166,15 @@ const DiamondMosaicPurchasePage = () => {
             className="flex items-center text-purple-600 hover:text-purple-700 mb-4 transition-colors"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
-            Назад к превью
+            {t('diamond_mosaic_purchase.back_to_preview')}
           </button>
           
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
-              Покупка купона
+              {t('diamond_mosaic_purchase.title')}
             </h1>
             <p className="text-lg text-gray-600">
-              Генерация схемы алмазной мозаики
+              {t('diamond_mosaic_purchase.subtitle')}
             </p>
           </div>
         </motion.div>
@@ -206,7 +188,7 @@ const DiamondMosaicPurchasePage = () => {
             className="lg:col-span-1"
           >
             <div className="bg-white rounded-xl p-6 shadow-lg mb-6">
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">Ваш заказ</h3>
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">{t('diamond_mosaic_purchase.order_section.title')}</h3>
               
               {/* Превью изображения */}
               <div className="mb-4">
@@ -218,23 +200,23 @@ const DiamondMosaicPurchasePage = () => {
                   />
                 </div>
                 <p className="text-sm text-gray-600 text-center">
-                  {purchaseData.selectedPreview?.title || 'Выбранное превью'}
+                  {purchaseData.selectedPreview?.title || t('diamond_mosaic_purchase.selected_preview')}
                 </p>
               </div>
               
               {/* Детали заказа */}
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Размер:</span>
-                  <span className="font-medium">{purchaseData.size} см</span>
+                  <span className="text-gray-600">{t('diamond_mosaic_purchase.size_label')}</span>
+                  <span className="font-medium">{purchaseData.size} {t('common.cm')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Стиль:</span>
+                  <span className="text-gray-600">{t('diamond_mosaic_purchase.style_label')}</span>
                   <span className="font-medium">{getStyleTitle(purchaseData.style)}</span>
                 </div>
                 {purchaseData.selectedPreview?.type && (
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Тип обработки:</span>
+                    <span className="text-gray-600">{t('diamond_mosaic_purchase.order_section.processing_type')}</span>
                     <span className="font-medium capitalize">{purchaseData.selectedPreview.type}</span>
                   </div>
                 )}
@@ -245,24 +227,24 @@ const DiamondMosaicPurchasePage = () => {
             <div className="bg-white rounded-xl p-6 shadow-lg">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                 <Package className="w-5 h-5 mr-2 text-purple-600" />
-                Что вы получите
+                {t('diamond_mosaic_purchase.what_you_get.title')}
               </h3>
               <ul className="space-y-2 text-sm text-gray-600">
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
-                  Подробная схема алмазной мозаики
+                  {t('diamond_mosaic_purchase.what_you_get.detailed_schema')}
                 </li>
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
-                  Список необходимых материалов
+                  {t('diamond_mosaic_purchase.what_you_get.materials_list')}
                 </li>
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
-                  Пошаговая инструкция
+                  {t('diamond_mosaic_purchase.what_you_get.step_instructions')}
                 </li>
                 <li className="flex items-center">
                   <Check className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
-                  Файлы для скачивания
+                  {t('diamond_mosaic_purchase.what_you_get.download_files')}
                 </li>
               </ul>
             </div>
@@ -274,10 +256,10 @@ const DiamondMosaicPurchasePage = () => {
             animate={{ opacity: 1, x: 0 }}
             className="lg:col-span-2"
           >
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Выберите пакет</h2>
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">{t('diamond_mosaic_purchase.labels.select_package')}</h2>
             
             <div className="grid md:grid-cols-3 gap-6 mb-8">
-              {packages.map((pkg, index) => (
+              {getPackages().map((pkg, index) => (
                 <motion.div
                   key={pkg.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -294,7 +276,7 @@ const DiamondMosaicPurchasePage = () => {
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                       <div className="bg-purple-500 text-white px-4 py-1 rounded-full text-sm font-medium flex items-center">
                         <Star className="w-3 h-3 mr-1" />
-                        Популярный
+                        {t('diamond_mosaic_purchase.labels.popular')}
                       </div>
                     </div>
                   )}
@@ -308,7 +290,7 @@ const DiamondMosaicPurchasePage = () => {
                         <span className="text-lg text-gray-400 line-through">{pkg.originalPrice}₽</span>
                       </div>
                       <div className="text-sm text-green-600 font-medium">
-                        Скидка {Math.round((1 - pkg.price / pkg.originalPrice) * 100)}%
+                        {t('diamond_mosaic_purchase.pricing.discount')} {Math.round((1 - pkg.price / pkg.originalPrice) * 100)}%
                       </div>
                     </div>
                     
@@ -335,10 +317,10 @@ const DiamondMosaicPurchasePage = () => {
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-800">
-                      {selectedPkg.name} пакет
+                      {selectedPkg.name} {t('diamond_mosaic_purchase.pricing.package')}
                     </h3>
                     <p className="text-gray-600">
-                      Итого к оплате: <span className="text-2xl font-bold text-purple-600">{selectedPkg.price}₽</span>
+                      {t('diamond_mosaic_purchase.pricing.total_to_pay')} <span className="text-2xl font-bold text-purple-600">{selectedPkg.price}₽</span>
                     </p>
                   </div>
                   <div className="text-right">
@@ -346,7 +328,7 @@ const DiamondMosaicPurchasePage = () => {
                       {selectedPkg.originalPrice}₽
                     </div>
                     <div className="text-green-600 font-medium">
-                      Экономия {selectedPkg.originalPrice - selectedPkg.price}₽
+                      {t('diamond_mosaic_purchase.pricing.savings')} {selectedPkg.originalPrice - selectedPkg.price}₽
                     </div>
                   </div>
                 </div>
@@ -359,18 +341,18 @@ const DiamondMosaicPurchasePage = () => {
                   {isProcessing ? (
                     <>
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                      Обработка...
+                      {t('diamond_mosaic_purchase.buttons.processing')}
                     </>
                   ) : (
                     <>
                       <CreditCard className="w-5 h-5 mr-2" />
-                      Купить и сгенерировать схему
+                      {t('diamond_mosaic_purchase.buttons.buy_and_generate')}
                     </>
                   )}
                 </button>
                 
                 <p className="text-xs text-gray-500 text-center mt-3">
-                  Нажимая кнопку, вы соглашаетесь с условиями использования
+                  {t('diamond_mosaic_purchase.terms')}
                 </p>
               </motion.div>
             )}

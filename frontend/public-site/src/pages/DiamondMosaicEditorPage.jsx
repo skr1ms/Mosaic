@@ -17,7 +17,7 @@ const DiamondMosaicEditorPage = () => {
   const [currentImage, setCurrentImage] = useState(null)
   const [editedImageUrl, setEditedImageUrl] = useState(null)
   
-  // Параметры редактирования
+  // Editing parameters
   const [rotation, setRotation] = useState(0)
   const [scale, setScale] = useState(1)
   const [position, setPosition] = useState({ x: 0, y: 0 })
@@ -26,7 +26,7 @@ const DiamondMosaicEditorPage = () => {
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 })
 
   useEffect(() => {
-    // Загружаем настройки редактора
+    // Load editor settings
     try {
       const savedSettings = localStorage.getItem('diamondMosaic_editorSettings')
       const savedImageData = localStorage.getItem('diamondMosaic_selectedImage')
@@ -65,13 +65,13 @@ const DiamondMosaicEditorPage = () => {
       const canvasWidth = canvas.width
       const canvasHeight = canvas.height
       
-      // Очищаем канвас
+      // Clear canvas
       ctx.clearRect(0, 0, canvasWidth, canvasHeight)
       
-      // Сохраняем контекст
+      // Save context
       ctx.save()
       
-      // Центрируем трансформации
+      // Center transformations
       ctx.translate(canvasWidth / 2, canvasHeight / 2)
       
       // Применяем поворот
@@ -113,7 +113,7 @@ const DiamondMosaicEditorPage = () => {
     if (!file.type.startsWith('image/')) {
       addNotification({
         type: 'error',
-        message: 'Пожалуйста, выберите изображение'
+        message: t('diamond_mosaic_editor.image_required')
       })
       return
     }
@@ -205,7 +205,7 @@ const DiamondMosaicEditorPage = () => {
       console.error('Error processing edited image:', error)
       addNotification({
         type: 'error',
-        message: 'Ошибка при обработке изображения'
+        message: t('diamond_mosaic_editor.processing_error')
       })
     }
   }
@@ -221,7 +221,7 @@ const DiamondMosaicEditorPage = () => {
   if (!editorSettings) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center">
-        <div className="text-purple-600">Загрузка редактора...</div>
+      <div className="text-purple-600">{t('diamond_mosaic_editor.loading')}</div>
       </div>
     )
   }
@@ -241,16 +241,16 @@ const DiamondMosaicEditorPage = () => {
             className="flex items-center text-purple-600 hover:text-purple-700 mb-4 transition-colors"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
-            Назад
+            {t('diamond_mosaic_editor.navigation.back')}
           </button>
           
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
-              Редактор изображения
+              {t('diamond_mosaic_editor.title')}
             </h1>
             <p className="text-lg text-gray-600">
-              Размер: <span className="font-semibold">{editorSettings.size} см</span> • 
-              Стиль: <span className="font-semibold">{editorSettings.style}</span>
+              {t('diamond_mosaic_editor.size_label')} <span className="font-semibold">{editorSettings.size} {t('common.cm')}</span> • 
+              {t('diamond_mosaic_editor.style_label')} <span className="font-semibold">{editorSettings.style}</span>
             </p>
           </div>
         </motion.div>
@@ -268,7 +268,7 @@ const DiamondMosaicEditorPage = () => {
             <div className="bg-white rounded-xl p-6 shadow-lg">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                 <Upload className="w-5 h-5 mr-2 text-purple-600" />
-                Новое изображение
+                {t('diamond_mosaic_editor.sections.new_image')}
               </h3>
               <input
                 ref={fileInputRef}
@@ -281,7 +281,7 @@ const DiamondMosaicEditorPage = () => {
                 onClick={() => fileInputRef.current?.click()}
                 className="w-full bg-purple-100 text-purple-700 px-4 py-2 rounded-lg hover:bg-purple-200 transition-colors"
               >
-                Выбрать другое изображение
+                {t('diamond_mosaic_editor.sections.select_other_image')}
               </button>
             </div>
             
@@ -289,18 +289,18 @@ const DiamondMosaicEditorPage = () => {
             <div className="bg-white rounded-xl p-6 shadow-lg">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                 <RotateCw className="w-5 h-5 mr-2 text-purple-600" />
-                Поворот
+                {t('diamond_mosaic_editor.tools.rotate')}
               </h3>
               <div className="space-y-3">
                 <button
                   onClick={handleRotate}
                   className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
                 >
-                  Повернуть на 90°
+                  {t('diamond_mosaic_editor.tools.rotate')} 90°
                 </button>
                 <div>
                   <label className="block text-sm text-gray-600 mb-2">
-                    Угол: {rotation}°
+                    {t('diamond_mosaic_editor.controls.rotation_control', { value: rotation })}
                   </label>
                   <input
                     type="range"
@@ -318,7 +318,7 @@ const DiamondMosaicEditorPage = () => {
             <div className="bg-white rounded-xl p-6 shadow-lg">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                 <ZoomIn className="w-5 h-5 mr-2 text-purple-600" />
-                Масштаб
+                {t('diamond_mosaic_editor.tools.scale')}
               </h3>
               <div className="space-y-3">
                 <div className="flex space-x-2">
@@ -356,12 +356,12 @@ const DiamondMosaicEditorPage = () => {
             <div className="bg-white rounded-xl p-6 shadow-lg">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                 <Move className="w-5 h-5 mr-2 text-purple-600" />
-                Позиция
+                {t('diamond_mosaic_editor.tools.position')}
               </h3>
               <div className="space-y-3">
                 <div>
                   <label className="block text-sm text-gray-600 mb-2">
-                    X: {Math.round(position.x)}
+                    {t('diamond_mosaic_editor.controls.position_x', { value: Math.round(position.x) })}
                   </label>
                   <input
                     type="range"
@@ -374,7 +374,7 @@ const DiamondMosaicEditorPage = () => {
                 </div>
                 <div>
                   <label className="block text-sm text-gray-600 mb-2">
-                    Y: {Math.round(position.y)}
+                    {t('diamond_mosaic_editor.controls.position_y', { value: Math.round(position.y) })}
                   </label>
                   <input
                     type="range"
@@ -394,7 +394,7 @@ const DiamondMosaicEditorPage = () => {
                 onClick={handleReset}
                 className="w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
               >
-                Сбросить все изменения
+                {t('diamond_mosaic_editor.sections.reset_changes')}
               </button>
             </div>
           </motion.div>
@@ -406,7 +406,7 @@ const DiamondMosaicEditorPage = () => {
             className="lg:col-span-2"
           >
             <div className="bg-white rounded-xl p-6 shadow-lg">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Предварительный просмотр</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">{t('diamond_mosaic_editor.sections.preview')}</h3>
               
               <div className="border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50">
                 <canvas
@@ -423,7 +423,7 @@ const DiamondMosaicEditorPage = () => {
               
               <div className="mt-6 text-center">
                 <p className="text-sm text-gray-600 mb-4">
-                  Перетаскивайте изображение для изменения позиции
+                  {t('diamond_mosaic_editor.sections.drag_instruction')}
                 </p>
                 
                 <button
@@ -431,7 +431,7 @@ const DiamondMosaicEditorPage = () => {
                   disabled={!editedImageUrl}
                   className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center mx-auto"
                 >
-                  Продолжить
+                  {t('diamond_mosaic_editor.continue')}
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </button>
               </div>

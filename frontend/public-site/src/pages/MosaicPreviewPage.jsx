@@ -97,7 +97,7 @@ const MosaicPreviewPage = () => {
     if (!file.type.startsWith('image/')) {
       addNotification({
         type: 'error',
-        message: 'Please select an image file'
+        message: t('mosaic_preview.notifications.invalid_file_type')
       })
       return
     }
@@ -106,7 +106,7 @@ const MosaicPreviewPage = () => {
     if (file.size > 15 * 1024 * 1024) {
       addNotification({
         type: 'error',
-        message: 'File size should not exceed 15MB'
+        message: t('mosaic_preview.notifications.file_too_large')
       })
       return
     }
@@ -197,7 +197,7 @@ const MosaicPreviewPage = () => {
                       <p className="text-sm text-gray-600">
                         {selectedFile?.name} ({Math.round(selectedFile?.size / 1024)}KB)
                       </p>
-                      <p className="text-xs text-brand-primary">Click to select another image</p>
+                      <p className="text-xs text-brand-primary">{t('mosaic_preview.notifications.click_to_change')}</p>
                     </div>
                   ) : (
                     <div className="space-y-4">

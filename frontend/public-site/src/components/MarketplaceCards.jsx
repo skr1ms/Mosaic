@@ -240,7 +240,7 @@ const MarketplaceCards = ({ selectedSize, selectedStyle }) => {
                   <div>
                     <h4 className="font-semibold text-gray-900">{marketplace.name}</h4>
                     {data.sku && (
-                      <p className="text-xs text-gray-500">Артикул: {data.sku}</p>
+                      <p className="text-xs text-gray-500">{t('sections.diamond_art.marketplace.sku', { sku: data.sku })}</p>
                     )}
                   </div>
                 </div>

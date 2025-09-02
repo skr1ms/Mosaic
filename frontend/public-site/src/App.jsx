@@ -11,7 +11,7 @@ import PaintByNumbersPage from './pages/PaintByNumbersPage'
 import WhatIsThisPage from './pages/WhatIsThisPage'
 import MosaicPreviewPage from './pages/MosaicPreviewPage'
 import DiamondMosaicPage from './pages/DiamondMosaicPage'
-import DiamondMosaicStylesPage from './pages/DiamondMosaicStylesPage'
+import DiamondMosaicPreviewPage from './pages/DiamondMosaicPreviewPage'
 import DiamondMosaicPreviewAlbumPage from './pages/DiamondMosaicPreviewAlbumPage'
 import DiamondMosaicEditorPage from './pages/DiamondMosaicEditorPage'
 import DiamondMosaicPurchasePage from './pages/DiamondMosaicPurchasePage'
@@ -100,7 +100,7 @@ function App() {
           
           {/* Новые роуты для алмазной мозаики */}
           <Route path="/diamond-mosaic" element={<DiamondMosaicPage />} />
-          <Route path="/diamond-mosaic/styles" element={<DiamondMosaicStylesPage />} />
+          <Route path="/diamond-mosaic/styles" element={<DiamondMosaicPreviewPage />} />
           <Route path="/diamond-mosaic/preview-album" element={<DiamondMosaicPreviewAlbumPage />} />
           <Route path="/diamond-mosaic/editor" element={<DiamondMosaicEditorPage />} />
           <Route path="/diamond-mosaic/purchase" element={<DiamondMosaicPurchasePage />} />

@@ -47,9 +47,9 @@ const HomePage = () => {
               
               <SectionCard
                 icon={<Image className="w-8 h-8" />}
-                title="Создать превью мозаики"
-                description="Загрузите своё изображение и создайте превью вашей уникальной алмазной мозаики"
-                buttonText="Создать превью"
+                title={t('diamond_art.preview_section.create_preview')}
+                description={t('diamond_art.preview_section.description')}
+                buttonText={t('diamond_art.preview_section.create_preview')}
                 buttonIcon={<Sparkles className="w-5 h-5" />}
                 onClick={() => window.location.href = '/diamond-mosaic'}
                 className="hover-lift"

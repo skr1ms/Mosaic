@@ -12,15 +12,20 @@
     "next": "Next",
     "yes": "Yes",
     "no": "No",
-    "continue": "Continue"
+    "continue": "Continue",
+    "cm": "cm"
   },
   "navigation": {
     "home": "Home",
     "diamond_art": "Diamond Art",
     "paint_by_numbers": "Paint by Numbers",
     "what_is_this": "What is this",
+    "create_preview": "Create Mosaic Preview",
+    "company_name": "Diamond Art",
     "page_title": "Diamond Mosaic - Create Beautiful Paintings from Rhinestones",
-    "page_description": "Create beautiful paintings from rhinestones. An exciting hobby for the whole family. Upload photos, choose style and get ready mosaic pattern."
+    "page_description": "Create beautiful paintings from rhinestones. An exciting hobby for the whole family. Upload photos, choose style and get ready mosaic pattern.",
+    "html_title": "Diamond Mosaic - Create Your Painting",
+    "html_description": "Diamond mosaic - an exciting hobby for the whole family. Create beautiful paintings from rhinestones."
   },
   "hero": {
     "title": "Create Your Unique Painting",
@@ -110,7 +115,8 @@
         "url_copied": "URL copied to clipboard! SKU: {sku}",
         "redirected_to_general": "Redirected to general marketplace page",
         "no_link_available": "Link not available",
-        "info_text": "Prices and product availability are current at the time of transition. Please check exact information on the marketplace website."
+        "info_text": "Prices and product availability are current at the time of transition. Please check exact information on the marketplace website.",
+        "sku": "SKU: {sku}"
       },
       "sizes_and_styles_section": {
         "title": "Mosaic Sizes and Styles",
@@ -303,12 +309,32 @@
     "final_price": "100 ₽",
     "proceed_to_payment": "Proceed to Payment",
     "how_it_works": "How It Works",
+    "email_label": "Email for receiving coupon",
     "payment": {
       "checking_status": "Checking payment status...",
       "auto_check_info": "Status updates automatically every 3 seconds"
     },
     "alerts": {
-      "select_size": "Please select mosaic size"
+      "select_size": "Please select mosaic size",
+      "payment_success": "Payment completed successfully!",
+      "payment_error": "Payment error",
+      "size_label": "Size:",
+      "style_label": "Style:",
+      "create_schema_now": "🎨 Create Schema Now",
+      "coupon_generating": "Coupon generating... We'll refresh the page in a few seconds.",
+      "payment_failed": "Please try again or contact support.",
+      "status_check_complete": "Status check completed",
+      "status_check_message": "Click \"Check Payment\" to update order status.",
+      "order_created": "Order created!",
+      "order_created_message": "Open payment page in a new tab.",
+      "email_required": "Please enter email",
+      "coupon_copied": "Coupon code copied to clipboard!",
+      "coupon_ready_title": "Your coupon is ready!",
+      "coupon_code_label": "Coupon code:",
+      "copy_code_button": "📋 Copy code",
+      "go_home_button": "🏠 Go home",
+      "email_sent_info": "💌 Coupon also sent to your email:",
+      "save_code_info": "📱 Save the coupon code in a safe place"
     },
     "sizes": {
       "21x30": {
@@ -377,6 +403,8 @@
     "coupon_not_activated": "Coupon not activated. Please activate the coupon first.",
     "activation_error": "Coupon activation error",
     "coupon_already_used": "Coupon already used",
+    "coupon_already_activated": "Coupon already activated",
+    "coupon_ready_for_use": "Coupon ready for use!",
     "image_uploaded": "Image uploaded",
     "image_uploaded_desc": "Image successfully uploaded and ready for processing",
     "upload_error": "Upload error",
@@ -397,7 +425,6 @@
     "email_error": "Email sending error",
     "email_error_desc": "Failed to send schema by email",
     "coupon_validated": "Coupon validated",
-    "coupon_ready_for_use": "Ready to use",
     "coupon_wrong_partner": "This coupon belongs to another partner. Please go to the correct website for activation."
   },
   "payment": {
@@ -740,7 +767,393 @@
     "notifications": {
       "select_image": "Please select an image",
       "success": "Mosaic preview generated successfully!",
-      "error": "Error generating preview"
+      "error": "Error generating preview",
+      "invalid_file_type": "Please select an image file",
+      "file_too_large": "File size should not exceed 15MB",
+      "click_to_change": "Click to select another image"
+    }
+  },
+  "diamond_mosaic_page": {
+    "title": "Diamond Mosaic",
+    "size_selection": {
+      "title": "Choose Size",
+      "sizes": {
+        "21x30": "21×30 cm",
+        "30x40": "30×40 cm",
+        "40x40": "40×40 cm",
+        "40x50": "40×50 cm",
+        "40x60": "40×60 cm",
+        "50x70": "50×70 cm"
+      },
+      "details": {
+        "21x30": {
+          "desc": "Basic detail level",
+          "price": "from 990 ₽",
+          "gems": "8,000 gems"
+        },
+        "30x40": {
+          "desc": "Good detail",
+          "price": "from 1,490 ₽",
+          "gems": "16,000 gems"
+        },
+        "40x40": {
+          "desc": "High detail",
+          "price": "from 1,990 ₽",
+          "gems": "21,000 gems"
+        },
+        "40x50": {
+          "desc": "Very high detail",
+          "price": "from 2,490 ₽",
+          "gems": "26,000 gems"
+        },
+        "40x60": {
+          "desc": "Maximum detail",
+          "price": "from 2,990 ₽",
+          "gems": "32,000 gems"
+        },
+        "50x70": {
+          "desc": "Professional level",
+          "price": "from 3,990 ₽",
+          "gems": "46,000 gems"
+        }
+      }
+    },
+    "upload_section": {
+      "title": "Upload Image for Mosaic",
+      "subtitle": "Upload your image and prepare it for mosaic creation",
+      "instruction": "Select an image and edit it to fit the chosen size",
+      "select_image": "Select Image",
+      "image_preview": "Image Preview",
+      "file_size_error": "File size should not exceed 10MB",
+      "file_type_error": "Please select an image",
+      "size_and_image_required": "Please select a size and upload an image"
+    },
+    "image_editor": {
+      "title": "Image Editing",
+      "position_controls": "Position Controls",
+      "position_x": "Position X",
+      "position_y": "Position Y",
+      "scale_control": "Scale",
+      "rotation_control": "Rotation",
+      "rotation_value": "{value}°",
+      "scale_value": "{value}%",
+      "drag_instruction": "Drag the image with your mouse to move it",
+      "tools": {
+        "rotate_left": "Rotate Left",
+        "rotate_right": "Rotate Right",
+        "rotate_90": "Rotate 90°",
+        "fit_image": "Fit Image",
+        "reset": "Reset"
+      }
+    },
+    "navigation": {
+      "continue": "Continue to Style Selection",
+      "select_size_first": "Please select a size first",
+      "other_photo": "Other Photo",
+      "recommendations": {
+        "title": "Recommendations:",
+        "good_contrast": "Use images with good contrast",
+        "avoid_small_details": "Avoid too small details",
+        "best_for": "Portraits and landscapes work best"
+      }
+    }
+  },
+  "diamond_mosaic_preview": {
+    "title": "Diamond Mosaic Preview",
+    "subtitle": "Original Image",
+    "style_selection": {
+      "title": "Choose Mosaic Style",
+      "styles": {
+        "realistic": {
+          "title": "Realistic",
+          "desc": "Image closest to the original"
+        },
+        "bright": {
+          "title": "Bright Colors",
+          "desc": "Saturated and contrasting shades"
+        },
+        "pastel": {
+          "title": "Pastel Tones",
+          "desc": "Soft muted colors"
+        },
+        "monochrome": {
+          "title": "Monochrome",
+          "desc": "Black and white palette"
+        },
+        "warm": {
+          "title": "Warm Tones",
+          "desc": "Golden and reddish hues"
+        },
+        "cool": {
+          "title": "Cool Tones",
+          "desc": "Blue and greenish hues"
+        }
+      }
+    },
+    "preview_section": {
+      "title": "Result Preview",
+      "selected_params": "Selected parameters:",
+      "size": "Size: {size}",
+      "style": "Style: {style}",
+      "generate_all": "Generate All Styles",
+      "generating": "Generating...",
+      "view_full": "View Full Size",
+      "download": "Download Preview"
+    },
+    "navigation": {
+      "back": "Back to Size Selection",
+      "continue": "Continue to Purchase"
+    },
+    "notifications": {
+      "select_style": "Please select a style",
+      "generation_started": "Preview generation started",
+      "generation_complete": "Preview generated successfully!",
+      "generation_error": "Error generating preview. Please try again.",
+      "save_error": "Error saving selection",
+      "style_selection_required": "Please select a processing style"
+    }
+  },
+  "diamond_mosaic_editor": {
+    "title": "Diamond Mosaic Editor",
+    "subtitle": "Edit your image before creating the mosaic",
+    "image_required": "Please select an image",
+    "processing_error": "Error processing image",
+    "continue": "Continue",
+    "size_label": "Size:",
+    "style_label": "Style:",
+    "loading": "Loading editor...",
+    "navigation": {
+      "back": "Back to Preview"
+    },
+    "tools": {
+      "rotate": "Rotate",
+      "scale": "Scale",
+      "position": "Position"
+    },
+    "controls": {
+      "rotation_control": "Rotation: {value}°",
+      "scale_control": "Scale: {value}%",
+      "position_x": "X: {value}",
+      "position_y": "Y: {value}"
+    },
+    "sections": {
+      "new_image": "New Image",
+      "select_other_image": "Select Another Image",
+      "reset_changes": "Reset All Changes",
+      "preview": "Preview",
+      "drag_instruction": "Drag the image to change position"
+    }
+  },
+  "diamond_mosaic_purchase": {
+    "title": "Purchase Mosaic Schema",
+    "subtitle": "Choose the right package for your diamond mosaic",
+    "back_to_preview": "Back to Preview",
+    "selected_preview": "Selected Preview",
+    "size_label": "Size:",
+    "style_label": "Style:",
+    "select_package": "Select a package for purchase",
+    "purchase_error": "Purchase Error",
+    "order_section": {
+      "title": "Your Order",
+      "processing_type": "Processing Type:"
+    },
+    "what_you_get": {
+      "title": "What You Get",
+      "detailed_schema": "Detailed diamond mosaic schema",
+      "materials_list": "List of required materials",
+      "step_instructions": "Step-by-step instructions",
+      "download_files": "Download files"
+    },
+    "pricing": {
+      "discount": "Discount",
+      "package": "package",
+      "total_to_pay": "Total to pay:",
+      "savings": "Savings"
+    },
+    "terms": "By clicking the button, you agree to the terms of use",
+    "packages": {
+      "basic": {
+        "name": "Basic",
+        "features": [
+          "Diamond mosaic schema",
+          "Assembly instructions",
+          "24/7 support"
+        ]
+      },
+      "premium": {
+        "name": "Premium",
+        "features": [
+          "Diamond mosaic schema",
+          "Assembly instructions",
+          "24/7 support",
+          "HD quality schema",
+          "Additional processing options"
+        ]
+      },
+      "professional": {
+        "name": "Professional",
+        "features": [
+          "Diamond mosaic schema",
+          "Assembly instructions",
+          "24/7 support",
+          "HD quality schema",
+          "Additional processing options",
+          "Priority processing",
+          "Personal manager"
+        ]
+      }
+    },
+    "labels": {
+      "popular": "Popular",
+      "original_price": "Regular price:",
+      "selected_params": "Selected parameters:",
+      "size": "Size: {size}",
+      "style": "Style: {style}",
+      "select_package": "Select a package"
+    },
+    "buttons": {
+      "purchase": "Purchase for {price} ₽",
+      "back": "Back to Preview"
+    },
+    "notifications": {
+      "select_package": "Please select a package",
+      "processing": "Processing order...",
+      "purchase_success_title": "Purchase Completed!",
+      "purchase_success_message": "Coupon activated. Proceeding to schema generation...",
+      "purchase_failed_message": "Failed to complete purchase. Please try again.",
+      "loading": "Loading..."
+    }
+  },
+  "diamond_mosaic_success": {
+    "title": "Order Successfully Created!",
+    "subtitle": "Your diamond mosaic schema is ready for download",
+    "generating": {
+      "title": "Generating files...",
+      "description": "Please wait, we are creating the schema and instructions for your mosaic"
+    },
+    "download_section": {
+      "title": "Download Files",
+      "files": {
+        "schema": "Mosaic Schema (PDF)",
+        "instructions": "Assembly Instructions (PDF)",
+        "preview": "Result Preview (JPG)"
+      }
+    },
+    "order_info": {
+      "title": "Order Information",
+      "order_number": "Order number: {number}",
+      "package": "Package: {package}",
+      "size": "Size: {size}",
+      "style": "Style: {style}"
+    },
+    "buttons": {
+      "download_all": "Download All Files",
+      "home": "Go Home",
+      "new_mosaic": "Create New Mosaic"
+    },
+    "your_mosaic": "Your Mosaic",
+    "selected_preview": "Selected Preview",
+    "size_label": "Size:",
+    "style_label": "Style:",
+    "download": "Download",
+    "create_new": "Create New Mosaic",
+    "preview_result": "Result Preview",
+    "schema_generation_error": "Error generating schema files",
+    "generating_files": "Generating your files...",
+    "generating_description": "Creating diamond mosaic schema and related materials",
+    "order_details": "Order Details",
+    "characteristics": "Characteristics",
+    "package": "Package:",
+    "cost": "Cost:",
+    "purchase_date": "Purchase date:",
+    "your_files": "Your Files",
+    "files": {
+      "schema": {
+        "name": "Diamond Mosaic Schema",
+        "description": "Detailed schema with rhinestone numbers and colors"
+      },
+      "instructions": {
+        "name": "Assembly Instructions",
+        "description": "Step-by-step guide for creating the mosaic"
+      },
+      "hd_schema": {
+        "name": "HD Schema",
+        "description": "High-resolution schema"
+      },
+      "print_files": {
+        "name": "Print Files",
+        "description": "Ready files for printing the schema"
+      }
+    },
+    "notifications": {
+      "download_started": "Download of {fileName} started"
+    },
+    "go_home": "Go Home",
+    "email_notification": "Files have also been sent to your email (if provided)",
+    "support_contact": "If you have any questions, please contact support"
+  },
+  "diamond_mosaic_album": {
+    "title": "Preview Album",
+    "subtitle": "All generated variants of your mosaic",
+    "empty_state": {
+      "title": "Album is Empty",
+      "description": "All generated previews will be displayed here",
+      "button": "Create First Preview"
+    },
+    "buttons": {
+      "view_full": "View Full Size",
+      "download": "Download",
+      "delete": "Delete",
+      "back": "Back to Creation"
+    }
+  },
+  "diamond_art": {
+    "title": "Diamond Art",
+    "subtitle": "Create stunning paintings from diamond gems",
+    "description": "Transform your photos into diamond painting schemas",
+    "coming_soon": "Coming Soon",
+    "preview_section": {
+      "title": "How will your mosaic look?",
+      "description": "Upload your image and create a preview of your unique diamond mosaic",
+      "create_preview": "Create Mosaic Preview",
+      "instruction": "Choose size, upload image and get previews in different styles"
+    },
+    "coupon_section": {
+      "title": "Coupon Purchase",
+      "domain_warning": "This coupon is intended for partner website: {partnerName}",
+      "wrong_domain": "This coupon is intended for partner website: {partnerBrandName}",
+      "go_to_partner_site": "Go to Partner Site"
+    },
+    "marketplace_links": {
+      "ozon": "https://www.ozon.ru/search/?text=алмазная+мозаика+набор",
+      "wildberries": "https://www.wildberries.ru/catalog/0/search.aspx?search=алмазная+мозаика+набор"
+    }
+  },
+  "diamond_mosaic_preview_album": {
+    "title": "Preview Album",
+    "subtitle": "Preview Options",
+    "generating_ai": "Generating AI preview...",
+    "back_to_style_selection": "Back to Style Selection",
+    "select_preview_for_purchase": "Select preview for purchase",
+    "contrast_generation_error": "Error generating contrast variants",
+    "ai_preview_generation_error": "Error generating AI preview",
+    "size_label": "Size:",
+    "style_label": "Style:",
+    "continue_to_purchase": "Continue to Purchase",
+    "ai_processing": "AI Processing",
+    "ai_description": "Add variants with neural network processing",
+    "generating_variants": "Generating variants...",
+    "main_preview": "Main",
+    "edit_image": "Edit Image",
+    "buy_coupon_and_generate": "Buy coupon and generate schema",
+    "ready_sets_in_stores": "Ready sets in stores:",
+    "contrast_variants": {
+      "venus": "Venus",
+      "sun": "Sun",
+      "moon": "Moon",
+      "mars": "Mars",
+      "soft": "Soft",
+      "strong": "Strong"
     }
   }
 }

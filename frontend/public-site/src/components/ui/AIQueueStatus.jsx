@@ -67,7 +67,7 @@ const AIQueueStatus = ({ imageId, onClose, isVisible }) => {
       <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold text-gray-900">
-            {t('ai_queue.status_title', 'Статус AI обработки')}
+            {t('ai_queue.status_title')}
           </h3>
           <button
             onClick={onClose}
@@ -95,7 +95,7 @@ const AIQueueStatus = ({ imageId, onClose, isVisible }) => {
               </div>
               <div className="ml-3">
                 <p className="text-sm text-red-800">
-                  {t('ai_queue.error_loading', 'Ошибка загрузки статуса очереди')}
+                  {t('ai_queue.error_loading')}
                 </p>
               </div>
             </div>
@@ -108,12 +108,12 @@ const AIQueueStatus = ({ imageId, onClose, isVisible }) => {
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">
-                  {t('ai_queue.queue_health', 'Состояние очереди')}
+                  {t('ai_queue.queue_health')}
                 </span>
                 <span className={`flex items-center text-sm font-semibold ${getHealthColor(queueStatus.queue_health)}`}>
                   {getHealthIcon(queueStatus.queue_health)}
                   <span className="ml-1">
-                    {t(`ai_queue.health.${queueStatus.queue_health}`, queueStatus.queue_health)}
+                    {t(`ai_queue.health.${queueStatus.queue_health}`)}
                   </span>
                 </span>
               </div>
@@ -126,7 +126,7 @@ const AIQueueStatus = ({ imageId, onClose, isVisible }) => {
                   {queueStatus.queue_size}
                 </div>
                 <div className="text-sm text-brand-primary/80">
-                  {t('ai_queue.tasks_in_queue', 'Задач в очереди')}
+                  {t('ai_queue.tasks_in_queue')}
                 </div>
               </div>
               
@@ -135,7 +135,7 @@ const AIQueueStatus = ({ imageId, onClose, isVisible }) => {
                   {queueStatus.available_workers}
                 </div>
                 <div className="text-sm text-brand-secondary/80">
-                  {t('ai_queue.available_workers', 'Доступных воркеров')}
+                  {t('ai_queue.available_workers')}
                 </div>
               </div>
             </div>
@@ -147,7 +147,7 @@ const AIQueueStatus = ({ imageId, onClose, isVisible }) => {
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                 </svg>
                 <span className="text-sm font-medium text-yellow-800">
-                  {t('ai_queue.estimated_wait', 'Оценочное время ожидания')}:
+                  {t('ai_queue.estimated_wait')}:
                 </span>
               </div>
               <div className="mt-1 text-lg font-semibold text-yellow-900">
@@ -159,7 +159,7 @@ const AIQueueStatus = ({ imageId, onClose, isVisible }) => {
             <div className="bg-brand-accent/5 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-brand-accent/80">
-                  {t('ai_queue.currently_processing', 'Сейчас обрабатывается')}
+                  {t('ai_queue.currently_processing')}
                 </span>
                 <span className="text-lg font-bold text-brand-accent">
                   {queueStatus.currently_processing} / {queueStatus.max_concurrent}
@@ -181,7 +181,7 @@ const AIQueueStatus = ({ imageId, onClose, isVisible }) => {
                     <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100 4 2 2 0 000-4z" clipRule="evenodd" />
                   </svg>
                   <span className="text-sm font-medium text-brand-primary">
-                    {t('ai_queue.your_task', 'Ваша задача')}
+                    {t('ai_queue.your_task')}
                   </span>
                 </div>
                 <div className="mt-1 text-sm text-brand-primary/80">
@@ -199,20 +199,20 @@ const AIQueueStatus = ({ imageId, onClose, isVisible }) => {
             disabled={loading}
             className="flex-1 bg-brand-primary text-white px-4 py-2 rounded-md hover:bg-brand-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? t('ai_queue.refreshing', 'Обновление...') : t('ai_queue.refresh', 'Обновить')}
+            {loading ? t('ai_queue.refreshing') : t('ai_queue.refresh')}
           </button>
           
           <button
             onClick={onClose}
             className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors"
           >
-            {t('ai_queue.close', 'Закрыть')}
+            {t('ai_queue.close')}
           </button>
         </div>
 
         {/* Подсказка */}
         <div className="mt-4 text-xs text-gray-500 text-center">
-          {t('ai_queue.auto_refresh_note', 'Статус обновляется автоматически каждые 30 секунд')}
+          {t('ai_queue.auto_refresh_note')}
         </div>
       </div>
     </div>

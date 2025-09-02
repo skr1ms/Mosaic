@@ -223,7 +223,9 @@ const HeroSection = () => {
 
           <motion.div 
             variants={itemVariants}
-            className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto"
+            className={`grid grid-cols-1 gap-6 sm:gap-8 max-w-5xl mx-auto ${
+              isOwnDomain ? 'lg:grid-cols-2' : 'lg:grid-cols-1 max-w-2xl'
+            }`}
           >
             {/* Coupon Activation Card */}
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 sm:p-8 border border-white/20 mx-4 lg:mx-0 flex flex-col h-full min-h-[400px]">
@@ -231,11 +233,11 @@ const HeroSection = () => {
                 <Ticket className="w-7 h-7 sm:w-8 sm:h-8 text-brand-primary" />
               </div>
               
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 px-2">
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 text-center">
                 {t('hero.coupon_banner.title')}
               </h3>
               
-              <p className="text-gray-600 mb-6 px-2 text-sm sm:text-base flex-grow">
+              <p className="text-gray-600 mb-6 text-sm sm:text-base flex-grow text-center">
                 {t('hero.coupon_banner.description')}
               </p>
               
@@ -275,11 +277,11 @@ const HeroSection = () => {
                   <ShoppingCart className="w-7 h-7 sm:w-8 sm:h-8 text-brand-secondary" />
                 </div>
                 
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 px-2">
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 text-center">
                   {t('hero.shop_banner.title')}
                 </h3>
                 
-                <p className="text-gray-600 mb-6 px-2 text-sm sm:text-base flex-grow">
+                <p className="text-gray-600 mb-6 text-sm sm:text-base flex-grow text-center">
                   {t('hero.shop_banner.description')}
                 </p>
                 
@@ -300,11 +302,11 @@ const HeroSection = () => {
                   <Gem className="w-7 h-7 sm:w-8 sm:h-8 text-green-600" />
                 </div>
                 
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 px-2">
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 text-center">
                   {t('sections.diamond_art.title')}
                 </h3>
                 
-                <p className="text-gray-600 mb-6 px-2 text-sm sm:text-base flex-grow">
+                <p className="text-gray-600 mb-6 text-sm sm:text-base flex-grow text-center">
                   {t('sections.diamond_art.description')}
                 </p>
                 

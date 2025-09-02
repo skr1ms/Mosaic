@@ -43,7 +43,7 @@ const Header = () => {
       onClick: null
     },
     {
-      name: 'Создать превью мозаики',
+      name: t('navigation.create_preview'),
       href: '/diamond-mosaic',
       current: location.pathname.startsWith('/diamond-mosaic'),
       onClick: null

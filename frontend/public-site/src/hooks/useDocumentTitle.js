@@ -6,12 +6,12 @@ export const useDocumentTitle = () => {
 
   useEffect(() => {
     // Update title
-    document.title = t('navigation.page_title')
+    document.title = t('navigation.html_title')
     
     // Update meta description
     const metaDescription = document.querySelector('meta[name="description"]')
     if (metaDescription) {
-      metaDescription.setAttribute('content', t('navigation.page_description'))
+      metaDescription.setAttribute('content', t('navigation.html_description'))
     }
     
     // Update HTML lang attribute

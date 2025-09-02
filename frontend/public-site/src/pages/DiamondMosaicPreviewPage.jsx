@@ -4,9 +4,9 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, Palette, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useUIStore } from '../store/partnerStore'
-import { MosaicAPI } from '../api/client'
+import MosaicAPIClient, { MosaicAPI } from '../api/client'
 
-const DiamondMosaicStylesPage = () => {
+const DiamondMosaicPreviewPage = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { addNotification } = useUIStore()
@@ -17,29 +17,29 @@ const DiamondMosaicStylesPage = () => {
   const [isGenerating, setIsGenerating] = useState(false)
   const [fileUrl, setFileUrl] = useState(null)
 
-  const styles = [
+  const getStyles = () => [
     { 
       key: 'max_colors', 
-      title: 'Максимум цветов', 
-      desc: 'Яркие и насыщенные цвета с максимальной детализацией',
+      title: t('diamond_mosaic_preview.style_selection.styles.realistic.title'), 
+      desc: t('diamond_mosaic_preview.style_selection.styles.realistic.desc'),
       preview: null
     },
     { 
       key: 'pop_art', 
-      title: 'Поп-арт', 
-      desc: 'Контрастные цвета в стиле поп-арт',
+      title: t('diamond_mosaic_preview.style_selection.styles.bright.title'), 
+      desc: t('diamond_mosaic_preview.style_selection.styles.bright.desc'),
       preview: null
     },
     { 
       key: 'grayscale', 
-      title: 'Чёрно-белый', 
-      desc: 'Классическая чёрно-белая обработка',
+      title: t('diamond_mosaic_preview.style_selection.styles.monochrome.title'), 
+      desc: t('diamond_mosaic_preview.style_selection.styles.monochrome.desc'),
       preview: null
     },
     { 
       key: 'skin_tones', 
-      title: 'Телесные тона', 
-      desc: 'Оптимизировано для портретов',
+      title: t('diamond_mosaic_preview.style_selection.styles.warm.title'), 
+      desc: t('diamond_mosaic_preview.style_selection.styles.warm.desc'),
       preview: null
     }
   ]
@@ -77,40 +77,54 @@ const DiamondMosaicStylesPage = () => {
     try {
       // Получаем файл из URL
       const response = await fetch(imageUrl)
+      if (!response.ok) {
+        throw new Error('Failed to fetch image')
+      }
       const blob = await response.blob()
       
-      // Генерируем превью для каждого стиля
-      const previews = {}
-      
-      for (const style of styles) {
+      // Генерируем превью для каждого стиля последовательно
+      for (const style of getStyles()) {
         try {
+          // Создаем новый FormData для каждого запроса
           const formData = new FormData()
           formData.append('image', blob, 'image.jpg')
           formData.append('size', size)
           formData.append('style', style.key)
           formData.append('use_ai', 'false')
           
+          console.log(`Generating preview for style: ${style.key}`)
+          
           // Используем существующий API endpoint
           const result = await MosaicAPI.generatePreview(formData)
-          previews[style.key] = result.preview_url
           
-          // Обновляем состояние постепенно для лучшего UX
-          setStylePreviews(prev => ({
-            ...prev,
-            [style.key]: result.preview_url
-          }))
+          if (result && result.preview_url) {
+            // Обновляем состояние для каждого сгенерированного превью
+            setStylePreviews(prev => ({
+              ...prev,
+              [style.key]: result.preview_url
+            }))
+            console.log(`Preview generated for ${style.key}:`, result.preview_url)
+          } else {
+            console.warn(`No preview URL returned for style ${style.key}`)
+          }
           
         } catch (error) {
           console.error(`Error generating preview for style ${style.key}:`, error)
-          previews[style.key] = null
+          setStylePreviews(prev => ({
+            ...prev,
+            [style.key]: null
+          }))
         }
+        
+        // Небольшая задержка между запросами
+        await new Promise(resolve => setTimeout(resolve, 500))
       }
       
     } catch (error) {
       console.error('Error generating previews:', error)
       addNotification({
         type: 'error',
-        message: 'Ошибка при генерации превью. Попробуйте ещё раз.'
+        message: t('diamond_mosaic_preview.notifications.generation_error')
       })
     } finally {
       setIsGenerating(false)
@@ -125,7 +139,7 @@ const DiamondMosaicStylesPage = () => {
     if (!selectedStyle) {
       addNotification({
         type: 'error',
-        message: 'Пожалуйста, выберите стиль обработки'
+        message: t('diamond_mosaic_preview.notifications.style_selection_required')
       })
       return
     }
@@ -146,7 +160,7 @@ const DiamondMosaicStylesPage = () => {
       console.error('Error saving style selection:', error)
       addNotification({
         type: 'error',
-        message: 'Ошибка при сохранении выбора'
+        message: t('diamond_mosaic_preview.notifications.save_error')
       })
     }
   }
@@ -178,15 +192,15 @@ const DiamondMosaicStylesPage = () => {
             className="flex items-center text-purple-600 hover:text-purple-700 mb-4 transition-colors"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
-            Назад к выбору размера
+            {t('diamond_mosaic_preview.navigation.back')}
           </button>
           
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
-              Выберите стиль обработки
+              {t('diamond_mosaic_preview.title')}
             </h1>
             <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
-              Размер: <span className="font-semibold">{imageData.size} см</span>
+              {t('diamond_mosaic_preview.preview_section.size', { size: imageData.size + ' ' + t('common.cm') })}
             </p>
           </div>
         </motion.div>
@@ -198,7 +212,7 @@ const DiamondMosaicStylesPage = () => {
           transition={{ delay: 0.1 }}
           className="text-center mb-8"
         >
-          <h3 className="text-lg font-medium text-gray-700 mb-4">Исходное изображение:</h3>
+          <h3 className="text-lg font-medium text-gray-700 mb-4">{t('diamond_mosaic_preview.subtitle')}:</h3>
           <div className="inline-block bg-white p-4 rounded-xl shadow-lg">
             <img
               src={imageData.previewUrl}
@@ -217,20 +231,20 @@ const DiamondMosaicStylesPage = () => {
         >
           <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center flex items-center justify-center">
             <Palette className="w-6 h-6 mr-2 text-purple-600" />
-            Стили обработки
+            {t('diamond_mosaic_preview.style_selection.title')}
           </h2>
           
           {isGenerating && (
             <div className="text-center mb-6">
               <div className="inline-flex items-center text-purple-600">
                 <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                Генерируем превью...
+                {t('diamond_mosaic_preview.preview_section.generating')}
               </div>
             </div>
           )}
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {styles.map((style, index) => (
+            {getStyles().map((style, index) => (
               <motion.div
                 key={style.key}
                 initial={{ opacity: 0, y: 20 }}
@@ -258,7 +272,7 @@ const DiamondMosaicStylesPage = () => {
                         <Palette className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                       )}
                       <p className="text-sm text-gray-500">
-                        {isGenerating ? 'Генерация...' : 'Превью'}
+                        {isGenerating ? t('diamond_mosaic_preview.preview_section.generating') : t('diamond_mosaic_preview.preview_section.title')}
                       </p>
                     </div>
                   )}
@@ -284,7 +298,7 @@ const DiamondMosaicStylesPage = () => {
               onClick={handleContinue}
               className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center mx-auto"
             >
-              Продолжить к альбому превью
+              {t('diamond_mosaic_preview.navigation.continue')}
               <ArrowRight className="w-5 h-5 ml-2" />
             </button>
           </motion.div>
@@ -294,4 +308,4 @@ const DiamondMosaicStylesPage = () => {
   )
 }
 
-export default DiamondMosaicStylesPage
+export default DiamondMosaicPreviewPage

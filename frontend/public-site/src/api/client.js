@@ -207,4 +207,5 @@ export class MosaicAPI {
   }
 }
 
+// Экспортируем axios client как default export
 export default apiClient

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, Edit, ShoppingCart, Loader2, Sparkles, Eye } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useUIStore } from '../store/partnerStore'
-import { MosaicAPI } from '../api/client'
+import MosaicAPIClient, { MosaicAPI } from '../api/client'
 import MarketplaceCards from '../components/MarketplaceCards'
 
 const DiamondMosaicPreviewAlbumPage = () => {
@@ -19,20 +19,20 @@ const DiamondMosaicPreviewAlbumPage = () => {
   const [isGeneratingAI, setIsGeneratingAI] = useState(false)
   const [isGeneratingVariants, setIsGeneratingVariants] = useState(false)
 
-  // Конфигурация контрастов
+  // Contrast configuration
   const contrastVariants = [
-    { name: 'Венера', type: 'soft', label: 'Мягкий' },
-    { name: 'Венера', type: 'strong', label: 'Сильный' },
-    { name: 'Солнце', type: 'soft', label: 'Мягкий' },
-    { name: 'Солнце', type: 'strong', label: 'Сильный' },
-    { name: 'Луна', type: 'soft', label: 'Мягкий' },
-    { name: 'Луна', type: 'strong', label: 'Сильный' },
-    { name: 'Марс', type: 'soft', label: 'Мягкий' },
-    { name: 'Марс', type: 'strong', label: 'Сильный' }
+    { name: t('diamond_mosaic_preview_album.contrast_variants.venus'), type: 'soft', label: t('diamond_mosaic_preview_album.contrast_variants.soft') },
+    { name: t('diamond_mosaic_preview_album.contrast_variants.venus'), type: 'strong', label: t('diamond_mosaic_preview_album.contrast_variants.strong') },
+    { name: t('diamond_mosaic_preview_album.contrast_variants.sun'), type: 'soft', label: t('diamond_mosaic_preview_album.contrast_variants.soft') },
+    { name: t('diamond_mosaic_preview_album.contrast_variants.sun'), type: 'strong', label: t('diamond_mosaic_preview_album.contrast_variants.strong') },
+    { name: t('diamond_mosaic_preview_album.contrast_variants.moon'), type: 'soft', label: t('diamond_mosaic_preview_album.contrast_variants.soft') },
+    { name: t('diamond_mosaic_preview_album.contrast_variants.moon'), type: 'strong', label: t('diamond_mosaic_preview_album.contrast_variants.strong') },
+    { name: t('diamond_mosaic_preview_album.contrast_variants.mars'), type: 'soft', label: t('diamond_mosaic_preview_album.contrast_variants.soft') },
+    { name: t('diamond_mosaic_preview_album.contrast_variants.mars'), type: 'strong', label: t('diamond_mosaic_preview_album.contrast_variants.strong') }
   ]
 
   useEffect(() => {
-    // Загружаем данные изображения
+    // Load image data
     try {
       const savedImageData = localStorage.getItem('diamondMosaic_selectedImage')
       
@@ -49,7 +49,7 @@ const DiamondMosaicPreviewAlbumPage = () => {
       
       setImageData(parsedData)
       
-      // Генерируем контрастные варианты
+      // Generate contrast variants
       generateContrastVariants(parsedData)
       
     } catch (error) {
@@ -67,13 +67,13 @@ const DiamondMosaicPreviewAlbumPage = () => {
         throw new Error('No file URL found')
       }
       
-      // Получаем файл из URL
+      // Get file from URL
       const response = await fetch(fileUrl)
       const blob = await response.blob()
       
       const generatedPreviews = []
       
-      // Добавляем основное превью как первое
+      // Add main preview as first
       generatedPreviews.push({
         id: 0,
         url: data.stylePreview,
@@ -82,7 +82,7 @@ const DiamondMosaicPreviewAlbumPage = () => {
         isMain: true
       })
       
-      // Генерируем контрастные варианты
+      // Generate contrast variants
       for (let i = 0; i < contrastVariants.length; i++) {
         const variant = contrastVariants[i]
         
@@ -95,7 +95,7 @@ const DiamondMosaicPreviewAlbumPage = () => {
           formData.append('contrast_level', variant.type)
           formData.append('use_ai', 'false')
           
-          // Используем модифицированный API для генерации вариантов
+          // Use modified API for variant generation
           const result = await MosaicAPI.generatePreviewVariant ? 
             await MosaicAPI.generatePreviewVariant(formData) :
             await MosaicAPI.generatePreview(formData)
@@ -108,7 +108,7 @@ const DiamondMosaicPreviewAlbumPage = () => {
             variant: variant
           })
           
-          // Обновляем превью по мере генерации
+          // Update preview as it generates
           setPreviews([...generatedPreviews])
           
         } catch (error) {
@@ -131,7 +131,7 @@ const DiamondMosaicPreviewAlbumPage = () => {
       console.error('Error generating contrast variants:', error)
       addNotification({
         type: 'error',
-        message: 'Ошибка при генерации вариантов контраста'
+        message: t('diamond_mosaic_preview_album.contrast_generation_error')
       })
     } finally {
       setIsGeneratingVariants(false)
@@ -165,7 +165,7 @@ const DiamondMosaicPreviewAlbumPage = () => {
           aiPreviews.push({
             id: previews.length + i,
             url: result.preview_url,
-            title: `AI обработка ${i + 1}`,
+            title: `${t('diamond_mosaic_preview_album.ai_processing')} ${i + 1}`,
             type: 'ai'
           })
           
@@ -181,7 +181,7 @@ const DiamondMosaicPreviewAlbumPage = () => {
       console.error('Error generating AI previews:', error)
       addNotification({
         type: 'error',
-        message: 'Ошибка при генерации AI превью'
+        message: t('diamond_mosaic_preview_album.ai_preview_generation_error')
       })
     } finally {
       setIsGeneratingAI(false)
@@ -222,7 +222,7 @@ const DiamondMosaicPreviewAlbumPage = () => {
     if (!imageData || !previews[selectedPreview]) {
       addNotification({
         type: 'error',
-        message: 'Выберите превью для покупки'
+        message: t('diamond_mosaic_preview_album.select_preview_for_purchase')
       })
       return
     }
@@ -251,10 +251,10 @@ const DiamondMosaicPreviewAlbumPage = () => {
 
   const getStyleTitle = (styleKey) => {
     const styleMap = {
-      'max_colors': 'Максимум цветов',
-      'pop_art': 'Поп-арт',
-      'grayscale': 'Чёрно-белый',
-      'skin_tones': 'Телесные тона'
+      'max_colors': t('diamond_mosaic_preview.style_selection.styles.realistic.title'),
+      'pop_art': t('diamond_mosaic_preview.style_selection.styles.bright.title'),
+      'grayscale': t('diamond_mosaic_preview.style_selection.styles.monochrome.title'),
+      'skin_tones': t('diamond_mosaic_preview.style_selection.styles.warm.title')
     }
     return styleMap[styleKey] || styleKey
   }
@@ -284,16 +284,16 @@ const DiamondMosaicPreviewAlbumPage = () => {
             className="flex items-center text-purple-600 hover:text-purple-700 mb-4 transition-colors"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
-            Назад к выбору стиля
+            {t('diamond_mosaic_preview_album.back_to_style_selection')}
           </button>
           
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
-              Альбом превью
+              {t('diamond_mosaic_preview_album.title')}
             </h1>
             <p className="text-lg text-gray-600">
-              Размер: <span className="font-semibold">{imageData.size} см</span> • 
-              Стиль: <span className="font-semibold">{getStyleTitle(imageData.selectedStyle)}</span>
+              {t('diamond_mosaic_preview_album.size_label')} <span className="font-semibold">{imageData.size} {t('common.cm')}</span> • 
+              {t('diamond_mosaic_preview_album.style_label')} <span className="font-semibold">{getStyleTitle(imageData.selectedStyle)}</span>
             </p>
           </div>
         </motion.div>
@@ -306,14 +306,14 @@ const DiamondMosaicPreviewAlbumPage = () => {
             animate={{ opacity: 1, x: 0 }}
             className="lg:col-span-1"
           >
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Варианты превью</h2>
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">{t('diamond_mosaic_preview_album.subtitle')}</h2>
             
             {/* AI переключатель */}
             <div className="mb-6 p-4 bg-white rounded-xl border border-gray-200">
               <div className="flex items-center justify-between mb-2">
                 <label className="flex items-center cursor-pointer">
                   <Sparkles className="w-5 h-5 text-purple-600 mr-2" />
-                  <span className="font-medium">AI обработка</span>
+                  <span className="font-medium">{t('diamond_mosaic_preview_album.ai_processing')}</span>
                 </label>
                 <input
                   type="checkbox"
@@ -323,12 +323,12 @@ const DiamondMosaicPreviewAlbumPage = () => {
                 />
               </div>
               <p className="text-sm text-gray-600">
-                Добавить варианты с нейросетевой обработкой
+                {t('diamond_mosaic_preview_album.ai_description')}
               </p>
               {isGeneratingAI && (
                 <div className="mt-2 flex items-center text-purple-600">
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  Генерируем AI превью...
+                  {t('diamond_mosaic_preview_album.generating_ai')}
                 </div>
               )}
             </div>
@@ -338,7 +338,7 @@ const DiamondMosaicPreviewAlbumPage = () => {
               {isGeneratingVariants && previews.length === 0 && (
                 <div className="text-center py-8">
                   <Loader2 className="w-8 h-8 animate-spin text-purple-600 mx-auto mb-2" />
-                  <p className="text-gray-600">Генерируем варианты...</p>
+                  <p className="text-gray-600">{t('diamond_mosaic_preview_album.generating_variants')}</p>
                 </div>
               )}
               
@@ -377,7 +377,7 @@ const DiamondMosaicPreviewAlbumPage = () => {
                     <p className="text-sm text-gray-500 capitalize">{preview.type}</p>
                     {preview.isMain && (
                       <span className="inline-block px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded mt-1">
-                        Основной
+                        {t('diamond_mosaic_preview_album.main_preview')}
                       </span>
                     )}
                   </div>
@@ -425,7 +425,7 @@ const DiamondMosaicPreviewAlbumPage = () => {
                 className="w-full bg-white text-purple-600 border-2 border-purple-600 px-6 py-3 rounded-xl font-semibold hover:bg-purple-50 transition-all duration-300 flex items-center justify-center"
               >
                 <Edit className="w-5 h-5 mr-2" />
-                Изменить изображение
+                {t('diamond_mosaic_preview_album.edit_image')}
               </button>
               
               <button
@@ -434,7 +434,7 @@ const DiamondMosaicPreviewAlbumPage = () => {
                 className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-4 rounded-xl font-semibold text-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 <ShoppingCart className="w-5 h-5 mr-2" />
-                Купить купон и сгенерировать схему
+                {t('diamond_mosaic_preview_album.buy_coupon_and_generate')}
               </button>
             </div>
 
@@ -445,7 +445,7 @@ const DiamondMosaicPreviewAlbumPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
               >
-                <h3 className="text-xl font-bold text-gray-800 mb-4">Готовые наборы в магазинах:</h3>
+                <h3 className="text-xl font-bold text-gray-800 mb-4">{t('diamond_mosaic_preview_album.ready_sets_in_stores')}</h3>
                 <MarketplaceCards 
                   selectedSize={imageData.size} 
                   selectedStyle={imageData.selectedStyle} 
