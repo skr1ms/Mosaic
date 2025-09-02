@@ -150,6 +150,45 @@ const DiamondArtPage = () => {
         </div>
       </section>
 
+      {/* Кнопка "Как будет выглядеть ваша мозаика" */}
+      <section className="py-8 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="text-center"
+          >
+            <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-3xl shadow-xl p-8 lg:p-10 border border-purple-200">
+              <div className="flex items-center justify-center space-x-4 mb-6">
+                <div className="w-16 h-16 bg-purple-600/10 rounded-2xl flex items-center justify-center">
+                  <Eye className="w-8 h-8 text-purple-600" />
+                </div>
+                <div>
+                  <h2 className="text-2xl lg:text-3xl font-bold text-gray-900">Как будет выглядеть ваша мозаика?</h2>
+                  <p className="text-gray-600 text-base lg:text-lg mt-2">
+                    Загрузите своё изображение и создайте превью уникальной алмазной мозаики
+                  </p>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => navigate('/diamond-mosaic')}
+                className="inline-flex items-center justify-center px-8 lg:px-12 py-4 lg:py-5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 font-semibold text-lg lg:text-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+              >
+                <Palette className="w-6 h-6 mr-3" />
+                <span>Создать превью мозаики</span>
+                <ArrowRight className="w-6 h-6 ml-3" />
+              </button>
+              
+              <p className="text-gray-500 text-sm mt-4">
+                Выберите размер, загрузите изображение и получите превью в разных стилях
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Центральная секция с блоками по центру */}
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
