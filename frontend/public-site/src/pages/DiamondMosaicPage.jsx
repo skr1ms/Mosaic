@@ -55,6 +55,31 @@ const DiamondMosaicPage = () => {
     }
   }, [previewUrl, rotation, scale, position, selectedSize, cropSize])
 
+  // Глобальные обработчики мыши для плавного изменения размера
+  useEffect(() => {
+    const handleGlobalMouseMove = (e) => {
+      if (isResizingCrop || isDragging) {
+        handleMouseMove(e)
+      }
+    }
+
+    const handleGlobalMouseUp = (e) => {
+      if (isResizingCrop || isDragging) {
+        handleMouseUp(e)
+      }
+    }
+
+    if (isResizingCrop || isDragging) {
+      document.addEventListener('mousemove', handleGlobalMouseMove)
+      document.addEventListener('mouseup', handleGlobalMouseUp)
+      
+      return () => {
+        document.removeEventListener('mousemove', handleGlobalMouseMove)
+        document.removeEventListener('mouseup', handleGlobalMouseUp)
+      }
+    }
+  }, [isResizingCrop, isDragging, cropSize, position, lastMousePos, resizeHandle, rotation])
+
   const drawImageOnCanvas = () => {
     const canvas = canvasRef.current
     if (!canvas || !previewUrl) return
@@ -768,9 +793,12 @@ const DiamondMosaicPage = () => {
                           className="rounded-xl border-2 border-dashed border-purple-300 cursor-move shadow-lg bg-white"
                           style={{ maxWidth: '100%', height: 'auto' }}
                           onMouseDown={handleMouseDown}
-                          onMouseMove={handleMouseMove}
-                          onMouseUp={handleMouseUp}
-                          onMouseLeave={handleMouseUp}
+                          onMouseMove={(e) => {
+                            // Только для изменения курсора при наведении
+                            if (!isDragging && !isResizingCrop) {
+                              handleMouseMove(e)
+                            }
+                          }}
                         />
                       </div>
                     </div>
