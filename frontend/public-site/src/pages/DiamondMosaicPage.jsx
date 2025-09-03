@@ -146,8 +146,10 @@ const DiamondMosaicPage = () => {
           cropHeight = baseImgHeight
         }
         
-        // Сохраняем начальный размер
-        setCropSize({ width: cropWidth, height: cropHeight })
+        // Сохраняем начальный размер только если он еще не установлен
+        setTimeout(() => {
+          setCropSize({ width: cropWidth, height: cropHeight })
+        }, 0)
       }
       
       // Применяем пользовательский масштаб к базовым размерам
@@ -510,15 +512,23 @@ const DiamondMosaicPage = () => {
         newHeight = newWidth / aspectRatio
         
       } else if (resizeHandle.type === 'side') {
-        // Боковые ручки - изменение только одной стороны
+        // Боковые ручки - изменение ТОЛЬКО одной стороны, не трогаем другую!
         if (resizeHandle.direction === 'top') {
+          // Изменяем только высоту, ширина остается прежней
           newHeight = Math.max(50, cropSize.height - adjustedDeltaY)
+          newWidth = cropSize.width // Явно сохраняем ширину
         } else if (resizeHandle.direction === 'bottom') {
+          // Изменяем только высоту, ширина остается прежней
           newHeight = Math.max(50, cropSize.height + adjustedDeltaY)
+          newWidth = cropSize.width // Явно сохраняем ширину
         } else if (resizeHandle.direction === 'left') {
+          // Изменяем только ширину, высота остается прежней
           newWidth = Math.max(50, cropSize.width - adjustedDeltaX)
+          newHeight = cropSize.height // Явно сохраняем высоту
         } else if (resizeHandle.direction === 'right') {
+          // Изменяем только ширину, высота остается прежней
           newWidth = Math.max(50, cropSize.width + adjustedDeltaX)
+          newHeight = cropSize.height // Явно сохраняем высоту
         }
       }
       
