@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Palette, Sparkles, Sun, Moon, Loader2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Palette, Sparkles, Sun, Moon, Loader2, Check } from 'lucide-react'
 import { useUIStore } from '../store/partnerStore'
 import { MosaicAPI } from '../api/client'
 
@@ -18,32 +18,32 @@ const PreviewStylesPage = () => {
 
   const styles = [
     {
-      key: 'natural',
-      title: t('diamond_mosaic_styles.styles.natural.title'),
-      description: t('diamond_mosaic_styles.styles.natural.description'),
+      key: 'max_color',
+      title: 'Max Color',
+      description: 'Максимальная насыщенность цветов',
       icon: <Palette className="w-6 h-6" />,
-      color: 'from-green-400 to-blue-500'
+      color: 'from-red-400 to-yellow-500'
     },
     {
-      key: 'enhanced',
-      title: t('diamond_mosaic_styles.styles.enhanced.title'),
-      description: t('diamond_mosaic_styles.styles.enhanced.description'),
+      key: 'pop_art',
+      title: 'Pop Art',
+      description: 'Яркий поп-арт стиль',
       icon: <Sparkles className="w-6 h-6" />,
       color: 'from-pink-400 to-purple-500'
     },
     {
-      key: 'vintage',
-      title: t('diamond_mosaic_styles.styles.vintage.title'),
-      description: t('diamond_mosaic_styles.styles.vintage.description'),
+      key: 'watercolor',
+      title: 'Акварель',
+      description: 'Нежные акварельные переходы',
       icon: <Sun className="w-6 h-6" />,
-      color: 'from-yellow-400 to-orange-500'
+      color: 'from-blue-400 to-cyan-500'
     },
     {
-      key: 'monochrome',
-      title: t('diamond_mosaic_styles.styles.monochrome.title'),
-      description: t('diamond_mosaic_styles.styles.monochrome.description'),
+      key: 'oil_painting',
+      title: 'Масляная живопись',
+      description: 'Классический стиль масляной живописи',
       icon: <Moon className="w-6 h-6" />,
-      color: 'from-gray-400 to-gray-600'
+      color: 'from-amber-400 to-brown-600'
     }
   ]
 
@@ -193,29 +193,60 @@ const PreviewStylesPage = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {styles.map((style) => (
-            <div
+            <motion.div
               key={style.key}
               onClick={() => handleStyleSelect(style.key)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               className={`
-                p-6 rounded-xl border-2 cursor-pointer transition-all hover:shadow-lg
+                relative overflow-hidden rounded-xl border-2 cursor-pointer transition-all hover:shadow-xl
                 ${selectedStyle === style.key 
-                  ? 'border-purple-500 bg-purple-50' 
+                  ? 'border-purple-500 ring-4 ring-purple-200' 
                   : 'border-gray-200 hover:border-purple-300'
                 }
               `}
             >
-              <div className="text-center">
-                <div className="flex justify-center mb-4 text-purple-600">
-                  {style.icon}
+              {/* Preview Image */}
+              <div className="relative h-48 bg-gradient-to-br ${style.color} overflow-hidden">
+                {stylePreviews[style.key] ? (
+                  <img 
+                    src={stylePreviews[style.key]} 
+                    alt={style.title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    {isGeneratingPreviews ? (
+                      <Loader2 className="w-8 h-8 text-white animate-spin" />
+                    ) : (
+                      <div className={`w-full h-full bg-gradient-to-br ${style.color}`} />
+                    )}
+                  </div>
+                )}
+                
+                {/* Selected indicator */}
+                {selectedStyle === style.key && (
+                  <div className="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg">
+                    <Check className="w-5 h-5 text-purple-600" />
+                  </div>
+                )}
+              </div>
+              
+              {/* Style Info */}
+              <div className="p-4 bg-white">
+                <div className="flex items-center justify-center mb-2">
+                  <div className={`text-transparent bg-clip-text bg-gradient-to-r ${style.color}`}>
+                    {style.icon}
+                  </div>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <h3 className="text-lg font-semibold text-gray-900 mb-1 text-center">
                   {style.title}
                 </h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 text-center">
                   {style.description}
                 </p>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
 

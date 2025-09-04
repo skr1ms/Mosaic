@@ -19,6 +19,7 @@ const PreviewPage = () => {
   const [isUploading, setIsUploading] = useState(false)
   const [editedImageUrl, setEditedImageUrl] = useState(null)
   const [showEditor, setShowEditor] = useState(false)
+  const [showSizeHint, setShowSizeHint] = useState(true)
 
     useEffect(() => {
     try {
@@ -64,32 +65,38 @@ const PreviewPage = () => {
     { 
       key: '21x30', 
       title: t('diamond_mosaic_page.size_selection.sizes.21x30'), 
-      desc: t('diamond_mosaic_page.size_selection.details.21x30.desc')
+      desc: t('diamond_mosaic_page.size_selection.details.21x30.desc'),
+      detail: 'Идеально для небольших помещений'
     },
     { 
       key: '30x40', 
       title: t('diamond_mosaic_page.size_selection.sizes.30x40'), 
-      desc: t('diamond_mosaic_page.size_selection.details.30x40.desc')
+      desc: t('diamond_mosaic_page.size_selection.details.30x40.desc'),
+      detail: 'Оптимальный баланс размера и детализации'
     },
     { 
       key: '40x40', 
       title: t('diamond_mosaic_page.size_selection.sizes.40x40'), 
-      desc: t('diamond_mosaic_page.size_selection.details.40x40.desc')
+      desc: t('diamond_mosaic_page.size_selection.details.40x40.desc'),
+      detail: 'Квадратный формат для симметричных композиций'
     },
     { 
       key: '40x50', 
       title: t('diamond_mosaic_page.size_selection.sizes.40x50'), 
-      desc: t('diamond_mosaic_page.size_selection.details.40x50.desc')
+      desc: t('diamond_mosaic_page.size_selection.details.40x50.desc'),
+      detail: 'Высокая детализация для портретов'
     },
     { 
       key: '40x60', 
       title: t('diamond_mosaic_page.size_selection.sizes.40x60'), 
-      desc: t('diamond_mosaic_page.size_selection.details.40x60.desc')
+      desc: t('diamond_mosaic_page.size_selection.details.40x60.desc'),
+      detail: 'Профессиональный размер с отличной детализацией'
     },
     { 
       key: '50x70', 
       title: t('diamond_mosaic_page.size_selection.sizes.50x70'), 
-      desc: t('diamond_mosaic_page.size_selection.details.50x70.desc')
+      desc: t('diamond_mosaic_page.size_selection.details.50x70.desc'),
+      detail: 'Максимальная детализация для больших работ'
     }
   ]
 
@@ -97,7 +104,8 @@ const PreviewPage = () => {
     const file = event.target.files[0]
     if (!file) return
 
-        if (!file.type.startsWith('image/')) {
+    // Validate file
+    if (!file.type.startsWith('image/')) {
       addNotification({
         type: 'error',
         message: t('diamond_mosaic_page.upload_section.file_type_error')
@@ -105,7 +113,7 @@ const PreviewPage = () => {
       return
     }
 
-        if (file.size > 10 * 1024 * 1024) {
+    if (file.size > 10 * 1024 * 1024) {
       addNotification({
         type: 'error',
         message: t('diamond_mosaic_page.upload_section.file_size_error')
@@ -115,12 +123,52 @@ const PreviewPage = () => {
 
     setSelectedFile(file)
     
-        const reader = new FileReader()
+    const reader = new FileReader()
     reader.onload = (e) => {
       setPreviewUrl(e.target.result)
       setShowEditor(true)
+      
+      // Auto-navigate to styles page if size is selected
+      if (selectedSize) {
+        setTimeout(() => {
+          handleAutoNavigate(file, e.target.result)
+        }, 500)
+      }
     }
     reader.readAsDataURL(file)
+  }
+  
+  const handleAutoNavigate = (file, imageUrl) => {
+    if (!selectedSize) {
+      addNotification({
+        type: 'info',
+        message: 'Выберите размер мозаики для продолжения'
+      })
+      return
+    }
+    
+    // Save data and navigate
+    try {
+      localStorage.setItem('diamondMosaic_selectedImage', JSON.stringify({
+        size: selectedSize,
+        fileName: file.name,
+        previewUrl: imageUrl,
+        timestamp: Date.now(),
+        hasEdits: false
+      }))
+      
+      const fileUrl = URL.createObjectURL(file)
+      sessionStorage.setItem('diamondMosaic_fileUrl', fileUrl)
+      
+      // Navigate to styles page
+      navigate('/preview/styles')
+    } catch (error) {
+      console.error('Error saving image data:', error)
+      addNotification({
+        type: 'error',
+        message: 'Ошибка при сохранении данных'
+      })
+    }
   }
 
   const handleEditorSave = (editedUrl, editorParams) => {
@@ -224,10 +272,32 @@ const PreviewPage = () => {
           transition={{ delay: 0.1 }}
           className="mb-16"
         >
-          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center flex items-center justify-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center flex items-center justify-center">
             <Ruler className="w-6 h-6 mr-2 text-purple-600" />
             {t('diamond_mosaic_page.size_selection.title')}
           </h2>
+          
+          {/* Size selection hint */}
+          {showSizeHint && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="max-w-2xl mx-auto mb-8 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start"
+            >
+              <Info className="w-5 h-5 text-blue-600 mr-3 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm text-blue-800">
+                  Чем больше размер — тем детальнее картинка. Выберите размер в зависимости от ваших предпочтений и места размещения.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowSizeHint(false)}
+                className="text-blue-600 hover:text-blue-800 ml-2"
+              >
+                ×
+              </button>
+            </motion.div>
+          )}
           
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
             {getSizes().map((size, index) => {
@@ -271,9 +341,15 @@ const PreviewPage = () => {
                       {size.title}
                     </h3>
                     
-                    <p className="text-sm text-gray-600 mb-3">
+                    <p className="text-sm text-gray-600 mb-2">
                       {size.desc}
                     </p>
+                    
+                    {size.detail && (
+                      <p className="text-xs text-purple-600 font-medium">
+                        {size.detail}
+                      </p>
+                    )}
                   </div>
                 </motion.div>
               )
