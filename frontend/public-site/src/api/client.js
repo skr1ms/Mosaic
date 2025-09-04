@@ -66,13 +66,23 @@ export class MosaicAPI {
     })
     return data?.result || data?.data || data
   }
-    static async validateCoupon(code) {
-    const { data } = await apiClient.get(`/coupons/${code}`)
+      static async validateCoupon(code) {
+    const { data } = await apiClient.post(`/coupons/code/${code}/validate`)
     return data
   }
 
-    static async activateCoupon(code) {
-    const { data } = await apiClient.post(`/coupons/${code}/activate`)
+  static async activateCoupon(id, activationData) {
+    const { data } = await apiClient.put(`/coupons/${id}/activate`, activationData)
+    return data
+  }
+  
+  static async getCouponByCode(code) {
+    const { data } = await apiClient.get(`/coupons/code/${code}`)
+    return data
+  }
+  
+  static async sendSchemaToEmail(couponId, payload) {
+    const { data } = await apiClient.put(`/coupons/${couponId}/send-schema`, payload)
     return data
   }
 

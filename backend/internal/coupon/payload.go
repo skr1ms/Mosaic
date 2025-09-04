@@ -107,7 +107,13 @@ type PaginatedCouponsResponse struct {
 }
 
 type ActivateCouponRequest struct {
-	ZipURL *string `json:"zip_url,omitempty" validate:"omitempty,url"`
+	ZipURL            *string `json:"zip_url,omitempty" validate:"omitempty,url"`
+	PreviewImageURL   *string `json:"preview_image_url,omitempty" validate:"omitempty,url"`
+	SelectedPreviewID *string `json:"selected_preview_id,omitempty"`
+	StonesCount       *int    `json:"stones_count,omitempty"`
+	FinalSchemaURL    *string `json:"final_schema_url,omitempty" validate:"omitempty,url"`
+	PageCount         *int    `json:"page_count,omitempty"`
+	UserEmail         *string `json:"user_email,omitempty" validate:"omitempty,email"`
 }
 
 type SendSchemaRequest struct {

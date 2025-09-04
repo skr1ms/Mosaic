@@ -94,13 +94,36 @@ func (r *CouponRepository) UpdateStatusByPartnerID(ctx context.Context, partnerI
 }
 
 // Activates a coupon by setting activation time (simplified activation)
-func (r *CouponRepository) ActivateCoupon(ctx context.Context, id uuid.UUID, zipURL string) error {
+func (r *CouponRepository) ActivateCoupon(ctx context.Context, id uuid.UUID, req ActivateCouponRequest) error {
 	now := time.Now()
-	_, err := r.db.NewUpdate().Model((*Coupon)(nil)).
+	query := r.db.NewUpdate().Model((*Coupon)(nil)).
+		Set("status = ?", "activated").
 		Set("activated_at = ?", &now).
-		Set("zip_url = ?", zipURL).
-		Where("id = ?", id).
-		Exec(ctx)
+		Where("id = ?", id)
+	
+	if req.ZipURL != nil {
+		query = query.Set("zip_url = ?", *req.ZipURL)
+	}
+	if req.PreviewImageURL != nil {
+		query = query.Set("preview_image_url = ?", *req.PreviewImageURL)
+	}
+	if req.SelectedPreviewID != nil {
+		query = query.Set("selected_preview_id = ?", *req.SelectedPreviewID)
+	}
+	if req.StonesCount != nil {
+		query = query.Set("stones_count = ?", *req.StonesCount)
+	}
+	if req.FinalSchemaURL != nil {
+		query = query.Set("final_schema_url = ?", *req.FinalSchemaURL)
+	}
+	if req.PageCount != nil {
+		query = query.Set("page_count = ?", *req.PageCount)
+	}
+	if req.UserEmail != nil {
+		query = query.Set("user_email = ?", *req.UserEmail)
+	}
+	
+	_, err := query.Exec(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to activate coupon: %w", err)
 	}

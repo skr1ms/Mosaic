@@ -12,11 +12,27 @@ const PreviewSuccessPage = () => {
   const { addNotification } = useUIStore()
   
   const [orderData, setOrderData] = useState(null)
+  const [couponData, setCouponData] = useState(null)
   const [isGenerating, setIsGenerating] = useState(true)
   const [downloadLinks, setDownloadLinks] = useState([])
 
   useEffect(() => {
-        let orderInfo = null
+        // Check for activated coupon first
+    const activatedCoupon = localStorage.getItem('activatedCoupon')
+    if (activatedCoupon) {
+      try {
+        const couponInfo = JSON.parse(activatedCoupon)
+        setCouponData(couponInfo)
+        // Generate schema for coupon
+        generateSchemaForCoupon(couponInfo)
+        return
+      } catch (error) {
+        console.error('Error loading coupon data:', error)
+      }
+    }
+    
+    // Regular order flow
+    let orderInfo = null
     
     if (location.state?.orderData) {
       orderInfo = location.state.orderData
@@ -41,6 +57,62 @@ const PreviewSuccessPage = () => {
         generateSchemaFiles(orderInfo)
   }, [location, navigate])
 
+  const generateSchemaForCoupon = async (coupon) => {
+    setIsGenerating(true)
+    
+    try {
+      // Simulate schema generation
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      const files = [
+        {
+          id: 1,
+          name: 'Схема мозаики (ZIP архив)',
+          filename: `mosaic_schema_${coupon.code}.zip`,
+          type: 'zip',
+          size: '15 MB',
+          description: 'Полный архив со всеми страницами схемы',
+          url: coupon.final_schema_url || '#',
+          icon: <Package className="w-5 h-5" />
+        },
+        {
+          id: 2,
+          name: 'Превью мозаики',
+          filename: `preview_${coupon.code}.jpg`,
+          type: 'image',
+          size: '1.2 MB',
+          description: 'Финальное превью вашей мозаики',
+          url: coupon.preview_image_url || '#',
+          icon: <Image className="w-5 h-5" />
+        },
+        {
+          id: 3,
+          name: 'Инструкция по сборке',
+          filename: `instructions_${coupon.code}.pdf`,
+          type: 'pdf',
+          size: '800 KB',
+          description: 'Подробная инструкция по созданию мозаики',
+          url: '#',
+          icon: <FileText className="w-5 h-5" />
+        }
+      ]
+      
+      setDownloadLinks(files)
+      setIsGenerating(false)
+      
+      // Clear the activated coupon from localStorage after successful generation
+      localStorage.removeItem('activatedCoupon')
+      
+    } catch (error) {
+      console.error('Error generating schema for coupon:', error)
+      addNotification({
+        type: 'error',
+        message: 'Ошибка при генерации схемы'
+      })
+      setIsGenerating(false)
+    }
+  }
+  
   const generateSchemaFiles = async (order) => {
     setIsGenerating(true)
     
@@ -180,10 +252,12 @@ const PreviewSuccessPage = () => {
           </motion.div>
           
           <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
-            {t('diamond_mosaic_success.title')}
+            {couponData ? 'Купон успешно активирован!' : t('diamond_mosaic_success.title')}
           </h1>
           <p className="text-lg text-gray-600">
-            {t('diamond_mosaic_success.order_info.order_number', { number: orderData.orderId })} • {t('diamond_mosaic_success.order_info.package', { package: orderData.package.name })}
+            {couponData 
+              ? `Код купона: ${couponData.code} • Активирован: ${new Date(couponData.activatedAt).toLocaleDateString('ru-RU')}`
+              : `${t('diamond_mosaic_success.order_info.order_number', { number: orderData?.orderId })} • ${t('diamond_mosaic_success.order_info.package', { package: orderData?.package?.name })}`}
           </p>
         </motion.div>
 
