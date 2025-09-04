@@ -23,8 +23,15 @@ type Coupon struct {
 
 	UserEmail   *string    `bun:"user_email" json:"user_email"`
 	ActivatedAt *time.Time `bun:"activated_at" json:"activated_at"`
-	UsedAt      *time.Time `bun:"used_at" json:"used_at"`
-	CompletedAt *time.Time `bun:"completed_at" json:"completed_at"`
+	UsedAt      *time.Time `bun:"used_at" json:"used_at"`      // Deprecated, kept for backward compatibility
+	CompletedAt *time.Time `bun:"completed_at" json:"completed_at"` // Deprecated, kept for backward compatibility
+
+	// New fields for enhanced activation process
+	PreviewImageURL   *string `bun:"preview_image_url" json:"preview_image_url"`     // URL of the uploaded and edited image
+	SelectedPreviewID *string `bun:"selected_preview_id" json:"selected_preview_id"` // ID of the selected preview style
+	StonesCount       *int    `bun:"stones_count" json:"stones_count"`               // Number of stones from CSV
+	FinalSchemaURL    *string `bun:"final_schema_url" json:"final_schema_url"`       // URL of the final mosaic schema
+	PageCount         int     `bun:"page_count,default:0" json:"page_count"`         // Number of pages in the schema
 
 	ZipURL          *string    `bun:"zip_url" json:"zip_url"`
 	SchemaSentEmail *string    `bun:"schema_sent_email" json:"schema_sent_email"`

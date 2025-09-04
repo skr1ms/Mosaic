@@ -54,7 +54,7 @@ type CouponRepositoryInterface interface {
 	GetPartnerRecentActivity(ctx context.Context, partnerID uuid.UUID, limit int) ([]*Coupon, error)
 
 	UpdateStatusByPartnerID(ctx context.Context, partnerID uuid.UUID, status bool) error
-	ActivateCoupon(ctx context.Context, id uuid.UUID, zipURL string) error
+	ActivateCoupon(ctx context.Context, id uuid.UUID, req ActivateCouponRequest) error
 	SendSchema(ctx context.Context, id uuid.UUID, email string) error
 	MarkAsPurchased(ctx context.Context, id uuid.UUID, purchaseEmail string) error
 	ResetCoupon(ctx context.Context, id uuid.UUID) error
@@ -105,7 +105,7 @@ type S3Interface interface {
 type CouponServiceInterface interface {
 	GetCouponByID(id uuid.UUID) (*Coupon, error)
 	GetCouponByCode(code string) (*Coupon, error)
-	ActivateCoupon(id uuid.UUID, zipURL string) error
+	ActivateCoupon(id uuid.UUID, req ActivateCouponRequest) error
 	ResetCoupon(id uuid.UUID) error
 	SendSchema(id uuid.UUID, email string) error
 	MarkAsPurchased(id uuid.UUID, purchaseEmail string) error

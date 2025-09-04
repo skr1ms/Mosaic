@@ -26,6 +26,7 @@ const PreviewAlbumPage = React.lazy(() => import('./pages/PreviewAlbumPage'))
 
 const PreviewPurchasePage = React.lazy(() => import('./pages/PreviewPurchasePage'))
 const PreviewSuccessPage = React.lazy(() => import('./pages/PreviewSuccessPage'))
+const CouponActivationPage = React.lazy(() => import('./pages/CouponActivationPage'))
 
 function App() {
   const { i18n } = useTranslation()
@@ -105,6 +106,9 @@ function App() {
 
             <Route path="/preview/purchase" element={<PreviewPurchasePage />} />
             <Route path="/preview/success" element={<PreviewSuccessPage />} />
+            
+            {/* Coupon Activation */}
+            <Route path="/coupon" element={<CouponActivationPage />} />
             
             <Route path="*" element={<NotFoundPage />} />
           </Routes>

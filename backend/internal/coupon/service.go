@@ -67,8 +67,8 @@ func (s *CouponService) GetCouponByCode(code string) (*Coupon, error) {
 }
 
 // ActivateCoupon activates coupon (changes status to 'completed')
-func (s *CouponService) ActivateCoupon(id uuid.UUID, zipURL string) error {
-	if err := s.deps.CouponRepository.ActivateCoupon(context.Background(), id, zipURL); err != nil {
+func (s *CouponService) ActivateCoupon(id uuid.UUID, req ActivateCouponRequest) error {
+	if err := s.deps.CouponRepository.ActivateCoupon(context.Background(), id, req); err != nil {
 		return fmt.Errorf("failed to activate coupon: %w", err)
 	}
 	return nil

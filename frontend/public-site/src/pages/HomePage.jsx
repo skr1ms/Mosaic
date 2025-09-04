@@ -1,7 +1,7 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
-import { Gem, Palette, ShoppingCart, Ticket, ArrowRight, Image, Sparkles } from 'lucide-react'
+import { Gem, Palette, ShoppingCart, Ticket, ArrowRight, Image, Sparkles, Gift } from 'lucide-react'
 import HeroSection from '../components/sections/HeroSection'
 import SectionCard from '../components/cards/SectionCard'
 import FAQ from '../components/sections/FAQ'
@@ -24,6 +24,26 @@ const HomePage = () => {
     <div className="min-h-screen">
       <HeroSection />
       
+      {/* Coupon Activation Section */}
+      <section className="py-12 bg-gradient-to-r from-purple-600 to-pink-600">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div {...fadeInUp} className="text-center text-white">
+            <Gift className="w-16 h-16 mx-auto mb-4" />
+            <h2 className="text-3xl font-bold mb-4">У вас есть купон?</h2>
+            <p className="text-xl mb-8 max-w-2xl mx-auto">
+              Активируйте купон и создайте уникальную схему мозаики из вашей фотографии
+            </p>
+            <button
+              onClick={() => window.location.href = '/coupon'}
+              className="bg-white text-purple-600 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl inline-flex items-center"
+            >
+              <Ticket className="w-6 h-6 mr-3" />
+              Активировать купон
+              <ArrowRight className="w-5 h-5 ml-3" />
+            </button>
+          </motion.div>
+        </div>
+      </section>
       
       {isOwnDomain && (
         <section id="diamond-art" className="py-16 bg-gray-50">

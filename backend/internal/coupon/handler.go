@@ -477,24 +477,30 @@ func (handler *CouponHandler) ActivateCoupon(c *fiber.Ctx) error {
 		})
 	}
 
-	if req.ZipURL == nil {
-		handler.deps.Logger.FromContext(c).Error().Msg("Missing required field: zip_url")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Missing required field: zip_url",
-		})
-	}
-
-	if err := handler.deps.CouponService.ActivateCoupon(id, *req.ZipURL); err != nil {
+	if err := handler.deps.CouponService.ActivateCoupon(id, req); err != nil {
 		handler.deps.Logger.FromContext(c).Error().Err(err).Msg("Failed to activate coupon")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to activate coupon",
 		})
 	}
 
-	handler.deps.Logger.FromContext(c).Info().
-		Str("coupon_id", idStr).
-		Str("zip_url", *req.ZipURL).
-		Msg("Coupon activated successfully")
+	logger := handler.deps.Logger.FromContext(c).Info().
+		Str("coupon_id", idStr)
+	
+	if req.ZipURL != nil {
+		logger = logger.Str("zip_url", *req.ZipURL)
+	}
+	if req.PreviewImageURL != nil {
+		logger = logger.Str("preview_image_url", *req.PreviewImageURL)
+	}
+	if req.SelectedPreviewID != nil {
+		logger = logger.Str("selected_preview_id", *req.SelectedPreviewID)
+	}
+	if req.UserEmail != nil {
+		logger = logger.Str("user_email", *req.UserEmail)
+	}
+	
+	logger.Msg("Coupon activated successfully")
 
 	return c.JSON(fiber.Map{"message": "Coupon activated successfully"})
 }

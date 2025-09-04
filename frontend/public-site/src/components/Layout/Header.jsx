@@ -35,6 +35,13 @@ const Header = () => {
       onClick: null
     },
     {
+      name: 'Активировать купон',
+      href: '/coupon',
+      current: location.pathname === '/coupon',
+      onClick: null,
+      highlight: true
+    },
+    {
       name: t('navigation.diamond_art'),
       href: '/diamond-art',
       current: location.pathname === '/diamond-art',
@@ -94,8 +101,10 @@ const Header = () => {
                   className={`${
                     item.current
                       ? 'border-brand-primary text-brand-primary'
+                      : item.highlight
+                      ? 'bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700'
                       : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                  } inline-flex items-center px-1 xl:px-2 pt-1 border-b-2 text-xs sm:text-sm lg:text-base font-medium transition-colors whitespace-nowrap`}
+                  } ${item.highlight ? '' : 'inline-flex items-center px-1 xl:px-2 pt-1 border-b-2'} text-xs sm:text-sm lg:text-base font-medium transition-colors whitespace-nowrap`}
                 >
                   {item.name}
                 </button>
@@ -106,8 +115,10 @@ const Header = () => {
                   className={`${
                     item.current
                       ? 'border-brand-primary text-brand-primary'
+                      : item.highlight
+                      ? 'bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700'
                       : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                  } inline-flex items-center px-1 xl:px-2 pt-1 border-b-2 text-xs sm:text-sm lg:text-base font-medium transition-colors whitespace-nowrap`}
+                  } ${item.highlight ? '' : 'inline-flex items-center px-1 xl:px-2 pt-1 border-b-2'} text-xs sm:text-sm lg:text-base font-medium transition-colors whitespace-nowrap`}
                 >
                   {item.name}
                 </Link>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
-import { ArrowLeft, ArrowRight, Edit, ShoppingCart, Loader2, Sparkles, Eye } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Edit, ShoppingCart, Loader2, Sparkles, Eye, Check } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useUIStore } from '../store/partnerStore'
 import MosaicAPIClient, { MosaicAPI } from '../api/client'
@@ -19,16 +19,21 @@ const PreviewAlbumPage = () => {
   const [isGeneratingAI, setIsGeneratingAI] = useState(false)
   const [isGeneratingVariants, setIsGeneratingVariants] = useState(false)
 
-    const contrastVariants = [
-    { name: 'venus', type: 'soft', label: t('diamond_mosaic_preview_album.contrast_variants.soft') },
-    { name: 'venus', type: 'strong', label: t('diamond_mosaic_preview_album.contrast_variants.strong') },
-    { name: 'sun', type: 'soft', label: t('diamond_mosaic_preview_album.contrast_variants.soft') },
-    { name: 'sun', type: 'strong', label: t('diamond_mosaic_preview_album.contrast_variants.strong') },
-    { name: 'moon', type: 'soft', label: t('diamond_mosaic_preview_album.contrast_variants.soft') },
-    { name: 'moon', type: 'strong', label: t('diamond_mosaic_preview_album.contrast_variants.strong') },
-    { name: 'mars', type: 'soft', label: t('diamond_mosaic_preview_album.contrast_variants.soft') },
-    { name: 'mars', type: 'strong', label: t('diamond_mosaic_preview_album.contrast_variants.strong') }
+    // 4 стиля × 2 контраста = 8 превью
+  const styleVariants = [
+    { style: 'venus', contrast: 'soft', label: 'Венера (мягкий контраст)' },
+    { style: 'venus', contrast: 'strong', label: 'Венера (сильный контраст)' },
+    { style: 'sun', contrast: 'soft', label: 'Солнце (мягкий контраст)' },
+    { style: 'sun', contrast: 'strong', label: 'Солнце (сильный контраст)' },
+    { style: 'moon', contrast: 'soft', label: 'Луна (мягкий контраст)' },
+    { style: 'moon', contrast: 'strong', label: 'Луна (сильный контраст)' },
+    { style: 'mars', contrast: 'soft', label: 'Марс (мягкий контраст)' },
+    { style: 'mars', contrast: 'strong', label: 'Марс (сильный контраст)' }
   ]
+  
+  // Coupon data state
+  const [couponData, setCouponData] = useState(null)
+  const [isActivating, setIsActivating] = useState(false)
 
   useEffect(() => {
         try {
@@ -40,7 +45,14 @@ const PreviewAlbumPage = () => {
       }
       
       const parsedData = JSON.parse(savedImageData)
-      if (!parsedData.selectedStyle) {
+      
+      // Check if we're in coupon activation flow
+      if (parsedData.couponId && parsedData.couponCode) {
+        setCouponData({
+          id: parsedData.couponId,
+          code: parsedData.couponCode
+        })
+      } else if (!parsedData.selectedStyle) {
         navigate('/preview/styles')
         return
       }
@@ -77,16 +89,16 @@ const PreviewAlbumPage = () => {
         isMain: true
       })
       
-            for (let i = 0; i < contrastVariants.length; i++) {
-        const variant = contrastVariants[i]
+            // Generate 8 style previews (4 styles × 2 contrasts)
+      for (let i = 0; i < styleVariants.length; i++) {
+        const variant = styleVariants[i]
         
         try {
           const formData = new FormData()
           formData.append('image', blob, 'image.jpg')
           formData.append('size', data.size)
-          formData.append('style', data.selectedStyle)
-          formData.append('contrast_type', variant.name)
-          formData.append('contrast_level', variant.type)
+          formData.append('style', variant.style)
+          formData.append('contrast_level', variant.contrast)
           formData.append('use_ai', 'false')
           
                     const result = await MosaicAPI.generatePreviewVariant ? 
@@ -96,8 +108,10 @@ const PreviewAlbumPage = () => {
           generatedPreviews.push({
             id: i + 1,
             url: result.preview_url,
-            title: `${t(`diamond_mosaic_preview_album.contrast_variants.${variant.name}`)} (${variant.label})`,
-            type: 'contrast',
+            title: variant.label,
+            style: variant.style,
+            contrast: variant.contrast,
+            type: 'style',
             variant: variant
           })
           
@@ -209,7 +223,7 @@ const PreviewAlbumPage = () => {
     }
   }
 
-  const handlePurchase = () => {
+    const handlePurchase = async () => {
     if (!imageData || !previews[selectedPreview]) {
       addNotification({
         type: 'error',
@@ -218,19 +232,63 @@ const PreviewAlbumPage = () => {
       return
     }
     
-        try {
-      const purchaseData = {
-        size: imageData.size,
-        style: imageData.selectedStyle,
-        selectedPreview: previews[selectedPreview],
-        originalImage: imageData.previewUrl
+    // Check if we're in coupon activation flow
+    if (couponData && couponData.id) {
+      // Activate coupon with selected preview
+      setIsActivating(true)
+      try {
+        const selectedPreviewData = previews[selectedPreview]
+        
+        // Prepare activation data
+        const activationData = {
+          preview_image_url: imageData.previewUrl,
+          selected_preview_id: `${selectedPreviewData.style}_${selectedPreviewData.contrast || 'default'}`,
+          final_schema_url: selectedPreviewData.url,
+          page_count: 100, // This should come from backend after schema generation
+          user_email: null // Can be added later
+        }
+        
+        // Activate the coupon
+        await MosaicAPI.activateCoupon(couponData.id, activationData)
+        
+        addNotification({
+          type: 'success',
+          message: 'Купон успешно активирован!'
+        })
+        
+        // Navigate to success page with coupon data
+        localStorage.setItem('activatedCoupon', JSON.stringify({
+          ...couponData,
+          ...activationData,
+          activatedAt: new Date().toISOString()
+        }))
+        
+        navigate('/preview/success')
+      } catch (error) {
+        console.error('Error activating coupon:', error)
+        addNotification({
+          type: 'error',
+          message: 'Ошибка при активации купона'
+        })
+      } finally {
+        setIsActivating(false)
       }
-      localStorage.setItem('diamondMosaic_purchaseData', JSON.stringify(purchaseData))
-      
-            navigate('/preview/purchase')
-      
-    } catch (error) {
-      console.error('Error preparing purchase data:', error)
+    } else {
+      // Regular purchase flow
+      try {
+        const purchaseData = {
+          size: imageData.size,
+          style: imageData.selectedStyle,
+          selectedPreview: previews[selectedPreview],
+          originalImage: imageData.previewUrl
+        }
+        localStorage.setItem('diamondMosaic_purchaseData', JSON.stringify(purchaseData))
+        
+        navigate('/preview/purchase')
+        
+      } catch (error) {
+        console.error('Error preparing purchase data:', error)
+      }
     }
   }
 
@@ -426,10 +484,25 @@ const PreviewAlbumPage = () => {
                   </p>
                   <button
                     onClick={handlePurchase}
-                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-4 rounded-xl font-semibold text-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center"
+                    disabled={isActivating}
+                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-4 rounded-xl font-semibold text-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <ShoppingCart className="w-5 h-5 mr-2" />
-                    {t('diamond_mosaic_preview_album.buy_coupon_and_generate')}
+                    {isActivating ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Активация купона...
+                      </>
+                    ) : couponData ? (
+                      <>
+                        <Check className="w-5 h-5 mr-2" />
+                        Создать схему мозаики
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingCart className="w-5 h-5 mr-2" />
+                        {t('diamond_mosaic_preview_album.buy_coupon_and_generate')}
+                      </>
+                    )}
                   </button>
                 </div>
               )}
