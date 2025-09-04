@@ -1,0 +1,131 @@
+{
+  "id": null,
+  "title": "Go Runtime Metrics - Backend",
+  "tags": [
+    "go",
+    "runtime",
+    "system"
+  ],
+  "timezone": "browser",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Go Goroutines",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "go_goroutines{job=\"backend\"}",
+          "legendFormat": "Goroutines (Backend)"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": 2,
+      "title": "Go Memory Usage",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "go_memstats_alloc_bytes{job=\"backend\"}",
+          "legendFormat": "Allocated Memory (Backend)"
+        },
+        {
+          "expr": "go_memstats_heap_alloc_bytes{job=\"backend\"}",
+          "legendFormat": "Heap Allocated (Backend)"
+        },
+        {
+          "expr": "go_memstats_sys_bytes{job=\"backend\"}",
+          "legendFormat": "System Memory (Backend)"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      }
+    },
+    {
+      "id": 3,
+      "title": "GC Duration",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "go_gc_duration_seconds{job=\"backend\"}",
+          "legendFormat": "GC Duration ({{quantile}}) - Backend"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      }
+    },
+    {
+      "id": 4,
+      "title": "GC Cycles",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "rate(go_gc_cycles_automatic_gc_cycles_total{job=\"backend\"}[5m])",
+          "legendFormat": "Automatic GC (Backend)"
+        },
+        {
+          "expr": "rate(go_gc_cycles_forced_gc_cycles_total{job=\"backend\"}[5m])",
+          "legendFormat": "Forced GC (Backend)"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      }
+    },
+    {
+      "id": 5,
+      "title": "Go Threads",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "go_threads{job=\"backend\"}",
+          "legendFormat": "Threads (Backend)"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      }
+    },
+    {
+      "id": 6,
+      "title": "Heap Objects",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "go_memstats_heap_objects{job=\"backend\"}",
+          "legendFormat": "Heap Objects (Backend)"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      }
+    }
+  ],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "refresh": "5s"
+}

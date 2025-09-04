@@ -1,0 +1,359 @@
+# Global images
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_HOST: unix:///var/run/docker.sock
+  GO_IMAGE: golang:1.24-alpine
+  DOCKER_IMAGE: docker:latest
+  UBUNTU_IMAGE: ubuntu:22.04
+  CI_REGISTRY: "${PRODUCTION_SERVER_IP}:9080"
+  CI_REGISTRY_IMAGE: "${PRODUCTION_SERVER_IP}:9080/root/mosaic"
+
+stages:
+  - test
+  - build
+  - deploy
+
+# ========================================
+# TESTS
+# ========================================
+test:
+  stage: test
+  image: $GO_IMAGE
+  services:
+    - postgres:17-alpine
+    - redis:8-alpine
+  variables:
+    POSTGRES_DB: mosaic_test
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: testpass
+    DATABASE_URL: "postgres://postgres:testpass@postgres:5432/mosaic_test?sslmode=disable"
+    REDIS_URL: "redis://redis:6379"
+  before_script:
+    - cd backend
+  script:
+    - go mod download
+    - go mod vendor  
+    - go fmt ./...
+    - go vet ./...
+    - go test ./internal/... -v
+  cache:
+    key: "go-tests-${CI_COMMIT_REF_SLUG}"
+    paths:
+      - backend/internal/
+    policy: pull-push
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      when: always
+    - if: '$CI_MERGE_REQUEST_ID'
+      when: always
+
+# ========================================
+# BUILD
+# ========================================
+build:backend:
+  stage: build
+  image: $DOCKER_IMAGE
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_HOST: unix:///var/run/docker.sock
+  before_script:
+    - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token $CI_REGISTRY --password-stdin
+    - export DOCKER_BUILDKIT=1
+    - export BUILDKIT_PROGRESS=plain
+  script:
+    - cd backend
+    - echo "Registry info - CI_REGISTRY=$CI_REGISTRY, CI_REGISTRY_IMAGE=$CI_REGISTRY_IMAGE"
+    - docker build -t "$CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA" .
+    - docker push "$CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA"
+    - echo "Backend build and push completed successfully!"
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME == "develop"'
+      when: always
+
+build:frontend-dashboards:
+  stage: build
+  image: $DOCKER_IMAGE
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_HOST: unix:///var/run/docker.sock
+  before_script:
+    - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token http://$CI_REGISTRY --password-stdin
+    - export DOCKER_BUILDKIT=1
+    - export BUILDKIT_PROGRESS=plain
+  script:
+    - cd frontend/dashboards
+    - docker build -t "$CI_REGISTRY_IMAGE/dashboards:$CI_COMMIT_SHA" .
+    - docker push "$CI_REGISTRY_IMAGE/dashboards:$CI_COMMIT_SHA"
+    - echo "Dashboards build and push completed successfully!"
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME == "develop"'
+      when: always
+
+build:frontend-public:
+  stage: build
+  image: $DOCKER_IMAGE
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_HOST: unix:///var/run/docker.sock
+  before_script:
+    - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token http://$CI_REGISTRY --password-stdin
+    - export DOCKER_BUILDKIT=1
+    - export BUILDKIT_PROGRESS=plain
+  script:
+    - cd frontend/public-site
+    - docker build -t "$CI_REGISTRY_IMAGE/public-site:$CI_COMMIT_SHA" .
+    - docker push "$CI_REGISTRY_IMAGE/public-site:$CI_COMMIT_SHA"
+    - echo "Public site build and push completed successfully!"
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME == "develop"'
+      when: always
+
+# ========================================
+# DEPLOY
+# ========================================
+deploy:production:
+  stage: deploy
+  image: $UBUNTU_IMAGE
+  variables:
+    DEPLOY_SERVER: $PRODUCTION_SERVER_IP
+    DEPLOY_USER: $PRODUCTION_USER
+    CI_REGISTRY: $CI_REGISTRY
+    CI_REGISTRY_IMAGE: $CI_REGISTRY_IMAGE
+    CI_COMMIT_SHA: $CI_COMMIT_SHA
+    CI_REGISTRY_PASSWORD: $CI_JOB_TOKEN
+  before_script:
+    - sudo apt-get update -qq && sudo apt-get install -y -qq git openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan $DEPLOY_SERVER >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - |
+      cat > deploy.sh << EOF
+      #!/bin/bash
+      set -e
+      cd /home/lumirin/Mosaic
+      git pull origin main
+      
+      echo "Debug variables:"
+      echo "CI_REGISTRY_IMAGE: $CI_REGISTRY_IMAGE"
+      echo "CI_COMMIT_SHA: $CI_COMMIT_SHA"
+      echo "CI_REGISTRY: $CI_REGISTRY"
+      
+      if [ -z "$CI_REGISTRY_IMAGE" ]; then
+        echo "CI_REGISTRY_IMAGE is empty, setting default"
+        export CI_REGISTRY_IMAGE="mosaic"
+      fi
+      
+      if [ -z "$CI_COMMIT_SHA" ]; then
+        echo "CI_COMMIT_SHA is empty, setting default"
+        export CI_COMMIT_SHA="latest"
+      fi
+      
+      echo "Final variables:"
+      echo "CI_REGISTRY_IMAGE: $CI_REGISTRY_IMAGE"
+      echo "CI_COMMIT_SHA: $CI_COMMIT_SHA"
+      
+      if [ -f .env ]; then
+        echo "Loading existing .env file..."
+        export \$(cat .env | grep -v '^#' | xargs)
+        echo ".env file loaded successfully"
+      else
+        echo "No .env file found, using CI/CD variables"
+      fi
+      
+      if [ -n "$CI_REGISTRY" ] && [ -n "$CI_REGISTRY_PASSWORD" ]; then
+        echo "Attempting to login to GitLab registry..."
+        echo "$CI_REGISTRY_PASSWORD" | docker login -u gitlab-ci-token $CI_REGISTRY --password-stdin || echo "Docker login failed, continuing with local build"
+      else
+        echo "No registry credentials, will use local build"
+      fi
+      
+      echo "Starting deployment..."
+      echo "Checking available images..."
+      docker images | grep -E "(mosaic|public-site|backend|dashboards)" || echo "No mosaic images found"
+      
+      echo "Stopping existing containers..."
+      docker compose -f deployments/docker-compose/docker-compose.cicd.yml down || echo "No containers to stop"
+      
+      if docker compose -f deployments/docker-compose/docker-compose.cicd.yml pull 2>/dev/null; then
+        echo "Images pulled successfully, starting services..."
+        docker compose -f deployments/docker-compose/docker-compose.cicd.yml up -d
+      else
+        echo "Failed to pull images, building locally..."
+        echo "Building images locally..."
+        docker compose -f deployments/docker-compose/docker-compose.cicd.yml up -d --build
+      fi
+      
+      echo "Waiting for services to be ready..."
+      sleep 30
+      
+      if docker ps --filter "name=nginx" --filter "status=running" | grep -q nginx; then
+        echo "Reloading nginx configuration..."
+        docker exec nginx nginx -t && docker exec nginx nginx -s reload || echo "Nginx reload failed"
+      fi
+      
+      echo "Checking running containers..."
+      docker ps
+      echo "Checking public-site logs..."
+      docker logs public-site --tail 20 || echo "public-site container not found"
+      chmod +x ./scripts/health-check.sh
+      ./scripts/health-check.sh
+      EOF
+    - scp deploy.sh $DEPLOY_USER@$DEPLOY_SERVER:/tmp/
+    - |
+      ssh $DEPLOY_USER@$DEPLOY_SERVER "echo 'Starting deploy.sh...' && chmod +x /tmp/deploy.sh && echo 'Executing deploy.sh...' && /tmp/deploy.sh 2>&1 || echo 'deploy.sh failed with exit code: \$?'"
+  environment:
+    name: production
+    url: https://photo.doyoupaint.com
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME == "develop"'
+      when: always
+  allow_failure: false
+
+# ========================================
+# DOMAIN UPDATE PIPELINE
+# ========================================
+deploy:domains-update:
+  stage: deploy
+  image: $UBUNTU_IMAGE
+  variables:
+    DEPLOY_SERVER: $PRODUCTION_SERVER_IP
+    DEPLOY_USER: $PRODUCTION_USER
+    BACKEND_URL: "https://photo.doyoupaint.com"
+    DEFAULT_ADMIN_EMAIL: $DEFAULT_ADMIN_EMAIL
+    DEFAULT_ADMIN_PASSWORD: $DEFAULT_ADMIN_PASSWORD
+  before_script:
+    - sudo apt-get update -qq && sudo apt-get install -y -qq git curl openssh-client jq
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan $DEPLOY_SERVER >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - |
+      cat > deploy_domains.sh << 'EOF'
+      #!/bin/bash
+      set -e
+      
+      echo "=========================================="
+      echo "Starting Partner Domain Update Pipeline"
+      echo "=========================================="
+      
+      log() {
+          echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+      }
+      
+      cd /home/lumirin/Mosaic
+      
+      if [ -f .env ]; then
+          export $(cat .env | grep -v '^#' | xargs)
+      fi
+      
+      log "Pulling latest code changes..."
+      git pull origin main
+      
+      log "Making scripts executable..."
+      chmod +x ./scripts/*.sh
+      
+      OPERATION="${DOMAIN_OPERATION:-refresh}"
+      OLD_DOMAIN="${OLD_DOMAIN:-}"
+      NEW_DOMAIN="${NEW_DOMAIN:-}"
+      
+      log "Operation: $OPERATION"
+      [ -n "$OLD_DOMAIN" ] && log "Old Domain: $OLD_DOMAIN"
+      [ -n "$NEW_DOMAIN" ] && log "New Domain: $NEW_DOMAIN"
+      
+      log "Managing partner domains..."
+      sudo ./scripts/manage-partner-domains.sh "$OPERATION" "$OLD_DOMAIN" "$NEW_DOMAIN"
+      
+      log "Updating nginx configuration via backend API..."
+      if [ -n "$BACKEND_URL" ]; then
+          sleep 10
+          
+          log "Getting admin JWT token..."
+          local login_response
+          login_response=$(curl -s -X POST \
+              -H "Content-Type: application/json" \
+              -d "{\"email\":\"${DEFAULT_ADMIN_EMAIL:-admin@example.com}\",\"password\":\"${DEFAULT_ADMIN_PASSWORD}\"}" \
+              "${BACKEND_URL}/api/auth/login" || echo "")
+          
+          if [ -n "$login_response" ]; then
+              local admin_token=$(echo "$login_response" | jq -r '.access_token' 2>/dev/null || echo "")
+              
+              if [ -n "$admin_token" ] && [ "$admin_token" != "null" ]; then
+                  log "Admin token obtained, updating nginx config..."
+                  
+                  local nginx_response
+                  nginx_response=$(curl -s -X POST \
+                      -H "Content-Type: application/json" \
+                      -H "Authorization: Bearer $admin_token" \
+                      "${BACKEND_URL}/api/admin/nginx/deploy" || echo "")
+                  
+                  if [ -n "$nginx_response" ]; then
+                      log "Nginx configuration updated via API: $nginx_response"
+                  else
+                      log "Failed to update nginx config via API"
+                  fi
+              else
+                  log "Failed to extract admin token"
+              fi
+          else
+              log "Failed to get admin token"
+          fi
+      else
+          log "BACKEND_URL not set, skipping nginx config update via API"
+      fi
+      
+      log "Restarting nginx container..."
+      if docker ps --filter "name=nginx" --filter "status=running" | grep -q nginx; then
+          docker restart nginx
+          sleep 10
+          
+          if docker exec nginx nginx -t; then
+              log "Nginx configuration is valid"
+          else
+              log "ERROR: Nginx configuration is invalid!"
+              exit 1
+          fi
+      else
+          log "WARNING: Nginx container not found or not running"
+      fi
+      
+      log "Updating SSL certificates..."
+      ./scripts/update-ssl-certificates.sh
+      
+      log "Updating monitoring configuration..."
+      ./scripts/update-monitoring-config.sh
+      
+      log "Running health checks..."
+      ./scripts/health-check.sh
+      
+      log "Domain update pipeline completed successfully!"
+      EOF
+      
+    - scp deploy_domains.sh $DEPLOY_USER@$DEPLOY_SERVER:/tmp/
+    - ssh $DEPLOY_USER@$DEPLOY_SERVER "chmod +x /tmp/deploy_domains.sh && /tmp/deploy_domains.sh"
+    
+    - ssh $DEPLOY_USER@$DEPLOY_SERVER "rm -f /tmp/deploy_domains.sh"
+  after_script:
+    - |
+      if [ "$CI_JOB_STATUS" == "failed" ]; then
+        echo "Domain update pipeline failed!"
+      fi
+  rules:
+    - if: '$DOMAIN_UPDATE == "true"'
+      when: always
+    - when: never
+  tags:
+    - docker
+  
+  timeout: 30 minutes
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
