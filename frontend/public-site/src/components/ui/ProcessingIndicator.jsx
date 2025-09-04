@@ -23,8 +23,7 @@ const ProcessingIndicator = ({ isProcessing, useAI, currentStep = 0, error = nul
           }
           return prev;
         });
-      }, 2000); // Смена шага каждые 2 секунды
-
+      }, 2000); 
       return () => clearInterval(interval);
     } else {
       setStep(0);
@@ -59,7 +58,7 @@ const ProcessingIndicator = ({ isProcessing, useAI, currentStep = 0, error = nul
       animate={{ opacity: 1, y: 0 }}
       className="text-center py-8 bg-gradient-to-br from-brand-primary/5 to-brand-secondary/5 rounded-xl border border-brand-primary/20"
     >
-      {/* Заголовок */}
+      
       <div className="mb-6">
         <div className="w-20 h-20 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-full flex items-center justify-center mx-auto mb-4">
           {useAI ? (
@@ -83,7 +82,7 @@ const ProcessingIndicator = ({ isProcessing, useAI, currentStep = 0, error = nul
         )}
       </div>
 
-      {/* Шаги обработки */}
+      
       <div className="max-w-md mx-auto mb-6">
         <div className="space-y-3">
           {steps.map((stepItem, index) => (
@@ -131,7 +130,7 @@ const ProcessingIndicator = ({ isProcessing, useAI, currentStep = 0, error = nul
         </div>
       </div>
 
-      {/* Информация о времени */}
+      
       <div className="flex items-center justify-center space-x-2 text-sm text-gray-600">
         <Clock className="w-4 h-4" />
         <span>
@@ -142,7 +141,7 @@ const ProcessingIndicator = ({ isProcessing, useAI, currentStep = 0, error = nul
         </span>
       </div>
 
-      {/* Примечание */}
+      
       {useAI && (
         <div className="mt-4 p-3 bg-brand-primary/10 rounded-lg max-w-md mx-auto">
           <p className="text-xs text-brand-primary/80">

@@ -12,8 +12,7 @@ const HomePage = () => {
   const { t } = useTranslation()
   const { partner } = usePartnerStore()
 
-  // Определяем, является ли это собственным доменом (партнер код = 0000 или дефолтный брендинг)
-  const isOwnDomain = partner?.partner_code === '0000' || partner?.is_default
+    const isOwnDomain = partner?.partner_code === '0000' || partner?.is_default
 
   const fadeInUp = {
     initial: { opacity: 0, y: 20 },
@@ -25,7 +24,7 @@ const HomePage = () => {
     <div className="min-h-screen">
       <HeroSection />
       
-      {/* Main Sections - показываем только для собственного домена */}
+      
       {isOwnDomain && (
         <section id="diamond-art" className="py-16 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -51,7 +50,7 @@ const HomePage = () => {
                 description={t('diamond_art.preview_section.description')}
                 buttonText={t('diamond_art.preview_section.create_preview')}
                 buttonIcon={<Sparkles className="w-5 h-5" />}
-                onClick={() => window.location.href = '/diamond-mosaic'}
+                onClick={() => window.location.href = '/preview'}
                 className="hover-lift"
                 gradient="from-purple-600 to-pink-600"
                 active

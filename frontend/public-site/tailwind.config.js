@@ -7,7 +7,6 @@ export default {
   theme: {
     extend: {
       colors: {
-  // Динамические цвета бренда через CSS переменные
   'brand-primary': 'var(--brand-primary)',
   'brand-secondary': 'var(--brand-secondary)',
   'brand-accent': 'var(--brand-accent)',

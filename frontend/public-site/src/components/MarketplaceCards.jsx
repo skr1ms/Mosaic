@@ -51,11 +51,9 @@ const MarketplaceCards = ({ selectedSize, selectedStyle }) => {
       const newData = {}
 
       try {
-        // Load data for each marketplace
-        for (const marketplace of marketplaces) {
+                for (const marketplace of marketplaces) {
           try {
-            // If we have partner_id, try to get specific product URLs
-            if (partner.partner_id) {
+                        if (partner.partner_id) {
               const response = await MosaicAPI.generateProductURL(partner.partner_id, {
                 marketplace: marketplace.key,
                 style: selectedStyle,
@@ -64,13 +62,10 @@ const MarketplaceCards = ({ selectedSize, selectedStyle }) => {
               
               newData[marketplace.key] = {
                 ...response,
-                available: response.has_article, // Available if we have specific article
-                has_general_link: !!response.url && !response.has_article, // General link available if no specific article but URL exists
-                specific_product: true
+                available: response.has_article,                 has_general_link: !!response.url && !response.has_article,                 specific_product: true
               }
             } else {
-              // For default partner or when no partner_id, use general marketplace links
-              const generalLink = partner?.[`${marketplace.key}Link`] || partner?.marketplace_links?.[marketplace.key]
+                            const generalLink = partner?.[`${marketplace.key}Link`] || partner?.marketplace_links?.[marketplace.key]
               
               newData[marketplace.key] = {
                 url: generalLink || '',
@@ -85,15 +80,13 @@ const MarketplaceCards = ({ selectedSize, selectedStyle }) => {
             }
           } catch (error) {
             console.error(`Error loading ${marketplace.key} data:`, error)
-            // Fallback to general link even on API error
-            const generalLink = partner?.[`${marketplace.key}Link`] || partner?.marketplace_links?.[marketplace.key]
+                        const generalLink = partner?.[`${marketplace.key}Link`] || partner?.marketplace_links?.[marketplace.key]
             
             newData[marketplace.key] = {
               url: generalLink || '',
               sku: '',
               has_article: false,
-              available: false, // Never show as "available" when API fails - specific product not found
-              has_general_link: !!generalLink,
+              available: false,               has_general_link: !!generalLink,
               error: !generalLink,
               partner_name: partner.name || '',
               marketplace: marketplace.key,
@@ -123,18 +116,15 @@ const MarketplaceCards = ({ selectedSize, selectedStyle }) => {
     }
 
     try {
-      // Copy URL to clipboard
-      await navigator.clipboard.writeText(data.url)
+            await navigator.clipboard.writeText(data.url)
       
-      // Show appropriate notification
-      if (data.has_article && data.sku) {
+            if (data.has_article && data.sku) {
         addNotification({
           type: 'success',
           message: t('sections.diamond_art.marketplace.url_copied', { sku: data.sku })
         })
       } else {
-        // For general marketplace links when specific product not available
-        if (data.has_general_link || data.url) {
+                if (data.has_general_link || data.url) {
           addNotification({
             type: 'info',
             message: t('sections.diamond_art.marketplace.redirected_to_general')
@@ -148,12 +138,10 @@ const MarketplaceCards = ({ selectedSize, selectedStyle }) => {
         }
       }
 
-      // Open in new tab
-      window.open(data.url, '_blank')
+            window.open(data.url, '_blank')
     } catch (error) {
       console.error('Error handling product click:', error)
-      // Still try to open the URL even if clipboard fails
-      window.open(data.url, '_blank')
+            window.open(data.url, '_blank')
     }
   }
 
@@ -184,9 +172,9 @@ const MarketplaceCards = ({ selectedSize, selectedStyle }) => {
 {t('sections.diamond_art.marketplace.ready_to_buy')}
         </h3>
         {(() => {
-          // Используем размеры без перевода, как на странице активации купонов
-          const sizeText = selectedSize // Просто 21x30, 30x40 и т.д.
-          // Приводим к единому формату ключей в shop.styles
+          
+          const sizeText = selectedSize 
+          
           const styleKey = selectedStyle === 'skin_tones' ? 'skin_tone' : selectedStyle
           const styleText = t(`shop.styles.${styleKey}.title`) || selectedStyle
           

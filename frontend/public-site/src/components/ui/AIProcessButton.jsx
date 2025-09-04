@@ -14,15 +14,13 @@ const AIProcessButton = ({ imageId, onProcess, disabled = false }) => {
     try {
       setIsProcessing(true);
       
-      // Показываем модальное окно с параметрами AI обработки
-      const aiParams = await showAIParametersModal();
+            const aiParams = await showAIParametersModal();
       if (!aiParams) {
         setIsProcessing(false);
         return;
       }
 
-      // Отправляем запрос на AI обработку
-      const response = await fetch(`/api/images/${imageId}/process`, {
+            const response = await fetch(`/api/images/${imageId}/process`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -35,8 +33,7 @@ const AIProcessButton = ({ imageId, onProcess, disabled = false }) => {
         setQueueInfo(data);
         setShowQueueStatus(true);
         
-        // Вызываем callback если передан
-        if (onProcess) {
+                if (onProcess) {
           onProcess(data);
         }
       } else {
@@ -45,7 +42,7 @@ const AIProcessButton = ({ imageId, onProcess, disabled = false }) => {
       }
     } catch (error) {
       console.error('AI processing error:', error);
-      alert(t('ai_process.error', 'Ошибка запуска AI обработки: ') + error.message);
+      alert(t('ai_process.error') + error.message);
     } finally {
       setIsProcessing(false);
     }
@@ -53,55 +50,54 @@ const AIProcessButton = ({ imageId, onProcess, disabled = false }) => {
 
   const showAIParametersModal = () => {
     return new Promise((resolve) => {
-      // Создаем модальное окно с параметрами
-      const modal = document.createElement('div');
+            const modal = document.createElement('div');
       modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
       
       const modalContent = `
         <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
           <h3 class="text-lg font-semibold text-gray-900 mb-4">
-            ${t('ai_process.parameters_title', 'Параметры AI обработки')}
+            ${t('ai_process.parameters_title')}
           </h3>
           
           <div class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">
-                ${t('ai_process.style', 'Стиль обработки')}
+                ${t('ai_process.style')}
               </label>
               <select id="ai-style" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-primary">
-                <option value="grayscale">${t('ai_process.style.grayscale', 'Оттенки серого')}</option>
-                <option value="skin_tones">${t('ai_process.style.skin_tones', 'Оттенки телесного')}</option>
-                <option value="pop_art">${t('ai_process.style.pop_art', 'Поп-арт')}</option>
-                <option value="max_colors">${t('ai_process.style.max_colors', 'Максимум цветов')}</option>
+                <option value="grayscale">${t('ai_process.style.grayscale')}</option>
+                <option value="skin_tones">${t('ai_process.style.skin_tones')}</option>
+                <option value="pop_art">${t('ai_process.style.pop_art')}</option>
+                <option value="max_colors">${t('ai_process.style.max_colors')}</option>
               </select>
             </div>
             
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">
-                ${t('ai_process.lighting', 'Освещение')}
+                ${t('ai_process.lighting')}
               </label>
               <select id="ai-lighting" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-primary">
-                <option value="">${t('ai_process.lighting.none', 'Без изменений')}</option>
-                <option value="sun">${t('ai_process.lighting.sun', 'Солнечное')}</option>
-                <option value="moon">${t('ai_process.lighting.moon', 'Лунное')}</option>
-                <option value="venus">${t('ai_process.lighting.venus', 'Венерианское')}</option>
+                <option value="">${t('ai_process.lighting.none')}</option>
+                <option value="sun">${t('ai_process.lighting.sun')}</option>
+                <option value="moon">${t('ai_process.lighting.moon')}</option>
+                <option value="venus">${t('ai_process.lighting.venus')}</option>
               </select>
             </div>
             
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">
-                ${t('ai_process.contrast', 'Контрастность')}
+                ${t('ai_process.contrast')}
               </label>
               <select id="ai-contrast" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-primary">
-                <option value="">${t('ai_process.contrast.none', 'Без изменений')}</option>
-                <option value="low">${t('ai_process.contrast.low', 'Низкий')}</option>
-                <option value="high">${t('ai_process.contrast.high', 'Высокий')}</option>
+                <option value="">${t('ai_process.contrast.none')}</option>
+                <option value="low">${t('ai_process.contrast.low')}</option>
+                <option value="high">${t('ai_process.contrast.high')}</option>
               </select>
             </div>
             
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">
-                ${t('ai_process.brightness', 'Яркость')} (-100 до 100)
+                ${t('ai_process.brightness')} (-100 до 100)
               </label>
               <input type="range" id="ai-brightness" min="-100" max="100" value="0" class="w-full">
               <span id="brightness-value" class="text-sm text-gray-600">0</span>
@@ -109,7 +105,7 @@ const AIProcessButton = ({ imageId, onProcess, disabled = false }) => {
             
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">
-                ${t('ai_process.saturation', 'Насыщенность')} (-100 до 100)
+                ${t('ai_process.saturation')} (-100 до 100)
               </label>
               <input type="range" id="ai-saturation" min="-100" max="100" value="0" class="w-full">
               <span id="saturation-value" class="text-sm text-gray-600">0</span>
@@ -117,22 +113,22 @@ const AIProcessButton = ({ imageId, onProcess, disabled = false }) => {
             
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">
-                ${t('ai_process.priority', 'Приоритет')}
+                ${t('ai_process.priority')}
               </label>
               <select id="ai-priority" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-primary">
-                <option value="5">${t('ai_process.priority.normal', 'Обычный')}</option>
-                <option value="7">${t('ai_process.priority.high', 'Высокий')}</option>
-                <option value="10">${t('ai_process.priority.urgent', 'Срочный')}</option>
+                <option value="5">${t('ai_process.priority.normal')}</option>
+                <option value="7">${t('ai_process.priority.high')}</option>
+                <option value="10">${t('ai_process.priority.urgent')}</option>
               </select>
             </div>
           </div>
           
           <div class="mt-6 flex space-x-3">
             <button id="ai-process-start" class="flex-1 bg-brand-primary text-white px-4 py-2 rounded-md hover:bg-brand-primary/90 transition-colors">
-              ${t('ai_process.start', 'Запустить AI обработку')}
+              ${t('ai_process.start')}
             </button>
             <button id="ai-process-cancel" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors">
-              ${t('ai_process.cancel', 'Отмена')}
+              ${t('ai_process.cancel')}
             </button>
           </div>
         </div>
@@ -141,8 +137,7 @@ const AIProcessButton = ({ imageId, onProcess, disabled = false }) => {
       modal.innerHTML = modalContent;
       document.body.appendChild(modal);
       
-      // Добавляем обработчики событий
-      const brightnessSlider = modal.querySelector('#ai-brightness');
+            const brightnessSlider = modal.querySelector('#ai-brightness');
       const brightnessValue = modal.querySelector('#brightness-value');
       const saturationSlider = modal.querySelector('#ai-saturation');
       const saturationValue = modal.querySelector('#ai-saturation-value');
@@ -155,8 +150,7 @@ const AIProcessButton = ({ imageId, onProcess, disabled = false }) => {
         saturationValue.textContent = e.target.value;
       });
       
-      // Обработчик запуска
-      modal.querySelector('#ai-process-start').addEventListener('click', () => {
+            modal.querySelector('#ai-process-start').addEventListener('click', () => {
         const params = {
           style: modal.querySelector('#ai-style').value,
           use_ai: true,
@@ -171,8 +165,7 @@ const AIProcessButton = ({ imageId, onProcess, disabled = false }) => {
         resolve(params);
       });
       
-      // Обработчик отмены
-      modal.querySelector('#ai-process-cancel').addEventListener('click', () => {
+            modal.querySelector('#ai-process-cancel').addEventListener('click', () => {
         document.body.removeChild(modal);
         resolve(null);
       });
@@ -192,19 +185,19 @@ const AIProcessButton = ({ imageId, onProcess, disabled = false }) => {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            {t('ai_process.processing', 'Обработка...')}
+            {t('ai_process.processing')}
           </>
         ) : (
           <>
             <svg className="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
-            {t('ai_process.start_ai', 'AI улучшение')}
+            {t('ai_process.start_ai')}
           </>
         )}
       </button>
 
-      {/* Модальное окно статуса очереди */}
+      {}
       <AIQueueStatus
         imageId={imageId}
         isVisible={showQueueStatus}

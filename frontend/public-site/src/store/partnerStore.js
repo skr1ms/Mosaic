@@ -1,39 +1,30 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 
-// Store для управления партнером и брендингом
 export const usePartnerStore = create(
   devtools(
     (set, get) => ({
       partner: null,
       setPartner: (partner) => set({ partner }),
       
-      // Получение цветов брендинга
-      getBrandColors: () => {
+            getBrandColors: () => {
         const state = get()
         return state.partner?.brandColors || []
       },
       
-      // Получение основного цвета (первый из массива)
-      getPrimaryColor: () => {
+            getPrimaryColor: () => {
         const state = get()
-        return state.partner?.brandColors?.[0] || '#3B82F6' // fallback к синему
-      },
+        return state.partner?.brandColors?.[0] || '#3B82F6'       },
       
-      // Получение вторичного цвета (второй из массива)
-      getSecondaryColor: () => {
+            getSecondaryColor: () => {
         const state = get()
-        return state.partner?.brandColors?.[1] || '#10B981' // fallback к зеленому
-      },
+        return state.partner?.brandColors?.[1] || '#10B981'       },
       
-      // Получение акцентного цвета (третий из массива)
-      getAccentColor: () => {
+            getAccentColor: () => {
         const state = get()
-        return state.partner?.brandColors?.[2] || '#F59E0B' // fallback к оранжевому
-      },
+        return state.partner?.brandColors?.[2] || '#F59E0B'       },
       
-      // Состояние для редактора
-      editorState: {
+            editorState: {
         currentStep: 1,
         imageData: null,
         selectedOptions: null,
@@ -59,7 +50,6 @@ export const usePartnerStore = create(
   )
 )
 
-// Store для управления UI состоянием
 export const useUIStore = create(
   devtools(
     (set, get) => ({
@@ -70,17 +60,14 @@ export const useUIStore = create(
         const now = Date.now()
         const state = get()
         const id = state.nextNotificationId
-        // Формируем ключ для дедупликации
-        const type = notification.type || 'info'
+                const type = notification.type || 'info'
         const title = notification.title || ''
         const message = notification.message || ''
         const dedupeKey = `${type}::${title}::${message}`
 
-        // Проверяем, есть ли уже такое же уведомление
-        const existingNotification = state.notifications.find(n => n.dedupeKey === dedupeKey)
+                const existingNotification = state.notifications.find(n => n.dedupeKey === dedupeKey)
         if (existingNotification) {
-          // Если уведомление уже есть, обновляем его timestamp и не добавляем дубликат
-          return
+                    return
         }
 
         const newNotification = {
@@ -95,8 +82,7 @@ export const useUIStore = create(
           nextNotificationId: id + 1,
         })
 
-        // Автоматически удаляем уведомление через 5 секунд (или кастомный duration)
-        const duration = typeof notification.duration === 'number' ? notification.duration : 5000
+                const duration = typeof notification.duration === 'number' ? notification.duration : 5000
         setTimeout(() => {
           get().removeNotification(id)
         }, duration)
@@ -116,7 +102,6 @@ export const useUIStore = create(
   )
 )
 
-// Store для управления купоном
 export const useCouponStore = create(
   devtools(
     (set, get) => ({

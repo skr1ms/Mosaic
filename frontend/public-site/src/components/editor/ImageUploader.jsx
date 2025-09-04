@@ -42,7 +42,7 @@ const ImageUploader = ({ onImageUploaded, couponCode, couponSize, initialImageId
     onError: (error) => {
       const msgRaw = (error && (error.message || error?.original?.response?.data?.detail)) || ''
       const msg = /not activated/i.test(msgRaw)
-        ? t('notifications.coupon_not_activated', 'Купон не активирован. Сначала активируйте купон.')
+        ? t('notifications.coupon_not_activated')
         : /coupon not found/i.test(msgRaw)
         ? t('notifications.invalid_coupon')
         : /invalid image type/i.test(msgRaw)
@@ -60,8 +60,7 @@ const ImageUploader = ({ onImageUploaded, couponCode, couponSize, initialImageId
       return false
     }
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png']
-    const maxSize = 15 * 1024 * 1024 // 15MB
-
+    const maxSize = 15 * 1024 * 1024 
     if (!validTypes.includes(file.type)) {
       addNotification({
         type: 'error',
@@ -98,7 +97,7 @@ const ImageUploader = ({ onImageUploaded, couponCode, couponSize, initialImageId
 
     setSelectedFile(file)
     
-    // Создаем превью
+    
     const reader = new FileReader()
     reader.onload = (e) => {
       setPreview(e.target.result)
@@ -138,7 +137,7 @@ const ImageUploader = ({ onImageUploaded, couponCode, couponSize, initialImageId
   }
 
   const handleUpload = async () => {
-    // Берём купон из пропсов или из sessionStorage, если есть
+    
     const effectiveCoupon = couponCode || (() => { try { return sessionStorage.getItem('editor:coupon') || '' } catch { return '' } })()
     if (!selectedFile || !effectiveCoupon) {
       addNotification({ type: 'error', message: t('notifications.coupon_required') })
@@ -151,8 +150,8 @@ const ImageUploader = ({ onImageUploaded, couponCode, couponSize, initialImageId
 
     const formData = new FormData()
     formData.append('image', selectedFile)
-    // Бэкенд поддерживает coupon_code (12 цифр)
-    // Бэкенд требует ровно 12 цифр (без дефисов)
+    
+    
     const clean = effectiveCoupon.replace(/\D/g, '')
     console.log('ImageUploader: Cleaned coupon code:', clean)
     
@@ -186,8 +185,7 @@ const ImageUploader = ({ onImageUploaded, couponCode, couponSize, initialImageId
     setCropData(null)
   }
 
-  // Восстановление предпросмотра и параметров редактирования при перезагрузке
-  React.useEffect(() => {
+    React.useEffect(() => {
     try {
       const prev = sessionStorage.getItem('editor:lastPreview')
       if (prev && !preview) {
@@ -195,8 +193,7 @@ const ImageUploader = ({ onImageUploaded, couponCode, couponSize, initialImageId
         setEditMode(true)
       }
       
-      // Восстанавливаем параметры редактирования
-      if (imageData?.image_id) {
+            if (imageData?.image_id) {
         const savedEdits = sessionStorage.getItem(`editor:edits:${imageData.image_id}`)
         if (savedEdits) {
           const edits = JSON.parse(savedEdits)
@@ -229,9 +226,7 @@ const ImageUploader = ({ onImageUploaded, couponCode, couponSize, initialImageId
   }
 
   const handleCrop = () => {
-    // Фиксированный кроп по пропорциям размера купона
-    // 21x30, 30x40 -> 3:4; 40x40 -> 1:1; 40x50 -> 4:5; 40x60 -> 2:3; 50x70 -> 5:7
-    const ratioMap = {
+            const ratioMap = {
       '21x30': 3/4,
       '30x40': 3/4,
       '40x40': 1,
@@ -240,8 +235,7 @@ const ImageUploader = ({ onImageUploaded, couponCode, couponSize, initialImageId
       '50x70': 5/7,
     }
     const ratio = ratioMap[couponSize] || 3/4
-    // В процентах контейнера: ширина 80%, высота = 80% / ratio
-    const widthPct = 80
+        const widthPct = 80
     const heightPct = Math.min(80 / ratio, 90)
     const xPct = (100 - widthPct) / 2
     const yPct = (100 - heightPct) / 2
@@ -259,7 +253,7 @@ const ImageUploader = ({ onImageUploaded, couponCode, couponSize, initialImageId
       scale: scale,
     }
     
-    // Сохраняем параметры редактирования в sessionStorage
+    
     try {
       sessionStorage.setItem(`editor:edits:${imageData.image_id}`, JSON.stringify(params))
     } catch {}
@@ -342,7 +336,7 @@ const ImageUploader = ({ onImageUploaded, couponCode, couponSize, initialImageId
             transition={{ duration: 0.3 }}
             className="space-y-6"
           >
-            {/* Инструменты редактирования */}
+            
             <div className="flex items-center justify-center gap-4 p-4 bg-gray-50 rounded-lg overflow-x-auto">
               <div className="flex items-center gap-4 min-w-max">
                 <button
@@ -410,7 +404,7 @@ const ImageUploader = ({ onImageUploaded, couponCode, couponSize, initialImageId
               </div>
             </div>
 
-            {/* Предпросмотр изображения */}
+            
             <div className="flex justify-center">
               <div className="relative overflow-hidden rounded-lg border border-gray-300">
                 <img
@@ -437,7 +431,7 @@ const ImageUploader = ({ onImageUploaded, couponCode, couponSize, initialImageId
               </div>
             </div>
 
-            {/* Информация о файле */}
+            
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">

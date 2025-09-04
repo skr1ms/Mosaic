@@ -7,13 +7,11 @@ import { useUIStore } from '../../store/partnerStore'
 const StyleSelector = ({ imageId, onStyleSelected, onBack, initialOptions = null }) => {
   const { t } = useTranslation()
   const { addNotification } = useUIStore()
-  // Убрано немедленное предварительное процессирование. Выбор сохраняется и применяется на шаге подтверждения.
-  const [selectedStyle, setSelectedStyle] = useState(initialOptions?.style || null)
+    const [selectedStyle, setSelectedStyle] = useState(initialOptions?.style || null)
   const [selectedLighting, setSelectedLighting] = useState(initialOptions?.lighting || null)
   const [selectedContrast, setSelectedContrast] = useState(initialOptions?.contrast || null)
 
-  // Восстанавливаем из sessionStorage по imageId
-  React.useEffect(() => {
+    React.useEffect(() => {
     if (!imageId || initialOptions) return
     try {
       const raw = sessionStorage.getItem(`editor:selectedOptions:${imageId}`)
@@ -27,8 +25,7 @@ const StyleSelector = ({ imageId, onStyleSelected, onBack, initialOptions = null
   }, [imageId])
 
   const mapToBackendParams = (ui) => {
-    // style mapping: original->grayscale (no AI), enhanced->max_colors (AI)
-    const styleMap = {
+        const styleMap = {
       original: { style: 'grayscale', use_ai: false },
       enhanced: { style: 'max_colors', use_ai: true },
     }
@@ -154,7 +151,7 @@ const StyleSelector = ({ imageId, onStyleSelected, onBack, initialOptions = null
 
   return (
     <div className="space-y-8">
-      {/* Заголовок */}
+      {}
       <div className="text-center">
         <h2 className="text-3xl font-bold text-gray-900 mb-4">
           {t('editor.styles.title')}
@@ -164,7 +161,7 @@ const StyleSelector = ({ imageId, onStyleSelected, onBack, initialOptions = null
         </p>
       </div>
 
-      {/* Выбор основного стиля */}
+      
       <section>
         <h3 className="text-xl font-semibold text-gray-900 mb-6 text-center">
           {t('editor.styles.main_style')}
@@ -202,7 +199,7 @@ const StyleSelector = ({ imageId, onStyleSelected, onBack, initialOptions = null
                   {style.description}
                 </p>
                 
-                {/* Индикатор времени обработки */}
+                {}
                 <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${
                   style.useAI 
                     ? 'bg-brand-primary/10 text-brand-primary border border-brand-primary/20'
@@ -220,7 +217,7 @@ const StyleSelector = ({ imageId, onStyleSelected, onBack, initialOptions = null
         </div>
       </section>
 
-      {/* Выбор освещения */}
+      {}
       {selectedStyle && (
         <motion.section
           initial={{ opacity: 0, y: 20 }}
@@ -269,7 +266,7 @@ const StyleSelector = ({ imageId, onStyleSelected, onBack, initialOptions = null
         </motion.section>
       )}
 
-      {/* Выбор контрастности */}
+      
       {selectedStyle && (
         <motion.section
           initial={{ opacity: 0, y: 20 }}
@@ -318,7 +315,7 @@ const StyleSelector = ({ imageId, onStyleSelected, onBack, initialOptions = null
         </motion.section>
       )}
 
-      {/* Навигация */}
+      
       <div className="flex items-center justify-between pt-8 border-t">
         <button
           onClick={onBack}

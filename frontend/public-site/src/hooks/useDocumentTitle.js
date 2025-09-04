@@ -5,16 +5,13 @@ export const useDocumentTitle = () => {
   const { t, i18n } = useTranslation()
 
   useEffect(() => {
-    // Update title
-    document.title = t('navigation.html_title')
+        document.title = t('navigation.html_title')
     
-    // Update meta description
-    const metaDescription = document.querySelector('meta[name="description"]')
+        const metaDescription = document.querySelector('meta[name="description"]')
     if (metaDescription) {
       metaDescription.setAttribute('content', t('navigation.html_description'))
     }
     
-    // Update HTML lang attribute
-    document.documentElement.lang = i18n.language
+        document.documentElement.lang = i18n.language
   }, [t, i18n.language])
 }

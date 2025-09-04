@@ -23,8 +23,7 @@ const SchemaGenerator = ({ imageId, selectedOptions, onBack, onComplete, onLockN
       return await MosaicAPI.generateSchema(imageId, params)
     },
     onSuccess: (data) => {
-      // async
-    },
+          },
     onError: (error) => {
       setIsGenerating(false)
       addNotification({
@@ -81,8 +80,7 @@ const SchemaGenerator = ({ imageId, selectedOptions, onBack, onComplete, onLockN
         }
       }
 
-      // Сначала применяем редактирование (поворот, масштаб, кроп)
-      try {
+            try {
         const editParams = {
           crop_x: 0,
           crop_y: 0,
@@ -92,8 +90,7 @@ const SchemaGenerator = ({ imageId, selectedOptions, onBack, onComplete, onLockN
           scale: 1
         }
         
-        // Получаем параметры редактирования из sessionStorage
-        try {
+                try {
           const savedEdits = sessionStorage.getItem(`editor:edits:${imageId}`)
           if (savedEdits) {
             const edits = JSON.parse(savedEdits)
@@ -104,8 +101,7 @@ const SchemaGenerator = ({ imageId, selectedOptions, onBack, onComplete, onLockN
         await MosaicAPI.editImage(imageId, editParams)
       } catch (error) {
         console.warn('Failed to apply edits:', error)
-        // Продолжаем без редактирования
-      }
+              }
 
       if (!currentStatus || currentStatus.status !== 'processed') {
         const processParams = mapParams(selectedOptions)
@@ -384,7 +380,7 @@ const SchemaGenerator = ({ imageId, selectedOptions, onBack, onComplete, onLockN
               {t('editor.completion.description')}
             </p>
 
-            {/* Действия с готовой схемой */}
+            {}
             <div className="flex justify-center mb-8">
               <div className="grid md:grid-cols-2 gap-6 max-w-2xl">
                 <motion.button
@@ -419,13 +415,12 @@ const SchemaGenerator = ({ imageId, selectedOptions, onBack, onComplete, onLockN
               </div>
             </div>
 
-            {/* Кнопка вернуться на главную */}
+            {}
             <div className="mt-8 flex justify-center">
               <button
                 onClick={() => {
                   try {
-                    // Чистим все ключи редактора, чтобы не потянуть старый купон/состояние
-                    Object.keys(sessionStorage).forEach((k) => {
+                                        Object.keys(sessionStorage).forEach((k) => {
                       if (k.startsWith('editor:')) {
                         sessionStorage.removeItem(k)
                       }
@@ -439,7 +434,7 @@ const SchemaGenerator = ({ imageId, selectedOptions, onBack, onComplete, onLockN
               </button>
             </div>
 
-            {/* Форма отправки email */}
+            {}
             <AnimatePresence>
               {showEmailForm && (
                 <motion.div

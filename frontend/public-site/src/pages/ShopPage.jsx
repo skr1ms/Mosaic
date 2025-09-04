@@ -10,8 +10,7 @@ import { useUIStore } from '../store/partnerStore'
 const ShopPage = () => {
   const { t } = useTranslation()
   
-  // Восстанавлием состояние из sessionStorage
-  const [selectedSize, setSelectedSize] = useState(() => {
+    const [selectedSize, setSelectedSize] = useState(() => {
     try {
       return sessionStorage.getItem('shop:selectedSize') || null
     } catch {
@@ -34,21 +33,16 @@ const ShopPage = () => {
   const [couponCode, setCouponCode] = useState(null)
   const [orderData, setOrderData] = useState(null)
   
-  // Проверяем сохраненный заказ при загрузке
-  useEffect(() => {
+    useEffect(() => {
     try {
       const savedOrder = localStorage.getItem('pendingOrder')
       if (savedOrder) {
         const order = JSON.parse(savedOrder)
-        // Проверяем что заказ не старше 30 минут
-        const thirtyMinutes = 30 * 60 * 1000
+                const thirtyMinutes = 30 * 60 * 1000
         if (Date.now() - order.timestamp < thirtyMinutes) {
-          // ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: пытаемся получить статус заказа
-          // Если заказ не существует на сервере - очищаем localStorage
-          MosaicAPI.getOrderStatus(order.orderNumber)
+                              MosaicAPI.getOrderStatus(order.orderNumber)
             .then(() => {
-              // Заказ существует - восстанавливаем данные
-              setOrderNumber(order.orderNumber)
+                            setOrderNumber(order.orderNumber)
               setPaymentUrl(order.paymentUrl)
               setEmail(order.email)
               setSelectedSize(order.size)
@@ -56,20 +50,17 @@ const ShopPage = () => {
               console.log('Restored pending order:', order.orderNumber)
             })
             .catch(() => {
-              // Заказ не существует - очищаем localStorage
-              console.log('Saved order not found on server, clearing localStorage')
+                            console.log('Saved order not found on server, clearing localStorage')
               localStorage.removeItem('pendingOrder')
               localStorage.removeItem('activeCoupon')
             })
         } else {
-          // Удаляем старый заказ
-          localStorage.removeItem('pendingOrder')
+                    localStorage.removeItem('pendingOrder')
         }
       }
     } catch (error) {
       console.error('Failed to restore pending order:', error)
-      // При ошибке тоже очищаем localStorage
-      localStorage.removeItem('pendingOrder')
+            localStorage.removeItem('pendingOrder')
       localStorage.removeItem('activeCoupon')
     }
   }, [])
@@ -78,14 +69,12 @@ const ShopPage = () => {
   
 
   
-  // АВТОМАТИЧЕСКАЯ ПРОВЕРКА СТАТУСА ЗАКАЗА
-  useEffect(() => {
+    useEffect(() => {
     if (!orderNumber || paymentStatus) return
     
     let intervalId = null
     let attempts = 0
-    const maxAttempts = 60 // 60 попыток = 3 минуты
-    
+    const maxAttempts = 60     
     const checkOrderStatus = async () => {
       try {
         attempts++
@@ -97,12 +86,12 @@ const ShopPage = () => {
           setPaymentStatus('success')
           clearInterval(intervalId)
           
-          // ЕСЛИ ЕСТЬ КУПОН - ПОКАЗЫВАЕМ ЕГО НА СТРАНИЦЕ!
+          
           if (statusData.coupon_code) {
             setCouponCode(statusData.coupon_code)
             setOrderData(statusData)
             localStorage.setItem('activeCoupon', statusData.coupon_code)
-            localStorage.removeItem('pendingOrder') // Очищаем pending order
+            localStorage.removeItem('pendingOrder') 
             
             addNotification({ 
               type: 'success', 
@@ -125,7 +114,7 @@ const ShopPage = () => {
             message: t('shop.alerts.payment_failed')
           })
         } else if (attempts >= maxAttempts) {
-          // Превысили максимум попыток
+          
           clearInterval(intervalId)
                     addNotification({
             type: 'warning',
@@ -141,10 +130,10 @@ const ShopPage = () => {
       }
     }
     
-    // Начинаем проверку через 3 секунды, затем каждые 3 секунды
+    
     const initialTimer = setTimeout(() => {
-      checkOrderStatus() // Первая проверка
-      intervalId = setInterval(checkOrderStatus, 3000) // Последующие проверки каждые 3 сек
+      checkOrderStatus() 
+      intervalId = setInterval(checkOrderStatus, 3000) 
     }, 3000)
     
     return () => {
@@ -158,11 +147,11 @@ const ShopPage = () => {
     onSuccess: (data) => {
       console.log('Payment response:', data)
       if (data?.payment_url) {
-        // Сохраняем номер заказа для проверки статуса
+        
         if (data.order_number) {
           setOrderNumber(data.order_number)
           
-          // СОХРАНЯЕМ ДАННЫЕ ЗАКАЗА В LOCALSTORAGE
+          
           try {
             localStorage.setItem('pendingOrder', JSON.stringify({
               orderNumber: data.order_number,
@@ -178,7 +167,7 @@ const ShopPage = () => {
             console.error('Failed to save order to localStorage:', error)
           }
         }
-        // Открываем страницу оплаты в новой вкладке
+        
         window.open(data.payment_url, '_blank')
         setPaymentUrl(data.payment_url)
                 addNotification({
@@ -203,10 +192,10 @@ const ShopPage = () => {
   }
 
   const sizeKeys = ['21x30', '30x40', '40x40', '40x50', '40x60', '50x70']
-  // Ключи стилей должны соответствовать бэкенду: grayscale, skin_tone, pop_art, max_colors
+  
   const styleKeys = ['grayscale', 'skin_tone', 'pop_art', 'max_colors']
 
-  // Rectangle sizes for visual representation (proportional to actual sizes)
+  
   const rectangleSizes = {
     '21x30': { width: 'w-12', height: 'h-16' },
     '30x40': { width: 'w-14', height: 'h-20' },
@@ -216,7 +205,7 @@ const ShopPage = () => {
     '50x70': { width: 'w-20', height: 'h-28' }
   }
 
-  // Сохраняем состояние в sessionStorage при изменении
+  
   const handleSizeChange = (size) => {
     setSelectedSize(size)
     try {
@@ -266,7 +255,7 @@ const ShopPage = () => {
           </p>
         </motion.div>
 
-        {/* Size Selection */}
+        {}
         <motion.section 
           {...fadeInUp}
           transition={{ delay: 0.2 }}
@@ -319,7 +308,7 @@ const ShopPage = () => {
           </div>
         </motion.section>
 
-        {/* Style Selection */}
+        {}
         <motion.section 
           {...fadeInUp}
           transition={{ delay: 0.4 }}
@@ -333,7 +322,7 @@ const ShopPage = () => {
               const styleData = t(`shop.styles.${styleKey}`, { returnObjects: true })
               const isSelected = selectedStyle === styleKey
 
-              // Style preview colors
+              
               const styleColors = {
                 'grayscale': 'linear-gradient(135deg, #000000, #ffffff)',
                 'skin_tone': 'linear-gradient(135deg, #8B4513, #DEB887)',
@@ -380,7 +369,7 @@ const ShopPage = () => {
           </div>
         </motion.section>
 
-        {/* Email Input */}
+        {}
         <motion.div
           {...fadeInUp}
           transition={{ delay: 0.5 }}
@@ -400,7 +389,7 @@ const ShopPage = () => {
           />
         </motion.div>
 
-        {/* Fixed Price and Purchase Button */}
+        
         <motion.div
           {...fadeInUp}
           transition={{ delay: 0.6 }}
@@ -424,7 +413,7 @@ const ShopPage = () => {
             </div>
           </button>
           
-          {/* Показываем информацию о том, что проверка автоматическая */}
+          {}
           {orderNumber && !couponCode && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -442,7 +431,7 @@ const ShopPage = () => {
 
         </motion.div>
 
-        {/* How it works */}
+        {}
         <motion.div 
           {...fadeInUp}
           transition={{ delay: 0.8 }}
@@ -466,7 +455,7 @@ const ShopPage = () => {
           </div>
         </motion.div>
 
-        {/* ОТОБРАЖЕНИЕ ГОТОВОГО КУПОНА */}
+        {}
         {couponCode && orderData && (
           <motion.section
             initial={{ opacity: 0, scale: 0.9 }}

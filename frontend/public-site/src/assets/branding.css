@@ -1,11 +1,11 @@
-/* CSS переменные для цветов брендинга */
+
 :root {
-  --brand-primary: #3B82F6;    /* fallback к синему */
-  --brand-secondary: #10B981;  /* fallback к зеленому */
-  --brand-accent: #F59E0B;     /* fallback к оранжевому */
+  --brand-primary: #3B82F6;    
+  --brand-secondary: #10B981;  
+  --brand-accent: #F59E0B;     
 }
 
-/* Утилитарные классы для цветов брендинга */
+
 .bg-brand-primary {
   background-color: var(--brand-primary);
 }
@@ -42,7 +42,7 @@
   border-color: var(--brand-accent);
 }
 
-/* Hover эффекты */
+
 .hover\:bg-brand-primary:hover {
   background-color: var(--brand-primary);
 }
@@ -67,7 +67,7 @@
   color: var(--brand-accent);
 }
 
-/* Focus эффекты */
+
 .focus\:ring-brand-primary:focus {
   --tw-ring-color: var(--brand-primary);
 }
@@ -80,7 +80,7 @@
   --tw-ring-color: var(--brand-accent);
 }
 
-/* Градиенты */
+
 .bg-gradient-brand {
   background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
 }
@@ -89,7 +89,7 @@
   background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
 }
 
-/* Кнопки с цветами брендинга */
+
 .btn-brand-primary {
   background-color: var(--brand-primary);
   color: white;
@@ -135,7 +135,7 @@
   transform: translateY(-1px);
 }
 
-/* Outline кнопки */
+
 .btn-outline-brand-primary {
   background-color: transparent;
   color: var(--brand-primary);
@@ -151,7 +151,7 @@
   color: white;
 }
 
-/* Ссылки с цветами брендинга */
+
 .link-brand-primary {
   color: var(--brand-primary);
   text-decoration: none;

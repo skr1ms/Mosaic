@@ -5,7 +5,7 @@ import { CheckCircle, Download, ArrowRight, FileText, Image, Package, Home } fro
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useUIStore } from '../store/partnerStore'
 
-const DiamondMosaicSuccessPage = () => {
+const PreviewSuccessPage = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
@@ -16,8 +16,7 @@ const DiamondMosaicSuccessPage = () => {
   const [downloadLinks, setDownloadLinks] = useState([])
 
   useEffect(() => {
-    // Получаем данные заказа
-    let orderInfo = null
+        let orderInfo = null
     
     if (location.state?.orderData) {
       orderInfo = location.state.orderData
@@ -33,25 +32,22 @@ const DiamondMosaicSuccessPage = () => {
     }
     
     if (!orderInfo) {
-      navigate('/diamond-mosaic')
+      navigate('/preview')
       return
     }
     
     setOrderData(orderInfo)
     
-    // Симулируем генерацию файлов
-    generateSchemaFiles(orderInfo)
+        generateSchemaFiles(orderInfo)
   }, [location, navigate])
 
   const generateSchemaFiles = async (order) => {
     setIsGenerating(true)
     
     try {
-      // Симулируем процесс генерации файлов
-      await new Promise(resolve => setTimeout(resolve, 3000))
+            await new Promise(resolve => setTimeout(resolve, 3000))
       
-      // Имитируем созданные файлы
-      const files = [
+            const files = [
         {
           id: 1,
           name: t('diamond_mosaic_success.files.schema.name'),
@@ -59,8 +55,7 @@ const DiamondMosaicSuccessPage = () => {
           type: 'pdf',
           size: '2.5 MB',
           description: t('diamond_mosaic_success.files.schema.description'),
-          url: '#', // В реальном приложении здесь будет реальная ссылка
-          icon: <FileText className="w-5 h-5" />
+          url: '#',           icon: <FileText className="w-5 h-5" />
         },
         {
           id: 2,
@@ -84,7 +79,7 @@ const DiamondMosaicSuccessPage = () => {
         }
       ]
       
-      // Add additional files for premium and professional packages
+      
       if (order.package.id === 'premium' || order.package.id === 'professional') {
         files.push({
           id: 4,
@@ -125,7 +120,7 @@ const DiamondMosaicSuccessPage = () => {
   }
 
   const handleDownload = (file) => {
-    // В реальном приложении здесь будет загрузка файла
+    
     addNotification({
       type: 'success',
       message: t('diamond_mosaic_success.notifications.download_started', { fileName: file.name })
@@ -133,14 +128,14 @@ const DiamondMosaicSuccessPage = () => {
   }
 
   const handleDownloadAll = () => {
-    // Скачиваем все файлы
+    
     downloadLinks.forEach(file => {
       setTimeout(() => handleDownload(file), Math.random() * 1000)
     })
   }
 
   const handleNewProject = () => {
-    // Очищаем все данные и начинаем новый проект
+    
     try {
       localStorage.removeItem('diamondMosaic_lastOrder')
       localStorage.removeItem('diamondMosaic_selectedImage')
@@ -150,7 +145,7 @@ const DiamondMosaicSuccessPage = () => {
       console.error('Error clearing data:', error)
     }
     
-    navigate('/diamond-mosaic')
+    navigate('/preview')
   }
 
   const handleGoHome = () => {
@@ -169,7 +164,7 @@ const DiamondMosaicSuccessPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 py-8 px-4">
       <div className="container mx-auto max-w-4xl">
         
-        {/* Заголовок успеха */}
+        
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -192,7 +187,7 @@ const DiamondMosaicSuccessPage = () => {
           </p>
         </motion.div>
 
-        {/* Статус генерации */}
+        {}
         {isGenerating && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -209,7 +204,7 @@ const DiamondMosaicSuccessPage = () => {
           </motion.div>
         )}
 
-        {/* Информация о заказе */}
+        {}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -219,7 +214,7 @@ const DiamondMosaicSuccessPage = () => {
           <h2 className="text-2xl font-bold text-gray-800 mb-6">{t('diamond_mosaic_success.order_details')}</h2>
           
           <div className="grid md:grid-cols-2 gap-6">
-            {/* Превью */}
+            
             <div>
               <h3 className="text-lg font-semibold text-gray-800 mb-3">{t('diamond_mosaic_success.your_mosaic')}</h3>
               <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3">
@@ -234,7 +229,7 @@ const DiamondMosaicSuccessPage = () => {
               </p>
             </div>
             
-            {/* Детали */}
+            {}
             <div>
               <h3 className="text-lg font-semibold text-gray-800 mb-3">{t('diamond_mosaic_success.characteristics')}</h3>
               <div className="space-y-3">
@@ -265,7 +260,7 @@ const DiamondMosaicSuccessPage = () => {
           </div>
         </motion.div>
 
-        {/* Файлы для скачивания */}
+        {}
         {!isGenerating && downloadLinks.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -316,7 +311,7 @@ const DiamondMosaicSuccessPage = () => {
           </motion.div>
         )}
 
-        {/* Действия */}
+        
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -340,7 +335,7 @@ const DiamondMosaicSuccessPage = () => {
           </button>
         </motion.div>
 
-        {/* Дополнительная информация */}
+        {}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -359,4 +354,4 @@ const DiamondMosaicSuccessPage = () => {
   )
 }
 
-export default DiamondMosaicSuccessPage
+export default PreviewSuccessPage

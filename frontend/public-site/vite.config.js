@@ -21,14 +21,10 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          // React core - объединяем все React зависимости
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          // UI библиотеки
-          'ui-vendor': ['framer-motion', 'lucide-react'],
-          // i18n
-          'i18n-vendor': ['i18next', 'react-i18next', 'i18next-browser-languagedetector'],
-          // API и state
-          'data-vendor': ['axios', '@tanstack/react-query', 'zustand'],
+                    'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+                    'ui-vendor': ['framer-motion', 'lucide-react'],
+                    'i18n-vendor': ['i18next', 'react-i18next', 'i18next-browser-languagedetector'],
+                    'data-vendor': ['axios', '@tanstack/react-query', 'zustand'],
         },
       },
     },

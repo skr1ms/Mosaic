@@ -6,8 +6,7 @@ export const useBrandingQuery = () => {
   return useQuery({
     queryKey: ['branding', window.location.hostname],
     queryFn: () => MosaicAPI.getBrandingInfo(),
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    retry: 1,
+    staleTime: 10 * 60 * 1000,     retry: 1,
     refetchOnWindowFocus: false,
   })
 }
@@ -27,12 +26,10 @@ export const useImageStatusQuery = (imageId, enabled = false) => {
     queryKey: ['imageStatus', imageId],
     queryFn: () => MosaicAPI.getProcessingStatus(imageId),
     enabled: !!imageId && enabled,
-    refetchInterval: 2000, // Poll every 2 seconds
-    retry: 3,
+    refetchInterval: 2000,     retry: 3,
   })
 }
 
-// Хук для использования цветов брендинга
 export const useBrandColors = () => {
   const { getBrandColors, getPrimaryColor, getSecondaryColor, getAccentColor } = usePartnerStore()
   
@@ -41,8 +38,7 @@ export const useBrandColors = () => {
     primaryColor: getPrimaryColor(),
     secondaryColor: getSecondaryColor(),
     accentColor: getAccentColor(),
-    // CSS переменные для использования в стилях
-    cssVariables: {
+        cssVariables: {
       '--brand-primary': getPrimaryColor(),
       '--brand-secondary': getSecondaryColor(),
       '--brand-accent': getAccentColor(),

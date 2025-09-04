@@ -8,8 +8,7 @@ const MarketplaceLinks = () => {
   const { t } = useTranslation()
   const { partner } = usePartnerStore()
 
-  // Don't show section if no links
-  if (!partner?.ozonLink && !partner?.wildberriesLink) {
+    if (!partner?.ozonLink && !partner?.wildberriesLink) {
     return null
   }
 

@@ -1,6 +1,6 @@
-/* Стили для чата поддержки */
 
-/* Основные стили для чата */
+
+
 .support-chat-window {
   animation: slideIn 0.3s ease-out;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
@@ -23,7 +23,7 @@
   transition: all 0.2s ease;
 }
 
-/* Стили для области сообщений */
+
 .support-chat-messages {
   overflow-x: hidden;
   word-wrap: break-word;
@@ -47,7 +47,7 @@
   background: #a8a8a8;
 }
 
-/* Анимация для новых сообщений */
+
 .support-message-enter {
   opacity: 0;
   transform: translateY(10px);
@@ -59,7 +59,7 @@
   transition: opacity 300ms, transform 300ms;
 }
 
-/* Стили для текста сообщений */
+
 .support-message-text {
   white-space: pre-wrap;
   word-wrap: break-word;
@@ -70,7 +70,7 @@
   hyphens: auto;
 }
 
-/* Стили для ссылок вложений */
+
 .support-attachment-link {
   text-decoration: underline !important;
   text-decoration-thickness: 2px !important;
@@ -97,7 +97,7 @@
   box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
 }
 
-/* Стили для textarea в чате */
+
 .support-message-input {
   transition: height 0.2s ease;
   line-height: 1.4;
@@ -114,7 +114,7 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* Стили для пузырьков сообщений */
+
 .support-message-bubble {
   max-width: 70%;
   padding: 12px 16px;
@@ -139,7 +139,7 @@
   border-bottom-left-radius: 6px;
 }
 
-/* Стили для метаданных сообщения (время, статус) */
+
 .support-message-meta {
   display: flex;
   align-items: center;
@@ -159,7 +159,7 @@
   line-height: 1;
 }
 
-/* Стили для кнопок */
+
 .support-chat-button {
   background: var(--brand-primary, #3b82f6);
   color: white;
@@ -222,7 +222,7 @@
   border-color: #9ca3af;
 }
 
-/* Стили для выбранных файлов */
+
 .support-file-preview {
   background: #f3f4f6;
   border: 1px solid #e5e7eb;
@@ -244,7 +244,7 @@
   line-height: 1;
 }
 
-/* Стили для контекстного меню */
+
 .support-context-menu {
   background: white;
   border: 1px solid #e5e7eb;
@@ -279,7 +279,7 @@
   margin: 4px 0;
 }
 
-/* Адаптивность для мобильных устройств */
+
 @media (max-width: 768px) {
   .support-chat-window {
     width: 350px !important;
@@ -321,7 +321,7 @@
   }
 }
 
-/* Анимация появления чата */
+
 .support-chat-fade-enter {
   opacity: 0;
   transform: scale(0.9);

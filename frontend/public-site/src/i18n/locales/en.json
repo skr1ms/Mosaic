@@ -13,14 +13,19 @@
     "yes": "Yes",
     "no": "No",
     "continue": "Continue",
-    "cm": "cm"
+    "cm": "cm",
+    "reset": "Reset"
+  },
+  "rotation": "Rotation",
+  "languages": {
+    "russian": "Russian",
+    "english": "English"
   },
   "navigation": {
     "home": "Home",
     "diamond_art": "Diamond Art",
     "paint_by_numbers": "Paint by Numbers",
     "what_is_this": "What is this",
-    "create_preview": "Create Mosaic Preview",
     "company_name": "Diamond Art",
     "page_title": "Diamond Mosaic - Create Beautiful Paintings from Rhinestones",
     "page_description": "Create beautiful paintings from rhinestones. An exciting hobby for the whole family. Upload photos, choose style and get ready mosaic pattern.",
@@ -840,6 +845,9 @@
       "crop_area_label": "MOSAIC AREA",
       "file_info": "Choose the area that will be used to create the mosaic",
       "crop_hint": "Purple frame shows the final area",
+      "select_area_title": "Select the area you like",
+      "select_area_hint": "Click and drag on the image to select the area that will be used for your mosaic. You can adjust the selection at any time.",
+      "select_area_instruction": "Select the area on the photo you want to use to create the preview",
       "tools": {
         "rotate_left": "Rotate Left",
         "rotate_right": "Rotate Right",
@@ -848,10 +856,11 @@
         "reset": "Reset",
         "zoom_in": "Zoom In",
         "zoom_out": "Zoom Out"
-      }
+      },
+      "editor_title": "Image Setup"
     },
     "navigation": {
-      "continue": "Continue to Style Selection",
+      "continue": "To style selection",
       "select_size_first": "Please select a size first",
       "other_photo": "Other Photo",
       "recommendations": {

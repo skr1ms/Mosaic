@@ -11,10 +11,8 @@ const Header = () => {
   const { partner } = usePartnerStore()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
-  // Function to scroll to section
-  const scrollToSection = (sectionId) => {
-    // If we're not on home page, go to home first
-    if (location.pathname !== '/') {
+    const scrollToSection = (sectionId) => {
+        if (location.pathname !== '/') {
       window.location.href = `/#${sectionId}`
       return
     }
@@ -43,12 +41,6 @@ const Header = () => {
       onClick: null
     },
     {
-      name: t('navigation.create_preview'),
-      href: '/diamond-mosaic',
-      current: location.pathname.startsWith('/diamond-mosaic'),
-      onClick: null
-    },
-    {
       name: t('navigation.paint_by_numbers'),
       href: '#paint-by-numbers',
       current: false,
@@ -72,7 +64,7 @@ const Header = () => {
     <header className="bg-white shadow-sm">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
         <div className="flex justify-between items-center h-20 lg:h-24">
-          {/* Левая часть: логотип */}
+          
           <div className="flex items-center min-w-0 flex-shrink-0">
             <Link to="/" className="flex items-center space-x-2 lg:space-x-3 min-w-0">
               <img 
@@ -92,7 +84,7 @@ const Header = () => {
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
+          
           <nav className="hidden lg:flex space-x-4 xl:space-x-8 flex-1 justify-center px-4">
             {navigation.map((item) => (
               item.onClick ? (
@@ -123,12 +115,12 @@ const Header = () => {
             ))}
           </nav>
 
-          {/* Right side */}
+          
           <div className="hidden lg:flex items-center flex-shrink-0">
             <LanguageSelector />
           </div>
 
-          {/* Mobile menu button */}
+          
           <div className="lg:hidden">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -144,7 +136,7 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Mobile menu */}
+      
       {isMenuOpen && (
         <div className="lg:hidden bg-white border-t border-gray-100">
           <div className="pt-2 pb-3 space-y-1 px-2">

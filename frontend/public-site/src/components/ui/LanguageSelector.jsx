@@ -3,19 +3,18 @@ import { useTranslation } from 'react-i18next'
 import { Globe } from 'lucide-react'
 
 const LanguageSelector = () => {
-  const { i18n } = useTranslation()
+  const { i18n, t } = useTranslation()
 
   const languages = [
-    { code: 'ru', name: 'Русский', flag: '🇷🇺' },
-    { code: 'en', name: 'English', flag: '🇺🇸' }
+    { code: 'ru', name: t('languages.russian'), flag: '🇷🇺' },
+    { code: 'en', name: t('languages.english'), flag: '🇺🇸' }
   ]
 
   const currentLanguage = languages.find(lang => lang.code === i18n.language) || languages[0]
 
   const handleLanguageChange = (languageCode) => {
     i18n.changeLanguage(languageCode)
-    // Сохраняем выбранный язык в localStorage
-    try {
+        try {
       localStorage.setItem('language', languageCode)
     } catch {}
   }

@@ -6,7 +6,7 @@ import { ArrowLeft, ArrowRight, Palette, Sparkles, Sun, Moon, Loader2 } from 'lu
 import { useUIStore } from '../store/partnerStore'
 import { MosaicAPI } from '../api/client'
 
-const DiamondMosaicStylesPage = () => {
+const PreviewStylesPage = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { addNotification } = useUIStore()
@@ -19,52 +19,50 @@ const DiamondMosaicStylesPage = () => {
   const styles = [
     {
       key: 'natural',
-      title: 'Натуральный',
-      description: 'Сохраняет оригинальные цвета изображения',
+      title: t('diamond_mosaic_styles.styles.natural.title'),
+      description: t('diamond_mosaic_styles.styles.natural.description'),
       icon: <Palette className="w-6 h-6" />,
       color: 'from-green-400 to-blue-500'
     },
     {
       key: 'enhanced',
-      title: 'Яркий',
-      description: 'Усиленные и насыщенные цвета',
+      title: t('diamond_mosaic_styles.styles.enhanced.title'),
+      description: t('diamond_mosaic_styles.styles.enhanced.description'),
       icon: <Sparkles className="w-6 h-6" />,
       color: 'from-pink-400 to-purple-500'
     },
     {
       key: 'vintage',
-      title: 'Винтажный',
-      description: 'Приглушенные и теплые тона',
+      title: t('diamond_mosaic_styles.styles.vintage.title'),
+      description: t('diamond_mosaic_styles.styles.vintage.description'),
       icon: <Sun className="w-6 h-6" />,
       color: 'from-yellow-400 to-orange-500'
     },
     {
       key: 'monochrome',
-      title: 'Монохром',
-      description: 'Стильный черно-белый вариант',
+      title: t('diamond_mosaic_styles.styles.monochrome.title'),
+      description: t('diamond_mosaic_styles.styles.monochrome.description'),
       icon: <Moon className="w-6 h-6" />,
       color: 'from-gray-400 to-gray-600'
     }
   ]
 
   useEffect(() => {
-    // Загружаем данные изображения
-    try {
+        try {
       const savedImageData = localStorage.getItem('diamondMosaic_selectedImage')
       if (!savedImageData) {
-        navigate('/diamond-mosaic')
+        navigate('/preview')
         return
       }
       
       const parsedData = JSON.parse(savedImageData)
       setImageData(parsedData)
       
-      // Генерируем превью для всех стилей
-      generateStylePreviews(parsedData)
+            generateStylePreviews(parsedData)
       
     } catch (error) {
       console.error('Error loading image data:', error)
-      navigate('/diamond-mosaic')
+      navigate('/preview')
     }
   }, [navigate])
 
@@ -74,14 +72,12 @@ const DiamondMosaicStylesPage = () => {
     try {
       const fileUrl = sessionStorage.getItem('diamondMosaic_fileUrl')
       if (!fileUrl) {
-        // Если нет URL файла, используем оригинальное изображение
-        console.log('No file URL found, skipping preview generation')
+                console.log('No file URL found, skipping preview generation')
         setIsGeneratingPreviews(false)
         return
       }
       
-      // Получаем файл из URL (проверяем безопасность)
-      let blob
+            let blob
       try {
         const response = await fetch(fileUrl)
         blob = await response.blob()
@@ -93,18 +89,13 @@ const DiamondMosaicStylesPage = () => {
       
       const previews = {}
       
-      // Генерируем превью для каждого стиля (пока используем заглушки)
-      for (const style of styles) {
+            for (const style of styles) {
         try {
-          // Временно используем оригинальное изображение как превью
-          // В реальном проекте здесь будет вызов API
-          previews[style.key] = data.previewUrl
+                              previews[style.key] = data.previewUrl
           
-          // Обновляем превью по мере генерации
-          setStylePreviews({ ...previews })
+                    setStylePreviews({ ...previews })
           
-          // Имитируем задержку генерации
-          await new Promise(resolve => setTimeout(resolve, 500))
+                    await new Promise(resolve => setTimeout(resolve, 500))
           
         } catch (error) {
           console.error(`Error generating preview for style ${style.key}:`, error)
@@ -116,7 +107,7 @@ const DiamondMosaicStylesPage = () => {
       console.error('Error generating style previews:', error)
       addNotification({
         type: 'error',
-        message: 'Ошибка при генерации превью стилей'
+        message: t('diamond_mosaic_styles.error_generating_previews')
       })
     } finally {
       setIsGeneratingPreviews(false)
@@ -131,14 +122,13 @@ const DiamondMosaicStylesPage = () => {
     if (!selectedStyle) {
       addNotification({
         type: 'error',
-        message: 'Пожалуйста, выберите стиль обработки'
+        message: t('diamond_mosaic_styles.select_style_error')
       })
       return
     }
 
     try {
-      // Обновляем данные изображения с выбранным стилем
-      const updatedImageData = {
+            const updatedImageData = {
         ...imageData,
         selectedStyle: selectedStyle,
         stylePreview: stylePreviews[selectedStyle]
@@ -146,26 +136,25 @@ const DiamondMosaicStylesPage = () => {
       
       localStorage.setItem('diamondMosaic_selectedImage', JSON.stringify(updatedImageData))
       
-      // Переходим к альбому превью
-      navigate('/diamond-mosaic/preview-album')
+            navigate('/preview/album')
       
     } catch (error) {
       console.error('Error saving style selection:', error)
       addNotification({
         type: 'error',
-        message: 'Ошибка при сохранении стиля'
+        message: t('diamond_mosaic_styles.error_saving_style')
       })
     }
   }
 
   const handleBack = () => {
-    navigate('/diamond-mosaic')
+    navigate('/preview')
   }
 
   if (!imageData) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-gray-600">Загрузка...</div>
+        <div className="text-gray-600">{t('diamond_mosaic_styles.loading')}</div>
       </div>
     )
   }
@@ -174,25 +163,25 @@ const DiamondMosaicStylesPage = () => {
     <div className="min-h-screen bg-white">
       <div className="max-w-6xl mx-auto px-6 py-8">
         
-        {/* Заголовок */}
+        {}
         <div className="mb-8">
-          <button
-            onClick={handleBack}
-            className="flex items-center text-purple-600 hover:text-purple-700 mb-4 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            Назад к редактору
-          </button>
-          
-          <h1 className="text-3xl font-bold text-gray-900 text-center mb-2">
-            Выберите стиль обработки
-          </h1>
-          <p className="text-gray-600 text-center">
-            Размер: {imageData.size} см
-          </p>
+                     <button
+             onClick={handleBack}
+             className="flex items-center text-purple-600 hover:text-purple-700 mb-4 transition-colors"
+           >
+             <ArrowLeft className="w-5 h-5 mr-2" />
+             {t('diamond_mosaic_styles.back_to_editor')}
+           </button>
+           
+           <h1 className="text-3xl font-bold text-gray-900 text-center mb-2">
+             {t('diamond_mosaic_styles.page_title')}
+           </h1>
+           <p className="text-gray-600 text-center">
+             {t('diamond_mosaic_styles.size_label', { size: imageData.size })}
+           </p>
         </div>
 
-        {/* Превью изображения */}
+        
         <div className="mb-8 text-center">
           <img 
             src={imageData.previewUrl} 
@@ -201,7 +190,7 @@ const DiamondMosaicStylesPage = () => {
           />
         </div>
 
-        {/* Выбор стилей */}
+        
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {styles.map((style) => (
             <div
@@ -230,36 +219,36 @@ const DiamondMosaicStylesPage = () => {
           ))}
         </div>
 
-        {/* Загрузочное состояние */}
+        
         {isGeneratingPreviews && (
           <motion.div 
             className="text-center mb-8"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
-            <div className="inline-flex items-center px-6 py-3 bg-purple-100 rounded-full text-purple-700">
-              <Loader2 className="w-5 h-5 mr-3 animate-spin" />
-              Генерируем превью стилей...
-            </div>
+                         <div className="inline-flex items-center px-6 py-3 bg-purple-100 rounded-full text-purple-700">
+               <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+               {t('diamond_mosaic_styles.generating_previews')}
+             </div>
           </motion.div>
         )}
 
-        {/* Кнопка продолжить */}
+        {}
         <div className="flex gap-4 max-w-md mx-auto">
-          <button
-            onClick={handleBack}
-            className="flex-1 py-4 px-6 bg-white border-2 border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
-          >
-            Назад
-          </button>
-          
-          <button
-            onClick={handleContinue}
-            disabled={!selectedStyle}
-            className="flex-1 py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-medium hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Создать превью
-          </button>
+                     <button
+             onClick={handleBack}
+             className="flex-1 py-4 px-6 bg-white border-2 border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+           >
+             {t('diamond_mosaic_styles.back')}
+           </button>
+           
+           <button
+             onClick={handleContinue}
+             disabled={!selectedStyle}
+             className="flex-1 py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-medium hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+           >
+             {t('diamond_mosaic_styles.create_preview')}
+           </button>
         </div>
 
       </div>
@@ -267,4 +256,4 @@ const DiamondMosaicStylesPage = () => {
   )
 }
 
-export default DiamondMosaicStylesPage
+export default PreviewStylesPage

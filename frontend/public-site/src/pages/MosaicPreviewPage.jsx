@@ -20,17 +20,13 @@ const MosaicPreviewPage = () => {
   const [useAI, setUseAI] = useState(false)
   const [generatedPreview, setGeneratedPreview] = useState(null)
 
-  // ОЧИСТКА localStorage ПРИ ЗАГРУЗКЕ СТРАНИЦЫ
-  useEffect(() => {
-    // Очищаем данные о заказах и купонах при входе на страницу превью
-    const clearStaleData = () => {
+    useEffect(() => {
+        const clearStaleData = () => {
       try {
-        // Очищаем данные о заказах
-        localStorage.removeItem('pendingOrder')
+                localStorage.removeItem('pendingOrder')
         localStorage.removeItem('activeCoupon')
         
-        // Очищаем любые временные данные превью если есть
-        const keys = Object.keys(localStorage)
+                const keys = Object.keys(localStorage)
         keys.forEach(key => {
           if (key.startsWith('preview_') || key.startsWith('temp_')) {
             localStorage.removeItem(key)
@@ -93,8 +89,7 @@ const MosaicPreviewPage = () => {
     const file = event.target.files[0]
     if (!file) return
 
-        // Check file type
-    if (!file.type.startsWith('image/')) {
+            if (!file.type.startsWith('image/')) {
       addNotification({
         type: 'error',
         message: t('mosaic_preview.notifications.invalid_file_type')
@@ -102,8 +97,7 @@ const MosaicPreviewPage = () => {
       return
     }
 
-    // Check file size (max 15MB)
-    if (file.size > 15 * 1024 * 1024) {
+        if (file.size > 15 * 1024 * 1024) {
       addNotification({
         type: 'error',
         message: t('mosaic_preview.notifications.file_too_large')
@@ -113,8 +107,7 @@ const MosaicPreviewPage = () => {
 
     setSelectedFile(file)
 
-    // Create preview for display
-    const reader = new FileReader()
+        const reader = new FileReader()
     reader.onload = (e) => {
       setPreviewUrl(e.target.result)
     }
@@ -144,7 +137,7 @@ const MosaicPreviewPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {}
       <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center space-x-4">
@@ -164,14 +157,14 @@ const MosaicPreviewPage = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid lg:grid-cols-2 gap-8">
           
-          {/* Left column - upload and settings */}
+          
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
             className="space-y-6"
           >
-            {/* Image upload */}
+            
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
                 <Upload className="w-6 h-6 mr-2 text-brand-primary" />
@@ -214,7 +207,7 @@ const MosaicPreviewPage = () => {
               </div>
             </div>
 
-            {/* Size selection */}
+            
             <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">{t('mosaic_preview.size_section.title')}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -235,7 +228,7 @@ const MosaicPreviewPage = () => {
               </div>
             </div>
 
-            {/* Style selection */}
+            
             <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">{t('mosaic_preview.style_section.title')}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -256,7 +249,7 @@ const MosaicPreviewPage = () => {
               </div>
             </div>
 
-            {/* AI Processing Option */}
+            
             <div className="mb-6">
               <div className="flex items-center space-x-3 p-4 border rounded-lg bg-gray-50">
                 <input
@@ -275,7 +268,7 @@ const MosaicPreviewPage = () => {
               </div>
             </div>
 
-            {/* Generate button */}
+            
             <button
               onClick={handleGeneratePreview}
               disabled={!selectedFile || generatePreviewMutation.isPending}
@@ -294,14 +287,14 @@ const MosaicPreviewPage = () => {
               )}
             </button>
 
-            {/* Marketplace Cards */}
+            
             <MarketplaceCards 
               selectedSize={selectedSize} 
               selectedStyle={selectedStyle} 
             />
           </motion.div>
 
-          {/* Right column - result */}
+          
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -341,8 +334,7 @@ const MosaicPreviewPage = () => {
                   </button>
                   <button
                     onClick={() => {
-                      // Download through special endpoint with proper headers
-                      const previewId = generatedPreview.split('/').pop().replace('.png', '')
+                                            const previewId = generatedPreview.split('/').pop().replace('.png', '')
                       const downloadUrl = `/api/preview/${previewId}/download`
                       window.open(downloadUrl, '_blank')
                     }}

@@ -13,7 +13,7 @@ const Footer = () => {
     <footer className="bg-gray-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {/* Company Info */}
+          {}
           <div className="text-center sm:text-left">
             <div className="flex flex-col items-center sm:items-start mb-4">
               <div className="flex items-center justify-center sm:justify-start mb-2">
@@ -24,13 +24,11 @@ const Footer = () => {
                     className="h-8 sm:h-10 w-auto max-w-[150px]"
                     onError={(e) => {
                       e.target.style.display = 'none'
-                      // Show fallback logo
-                      const fallback = e.target.nextElementSibling
+                                            const fallback = e.target.nextElementSibling
                       if (fallback) fallback.style.display = 'block'
                     }}
                     onLoad={(e) => {
-                      // Hide fallback logo
-                      const fallback = e.target.nextElementSibling
+                                            const fallback = e.target.nextElementSibling
                       if (fallback) fallback.style.display = 'none'
                     }}
                     style={{
@@ -42,7 +40,7 @@ const Footer = () => {
                   />
                 ) : null}
                 
-                {/* Fallback logo */}
+                
                 <img 
                   src="/logo.svg" 
                   alt={t('navigation.company_name')} 
@@ -66,7 +64,7 @@ const Footer = () => {
             </p>
           </div>
 
-          {/* Contacts */}
+          
           <div className="text-center sm:text-left">
             <h3 className="text-lg font-semibold mb-4">{t('footer.contacts')}</h3>
             <div className="space-y-3">
@@ -105,7 +103,7 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Social & Marketplaces */}
+          
           <div className="text-center sm:text-left lg:col-span-1 sm:col-span-2 lg:col-span-1">
             <h3 className="text-lg font-semibold mb-4">{t('footer.social_networks')}</h3>
             <div className="space-y-3">

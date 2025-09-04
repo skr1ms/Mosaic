@@ -10,8 +10,7 @@ const CouponInfo = ({ coupon }) => {
     return null
   }
 
-  // В development используем переменную из Docker Compose, в production - false
-  const isDevMode = process.env.NODE_ENV === 'development'
+    const isDevMode = process.env.NODE_ENV === 'development'
 
   return (
     <motion.div

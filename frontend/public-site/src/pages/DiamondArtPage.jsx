@@ -173,7 +173,7 @@ const DiamondArtPage = () => {
               </div>
               
               <button
-                onClick={() => navigate('/diamond-mosaic')}
+                onClick={() => navigate('/preview')}
                 className="inline-flex items-center justify-center px-8 lg:px-12 py-4 lg:py-5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 font-semibold text-lg lg:text-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
               >
                 <Palette className="w-6 h-6 mr-3" />
@@ -317,5 +317,4 @@ const DiamondArtPage = () => {
 }
 
 export default DiamondArtPage
-
 

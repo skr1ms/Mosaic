@@ -542,4 +542,3 @@ const SupportChatWidget = () => {
 
 export default SupportChatWidget
 
-

@@ -12,7 +12,6 @@ import SupportChatWidget from './components/SupportChatWidget'
 import BrandingProvider from './components/ui/BrandingProvider'
 import './assets/branding.css'
 
-// Lazy load страниц для уменьшения размера главного чанка
 const HomePage = React.lazy(() => import('./pages/HomePage'))
 const EditorPage = React.lazy(() => import('./pages/EditorPage'))
 const DiamondArtPage = React.lazy(() => import('./pages/DiamondArtPage'))
@@ -21,12 +20,12 @@ const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'))
 const PaintByNumbersPage = React.lazy(() => import('./pages/PaintByNumbersPage'))
 const WhatIsThisPage = React.lazy(() => import('./pages/WhatIsThisPage'))
 const MosaicPreviewPage = React.lazy(() => import('./pages/MosaicPreviewPage'))
-const DiamondMosaicPage = React.lazy(() => import('./pages/DiamondMosaicPage'))
-const DiamondMosaicStylesPage = React.lazy(() => import('./pages/DiamondMosaicStylesPage'))
-const DiamondMosaicPreviewAlbumPage = React.lazy(() => import('./pages/DiamondMosaicPreviewAlbumPage'))
-const DiamondMosaicEditorPage = React.lazy(() => import('./pages/DiamondMosaicEditorPage'))
-const DiamondMosaicPurchasePage = React.lazy(() => import('./pages/DiamondMosaicPurchasePage'))
-const DiamondMosaicSuccessPage = React.lazy(() => import('./pages/DiamondMosaicSuccessPage'))
+const PreviewPage = React.lazy(() => import('./pages/PreviewPage'))
+const PreviewStylesPage = React.lazy(() => import('./pages/PreviewStylesPage'))
+const PreviewAlbumPage = React.lazy(() => import('./pages/PreviewAlbumPage'))
+
+const PreviewPurchasePage = React.lazy(() => import('./pages/PreviewPurchasePage'))
+const PreviewSuccessPage = React.lazy(() => import('./pages/PreviewSuccessPage'))
 
 function App() {
   const { i18n } = useTranslation()
@@ -35,8 +34,7 @@ function App() {
   
   const { data: brandingData, isLoading } = useBrandingQuery()
   
-  // Update document title and meta tags based on current language
-  useDocumentTitle()
+    useDocumentTitle()
 
   React.useEffect(() => {
     if (!brandingData) return
@@ -46,8 +44,7 @@ function App() {
     console.log('App - Is default branding:', brandingData.is_default)
     console.log('App - Partner code:', brandingData.partner_code)
 
-    // Маппим данные API в формат, ожидаемый компонентами
-    const mappedPartner = {
+        const mappedPartner = {
       name: brandingData.brand_name,
       email: brandingData.contact_email,
       phone: brandingData.contact_phone,
@@ -101,13 +98,13 @@ function App() {
             <Route path="/editor" element={<EditorPage />} />
             <Route path="/shop" element={<ShopPage />} />
             
-            {/* Новые роуты для алмазной мозаики */}
-            <Route path="/diamond-mosaic" element={<DiamondMosaicPage />} />
-            <Route path="/diamond-mosaic/styles" element={<DiamondMosaicStylesPage />} />
-            <Route path="/diamond-mosaic/preview-album" element={<DiamondMosaicPreviewAlbumPage />} />
-            <Route path="/diamond-mosaic/editor" element={<DiamondMosaicEditorPage />} />
-            <Route path="/diamond-mosaic/purchase" element={<DiamondMosaicPurchasePage />} />
-            <Route path="/diamond-mosaic/success" element={<DiamondMosaicSuccessPage />} />
+            {}
+            <Route path="/preview" element={<PreviewPage />} />
+            <Route path="/preview/styles" element={<PreviewStylesPage />} />
+            <Route path="/preview/album" element={<PreviewAlbumPage />} />
+
+            <Route path="/preview/purchase" element={<PreviewPurchasePage />} />
+            <Route path="/preview/success" element={<PreviewSuccessPage />} />
             
             <Route path="*" element={<NotFoundPage />} />
           </Routes>

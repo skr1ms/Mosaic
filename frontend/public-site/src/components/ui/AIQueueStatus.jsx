@@ -10,8 +10,7 @@ const AIQueueStatus = ({ imageId, onClose, isVisible }) => {
   useEffect(() => {
     if (isVisible && imageId) {
       fetchQueueStatus();
-      // Обновляем статус каждые 30 секунд
-      const interval = setInterval(fetchQueueStatus, 30000);
+            const interval = setInterval(fetchQueueStatus, 30000);
       return () => clearInterval(interval);
     }
   }, [isVisible, imageId]);
@@ -104,7 +103,7 @@ const AIQueueStatus = ({ imageId, onClose, isVisible }) => {
 
         {queueStatus && !loading && (
           <div className="space-y-4">
-            {/* Статус очереди */}
+            {}
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">
@@ -119,7 +118,7 @@ const AIQueueStatus = ({ imageId, onClose, isVisible }) => {
               </div>
             </div>
 
-            {/* Статистика очереди */}
+            
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-brand-primary/5 rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-brand-primary">
@@ -140,7 +139,7 @@ const AIQueueStatus = ({ imageId, onClose, isVisible }) => {
               </div>
             </div>
 
-            {/* Время ожидания */}
+            {}
             <div className="bg-yellow-50 rounded-lg p-4">
               <div className="flex items-center">
                 <svg className="h-5 w-5 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -155,7 +154,7 @@ const AIQueueStatus = ({ imageId, onClose, isVisible }) => {
               </div>
             </div>
 
-            {/* Обрабатываемые задачи */}
+            {}
             <div className="bg-brand-accent/5 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-brand-accent/80">
@@ -173,7 +172,7 @@ const AIQueueStatus = ({ imageId, onClose, isVisible }) => {
               </div>
             </div>
 
-            {/* Информация о вашей задаче */}
+            {}
             {imageId && (
               <div className="bg-brand-primary/5 rounded-lg p-4">
                 <div className="flex items-center">
@@ -192,7 +191,7 @@ const AIQueueStatus = ({ imageId, onClose, isVisible }) => {
           </div>
         )}
 
-        {/* Кнопки действий */}
+        
         <div className="mt-6 flex space-x-3">
           <button
             onClick={fetchQueueStatus}
@@ -210,7 +209,7 @@ const AIQueueStatus = ({ imageId, onClose, isVisible }) => {
           </button>
         </div>
 
-        {/* Подсказка */}
+        
         <div className="mt-4 text-xs text-gray-500 text-center">
           {t('ai_queue.auto_refresh_note')}
         </div>

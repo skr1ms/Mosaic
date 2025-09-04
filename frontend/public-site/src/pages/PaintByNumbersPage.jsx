@@ -30,11 +30,11 @@ const PaintByNumbersPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-      {/* Hero Section */}
+      {}
       <section className="relative overflow-hidden py-16 sm:py-20 lg:py-24">
         <div className="absolute inset-0 opacity-40">
           <div className="w-full h-full" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='3'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http:
           }} />
         </div>
         
@@ -78,7 +78,7 @@ const PaintByNumbersPage = () => {
         </div>
       </section>
 
-      {/* Features Section */}
+      {}
       <section className="py-16 sm:py-20 lg:py-24 bg-white/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
@@ -135,7 +135,7 @@ const PaintByNumbersPage = () => {
         </div>
       </section>
 
-      {/* Coming Soon Section */}
+      
       <section className="py-16 sm:py-20 lg:py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div 

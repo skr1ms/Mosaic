@@ -2,7 +2,6 @@ import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
 
-// Импортируем переводы напрямую
 import ru from './locales/ru.json'
 import en from './locales/en.json'
 
@@ -30,9 +29,7 @@ i18n
   .init({
     resources,
     fallbackLng: 'ru',
-    // В development используем переменную из Docker Compose, в production - false
-    debug: true, // Включаем отладку всегда
-    
+        debug: true,     
     interpolation: {
       escapeValue: false
     },
@@ -42,8 +39,7 @@ i18n
       caches: ['localStorage']
     },
     
-    // Добавляем отладку для переводов
-    missingKeyHandler: (lng, ns, key, fallbackValue) => {
+        missingKeyHandler: (lng, ns, key, fallbackValue) => {
       console.warn(`Missing translation key: ${key} for language: ${lng}`)
       return fallbackValue || key
     }

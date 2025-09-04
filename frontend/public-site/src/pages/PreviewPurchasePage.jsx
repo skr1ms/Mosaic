@@ -5,7 +5,7 @@ import { ArrowLeft, ShoppingCart, CreditCard, Check, Package, Star } from 'lucid
 import { useNavigate } from 'react-router-dom'
 import { useUIStore } from '../store/partnerStore'
 
-const DiamondMosaicPurchasePage = () => {
+const PreviewPurchasePage = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { addNotification } = useUIStore()
@@ -14,8 +14,7 @@ const DiamondMosaicPurchasePage = () => {
   const [selectedPackage, setSelectedPackage] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
 
-  // Packages for purchase
-  const getPackages = () => [
+    const getPackages = () => [
     {
       id: 'basic',
       name: t('diamond_mosaic_purchase.packages.basic.name'),
@@ -43,24 +42,22 @@ const DiamondMosaicPurchasePage = () => {
   ]
 
   useEffect(() => {
-    // Загружаем данные для покупки
-    try {
+        try {
       const savedPurchaseData = localStorage.getItem('diamondMosaic_purchaseData')
       
       if (!savedPurchaseData) {
-        navigate('/diamond-mosaic')
+        navigate('/preview')
         return
       }
       
       const parsedData = JSON.parse(savedPurchaseData)
       setPurchaseData(parsedData)
       
-      // Устанавливаем премиум пакет по умолчанию
-      setSelectedPackage('premium')
+            setSelectedPackage('premium')
       
     } catch (error) {
       console.error('Error loading purchase data:', error)
-      navigate('/diamond-mosaic')
+      navigate('/preview')
     }
   }, [navigate])
 
@@ -80,16 +77,12 @@ const DiamondMosaicPurchasePage = () => {
     setIsProcessing(true)
 
     try {
-      // Здесь должна быть интеграция с платежной системой
-      // Пока что имитируем процесс покупки
+                  
+      const selectedPkg = getPackages().find(pkg => pkg.id === selectedPackage)
       
-      const selectedPkg = packages.find(pkg => pkg.id === selectedPackage)
+            await new Promise(resolve => setTimeout(resolve, 2000))
       
-      // Симулируем процесс покупки
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Сохраняем данные о покупке
-      const orderData = {
+            const orderData = {
         orderId: `DMO_${Date.now()}`,
         package: selectedPkg,
         imageData: purchaseData,
@@ -99,8 +92,7 @@ const DiamondMosaicPurchasePage = () => {
       
       localStorage.setItem('diamondMosaic_lastOrder', JSON.stringify(orderData))
       
-      // Очищаем временные данные
-      localStorage.removeItem('diamondMosaic_purchaseData')
+            localStorage.removeItem('diamondMosaic_purchaseData')
       localStorage.removeItem('diamondMosaic_selectedImage')
       sessionStorage.removeItem('diamondMosaic_fileUrl')
       
@@ -110,8 +102,7 @@ const DiamondMosaicPurchasePage = () => {
         message: t('diamond_mosaic_purchase.notifications.purchase_success_message')
       })
       
-      // Переходим к странице генерации схемы или результата
-      navigate('/diamond-mosaic/success', { 
+            navigate('/preview/success', { 
         state: { orderData } 
       })
       
@@ -128,7 +119,7 @@ const DiamondMosaicPurchasePage = () => {
   }
 
   const handleBack = () => {
-    navigate('/diamond-mosaic/preview-album')
+    navigate('/preview/album')
   }
 
   const getStyleTitle = (styleKey) => {
@@ -149,13 +140,13 @@ const DiamondMosaicPurchasePage = () => {
     )
   }
 
-  const selectedPkg = packages.find(pkg => pkg.id === selectedPackage)
+  const selectedPkg = getPackages().find(pkg => pkg.id === selectedPackage)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 py-8 px-4">
       <div className="container mx-auto max-w-6xl">
         
-        {/* Заголовок и навигация */}
+        {}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -181,7 +172,7 @@ const DiamondMosaicPurchasePage = () => {
 
         <div className="grid lg:grid-cols-3 gap-8">
           
-          {/* Информация о заказе */}
+          {}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -190,7 +181,7 @@ const DiamondMosaicPurchasePage = () => {
             <div className="bg-white rounded-xl p-6 shadow-lg mb-6">
               <h3 className="text-xl font-semibold text-gray-800 mb-4">{t('diamond_mosaic_purchase.order_section.title')}</h3>
               
-              {/* Превью изображения */}
+              
               <div className="mb-4">
                 <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-2">
                   <img
@@ -204,7 +195,7 @@ const DiamondMosaicPurchasePage = () => {
                 </p>
               </div>
               
-              {/* Детали заказа */}
+              
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">{t('diamond_mosaic_purchase.size_label')}</span>
@@ -223,7 +214,7 @@ const DiamondMosaicPurchasePage = () => {
               </div>
             </div>
 
-            {/* Что входит в покупку */}
+            {}
             <div className="bg-white rounded-xl p-6 shadow-lg">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                 <Package className="w-5 h-5 mr-2 text-purple-600" />
@@ -250,7 +241,7 @@ const DiamondMosaicPurchasePage = () => {
             </div>
           </motion.div>
 
-          {/* Выбор пакета */}
+          
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -307,7 +298,7 @@ const DiamondMosaicPurchasePage = () => {
               ))}
             </div>
 
-            {/* Кнопка покупки */}
+            {}
             {selectedPkg && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -363,4 +354,4 @@ const DiamondMosaicPurchasePage = () => {
   )
 }
 
-export default DiamondMosaicPurchasePage
+export default PreviewPurchasePage
