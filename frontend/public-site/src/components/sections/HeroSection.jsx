@@ -278,7 +278,7 @@ const HeroSection = () => {
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <>
-                      <span className="btn-text-safe flex-1">
+                      <span className="btn-text-safe">
                         {t('hero.coupon_banner.activate')}
                       </span>
                       <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
@@ -308,7 +308,7 @@ const HeroSection = () => {
                   className="hero-btn w-full py-3 sm:py-4 px-4 sm:px-6 bg-brand-secondary text-white rounded-lg hover:bg-brand-secondary/90 active:bg-brand-secondary/80 font-semibold text-sm sm:text-base transition-all duration-200 flex items-center justify-center space-x-2 focus:ring-2 focus:ring-brand-secondary focus:ring-offset-2 touch-target mt-auto"
                 >
                   <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                  <span className="btn-text-safe flex-1">
+                  <span className="btn-text-safe">
                     {t('hero.shop_banner.button')}
                   </span>
                 </button>

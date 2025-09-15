@@ -772,11 +772,6 @@ func (s *PublicService) GeneratePreview(ctx context.Context, file *multipart.Fil
 		Size:     size,
 	}
 
-	// Store in repository
-	if err := s.deps.PublicRepository.Create(ctx, previewData); err != nil {
-		return nil, fmt.Errorf("failed to save preview: %w", err)
-	}
-
 	return previewData, nil
 }
 
@@ -842,11 +837,6 @@ func (s *PublicService) GenerateStylePreview(ctx context.Context, file *multipar
 		Size:  size,
 	}
 
-	// Store in repository
-	if err := s.deps.PublicRepository.Create(ctx, previewData); err != nil {
-		return nil, fmt.Errorf("failed to save preview: %w", err)
-	}
-
 	return previewData, nil
 }
 
@@ -872,11 +862,6 @@ func (s *PublicService) GenerateAIPreview(ctx context.Context, file *multipart.F
 		ID:    previewID,
 		URL:   previewURL,
 		Style: "ai-generated",
-	}
-
-	// Store in repository
-	if err := s.deps.PublicRepository.Create(ctx, previewData); err != nil {
-		return nil, fmt.Errorf("failed to save AI preview: %w", err)
 	}
 
 	return previewData, nil

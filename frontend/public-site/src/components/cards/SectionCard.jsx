@@ -60,7 +60,7 @@ const SectionCard = ({
                     {buttonIcon}
                   </span>
                 )}
-                <span className="btn-text-safe flex-1">{buttonText}</span>
+                <span className="btn-text-safe">{buttonText}</span>
               </button>
             )
           )}

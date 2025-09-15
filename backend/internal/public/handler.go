@@ -2,6 +2,7 @@ package public
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -1382,14 +1383,18 @@ func (h *PublicHandler) GetPreview(c *fiber.Ctx) error {
 		})
 	}
 
-	preview, err := h.deps.PublicService.GetPublicRepository().GetByID(context.Background(), previewID)
-	if err != nil {
+	// Previews are stored in S3, generate URL directly
+	previewURL := h.deps.PublicService.GetS3Client().GetPreviewURL(fmt.Sprintf("style-previews/%s.jpg", previewID))
+	if previewURL == "" {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Preview not found",
 		})
 	}
 
-	return c.JSON(preview)
+	return c.JSON(fiber.Map{
+		"id":  previewID,
+		"url": previewURL,
+	})
 }
 
 // DeletePreview deletes a preview by ID
@@ -1401,15 +1406,9 @@ func (h *PublicHandler) DeletePreview(c *fiber.Ctx) error {
 		})
 	}
 
-	err := h.deps.PublicService.GetPublicRepository().Delete(context.Background(), previewID)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to delete preview: %v",
-		})
-	}
-
+	// Previews in S3 have automatic TTL deletion, no manual deletion needed
 	return c.JSON(fiber.Map{
-		"message": "Preview deleted successfully",
+		"message": "Preview will be automatically deleted by TTL",
 	})
 }
 

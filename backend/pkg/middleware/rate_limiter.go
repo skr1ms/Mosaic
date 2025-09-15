@@ -28,7 +28,7 @@ func GeneralRateLimiter(logger *Logger) fiber.Handler {
 			if p == "/favicon.ico" || strings.HasPrefix(p, "/static/") || strings.HasPrefix(p, "/swagger") {
 				return true
 			}
-			if p == "/api/chat/unread-count" || p == "/api/chat/unread-by-sender" || p == "/api/chat/users" {
+			if p == "/api/chat/unread-count" || p == "/api/chat/users" {
 				return true
 			}
 			if strings.HasPrefix(p, "/api/public/attachments") {
