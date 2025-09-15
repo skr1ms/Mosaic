@@ -31,6 +31,7 @@ const PreviewAlbumPage = () => {
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [isGeneratingVariants, setIsGeneratingVariants] = useState(false);
   const [hasGeneratedVariants, setHasGeneratedVariants] = useState(false);
+  const [generatingProgress, setGeneratingProgress] = useState(0);
 
   const styleVariants = [
     { style: 'venus', contrast: 'soft', label: t('preview_album.styles.venus_soft') },
@@ -148,6 +149,7 @@ const PreviewAlbumPage = () => {
     }
 
     setIsGeneratingVariants(true);
+    setGeneratingProgress(0);
 
     try {
       let imageId = data.imageId;
@@ -176,11 +178,22 @@ const PreviewAlbumPage = () => {
         }, 0);
       }
 
+      // Simulate progress animation
+      const progressInterval = setInterval(() => {
+        setGeneratingProgress(prev => {
+          if (prev >= 90) return prev;
+          return prev + Math.random() * 10;
+        });
+      }, 200);
+
       const result = await MosaicAPI.generateAllPreviews(
         imageId,
         data.size,
         false
       );
+
+      clearInterval(progressInterval);
+      setGeneratingProgress(100);
 
       const generatedPreviews = result.previews.map((preview, index) => {
         const variant = styleVariants.find(
@@ -270,6 +283,7 @@ const PreviewAlbumPage = () => {
     } finally {
       setIsGeneratingVariants(false);
       setHasGeneratedVariants(true);
+      setGeneratingProgress(0); // Reset progress
     }
   };
 
@@ -512,6 +526,71 @@ const PreviewAlbumPage = () => {
   }
 
   const currentPreview = previews[selectedPreview];
+
+  // Beautiful loading overlay for preview generation
+  if (isGeneratingVariants) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center px-4">
+        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 sm:p-12 max-w-md w-full text-center border border-white/20">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            {/* Animated mosaic icon */}
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center"
+            >
+              <Sparkles className="w-8 h-8 text-white" />
+            </motion.div>
+
+            {/* Title */}
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
+              {t('diamond_mosaic_preview_album.generating_previews')}
+            </h2>
+            
+            {/* Subtitle */}
+            <p className="text-sm sm:text-base text-gray-600 mb-6">
+              Создаем 8 уникальных превью в 4x быстрее с помощью параллельной обработки
+            </p>
+
+            {/* Progress bar */}
+            <div className="w-full bg-gray-200 rounded-full h-2 mb-4 overflow-hidden">
+              <motion.div
+                className="h-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${generatingProgress}%` }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+              />
+            </div>
+
+            {/* Progress percentage */}
+            <p className="text-sm text-gray-500">
+              {Math.round(generatingProgress)}% завершено
+            </p>
+
+            {/* Animated dots */}
+            <div className="flex justify-center space-x-1 mt-4">
+              {[0, 1, 2].map(i => (
+                <motion.div
+                  key={i}
+                  className="w-2 h-2 bg-purple-400 rounded-full"
+                  animate={{ scale: [1, 1.5, 1] }}
+                  transition={{
+                    duration: 1,
+                    repeat: Infinity,
+                    delay: i * 0.2,
+                  }}
+                />
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 py-4 sm:py-6 lg:py-8 px-4 sm:px-6 lg:px-8">
