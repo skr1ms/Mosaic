@@ -9,43 +9,9 @@ variables:
   CI_REGISTRY_IMAGE: "${PRODUCTION_SERVER_IP}:5000/root/mosaic"
 
 stages:
-  - test
   - build
+  - test
   - deploy
-
-# ========================================
-# TESTS
-# ========================================
-test:
-  stage: test
-  image: $GO_IMAGE
-  services:
-    - postgres:17-alpine
-    - redis:8-alpine
-  variables:
-    POSTGRES_DB: mosaic_test
-    POSTGRES_USER: postgres
-    POSTGRES_PASSWORD: testpass
-    DATABASE_URL: "postgres://postgres:testpass@postgres:5432/mosaic_test?sslmode=disable"
-    REDIS_URL: "redis://redis:6379"
-  before_script:
-    - cd backend
-  script:
-    - go mod download
-    - go mod vendor  
-    - go fmt ./...
-    - go vet ./...
-    - go test ./internal/... -v
-  cache:
-    key: "go-tests-${CI_COMMIT_REF_SLUG}"
-    paths:
-      - backend/internal/
-    policy: pull-push
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "push"'
-      when: always
-    - if: '$CI_MERGE_REQUEST_ID'
-      when: always
 
 # ========================================
 # BUILD
@@ -106,6 +72,40 @@ build:frontend-public:
     - echo "Public site build and push completed successfully!"
   rules:
     - if: '$CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME == "develop"'
+      when: always
+
+# ========================================
+# TESTS
+# ========================================
+test:
+  stage: test
+  image: $GO_IMAGE
+  services:
+    - postgres:17-alpine
+    - redis:8-alpine
+  variables:
+    POSTGRES_DB: mosaic_test
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: testpass
+    DATABASE_URL: "postgres://postgres:testpass@postgres:5432/mosaic_test?sslmode=disable"
+    REDIS_URL: "redis://redis:6379"
+  before_script:
+    - cd backend
+  script:
+    - go mod download
+    - go mod vendor  
+    - go fmt ./...
+    - go vet ./...
+    - go test ./internal/... -v
+  cache:
+    key: "go-tests-${CI_COMMIT_REF_SLUG}"
+    paths:
+      - backend/internal/
+    policy: pull-push
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      when: always
+    - if: '$CI_MERGE_REQUEST_ID'
       when: always
 
 # ========================================
