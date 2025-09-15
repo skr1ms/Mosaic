@@ -1,0 +1,6334 @@
+definitions:
+  admin.CreateAdminRequest:
+    properties:
+      email:
+        type: string
+      login:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - login
+    - password
+    type: object
+  admin.UpdateAdminEmailRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  admin.UpdateAdminPasswordRequest:
+    properties:
+      password:
+        type: string
+    required:
+    - password
+    type: object
+  auth.ChangeEmailRequest:
+    properties:
+      new_email:
+        type: string
+      password:
+        type: string
+    required:
+    - new_email
+    - password
+    type: object
+  auth.ChangePasswordRequest:
+    properties:
+      current_password:
+        type: string
+      new_password:
+        type: string
+    required:
+    - current_password
+    - new_password
+    type: object
+  auth.ForgotPasswordRequest:
+    properties:
+      captcha:
+        type: string
+      email:
+        type: string
+      login:
+        type: string
+    required:
+    - captcha
+    - email
+    - login
+    type: object
+  auth.LoginRequest:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    required:
+    - login
+    - password
+    type: object
+  auth.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  auth.ResetPasswordRequest:
+    properties:
+      new_password:
+        type: string
+      token:
+        type: string
+    required:
+    - new_password
+    - token
+    type: object
+  chat.MessageResponse:
+    properties:
+      attachment_url:
+        type: string
+      content:
+        type: string
+      edited:
+        type: boolean
+      id:
+        type: integer
+      read:
+        type: boolean
+      sender_id:
+        type: string
+      target_id:
+        type: string
+      timestamp:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  chat.MessagesResponse:
+    properties:
+      messages:
+        items:
+          $ref: '#/definitions/chat.MessageResponse'
+        type: array
+    type: object
+  chat.User:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      is_blocked_in_chat:
+        type: boolean
+      is_online:
+        type: boolean
+      login:
+        type: string
+      name:
+        type: string
+      partner_code:
+        type: string
+      role:
+        type: string
+      status:
+        type: string
+    type: object
+  chat.UsersResponse:
+    properties:
+      users:
+        items:
+          $ref: '#/definitions/chat.User'
+        type: array
+    type: object
+  coupon.ActivateCouponRequest:
+    properties:
+      zip_url:
+        type: string
+    type: object
+  coupon.BatchDeleteConfirmRequest:
+    properties:
+      admin_comment:
+        type: string
+      confirmation_key:
+        type: string
+      coupon_ids:
+        items:
+          type: string
+        maxItems: 1000
+        minItems: 1
+        type: array
+    required:
+    - confirmation_key
+    - coupon_ids
+    type: object
+  coupon.BatchDeletePreviewResponse:
+    properties:
+      confirmation_key:
+        type: string
+      coupons:
+        items:
+          $ref: '#/definitions/coupon.CouponDeletePreview'
+        type: array
+      expires_at:
+        type: string
+      new_count:
+        type: integer
+      total_count:
+        type: integer
+      used_count:
+        type: integer
+    type: object
+  coupon.BatchDeleteRequest:
+    properties:
+      coupon_ids:
+        items:
+          type: string
+        minItems: 1
+        type: array
+    required:
+    - coupon_ids
+    type: object
+  coupon.BatchDeleteResponse:
+    properties:
+      deleted:
+        items:
+          type: string
+        type: array
+      deleted_count:
+        type: integer
+      errors:
+        items:
+          type: string
+        type: array
+      failed:
+        items:
+          type: string
+        type: array
+      failed_count:
+        type: integer
+    type: object
+  coupon.BatchResetRequest:
+    properties:
+      coupon_ids:
+        items:
+          type: string
+        maxItems: 1000
+        minItems: 1
+        type: array
+    required:
+    - coupon_ids
+    type: object
+  coupon.BatchResetResponse:
+    properties:
+      errors:
+        items:
+          type: string
+        type: array
+      failed:
+        items:
+          type: string
+        type: array
+      failed_count:
+        type: integer
+      success:
+        items:
+          type: string
+        type: array
+      success_count:
+        type: integer
+    type: object
+  coupon.CouponDeletePreview:
+    properties:
+      code:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      partner_name:
+        type: string
+      status:
+        type: string
+      used_at:
+        type: string
+    type: object
+  coupon.CouponSize:
+    enum:
+    - 21x30
+    - 30x40
+    - 40x40
+    - 40x50
+    - 40x60
+    - 50x70
+    type: string
+    x-enum-varnames:
+    - Size21x30
+    - Size30x40
+    - Size40x40
+    - Size40x50
+    - Size40x60
+    - Size50x70
+  coupon.CouponStyle:
+    enum:
+    - grayscale
+    - skin_tones
+    - pop_art
+    - max_colors
+    type: string
+    x-enum-varnames:
+    - StyleGrayscale
+    - StyleSkinTones
+    - StylePopArt
+    - StyleMaxColors
+  coupon.CreateCouponRequest:
+    properties:
+      count:
+        maximum: 1000
+        minimum: 1
+        type: integer
+      partner_id:
+        type: string
+      size:
+        allOf:
+        - $ref: '#/definitions/coupon.CouponSize'
+        enum:
+        - 21x30
+        - 30x40
+        - 40x40
+        - 40x50
+        - 40x60
+        - 50x70
+      style:
+        allOf:
+        - $ref: '#/definitions/coupon.CouponStyle'
+        enum:
+        - grayscale
+        - skin_tones
+        - pop_art
+        - max_colors
+    required:
+    - count
+    - partner_id
+    - size
+    - style
+    type: object
+  coupon.ExportFormatType:
+    enum:
+    - codes
+    - basic
+    - full
+    - admin
+    - partner
+    - activity
+    type: string
+    x-enum-comments:
+      ExportFormatActivity: с активностью пользователей
+      ExportFormatAdmin: админ формат (новые купоны)
+      ExportFormatBasic: базовая информация
+      ExportFormatCodes: только коды
+      ExportFormatFull: полная информация (все купоны)
+      ExportFormatPartner: с информацией о партнере
+    x-enum-descriptions:
+    - только коды
+    - базовая информация
+    - полная информация (все купоны)
+    - админ формат (новые купоны)
+    - с информацией о партнере
+    - с активностью пользователей
+    x-enum-varnames:
+    - ExportFormatCodes
+    - ExportFormatBasic
+    - ExportFormatFull
+    - ExportFormatAdmin
+    - ExportFormatPartner
+    - ExportFormatActivity
+  coupon.ExportOptionsRequest:
+    properties:
+      activated_from:
+        type: string
+      activated_to:
+        type: string
+      created_from:
+        description: Фильтры по датам
+        type: string
+      created_to:
+        type: string
+      delimiter:
+        description: для CSV
+        type: string
+      file_format:
+        description: Настройки файла
+        enum:
+        - txt
+        - csv
+        - xlsx
+        type: string
+      format:
+        allOf:
+        - $ref: '#/definitions/coupon.ExportFormatType'
+        enum:
+        - codes
+        - basic
+        - full
+        - admin
+        - partner
+        - activity
+      include_header:
+        description: включать заголовки
+        type: boolean
+      partner_codes:
+        items:
+          type: string
+        type: array
+      partner_id:
+        type: string
+      size:
+        type: string
+      status:
+        type: string
+      style:
+        type: string
+    required:
+    - format
+    type: object
+  coupon.MarkAsPurchasedRequest:
+    properties:
+      purchase_email:
+        type: string
+    required:
+    - purchase_email
+    type: object
+  coupon.SendSchemaRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  image.AddToQueueRequest:
+    properties:
+      coupon_id:
+        type: string
+      original_image_path:
+        type: string
+      priority:
+        maximum: 10
+        minimum: 1
+        type: integer
+      processing_params:
+        $ref: '#/definitions/image.ProcessingParams'
+      user_email:
+        type: string
+    required:
+    - coupon_id
+    - original_image_path
+    - processing_params
+    - user_email
+    type: object
+  image.FailProcessingRequest:
+    properties:
+      error_message:
+        maxLength: 500
+        minLength: 1
+        type: string
+    required:
+    - error_message
+    type: object
+  image.ImageEditParams:
+    properties:
+      crop_height:
+        minimum: 1
+        type: integer
+      crop_width:
+        minimum: 1
+        type: integer
+      crop_x:
+        minimum: 0
+        type: integer
+      crop_y:
+        minimum: 0
+        type: integer
+      rotation:
+        enum:
+        - 0
+        - 90
+        - 180
+        - 270
+        type: integer
+      scale:
+        maximum: 5
+        minimum: 0.1
+        type: number
+    type: object
+  image.ProcessingParams:
+    properties:
+      brightness:
+        maximum: 100
+        minimum: -100
+        type: number
+      contrast:
+        enum:
+        - low
+        - high
+        type: string
+      lighting:
+        enum:
+        - sun
+        - moon
+        - venus
+        type: string
+      saturation:
+        maximum: 100
+        minimum: -100
+        type: number
+      settings:
+        additionalProperties: true
+        type: object
+      style:
+        enum:
+        - grayscale
+        - skin_tones
+        - pop_art
+        - max_colors
+        type: string
+      use_ai:
+        type: boolean
+    required:
+    - style
+    type: object
+  partner.CreatePartnerRequest:
+    properties:
+      address:
+        type: string
+      allow_purchases:
+        type: boolean
+      allow_sales:
+        type: boolean
+      brand_colors:
+        items:
+          type: string
+        maxItems: 3
+        type: array
+      brand_name:
+        type: string
+      domain:
+        type: string
+      email:
+        type: string
+      login:
+        type: string
+      logo_url:
+        type: string
+      ozon_link:
+        type: string
+      password:
+        type: string
+      phone:
+        type: string
+      status:
+        enum:
+        - active
+        - blocked
+        type: string
+      telegram:
+        type: string
+      telegram_link:
+        type: string
+      whatsapp:
+        type: string
+      whatsapp_link:
+        type: string
+      wildberries_link:
+        type: string
+    required:
+    - address
+    - brand_name
+    - domain
+    - email
+    - login
+    - logo_url
+    - ozon_link
+    - password
+    - phone
+    - telegram
+    - telegram_link
+    - whatsapp
+    - whatsapp_link
+    - wildberries_link
+    type: object
+  payment.OrderStatusResponse:
+    properties:
+      amount:
+        type: number
+      coupon_code:
+        description: Код купона после успешной оплаты
+        type: string
+      currency:
+        type: string
+      message:
+        type: string
+      order_id:
+        type: string
+      size:
+        type: string
+      status:
+        type: string
+      style:
+        type: string
+      success:
+        type: boolean
+    type: object
+  payment.PaymentNotificationRequest:
+    properties:
+      actionCode:
+        description: Опционально для тестовой среды
+        type: integer
+      actionCodeDescription:
+        description: Опционально для тестовой среды
+        type: string
+      amount:
+        type: integer
+      checksum:
+        description: Дополнительные поля для валидации
+        type: string
+      currency:
+        type: string
+      date:
+        type: integer
+      ip:
+        type: string
+      orderDescription:
+        type: string
+      orderId:
+        description: Опционально для тестовой среды
+        type: string
+      orderNumber:
+        type: string
+      orderStatus:
+        description: Опционально для тестовой среды
+        type: integer
+    type: object
+  payment.PurchaseCouponRequest:
+    properties:
+      domain:
+        description: Домен партнера для White Label
+        type: string
+      email:
+        type: string
+      fail_url:
+        type: string
+      language:
+        enum:
+        - ru
+        - en
+        - es
+        type: string
+      return_url:
+        type: string
+      size:
+        enum:
+        - 21x30
+        - 30x40
+        - 40x40
+        - 40x50
+        - 40x60
+        - 50x70
+        type: string
+      style:
+        enum:
+        - grayscale
+        - skin_tone
+        - pop_art
+        - max_colors
+        type: string
+    required:
+    - email
+    - return_url
+    - size
+    - style
+    type: object
+  payment.PurchaseCouponResponse:
+    properties:
+      amont:
+        type: string
+      message:
+        type: string
+      order_id:
+        type: string
+      order_number:
+        type: string
+      payment_url:
+        type: string
+      success:
+        type: boolean
+    type: object
+  public.PurchaseCouponRequest:
+    properties:
+      amount:
+        type: number
+      email:
+        type: string
+      payment_token:
+        type: string
+      size:
+        enum:
+        - 21x30
+        - 30x40
+        - 40x40
+        - 40x50
+        - 40x60
+        - 50x70
+        type: string
+      style:
+        enum:
+        - grayscale
+        - skin_tones
+        - pop_art
+        - max_colors
+        type: string
+    required:
+    - amount
+    - email
+    - payment_token
+    - size
+    - style
+    type: object
+  public.SendEmailRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  stats.CouponsBySizeResponse:
+    properties:
+      size_21x30:
+        type: integer
+      size_30x40:
+        type: integer
+      size_40x40:
+        type: integer
+      size_40x50:
+        type: integer
+      size_40x60:
+        type: integer
+      size_50x70:
+        type: integer
+    type: object
+  stats.CouponsByStatusResponse:
+    properties:
+      activated:
+        type: integer
+      completed:
+        type: integer
+      new:
+        type: integer
+      used:
+        type: integer
+    type: object
+  stats.CouponsByStyleResponse:
+    properties:
+      grayscale:
+        type: integer
+      max_colors:
+        type: integer
+      pop_art:
+        type: integer
+      skin_tones:
+        type: integer
+    type: object
+  stats.GeneralStatsResponse:
+    properties:
+      activation_rate:
+        type: number
+      active_partners_count:
+        type: integer
+      last_updated:
+        type: string
+      total_coupons_activated:
+        type: integer
+      total_coupons_created:
+        type: integer
+      total_partners_count:
+        type: integer
+    type: object
+  stats.PartnerListStatsResponse:
+    properties:
+      partners:
+        items:
+          $ref: '#/definitions/stats.PartnerStatsResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  stats.PartnerStatsResponse:
+    properties:
+      activated_coupons:
+        type: integer
+      activation_rate:
+        type: number
+      branded_site_purchases:
+        type: integer
+      last_activity:
+        type: string
+      partner_id:
+        type: string
+      partner_name:
+        type: string
+      total_coupons:
+        type: integer
+      unused_coupons:
+        type: integer
+    type: object
+  stats.SystemHealthResponse:
+    properties:
+      average_processing_time:
+        type: number
+      database_status:
+        type: string
+      error_rate:
+        type: number
+      image_processing_queue:
+        type: integer
+      last_updated:
+        type: string
+      redis_status:
+        type: string
+      status:
+        description: healthy, warning, critical
+        type: string
+      uptime:
+        type: string
+    type: object
+  stats.TimeSeriesStatsPoint:
+    properties:
+      coupons_activated:
+        type: integer
+      coupons_created:
+        type: integer
+      coupons_purchased:
+        type: integer
+      date:
+        type: string
+      new_partners_count:
+        type: integer
+    type: object
+  stats.TimeSeriesStatsResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/stats.TimeSeriesStatsPoint'
+        type: array
+      period:
+        type: string
+    type: object
+  stats.TopPartnerItem:
+    properties:
+      activated_coupons:
+        type: integer
+      activation_rate:
+        type: number
+      partner_id:
+        type: string
+      partner_name:
+        type: string
+      total_coupons:
+        type: integer
+    type: object
+  stats.TopPartnersResponse:
+    properties:
+      partners:
+        items:
+          $ref: '#/definitions/stats.TopPartnerItem'
+        type: array
+    type: object
+  types.EditImageRequest:
+    properties:
+      crop_height:
+        description: Высота области кадрирования
+        minimum: 1
+        type: integer
+      crop_width:
+        description: Ширина области кадрирования
+        minimum: 1
+        type: integer
+      crop_x:
+        description: X координата начала кадрирования
+        minimum: 0
+        type: integer
+      crop_y:
+        description: Y координата начала кадрирования
+        minimum: 0
+        type: integer
+      rotation:
+        description: Поворот в градусах
+        enum:
+        - 0
+        - 90
+        - 180
+        - 270
+        type: integer
+      scale:
+        description: Масштаб
+        maximum: 5
+        minimum: 0.1
+        type: number
+    type: object
+  types.GenerateSchemaRequest:
+    properties:
+      confirmed:
+        description: Подтверждение создания схемы
+        type: boolean
+    required:
+    - confirmed
+    type: object
+  types.GenerateSchemaResponse:
+    properties:
+      email_sent:
+        description: Отправлена ли схема на email
+        type: boolean
+      image_id:
+        type: string
+      message:
+        type: string
+      preview_url:
+        description: URL финального превью
+        type: string
+      zip_url:
+        description: URL для скачивания архива с материалами
+        type: string
+    type: object
+  types.ImageEditResponse:
+    properties:
+      image_id:
+        type: string
+      message:
+        type: string
+      next_step:
+        type: string
+      preview_url:
+        description: URL для просмотра отредактированного изображения
+        type: string
+    type: object
+  types.ImageStatusResponse:
+    properties:
+      edited_url:
+        description: URL отредактированного изображения
+        type: string
+      error_message:
+        description: Сообщение об ошибке (если есть)
+        type: string
+      estimated_time:
+        description: Оценочное время до завершения в секундах
+        type: integer
+      image_id:
+        type: string
+      message:
+        type: string
+      original_url:
+        description: URL оригинального изображения
+        type: string
+      preview_url:
+        description: URL превью
+        type: string
+      processed_url:
+        description: URL обработанного изображения
+        type: string
+      progress:
+        description: Прогресс в процентах (0-100)
+        type: integer
+      status:
+        description: queued, processing, completed, failed
+        type: string
+      zip_url:
+        description: URL архива с материалами (если готов)
+        type: string
+    type: object
+  types.ImageUploadResponse:
+    properties:
+      coupon_size:
+        description: Размер купона (определяется автоматически)
+        type: string
+      coupon_style:
+        description: Стиль купона (определяется автоматически)
+        type: string
+      image_id:
+        type: string
+      message:
+        type: string
+      next_step:
+        type: string
+    type: object
+  types.ProcessImageRequest:
+    properties:
+      brightness:
+        description: Яркость (-100 до 100)
+        maximum: 100
+        minimum: -100
+        type: number
+      contrast:
+        description: Контрастность (2 варианта)
+        enum:
+        - low
+        - high
+        type: string
+      lighting:
+        description: Освещение (солнце, луна, венера)
+        enum:
+        - sun
+        - moon
+        - venus
+        type: string
+      saturation:
+        description: Насыщенность (-100 до 100)
+        maximum: 100
+        minimum: -100
+        type: number
+      style:
+        description: Стиль обработки
+        enum:
+        - grayscale
+        - skin_tones
+        - pop_art
+        - max_colors
+        type: string
+      use_ai:
+        description: Использовать AI обработку через Stable Diffusion
+        type: boolean
+    required:
+    - style
+    type: object
+  types.ProcessImageResponse:
+    properties:
+      image_id:
+        type: string
+      message:
+        type: string
+      next_step:
+        type: string
+      original_url:
+        description: URL оригинального изображения для сравнения
+        type: string
+      preview_url:
+        description: URL превью обработанного изображения
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /admin/admins/{id}/email:
+    patch:
+      consumes:
+      - application/json
+      description: Updates administrator email by ID
+      parameters:
+      - description: Admin ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New email
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/admin.UpdateAdminEmailRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Email updated
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request or email format
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Admin not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update admin email
+      tags:
+      - admin-management
+  /admin/admins/{id}/password:
+    patch:
+      consumes:
+      - application/json
+      description: Updates administrator password by ID
+      parameters:
+      - description: Admin ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New password
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/admin.UpdateAdminPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Password updated
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request or password too short
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Admin not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update admin password
+      tags:
+      - admin-management
+  /admin/coupons:
+    get:
+      description: Returns list of all coupons with filtering capabilities by code,
+        status, size, style and partner
+      parameters:
+      - description: Search by coupon code
+        in: query
+        name: search
+        type: string
+      - description: Partner ID for filtering
+        in: query
+        name: partner_id
+        type: string
+      - description: Status for filtering (new/used)
+        in: query
+        name: status
+        type: string
+      - description: Size for filtering
+        in: query
+        name: size
+        type: string
+      - description: Style for filtering
+        in: query
+        name: style
+        type: string
+      - description: Number of records per page (default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Offset for pagination (default 0)
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Coupons list
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get coupons list with filtering
+      tags:
+      - admin-coupons
+    post:
+      consumes:
+      - application/json
+      description: Creates new coupons in batch mode
+      parameters:
+      - description: Coupon creation parameters
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/coupon.CreateCouponRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Coupons created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Request error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create coupons
+      tags:
+      - admin-coupons
+  /admin/coupons/{id}:
+    delete:
+      description: Deletes coupon by ID with confirmation
+      parameters:
+      - description: Coupon ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Delete confirmation (true/false)
+        in: query
+        name: confirm
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Coupon deleted
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID or confirmation required
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Coupon not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete coupon
+      tags:
+      - admin-coupons
+    get:
+      description: Returns detailed information about coupon by ID
+      parameters:
+      - description: Coupon ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Coupon information
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Coupon not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get coupon details
+      tags:
+      - admin-coupons
+  /admin/coupons/{id}/download-materials:
+    get:
+      description: Downloads archive with materials of used coupon (original, preview,
+        schema)
+      parameters:
+      - description: Coupon ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/zip
+      responses:
+        "200":
+          description: ZIP archive with materials
+          schema:
+            type: string
+        "400":
+          description: Invalid coupon ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Coupon not found or not used
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Download coupon materials
+      tags:
+      - admin-coupons
+  /admin/coupons/{id}/reset:
+    patch:
+      description: Resets coupon to "new" status with removal of all activation data
+      parameters:
+      - description: Coupon ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Coupon reset
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Coupon not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Reset coupon
+      tags:
+      - admin-coupons
+  /admin/coupons/batch-delete:
+    post:
+      consumes:
+      - application/json
+      description: Deletes multiple coupons by their IDs in administrative panel
+      parameters:
+      - description: List of coupon IDs to delete
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties:
+            items:
+              type: string
+            type: array
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Batch deletion result
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Request error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Batch delete coupons for admin
+      tags:
+      - admin-coupons
+  /admin/coupons/batch/reset:
+    post:
+      consumes:
+      - application/json
+      description: Resets multiple coupons to original state through administrative
+        panel
+      parameters:
+      - description: List of coupon IDs to reset
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/coupon.BatchResetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Batch reset result
+          schema:
+            $ref: '#/definitions/coupon.BatchResetResponse'
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Batch reset coupons (admin)
+      tags:
+      - admin-coupons
+  /admin/coupons/export-advanced:
+    post:
+      consumes:
+      - application/json
+      description: Exports coupons in various formats (TXT, CSV, XLSX) with configurable
+        options
+      parameters:
+      - description: Export options
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/coupon.ExportOptionsRequest'
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Export file
+          schema:
+            type: string
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Advanced export coupons (admin)
+      tags:
+      - admin-coupons
+  /admin/coupons/export/partner/{id}:
+    get:
+      description: Exports coupons of specific partner with status "new" in .txt or
+        .csv format
+      parameters:
+      - description: Partner ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: txt
+        description: File format (txt or csv)
+        in: query
+        name: format
+        type: string
+      produces:
+      - text/plain
+      - text/csv
+      responses:
+        "200":
+          description: Partner coupons file
+          schema:
+            type: string
+        "400":
+          description: Invalid partner ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Partner not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Export partner coupons for admin
+      tags:
+      - admin-coupons
+  /admin/coupons/paginated:
+    get:
+      description: Returns list of coupons with pagination and extended filtering
+        for administrative panel
+      parameters:
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page (default 20, max 100)
+        in: query
+        name: limit
+        type: integer
+      - description: Search by coupon code
+        in: query
+        name: search
+        type: string
+      - description: Partner ID
+        in: query
+        name: partner_id
+        type: string
+      - description: Coupon status (new, used)
+        in: query
+        name: status
+        type: string
+      - description: Coupon size
+        in: query
+        name: size
+        type: string
+      - description: Coupon style
+        in: query
+        name: style
+        type: string
+      - description: Creation date from (RFC3339)
+        in: query
+        name: created_from
+        type: string
+      - description: Creation date to (RFC3339)
+        in: query
+        name: created_to
+        type: string
+      - description: Usage date from (RFC3339)
+        in: query
+        name: used_from
+        type: string
+      - description: Usage date to (RFC3339)
+        in: query
+        name: used_to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Coupons with pagination info
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request parameters
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get coupons list with pagination for admin
+      tags:
+      - admin-coupons
+  /admin/dashboard:
+    get:
+      description: Returns data for admin dashboard
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Dashboard data
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get admin dashboard
+      tags:
+      - admin-dashboard
+  /admin/images:
+    get:
+      description: Returns list of all image processing tasks with filtering
+      parameters:
+      - description: Filter by status (queued, processing, completed, failed)
+        in: query
+        name: status
+        type: string
+      - description: Filter by partner ID
+        in: query
+        name: partner_id
+        type: string
+      - description: Record limit (default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Offset (default 0)
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Image processing tasks list
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all image processing tasks
+      tags:
+      - admin-images
+  /admin/images/{id}:
+    delete:
+      description: Deletes image processing task and related files
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Task deleted
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Task not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete image processing task
+      tags:
+      - admin-images
+    get:
+      description: Returns detailed information about image processing task
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Task details
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Task not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get image task details
+      tags:
+      - admin-images
+  /admin/images/{id}/retry:
+    post:
+      description: Restarts failed image processing task
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Task queued for retry
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Task cannot be retried
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Task not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Retry image processing
+      tags:
+      - admin-images
+  /admin/main-admin/admins:
+    get:
+      description: Returns list of all administrators in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of administrators
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get admins list
+      tags:
+      - admin-management
+    post:
+      consumes:
+      - application/json
+      description: Creates a new admin (only for existing admins)
+      parameters:
+      - description: New admin data
+        in: body
+        name: admin
+        required: true
+        schema:
+          $ref: '#/definitions/admin.CreateAdminRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Admin created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request payload
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new admin
+      tags:
+      - admin-management
+  /admin/main-admin/admins/{id}:
+    delete:
+      description: Deletes administrator by ID
+      parameters:
+      - description: Admin ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Admin deleted
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid admin ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Admin not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete admin
+      tags:
+      - admin-management
+  /admin/next:
+    get:
+      description: Returns next task in queue for processing
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Next task for processing
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: No tasks in queue
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error - failed to get next task
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get next task for processing
+      tags:
+      - admin-image-processing
+  /admin/nginx/deploy:
+    post:
+      consumes:
+      - application/json
+      description: Forces generation and update of nginx configuration via CI/CD pipeline
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Nginx configuration updated
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Force nginx update
+      tags:
+      - admin-domains
+  /admin/partners:
+    get:
+      description: Returns list of all partners with filtering, search and sorting
+      parameters:
+      - description: Search by brand name, domain or email
+        in: query
+        name: search
+        type: string
+      - description: Filter by status (active/blocked)
+        in: query
+        name: status
+        type: string
+      - description: Sort field (created_at/brand_name)
+        in: query
+        name: sort_by
+        type: string
+      - description: Sort order (asc/desc, default desc)
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Partners list
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get partners list with filtering and sorting
+      tags:
+      - admin-partners
+    post:
+      consumes:
+      - application/json
+      description: Creates a new partner with an auto-generated code (starting from
+        0001, 0000 is reserved)
+      parameters:
+      - description: New partner data
+        in: body
+        name: partner
+        required: true
+        schema:
+          $ref: '#/definitions/partner.CreatePartnerRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Partner created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request payload
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Partner with this login/domain already exists
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new partner
+      tags:
+      - admin-partners
+  /admin/partners/{id}:
+    delete:
+      description: Deletes partner by ID with all related data
+      parameters:
+      - description: Partner ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Delete confirmation (true/false)
+        in: query
+        name: confirm
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Partner deleted
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID or confirmation required
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Partner not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete partner
+      tags:
+      - admin-partners
+    get:
+      description: Returns partner details by ID
+      parameters:
+      - description: Partner ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Partner info
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Partner not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get partner details
+      tags:
+      - admin-partners
+    put:
+      consumes:
+      - application/json
+      description: Updates partner data
+      parameters:
+      - description: Partner ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Partner updated
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Partner not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update partner
+      tags:
+      - admin-partners
+  /admin/partners/{id}/block:
+    patch:
+      description: Blocks partner (temporarily disables access)
+      parameters:
+      - description: Partner ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Partner blocked
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Partner not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Block partner
+      tags:
+      - admin-partners
+  /admin/partners/{id}/detail:
+    get:
+      description: Returns detailed partner info including coupon stats, last activity,
+        and profile history
+      parameters:
+      - description: Partner ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Partner detail info
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid partner ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Partner not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get partner detail (with stats and history)
+      tags:
+      - admin-partners
+  /admin/partners/{id}/logo:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Accepts multipart/form-data with logo file and saves it to S3 logos
+        bucket
+      parameters:
+      - description: Partner ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Logo file (image/*)
+        in: formData
+        name: logo
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Logo URL
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Partner not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Upload partner logo
+      tags:
+      - admin-partners
+  /admin/partners/{id}/statistics:
+    get:
+      description: Returns detailed statistics for a specific partner
+      parameters:
+      - description: Partner ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Partner statistics
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Partner not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get partner statistics
+      tags:
+      - admin-partners
+  /admin/partners/{id}/unblock:
+    patch:
+      description: Unblocks partner (restores access)
+      parameters:
+      - description: Partner ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Partner unblocked
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Partner not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Unblock partner
+      tags:
+      - admin-partners
+  /admin/queue:
+    get:
+      description: Returns all tasks in image processing queue with optional status
+        filtering
+      parameters:
+      - description: Task status filter (uploaded, edited, processing, processed,
+          completed, failed)
+        in: query
+        name: status
+        type: string
+      - description: Start date filter (YYYY-MM-DD)
+        in: query
+        name: date_from
+        type: string
+      - description: End date filter (YYYY-MM-DD)
+        in: query
+        name: date_to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of tasks in processing queue
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: Internal server error - failed to get queue
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get processing queue
+      tags:
+      - admin-image-processing
+    post:
+      consumes:
+      - application/json
+      description: Adds new image processing task to queue
+      parameters:
+      - description: Task parameters including coupon ID, image path, processing params,
+          user email and priority
+        in: body
+        name: task
+        required: true
+        schema:
+          $ref: '#/definitions/image.AddToQueueRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Task added to queue successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Validation error - failed to parse request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error - failed to add task to queue
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Add task to queue
+      tags:
+      - admin-image-processing
+  /admin/queue/{id}:
+    delete:
+      description: Removes task from processing queue
+      parameters:
+      - description: Task ID (UUID format)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Task deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Validation error - invalid task ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error - failed to delete task
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete task
+      tags:
+      - admin-image-processing
+    get:
+      description: Returns detailed information about image processing task
+      parameters:
+      - description: Task ID (UUID format)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Task information with status details
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Validation error - invalid task ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Task not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error - failed to get task
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get task by ID
+      tags:
+      - admin-image-processing
+  /admin/queue/{id}/complete:
+    put:
+      description: Marks task as successfully completed
+      parameters:
+      - description: Task ID (UUID format)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Task completed successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Validation error - invalid task ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error - failed to complete processing
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Complete task processing
+      tags:
+      - admin-image-processing
+  /admin/queue/{id}/fail:
+    put:
+      consumes:
+      - application/json
+      description: Marks task as failed with error reason
+      parameters:
+      - description: Task ID (UUID format)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Error message details
+        in: body
+        name: error
+        required: true
+        schema:
+          $ref: '#/definitions/image.FailProcessingRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Task marked as failed successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Validation error - invalid task ID format or failed to parse
+            request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error - failed to mark task as failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Fail task processing
+      tags:
+      - admin-image-processing
+  /admin/queue/{id}/retry:
+    put:
+      description: Returns failed task back to processing queue
+      parameters:
+      - description: Task ID (UUID format)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Task returned to queue successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Validation error - invalid task ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error - failed to retry task
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Retry task processing
+      tags:
+      - admin-image-processing
+  /admin/queue/{id}/start:
+    put:
+      description: Marks task as being processed
+      parameters:
+      - description: Task ID (UUID format)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Processing started successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Validation error - invalid task ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error - failed to start processing
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Start task processing
+      tags:
+      - admin-image-processing
+  /admin/statistics:
+    get:
+      description: Returns image processing statistics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Processing statistics
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error - failed to get statistics
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get processing statistics
+      tags:
+      - admin-image-processing
+  /admin/statistics/partners:
+    get:
+      description: Returns detailed statistics for all partners
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Partners statistics
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get partners statistics
+      tags:
+      - admin-statistics
+  /admin/statistics/system:
+    get:
+      description: 'Returns detailed system statistics: performance, load, queue status'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: System statistics
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get system statistics
+      tags:
+      - admin-statistics
+  /admin/stats/coupons-by-size:
+    get:
+      description: Returns count of coupons by their sizes
+      parameters:
+      - description: Partner ID (optional)
+        format: uuid
+        in: query
+        name: partner_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Coupons by size statistics
+          schema:
+            $ref: '#/definitions/stats.CouponsBySizeResponse'
+        "400":
+          description: Invalid partner ID format
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized access
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error while getting coupons by size statistics
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get coupons statistics by size
+      tags:
+      - admin-stats
+  /admin/stats/coupons-by-status:
+    get:
+      description: Returns count of coupons in each status
+      parameters:
+      - description: Partner ID (optional)
+        format: uuid
+        in: query
+        name: partner_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Coupons by status statistics
+          schema:
+            $ref: '#/definitions/stats.CouponsByStatusResponse'
+        "400":
+          description: Invalid partner ID format
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized access
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error while getting coupons by status statistics
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get coupons statistics by status
+      tags:
+      - admin-stats
+  /admin/stats/coupons-by-style:
+    get:
+      description: Returns count of coupons by their processing styles
+      parameters:
+      - description: Partner ID (optional)
+        format: uuid
+        in: query
+        name: partner_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Coupons by style statistics
+          schema:
+            $ref: '#/definitions/stats.CouponsByStyleResponse'
+        "400":
+          description: Invalid partner ID format
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized access
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error while getting coupons by style statistics
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get coupons statistics by style
+      tags:
+      - admin-stats
+  /admin/stats/general:
+    get:
+      description: Returns general system statistics including coupon count, partner
+        count, and activation percentage
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: General statistics data
+          schema:
+            $ref: '#/definitions/stats.GeneralStatsResponse'
+        "401":
+          description: Unauthorized access
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error while getting general statistics
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get general statistics
+      tags:
+      - admin-stats
+  /admin/stats/partners:
+    get:
+      description: Returns statistics for all partners in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Partners statistics data
+          schema:
+            $ref: '#/definitions/stats.PartnerListStatsResponse'
+        "401":
+          description: Unauthorized access
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error while getting all partners statistics
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all partners statistics
+      tags:
+      - admin-stats
+  /admin/stats/partners/{partner_id}:
+    get:
+      description: Returns detailed statistics for a specific partner
+      parameters:
+      - description: Partner ID
+        format: uuid
+        in: path
+        name: partner_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Partner statistics data
+          schema:
+            $ref: '#/definitions/stats.PartnerStatsResponse'
+        "400":
+          description: Invalid partner ID format
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized access
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Partner not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error while getting partner statistics
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get partner statistics
+      tags:
+      - admin-stats
+  /admin/stats/realtime:
+    get:
+      consumes:
+      - application/json
+      description: Provides real-time statistics updates via WebSocket connection
+      produces:
+      - application/json
+      responses:
+        "101":
+          description: Switching to WebSocket protocol
+          schema:
+            type: string
+        "400":
+          description: WebSocket upgrade failed
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized access
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get real-time statistics via WebSocket
+      tags:
+      - admin-stats
+  /admin/stats/system-health:
+    get:
+      description: Returns system health information, service status and performance
+        metrics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: System health data
+          schema:
+            $ref: '#/definitions/stats.SystemHealthResponse'
+        "401":
+          description: Unauthorized access
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error while checking system health
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get system health status
+      tags:
+      - admin-stats
+  /admin/stats/time-series:
+    get:
+      description: Returns data for building time-based charts and graphs
+      parameters:
+      - description: Partner ID (optional)
+        format: uuid
+        in: query
+        name: partner_id
+        type: string
+      - description: Start date (YYYY-MM-DD)
+        format: date
+        in: query
+        name: date_from
+        type: string
+      - description: End date (YYYY-MM-DD)
+        format: date
+        in: query
+        name: date_to
+        type: string
+      - description: Grouping period
+        enum:
+        - day
+        - week
+        - month
+        - year
+        in: query
+        name: period
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Time series statistics data
+          schema:
+            $ref: '#/definitions/stats.TimeSeriesStatsResponse'
+        "400":
+          description: Invalid request parameters format
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized access
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error while getting time series statistics
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get time series statistics
+      tags:
+      - admin-stats
+  /admin/stats/top-partners:
+    get:
+      description: Returns list of top partners by activity metrics
+      parameters:
+      - description: 'Number of partners to return (default: 10)'
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Top partners statistics
+          schema:
+            $ref: '#/definitions/stats.TopPartnersResponse'
+        "400":
+          description: Invalid limit parameter
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized access
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error while getting top partners
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get top partners by activity
+      tags:
+      - admin-stats
+  /admin/support/chats:
+    get:
+      description: Lists all support chats with details (admin only)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of support chats
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Access denied
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List support chats
+      tags:
+      - admin
+      - support
+  /admin/support/chats/{id}:
+    delete:
+      description: Deletes a support chat by ID (admin only)
+      parameters:
+      - description: ID of the chat
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Delete success confirmation
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Access denied
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Admin delete support chat
+      tags:
+      - admin
+      - support
+  /admin/support/partners/{id}/block:
+    patch:
+      description: Blocks a partner by ID (admin only)
+      parameters:
+      - description: ID of the partner
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Block success confirmation
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Access denied
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Admin block partner
+      tags:
+      - admin
+      - support
+  /admin/support/partners/{id}/unblock:
+    patch:
+      description: Unblocks a partner by ID (admin only)
+      parameters:
+      - description: ID of the partner
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Unblock success confirmation
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Access denied
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Admin unblock partner
+      tags:
+      - admin
+      - support
+  /api/branding:
+    get:
+      description: Returns branding data (logo, contacts, links) for the current domain
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Branding data including logo, contacts, and links
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error when retrieving branding data
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get branding information
+      tags:
+      - public
+  /api/config/recaptcha:
+    get:
+      description: Returns the public reCAPTCHA v3 site key for frontend
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: reCAPTCHA site key
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error when retrieving reCAPTCHA site key
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get reCAPTCHA site key
+      tags:
+      - public
+  /api/coupons/{code}:
+    get:
+      description: Returns coupon information for validation purposes
+      parameters:
+      - description: Coupon code (12 digits)
+        in: path
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Coupon information including status, partner, and creation
+            date
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid coupon code format
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Coupon not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error when retrieving coupon
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get coupon information by code
+      tags:
+      - coupons
+  /api/coupons/{code}/activate:
+    post:
+      consumes:
+      - application/json
+      description: Activates a coupon and prepares it for image upload
+      parameters:
+      - description: Coupon code
+        in: path
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Coupon activated successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request format
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Coupon not found
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Coupon already used
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error during coupon activation
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Activate coupon
+      tags:
+      - coupons
+  /api/coupons/purchase:
+    post:
+      consumes:
+      - application/json
+      description: Purchases a new coupon with card payment
+      parameters:
+      - description: Purchase parameters
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/public.PurchaseCouponRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Coupon purchased successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 'Bad request: invalid purchase parameters'
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Purchase not allowed for this partner
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error during coupon purchase
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Purchase coupon
+      tags:
+      - coupons
+  /api/images/{id}/download:
+    get:
+      description: Downloads the generated mosaic schema
+      parameters:
+      - description: Image ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Schema file
+          schema:
+            type: file
+        "400":
+          description: Invalid image ID format
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Image not found
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Schema not ready
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error during schema download
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Download schema
+      tags:
+      - images
+  /api/images/{id}/edit:
+    post:
+      consumes:
+      - application/json
+      description: Applies cropping, rotation and scaling to the image
+      parameters:
+      - description: Image ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Editing parameters
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.EditImageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Image edited successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 'Bad request: invalid editing parameters'
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Image not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error during image editing
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Edit image
+      tags:
+      - images
+  /api/images/{id}/generate-schema:
+    post:
+      consumes:
+      - application/json
+      description: Creates final mosaic schema from processed image
+      parameters:
+      - description: Image ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Schema generation parameters
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.GenerateSchemaRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Schema generation started
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 'Bad request: invalid schema generation parameters'
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Image not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error during schema generation
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Generate mosaic schema
+      tags:
+      - images
+  /api/images/{id}/preview:
+    get:
+      description: Returns the preview of the processed image
+      parameters:
+      - description: Image ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Image preview with URL and dimensions
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Image not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error when retrieving image preview
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get image preview
+      tags:
+      - images
+  /api/images/{id}/process:
+    post:
+      consumes:
+      - application/json
+      description: Applies selected processing style to the image
+      parameters:
+      - description: Image ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Processing parameters
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.ProcessImageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Image processing started
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 'Bad request: invalid processing parameters'
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Image not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error during image processing
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Process image
+      tags:
+      - images
+  /api/images/{id}/send-email:
+    post:
+      consumes:
+      - application/json
+      description: Sends the generated mosaic schema to the specified email
+      parameters:
+      - description: Image ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Email address for sending
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/public.SendEmailRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Schema sent successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 'Bad request: invalid email or request format'
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Image not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error during email sending
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Send schema to email
+      tags:
+      - images
+  /api/images/{id}/status:
+    get:
+      description: Returns the current processing status of the image
+      parameters:
+      - description: Image ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Processing status including current step and progress
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Image not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error when retrieving processing status
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get processing status
+      tags:
+      - images
+  /api/images/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Uploads user's image for mosaic pattern creation
+      parameters:
+      - description: ID of activated coupon (UUID)
+        in: formData
+        name: coupon_id
+        type: string
+      - description: Coupon code (12 digits) - alternative to coupon_id
+        in: formData
+        name: coupon_code
+        type: string
+      - description: Image file (JPG, PNG)
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Image uploaded successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 'Bad request: missing required fields or invalid data'
+          schema:
+            additionalProperties: true
+            type: object
+        "413":
+          description: File too large
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error during image upload
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Upload image for processing
+      tags:
+      - images
+  /api/partners/{domain}/info:
+    get:
+      description: Returns branding and contact information of a partner for White
+        Label implementation
+      parameters:
+      - description: Partner's domain name
+        in: path
+        name: domain
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Partner information including branding and contact details
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Partner not found for the specified domain
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error when retrieving partner information
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get partner information by domain
+      tags:
+      - public
+  /api/sizes:
+    get:
+      description: Returns list of available mosaic sizes
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Available sizes with dimensions and prices
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: Internal server error when retrieving available sizes
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get available sizes
+      tags:
+      - public
+  /api/styles:
+    get:
+      description: Returns list of available processing styles
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Available styles with descriptions and examples
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: Internal server error when retrieving available styles
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get available styles
+      tags:
+      - public
+  /auth/change-email:
+    post:
+      consumes:
+      - application/json
+      description: Changes the email of the current admin (admin only)
+      parameters:
+      - description: Password and new email
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.ChangeEmailRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Email changed successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Invalid password
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Admins only
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Email already in use
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Change admin email
+      tags:
+      - auth
+  /auth/change-password:
+    post:
+      consumes:
+      - application/json
+      description: Changes the password of the current user (admin or partner)
+      parameters:
+      - description: Current and new password
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Password changed
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Invalid current password
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Change password
+      tags:
+      - auth
+  /auth/forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: Sends an email with a password reset link
+      parameters:
+      - description: Verification data and captcha
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.ForgotPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Email sent
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Forgot password request
+      tags:
+      - auth
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Login as admin or partner using credentials
+      parameters:
+      - description: Login credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/auth.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful login
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Invalid credentials
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Account blocked
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Universal login
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Refresh access and refresh tokens using a refresh token (admin
+        or partner)
+      parameters:
+      - description: Refresh token
+        in: body
+        name: refresh
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: New tokens
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Invalid or expired refresh token
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Refresh tokens
+      tags:
+      - auth
+  /auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Resets password using a token from email
+      parameters:
+      - description: Reset token and new password
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.ResetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Password changed
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Invalid or expired token
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Reset password
+      tags:
+      - auth
+  /chat/messages:
+    get:
+      description: Retrieves messages between the authenticated user and a target
+        user
+      parameters:
+      - description: ID of the target user
+        in: query
+        name: targetUserId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of messages
+          schema:
+            $ref: '#/definitions/chat.MessagesResponse'
+        "400":
+          description: Invalid targetUserId parameter
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get messages between users
+      tags:
+      - messages
+    post:
+      description: Sends a new message to a specific user
+      parameters:
+      - description: ID of the target user
+        in: query
+        name: targetId
+        required: true
+        type: string
+      - description: Content of the message
+        in: query
+        name: content
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Sent message details
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request body or target ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Send a message to a user
+      tags:
+      - messages
+  /chat/messages/{id}:
+    delete:
+      description: Deletes a message by ID
+      parameters:
+      - description: ID of the message
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Delete success confirmation
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete a message
+      tags:
+      - messages
+    patch:
+      description: Updates the content of a message by ID
+      parameters:
+      - description: ID of the message
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: New content for the message
+        in: query
+        name: content
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Update success confirmation
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request body or ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update a message
+      tags:
+      - messages
+  /chat/messages/{id}/attachments:
+    get:
+      description: Streams an attachment file for a specific message by ID
+      parameters:
+      - description: ID of the message
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Attachment file
+          schema:
+            type: file
+        "400":
+          description: Invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Attachment not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Stream an attachment by message ID
+      tags:
+      - messages
+    post:
+      description: Uploads an attachment file to a specific message
+      parameters:
+      - description: ID of the message
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Attachment file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Upload success confirmation
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID or file
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Upload an attachment to a message
+      tags:
+      - messages
+  /chat/support-unread-count:
+    get:
+      description: Retrieves the count of unread support messages for admins
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Support unread count details
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden (admins only)
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get support unread count
+      tags:
+      - messages
+  /chat/unread-by-sender:
+    get:
+      description: Retrieves unread message count grouped by sender for the authenticated
+        user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Unread count by sender
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get unread count by sender
+      tags:
+      - messages
+  /chat/unread-count:
+    get:
+      description: Retrieves the count of unread messages for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Unread count details
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get unread message count
+      tags:
+      - messages
+  /chat/users:
+    get:
+      description: Retrieves a list of users filtered by role
+      parameters:
+      - description: Role of the users
+        in: query
+        name: role
+        required: true
+        type: string
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of users
+          schema:
+            $ref: '#/definitions/chat.UsersResponse'
+        "400":
+          description: Invalid role parameter
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get users by role
+      tags:
+      - users
+  /coupons:
+    get:
+      description: Returns list of coupons with filtering capabilities by code, status,
+        size, style and partner
+      parameters:
+      - description: Coupon code for search
+        in: query
+        name: code
+        type: string
+      - description: Coupon status (new, used)
+        in: query
+        name: status
+        type: string
+      - description: Coupon size
+        in: query
+        name: size
+        type: string
+      - description: Coupon style
+        in: query
+        name: style
+        type: string
+      - description: Partner ID
+        in: query
+        name: partner_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of coupons
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get coupons list with filtering
+      tags:
+      - coupons
+  /coupons/{id}:
+    get:
+      description: Returns detailed coupon information by ID
+      parameters:
+      - description: Coupon ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Coupon information
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid coupon ID
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Coupon not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get coupon by ID
+      tags:
+      - coupons
+  /coupons/{id}/activate:
+    put:
+      consumes:
+      - application/json
+      description: Activates coupon by changing status to 'used' and adding image
+        links
+      parameters:
+      - description: Coupon ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Image links
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/coupon.ActivateCouponRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Coupon activated
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid coupon ID or request body
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Activate coupon
+      tags:
+      - coupons
+  /coupons/{id}/download-materials:
+    get:
+      description: Downloads archive with redeemed coupon materials (original, preview,
+        schema)
+      parameters:
+      - description: Coupon ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/zip
+      responses:
+        "200":
+          description: ZIP archive with materials
+          schema:
+            type: string
+        "400":
+          description: Invalid coupon ID
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Coupon not found or not used
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Download coupon materials
+      tags:
+      - coupons
+  /coupons/{id}/purchase:
+    put:
+      consumes:
+      - application/json
+      description: Marks coupon as purchased online with buyer's email
+      parameters:
+      - description: Coupon ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Buyer's email
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/coupon.MarkAsPurchasedRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Coupon marked as purchased
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid coupon ID or request body
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Mark coupon as purchased
+      tags:
+      - coupons
+  /coupons/{id}/reset:
+    put:
+      description: Resets coupon to initial state (status 'new')
+      parameters:
+      - description: Coupon ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Coupon reset
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid coupon ID
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Reset coupon
+      tags:
+      - coupons
+  /coupons/{id}/send-schema:
+    put:
+      consumes:
+      - application/json
+      description: Sends coupon schema to specified email address
+      parameters:
+      - description: Coupon ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Email for sending
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/coupon.SendSchemaRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Schema sent
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid coupon ID or request body
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Send schema to email
+      tags:
+      - coupons
+  /coupons/batch/delete/confirm:
+    post:
+      consumes:
+      - application/json
+      description: Deletes coupons after confirmation with key
+      parameters:
+      - description: Delete confirmation with key
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/coupon.BatchDeleteConfirmRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Delete result
+          schema:
+            $ref: '#/definitions/coupon.BatchDeleteResponse'
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Confirmed batch delete
+      tags:
+      - coupons
+  /coupons/batch/delete/preview:
+    post:
+      consumes:
+      - application/json
+      description: Shows information about coupons before deletion and generates confirmation
+        key
+      parameters:
+      - description: List of coupon IDs for deletion
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/coupon.BatchDeleteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Delete preview
+          schema:
+            $ref: '#/definitions/coupon.BatchDeletePreviewResponse'
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Batch delete preview
+      tags:
+      - coupons
+  /coupons/batch/reset:
+    post:
+      consumes:
+      - application/json
+      description: Resets multiple coupons to initial state
+      parameters:
+      - description: List of coupon IDs to reset
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/coupon.BatchResetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Batch reset result
+          schema:
+            $ref: '#/definitions/coupon.BatchResetResponse'
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Batch reset coupons
+      tags:
+      - coupons
+  /coupons/code/{code}:
+    get:
+      description: Returns detailed coupon information by code
+      parameters:
+      - description: Coupon code
+        in: path
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Coupon information
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Coupon not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get coupon by code
+      tags:
+      - coupons
+  /coupons/code/{code}/validate:
+    post:
+      description: Validates coupon existence and availability for activation
+      parameters:
+      - description: Coupon code
+        in: path
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Coupon validation status
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Coupon not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Validate coupon
+      tags:
+      - coupons
+  /coupons/export:
+    get:
+      description: Exports coupons to text file with filtering options
+      parameters:
+      - description: Partner ID for filtering
+        in: query
+        name: partner_id
+        type: string
+      - description: Coupon status for export
+        in: query
+        name: status
+        type: string
+      - description: 'Export format: codes (codes only) or full (full information)'
+        in: query
+        name: format
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Text file with coupons
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Export coupons
+      tags:
+      - coupons
+  /coupons/export-advanced:
+    get:
+      consumes:
+      - application/json
+      description: Exports coupons in various formats (TXT, CSV, XLSX) with customizable
+        options
+      parameters:
+      - description: Export options
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/coupon.ExportOptionsRequest'
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Export file
+          schema:
+            type: string
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Advanced coupon export
+      tags:
+      - coupons
+  /coupons/paginated:
+    get:
+      description: Returns paginated list of coupons with filtering capabilities
+      parameters:
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 20, max 100)
+        in: query
+        name: limit
+        type: integer
+      - description: Coupon code for search
+        in: query
+        name: code
+        type: string
+      - description: Coupon status (new, used)
+        in: query
+        name: status
+        type: string
+      - description: Coupon size
+        in: query
+        name: size
+        type: string
+      - description: Coupon style
+        in: query
+        name: style
+        type: string
+      - description: Partner ID
+        in: query
+        name: partner_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Coupons with pagination info
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request parameters
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get coupons list with pagination
+      tags:
+      - coupons
+  /coupons/partner/{partner_id}:
+    get:
+      description: Returns all coupons for specific partner with filtering options
+      parameters:
+      - description: Partner ID
+        in: path
+        name: partner_id
+        required: true
+        type: string
+      - description: Coupon status
+        in: query
+        name: status
+        type: string
+      - description: Coupon size
+        in: query
+        name: size
+        type: string
+      - description: Coupon style
+        in: query
+        name: style
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Partner coupons
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "400":
+          description: Invalid partner ID
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get coupons by partner
+      tags:
+      - coupons
+  /coupons/statistics:
+    get:
+      description: Returns coupon statistics with optional partner filtering
+      parameters:
+      - description: Partner ID for filtering
+        in: query
+        name: partner_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Coupon statistics
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get coupon statistics
+      tags:
+      - coupons
+  /partner/coupons:
+    get:
+      description: Returns a list of coupons for the current partner with filtering
+        and pagination
+      parameters:
+      - description: Coupon code for search
+        in: query
+        name: code
+        type: string
+      - description: Coupon status (new, used, completed)
+        in: query
+        name: status
+        type: string
+      - description: Coupon size
+        in: query
+        name: size
+        type: string
+      - description: Coupon style
+        in: query
+        name: style
+        type: string
+      - description: Creation date from (RFC3339 format)
+        in: query
+        name: created_from
+        type: string
+      - description: Creation date to (RFC3339 format)
+        in: query
+        name: created_to
+        type: string
+      - description: Usage date from (RFC3339 format)
+        in: query
+        name: used_from
+        type: string
+      - description: Usage date to (RFC3339 format)
+        in: query
+        name: used_to
+        type: string
+      - default: created_at
+        description: Field to sort by
+        enum:
+        - created_at
+        - updated_at
+        - used_at
+        in: query
+        name: sort_by
+        type: string
+      - default: desc
+        description: Sort order
+        enum:
+        - asc
+        - desc
+        in: query
+        name: sort_order
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 50
+        description: Number of items per page
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of partner coupons with pagination info
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 'Unauthorized: JWT token is missing or invalid'
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: 'Forbidden: User does not have partner role'
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error when retrieving coupons
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get partner's coupons
+      tags:
+      - partner-coupons
+  /partner/coupons/{id}/download-materials:
+    get:
+      description: Downloads archive with materials of a redeemed partner's coupon
+        (original, preview, scheme)
+      parameters:
+      - description: Coupon ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/zip
+      responses:
+        "200":
+          description: ZIP archive with materials as attachment
+          schema:
+            type: string
+        "400":
+          description: 'Bad request: Invalid coupon ID format'
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 'Unauthorized: JWT token is missing or invalid'
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: 'Forbidden: Coupon does not belong to partner'
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Coupon not found or materials not available
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error during download process
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Download coupon materials
+      tags:
+      - partner-coupons
+  /partner/coupons/export:
+    get:
+      description: Exports partner's coupons with status "new" in .txt or .csv format
+      parameters:
+      - default: csv
+        description: File format (txt or csv)
+        enum:
+        - txt
+        - csv
+        in: query
+        name: format
+        type: string
+      - default: new
+        description: Coupon status to export (new, used, completed, or 'all' for all
+          statuses)
+        in: query
+        name: status
+        type: string
+      produces:
+      - text/plain
+      - text/csv
+      responses:
+        "200":
+          description: File with coupons as attachment
+          schema:
+            type: string
+        "400":
+          description: 'Bad request: Invalid parameters'
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 'Unauthorized: JWT token is missing or invalid'
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: 'Forbidden: User does not have partner role'
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error during export process
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Export partner's coupons
+      tags:
+      - partner-coupons
+  /partner/dashboard:
+    get:
+      description: Returns data for the partner's main dashboard page including coupon
+        statistics and recent activations
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Dashboard data with coupons and recent activations
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 'Unauthorized: JWT token is missing or invalid'
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: 'Forbidden: User does not have partner role'
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error when retrieving dashboard data
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get partner dashboard data
+      tags:
+      - partner-dashboard
+  /partner/profile:
+    get:
+      description: Returns information about the current partner's profile
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Partner profile data
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 'Unauthorized: JWT token is missing or invalid'
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: 'Forbidden: User does not have partner role'
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Partner not found in the database
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get partner profile
+      tags:
+      - partner-profile
+    put:
+      consumes:
+      - application/json
+      description: Attempts to update partner profile (read-only in partner panel,
+        available only to administrator)
+      produces:
+      - application/json
+      responses:
+        "403":
+          description: 'Forbidden: Profile is read-only, contact administrator'
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update partner profile
+      tags:
+      - partner-profile
+  /partner/statistics:
+    get:
+      description: Returns general statistics for the current partner including coupon
+        counts by status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Partner statistics with coupon counts
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 'Unauthorized: JWT token is missing or invalid'
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: 'Forbidden: User does not have partner role'
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error when retrieving statistics
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get partner statistics
+      tags:
+      - partner-statistics
+  /partner/statistics/comparison:
+    get:
+      description: Returns aggregated comparison with other partners - top partners
+        by used and purchased coupons
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Comparison statistics with other partners
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 'Unauthorized: JWT token is missing or invalid'
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: 'Forbidden: User does not have partner role'
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error when retrieving comparison statistics
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get comparison statistics with other partners
+      tags:
+      - partner-statistics
+  /partner/stats/my:
+    get:
+      description: Returns statistics for the current authenticated partner
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Partner statistics data
+          schema:
+            $ref: '#/definitions/stats.PartnerStatsResponse'
+        "401":
+          description: Partner not authenticated
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error while getting partner statistics
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get my partner statistics
+      tags:
+      - partner-stats
+  /partner/stats/my/coupons-by-status:
+    get:
+      description: Returns coupons statistics by status for the current authenticated
+        partner
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Partner coupons by status statistics
+          schema:
+            $ref: '#/definitions/stats.CouponsByStatusResponse'
+        "401":
+          description: Partner not authenticated
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error while getting coupons by status statistics
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get my partner coupons statistics by status
+      tags:
+      - partner-stats
+  /partner/stats/my/time-series:
+    get:
+      description: Returns time series statistics for the current authenticated partner
+      parameters:
+      - description: Start date (YYYY-MM-DD)
+        format: date
+        in: query
+        name: date_from
+        type: string
+      - description: End date (YYYY-MM-DD)
+        format: date
+        in: query
+        name: date_to
+        type: string
+      - description: Grouping period
+        enum:
+        - day
+        - week
+        - month
+        in: query
+        name: period
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Partner time series statistics
+          schema:
+            $ref: '#/definitions/stats.TimeSeriesStatsResponse'
+        "401":
+          description: Partner not authenticated
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error while getting time series statistics
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get my partner time series statistics
+      tags:
+      - partner-stats
+  /payment/notification:
+    post:
+      consumes:
+      - application/json
+      description: Handle payment webhook notification from payment gateway
+      parameters:
+      - description: Notification data
+        in: body
+        name: notification
+        required: true
+        schema:
+          $ref: '#/definitions/payment.PaymentNotificationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Notification processed successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid notification data
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to process notification
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Process payment notification
+      tags:
+      - payment
+  /payment/options:
+    get:
+      description: Retrieve available payment methods and configurations
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to get payment options
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get available payment options
+      tags:
+      - payment
+  /payment/orders/{orderNumber}/status:
+    get:
+      description: Retrieve payment order status by order number
+      parameters:
+      - description: Order number
+        in: path
+        name: orderNumber
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/payment.OrderStatusResponse'
+        "400":
+          description: Order number is required
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to get order status
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get order status
+      tags:
+      - payment
+  /payment/purchase:
+    post:
+      consumes:
+      - application/json
+      description: Process coupon purchase and create payment order
+      parameters:
+      - description: Purchase request data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/payment.PurchaseCouponRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/payment.PurchaseCouponResponse'
+        "400":
+          description: Invalid request data
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to create order
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Purchase coupon
+      tags:
+      - payment
+  /payment/return:
+    get:
+      description: Handle payment return callback from payment gateway
+      parameters:
+      - description: Order number
+        in: query
+        name: orderNumber
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "302":
+          description: Redirect to success page
+        "400":
+          description: Order number is required
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to process payment return
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Process payment return
+      tags:
+      - payment
+  /payment/test-integration:
+    get:
+      description: Test integration with Alfa Bank API using current configuration
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Integration test results
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Integration test failed
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Test Alfa Bank integration
+      tags:
+      - payment
+  /public/images/{id}/edit:
+    put:
+      consumes:
+      - application/json
+      description: Applies cropping, rotation and scaling to uploaded image
+      parameters:
+      - description: Image ID (UUID format)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Edit parameters including crop, rotation and scale settings
+        in: body
+        name: params
+        required: true
+        schema:
+          $ref: '#/definitions/image.ImageEditParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Image successfully edited
+          schema:
+            $ref: '#/definitions/types.ImageEditResponse'
+        "400":
+          description: Validation error - invalid image ID format or parse error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Image not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error - failed to edit image or get image status
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Edit image
+      tags:
+      - public-images
+  /public/images/{id}/generate-schema:
+    post:
+      consumes:
+      - application/json
+      description: Creates final diamond mosaic schema with instructions and color
+        map
+      parameters:
+      - description: Image ID (UUID format)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Schema generation confirmation - must be true to proceed
+        in: body
+        name: params
+        required: true
+        schema:
+          $ref: '#/definitions/types.GenerateSchemaRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Schema generation started successfully
+          schema:
+            $ref: '#/definitions/types.GenerateSchemaResponse'
+        "400":
+          description: Validation error - invalid image ID format, parse error, or
+            schema request not confirmed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Image not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error - failed to generate schema
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Generate mosaic schema
+      tags:
+      - public-images
+  /public/images/{id}/process:
+    put:
+      consumes:
+      - application/json
+      description: Applies selected processing styles to image, including AI processing
+        through Stable Diffusion
+      parameters:
+      - description: Image ID (UUID format)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Processing parameters including style, AI settings, lighting,
+          contrast, brightness, and saturation
+        in: body
+        name: params
+        required: true
+        schema:
+          $ref: '#/definitions/types.ProcessImageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Image processing started successfully
+          schema:
+            $ref: '#/definitions/types.ProcessImageResponse'
+        "400":
+          description: Validation error - invalid image ID format or parse error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Image not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error - failed to get image status
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Process image
+      tags:
+      - public-images
+  /public/images/{id}/status:
+    get:
+      description: Returns current image processing status and file links
+      parameters:
+      - description: Image ID (UUID format)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Image status retrieved successfully
+          schema:
+            $ref: '#/definitions/types.ImageStatusResponse'
+        "400":
+          description: Validation error - invalid image ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Image not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error - failed to get image status
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get image processing status
+      tags:
+      - public-images
+  /public/schemas/{schema_uuid}/download:
+    get:
+      description: Allows user to download ZIP archive with mosaic schema files
+      parameters:
+      - description: Schema UUID (UUID format)
+        in: path
+        name: schema_uuid
+        required: true
+        type: string
+      produces:
+      - application/zip
+      responses:
+        "200":
+          description: ZIP archive with schema files
+          schema:
+            type: file
+        "400":
+          description: Validation error - schema UUID required, invalid UUID format,
+            or schema not ready for download
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Schema not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error - failed to generate download URL
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Download schema archive (public)
+      tags:
+      - public-images
+  /public/support/messages:
+    get:
+      description: Retrieves messages for a specific support chat by chat ID
+      parameters:
+      - description: ID of the chat
+        in: query
+        name: chat_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of support messages
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid chat ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Chat not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get support chat messages
+      tags:
+      - support
+    post:
+      description: Sends a new message in a specific support chat
+      parameters:
+      - description: ID of the chat
+        in: query
+        name: chat_id
+        required: true
+        type: string
+      - description: Content of the message
+        in: query
+        name: content
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Sent message details
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request body or chat ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Access denied
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Send a message in support chat
+      tags:
+      - support
+  /public/support/messages/{id}/attachments:
+    get:
+      description: Streams an attachment file for a specific support message by ID
+        (uses access token)
+      parameters:
+      - description: ID of the support message
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Attachment file
+          schema:
+            type: file
+        "400":
+          description: Invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Attachment not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Stream an attachment of a support message (public users)
+      tags:
+      - support
+    post:
+      description: Uploads an attachment file to a specific support message (uses
+        access token)
+      parameters:
+      - description: ID of the support message
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Attachment file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Upload success confirmation
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID or file
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Upload an attachment to a support message (public users)
+      tags:
+      - support
+  /public/support/start:
+    post:
+      description: Creates a new support chat and returns a guest token for access
+      parameters:
+      - description: Title of the support chat
+        in: query
+        name: title
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Chat details including guest token
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Start a support chat
+      tags:
+      - support
+  /public/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Uploads user image for diamond mosaic creation
+      parameters:
+      - description: 12-character coupon code
+        in: formData
+        name: coupon_code
+        required: true
+        type: string
+      - description: Image file (JPG, PNG, max 10MB)
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Image successfully uploaded
+          schema:
+            $ref: '#/definitions/types.ImageUploadResponse'
+        "400":
+          description: Validation error - invalid coupon code format or coupon not
+            activated
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Coupon not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error - failed to find coupon, get uploaded
+            image, or upload image
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Upload image
+      tags:
+      - public-images
+  /support/messages/{id}:
+    delete:
+      description: Deletes a specific support message by ID
+      parameters:
+      - description: ID of the message
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Delete success confirmation
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete a support message
+      tags:
+      - support
+    patch:
+      description: Updates the content of a specific support message
+      parameters:
+      - description: ID of the message
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: New content for the message
+        in: query
+        name: content
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Update success confirmation
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request body or ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update a support message
+      tags:
+      - support
+  /support/messages/{id}/attachments:
+    get:
+      description: Streams an attachment file for a specific support message by ID
+        (requires JWT authentication)
+      parameters:
+      - description: ID of the support message
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Attachment file
+          schema:
+            type: file
+        "400":
+          description: Invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Attachment not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Stream an attachment of a support message (authenticated users)
+      tags:
+      - support
+    post:
+      description: Uploads an attachment file to a specific support message (requires
+        JWT authentication)
+      parameters:
+      - description: ID of the support message
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Attachment file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Upload success confirmation
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID or file
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Upload an attachment to a support message (authenticated users)
+      tags:
+      - support
+swagger: "2.0"
