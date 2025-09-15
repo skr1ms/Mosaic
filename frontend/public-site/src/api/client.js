@@ -298,6 +298,19 @@ export class MosaicAPI {
     );
     return data;
   }
+
+  static async checkMarketplaceStatus(params) {
+    const { data } = await apiClient.get('/marketplace/status', {
+      params: {
+        marketplace: params.marketplace,
+        partner_id: params.partnerId,
+        size: params.size,
+        style: params.style,
+        sku: params.sku
+      }
+    });
+    return data;
+  }
 }
 
 export default apiClient;

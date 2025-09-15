@@ -69,10 +69,25 @@ const MarketplaceCards = ({ selectedSize, selectedStyle }) => {
                 }
               );
 
+              let actualAvailability = false;
+              try {
+                const statusResponse = await MosaicAPI.checkMarketplaceStatus({
+                  marketplace: marketplace.key,
+                  partnerId: partner.partner_id,
+                  size: selectedSize,
+                  style: selectedStyle,
+                  sku: response.sku
+                });
+                actualAvailability = statusResponse.available;
+              } catch (statusError) {
+                console.warn(`Failed to check availability for ${marketplace.key}:`, statusError);
+                actualAvailability = response.has_article;
+              }
+
               newData[marketplace.key] = {
                 ...response,
-                available: response.has_article,
-                has_general_link: !!response.url && !response.has_article,
+                available: actualAvailability,
+                has_general_link: !!response.url && !actualAvailability,
                 specific_product: true,
               };
             } else {
@@ -84,7 +99,8 @@ const MarketplaceCards = ({ selectedSize, selectedStyle }) => {
                 url: generalLink || '',
                 sku: '',
                 has_article: false,
-                available: !!generalLink,
+                available: false,
+                has_general_link: !!generalLink,
                 partner_name: partner.name || '',
                 marketplace: marketplace.key,
                 size: selectedSize,
