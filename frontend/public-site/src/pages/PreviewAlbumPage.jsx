@@ -204,9 +204,7 @@ const PreviewAlbumPage = () => {
             formData.append('contrast_level', variant.contrast);
             formData.append('use_ai', 'false');
 
-            const result = (await MosaicAPI.generatePreviewVariant)
-              ? await MosaicAPI.generatePreviewVariant(formData)
-              : await MosaicAPI.generatePreview(formData);
+            const result = await MosaicAPI.generatePreviewVariant(formData);
 
             generatedPreviews.push({
               id: i,

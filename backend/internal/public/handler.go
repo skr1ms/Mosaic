@@ -59,21 +59,19 @@ func NewPublicHandler(router fiber.Router, deps *PublicHandlerDeps) *PublicHandl
 	router.Get("/sizes", handler.GetAvailableSizes)                                       // GET /api/sizes
 	router.Get("/styles", handler.GetAvailableStyles)                                     // GET /api/styles
 	router.Get("/config/recaptcha", handler.GetRecaptchaSiteKey)                          // GET /api/config/recaptcha
+	router.Post("/coupons/:code/reactivate", handler.ReactivateCoupon)                    // POST /api/coupons/:code/reactivate
+	router.Post("/images/:id/search-page", handler.SearchSchemaPage)                      // POST /api/images/:id/search-page
+	router.Get("/marketplace/status", handler.CheckMarketplaceStatus)                     // GET /api/marketplace/status
 
 	// Public preview routes
 	public := handler.Group("/preview")
-	public.Post("/generate", handler.GeneratePreview)
-	public.Post("/generate-variants", handler.GenerateVariants)
-	public.Post("/generate-style-variants", handler.GenerateStyleVariants) // NEW: Generate 4 main style variants
-	public.Post("/generate-ai", handler.GenerateAIPreview)
-	public.Post("/generate-all", handler.GenerateAllPreviews) // NEW: Generate all 10 previews
-	public.Get("/:id", handler.GetPreview)
-	public.Delete("/:id", handler.DeletePreview)
-
-	// Additional routes for TZ requirements
-	router.Post("/coupons/:code/reactivate", handler.ReactivateCoupon) // NEW: Re-access activated coupon
-	router.Post("/images/:id/search-page", handler.SearchSchemaPage)   // NEW: Search schema page by number
-	router.Get("/marketplace/status", handler.CheckMarketplaceStatus)  // NEW: Check marketplace availability
+	public.Post("/generate-variant", handler.GeneratePreview)              // POST /api/preview/generate-variant
+	public.Post("/generate-variants", handler.GenerateVariants)            // POST /api/preview/generate-variants
+	public.Post("/generate-style-variants", handler.GenerateStyleVariants) // POST /api/preview/generate-style-variants
+	public.Post("/generate-ai", handler.GenerateAIPreview)                 // POST /api/preview/generate-ai
+	public.Post("/generate-all", handler.GenerateAllPreviews)              // POST /api/preview/generate-all
+	public.Get("/:id", handler.GetPreview)                                 // GET /api/preview/:id
+	public.Delete("/:id", handler.DeletePreview)                           // DELETE /api/preview/:id
 
 	return handler
 }

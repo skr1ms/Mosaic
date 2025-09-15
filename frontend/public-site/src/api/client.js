@@ -145,7 +145,7 @@ export class MosaicAPI {
   }
 
   static async generatePreview(formData) {
-    const { data } = await apiClient.post('/preview/generate', formData, {
+    const { data } = await apiClient.post('/preview/generate-variant', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
