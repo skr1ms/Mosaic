@@ -514,34 +514,28 @@ func (s *S3Client) UploadToPreviewBucket(ctx context.Context, objectKey string, 
 	return nil
 }
 
-// GetPreviewURL returns public URL for preview file (
+// GetPreviewURL returns public URL for preview file
 func (s *S3Client) GetPreviewURL(objectKey string) string {
 	bucket := s.previewBucket
 	if bucket == "" {
-		return ""
-	}
-
-	// If public URL is configured, return direct URL
-	if s.publicURL != "" {
-		// Form direct URL to preview file
-		directURL := fmt.Sprintf("%s/%s/%s", s.publicURL, bucket, objectKey)
-		return directURL
-	}
-
-	// Otherwise, generate presigned URL for MinIO
-	ctx := context.Background()
-	url, err := s.client.PresignedGetObject(ctx, bucket, objectKey, 7*24*time.Hour, nil)
-	if err != nil {
 		s.logger.GetZerologLogger().Error().
-			Err(err).
-			Str("bucket", bucket).
-			Str("key", objectKey).
-			Msg("Failed to generate presigned URL for preview")
+			Msg("Preview bucket is not configured")
 		return ""
 	}
 
-	presignedURL := url.String()
-	return presignedURL
+	s.logger.GetZerologLogger().Info().
+		Str("bucket", bucket).
+		Str("key", objectKey).
+		Str("public_url", s.publicURL).
+		Msg("Generating preview URL")
+
+	// Always use nginx proxy path for previews
+	// This works with the nginx location /preview-images/ proxy
+	proxyURL := fmt.Sprintf("/preview-images/%s", objectKey)
+	s.logger.GetZerologLogger().Info().
+		Str("url", proxyURL).
+		Msg("Generated proxy URL for preview")
+	return proxyURL
 }
 
 // DeleteFromPreviewBucket deletes file from preview-images bucket
