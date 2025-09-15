@@ -1460,42 +1460,79 @@ func (h *PublicHandler) DeletePreview(c *fiber.Ctx) error {
 	})
 }
 
-// GenerateAllPreviews generates all 8 base previews + optional 2 AI previews
+// GenerateAllPreviews generates all 8 base previews + optional 1 AI preview
 // @Summary Generate all preview variants
-// @Description Generates 8 base previews (4 styles × 2 contrasts) and optionally 2 AI previews
+// @Description Generates 8 base previews (4 styles × 2 contrasts) and optionally 1 AI preview
 // @Tags preview
-// @Accept json
+// @Accept multipart/form-data
 // @Produce json
-// @Param request body GenerateAllPreviewsRequest true "Preview generation parameters"
+// @Param image_id formData string false "Image ID (optional for preview uploads)"
+// @Param size formData string true "Size (e.g., 30x40)"
+// @Param use_ai formData bool false "Generate AI preview"
+// @Param image formData file false "Image file (required if image_id not found in DB)"
 // @Success 200 {object} GenerateAllPreviewsResponse "All previews generated successfully"
 // @Failure 400 {object} map[string]any "Invalid request"
 // @Failure 500 {object} map[string]any "Internal server error"
 // @Router /api/preview/generate-all [post]
 func (h *PublicHandler) GenerateAllPreviews(c *fiber.Ctx) error {
-	var req GenerateAllPreviewsRequest
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
-	}
-
-	if err := middleware.ValidateStruct(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   "Validation failed",
-			"details": err.Error(),
-		})
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
-	result, err := h.deps.PublicService.GenerateAllPreviews(ctx, req.ImageID, req.Size, req.UseAI)
+	// Get form parameters
+	imageID := c.FormValue("image_id")
+	size := c.FormValue("size", "30x40")
+	useAI := c.FormValue("use_ai") == "true"
+
+	h.deps.Logger.FromContext(c).Info().
+		Str("handler", "GenerateAllPreviews").
+		Str("image_id", imageID).
+		Str("size", size).
+		Bool("use_ai", useAI).
+		Msg("Starting preview generation")
+
+	// Try method 1: Use existing image from database
+	if imageID != "" {
+		result, err := h.deps.PublicService.GenerateAllPreviews(ctx, imageID, size, useAI)
+		if err == nil {
+			h.deps.Logger.FromContext(c).Info().
+				Str("handler", "GenerateAllPreviews").
+				Str("image_id", imageID).
+				Int("total_previews", result.Total).
+				Bool("use_ai", useAI).
+				Msg("All previews generated successfully from database")
+			return c.JSON(result)
+		}
+
+		// Log the error but continue to method 2
+		h.deps.Logger.FromContext(c).Warn().
+			Err(err).
+			Str("handler", "GenerateAllPreviews").
+			Str("image_id", imageID).
+			Msg("Failed to generate from database, trying file upload method")
+	}
+
+	// Method 2: Use uploaded file (fallback for preview uploads)
+	file, err := c.FormFile("image")
+	if err != nil || file == nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Image file is required when image_id is not found in database",
+		})
+	}
+
+	h.deps.Logger.FromContext(c).Info().
+		Str("handler", "GenerateAllPreviews").
+		Str("filename", file.Filename).
+		Int64("file_size", file.Size).
+		Msg("Using uploaded file for preview generation")
+
+	// Generate previews from uploaded file
+	result, err := h.deps.PublicService.GenerateAllPreviewsFromFile(ctx, file, size, useAI)
 	if err != nil {
 		h.deps.Logger.FromContext(c).Error().
 			Err(err).
 			Str("handler", "GenerateAllPreviews").
-			Str("image_id", req.ImageID).
-			Msg("Failed to generate all previews")
+			Str("filename", file.Filename).
+			Msg("Failed to generate all previews from file")
 
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":   "Failed to generate previews",
@@ -1505,10 +1542,10 @@ func (h *PublicHandler) GenerateAllPreviews(c *fiber.Ctx) error {
 
 	h.deps.Logger.FromContext(c).Info().
 		Str("handler", "GenerateAllPreviews").
-		Str("image_id", req.ImageID).
+		Str("filename", file.Filename).
 		Int("total_previews", result.Total).
-		Bool("use_ai", req.UseAI).
-		Msg("All previews generated successfully")
+		Bool("use_ai", useAI).
+		Msg("All previews generated successfully from uploaded file")
 
 	return c.JSON(result)
 }

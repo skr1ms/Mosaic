@@ -188,18 +188,26 @@ export class MosaicAPI {
     return data;
   }
 
-  static async generateAllPreviews(imageId, size, useAI = false) {
-    const { data } = await apiClient.post(
-      '/preview/generate-all',
-      {
-        image_id: imageId,
-        size: size,
-        use_ai: useAI,
+  static async generateAllPreviews(imageId, size, useAI = false, imageFile = null) {
+    const formData = new FormData();
+    
+    if (imageId) {
+      formData.append('image_id', imageId);
+    }
+    
+    formData.append('size', size);
+    formData.append('use_ai', useAI.toString());
+    
+    if (imageFile) {
+      formData.append('image', imageFile, 'image.jpg');
+    }
+
+    const { data } = await apiClient.post('/preview/generate-all', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
       },
-      {
-        timeout: 180000,
-      }
-    );
+      timeout: 180000,
+    });
     return data;
   }
 

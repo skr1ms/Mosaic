@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 	"github.com/skr1ms/mosaic/config"
 	"github.com/skr1ms/mosaic/internal/coupon"
 	internalImage "github.com/skr1ms/mosaic/internal/image"
@@ -101,6 +102,7 @@ type PublicServiceInterface interface {
 	GenerateStylePreview(ctx context.Context, file *multipart.FileHeader, size, style string) (*PreviewData, error)
 	GenerateAIPreview(ctx context.Context, file *multipart.FileHeader, prompt string) (*PreviewData, error)
 	GenerateAllPreviews(ctx context.Context, imageID string, size string, useAI bool) (*GenerateAllPreviewsResponse, error)
+	GenerateAllPreviewsFromFile(ctx context.Context, file *multipart.FileHeader, size string, useAI bool) (*GenerateAllPreviewsResponse, error)
 	SearchSchemaPage(ctx context.Context, imageID string, pageNumber int) (*SearchSchemaPageResponse, error)
 	ReactivateCoupon(ctx context.Context, code string) (*ReactivateCouponResponse, error)
 	GetEmailService() EmailServiceInterface
@@ -231,4 +233,11 @@ type S3ClientInterface interface {
 	SchedulePreviewDeletion(objectKey string)
 	CleanupAllPreviews(ctx context.Context) error
 	Decode(reader io.Reader) (image.Image, string, error)
+}
+
+type RedisClientInterface interface {
+	Get(ctx context.Context, key string) *redis.StringCmd
+	Set(ctx context.Context, key string, value any, expiration time.Duration) *redis.StatusCmd
+	Del(ctx context.Context, keys ...string) *redis.IntCmd
+	Ping(ctx context.Context) *redis.StatusCmd
 }

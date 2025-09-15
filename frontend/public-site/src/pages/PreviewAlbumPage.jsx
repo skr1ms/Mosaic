@@ -124,7 +124,6 @@ const PreviewAlbumPage = () => {
         return;
       }
 
-      // Only generate if we don't have imageData yet
       if (!imageData) {
         setImageData(parsedData);
         generateContrastVariants(parsedData);
@@ -134,7 +133,6 @@ const PreviewAlbumPage = () => {
     }
   }, [navigate, location.pathname, hasGeneratedVariants, isGeneratingVariants, imageData]);
 
-  // Reset generation flags when component unmounts or location changes
   useEffect(() => {
     return () => {
       setHasGeneratedVariants(false);
@@ -142,7 +140,6 @@ const PreviewAlbumPage = () => {
   }, [location.pathname]);
 
   const generateContrastVariants = async data => {
-    // Prevent duplicate generation
     if (isGeneratingVariants || hasGeneratedVariants) {
       console.log('Skipping generation - already in progress or completed');
       return;
@@ -172,13 +169,11 @@ const PreviewAlbumPage = () => {
 
         const updatedData = { ...data, imageId };
         setImageData(updatedData);
-        // Avoid immediate re-renders by deferring couponStore update
         setTimeout(() => {
           couponStore.setImageId(imageId);
         }, 0);
       }
 
-      // Simulate progress animation
       const progressInterval = setInterval(() => {
         setGeneratingProgress(prev => {
           if (prev >= 90) return prev;
@@ -186,10 +181,24 @@ const PreviewAlbumPage = () => {
         });
       }, 200);
 
+      let imageFile = null;
+      try {
+        const fileUrl = data.imageUrl || sessionStorage.getItem('diamondMosaic_fileUrl');
+        if (fileUrl) {
+          const response = await fetch(fileUrl);
+          if (response.ok) {
+            imageFile = await response.blob();
+          }
+        }
+      } catch (error) {
+        console.warn('Could not get image file for fallback:', error);
+      }
+
       const result = await MosaicAPI.generateAllPreviews(
         imageId,
         data.size,
-        false
+        false,
+        imageFile 
       );
 
       clearInterval(progressInterval);
@@ -211,7 +220,6 @@ const PreviewAlbumPage = () => {
       });
 
       setPreviews(generatedPreviews);
-      // Avoid immediate re-renders by deferring couponStore update
       setTimeout(() => {
         couponStore.setPreviews(generatedPreviews);
       }, 0);
@@ -263,7 +271,6 @@ const PreviewAlbumPage = () => {
         }
 
         setPreviews(generatedPreviews);
-        // Avoid immediate re-renders by deferring couponStore update
         setTimeout(() => {
           couponStore.setPreviews(generatedPreviews);
         }, 0);
@@ -283,7 +290,7 @@ const PreviewAlbumPage = () => {
     } finally {
       setIsGeneratingVariants(false);
       setHasGeneratedVariants(true);
-      setGeneratingProgress(0); // Reset progress
+      setGeneratingProgress(0); 
     }
   };
 
@@ -319,10 +326,24 @@ const PreviewAlbumPage = () => {
         setImageData(updatedData);
       }
 
+      let imageFile = null;
+      try {
+        const fileUrl = sessionStorage.getItem('diamondMosaic_fileUrl');
+        if (fileUrl) {
+          const response = await fetch(fileUrl);
+          if (response.ok) {
+            imageFile = await response.blob();
+          }
+        }
+      } catch (error) {
+        console.warn('Could not get image file for AI fallback:', error);
+      }
+
       const result = await MosaicAPI.generateAllPreviews(
         imageId,
         imageData.size,
-        true
+        true,
+        imageFile 
       );
 
       const aiPreviews = result.previews

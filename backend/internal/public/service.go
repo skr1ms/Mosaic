@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"image"
 	"image/color"
@@ -36,6 +37,7 @@ type PublicServiceDeps struct {
 	Config            ConfigInterface
 	S3Client          S3ClientInterface
 	AIClient          AIClientInterface
+	RedisClient       RedisClientInterface // 🚀 Added Redis for preview caching
 	RecaptchaSiteKey  string
 }
 
@@ -729,14 +731,39 @@ func (s *PublicService) processImageAsync(imageUUID uuid.UUID, processParams *in
 
 // GeneratePreview generates a single preview with style, lighting and contrast
 func (s *PublicService) GeneratePreview(ctx context.Context, file *multipart.FileHeader, size, style, lighting, contrast string) (*PreviewData, error) {
-	// Open uploaded file
+	// Step 1: Generate cache key from file content + ALL parameters
 	src, err := file.Open()
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file: %w", err)
+	}
+
+	fileContent, err := io.ReadAll(src)
+	if err != nil {
+		src.Close()
+		return nil, fmt.Errorf("failed to read file: %w", err)
+	}
+	src.Close()
+
+	// Create Redis cache key with ALL parameters
+	fileHash := fmt.Sprintf("%x", sha256.Sum256(fileContent))
+	cacheKey := fmt.Sprintf("preview:%s:%s:%s:%s:%s", fileHash[:16], size, style, lighting, contrast)
+
+	if s.deps.RedisClient != nil {
+		cachedData := s.deps.RedisClient.Get(ctx, cacheKey)
+		if cachedData.Err() == nil {
+			var previewData PreviewData
+			if err := json.Unmarshal([]byte(cachedData.Val()), &previewData); err == nil {
+				return &previewData, nil
+			}
+		}
+	}
+
+	src, err = file.Open()
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
 	defer src.Close()
 
-	// Decode image
 	img, format, err := s.deps.S3Client.Decode(src)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode image: %w", err)
@@ -800,6 +827,14 @@ func (s *PublicService) GeneratePreview(ctx context.Context, file *multipart.Fil
 	// Schedule automatic deletion after 24 hours (database TTL handles this too)
 	s.deps.S3Client.SchedulePreviewDeletion(previewKey)
 
+	// 🚀 CACHE TO REDIS - 2 hour TTL for ultra-fast future requests
+	if s.deps.RedisClient != nil {
+		previewJSON, err := json.Marshal(previewData)
+		if err == nil {
+			s.deps.RedisClient.Set(ctx, cacheKey, previewJSON, 2*time.Hour)
+		}
+	}
+
 	return previewData, nil
 }
 
@@ -824,9 +859,15 @@ func (s *PublicService) GenerateStylePreview(ctx context.Context, file *multipar
 	previewHash := fmt.Sprintf("style_%s_%s_%s", fileHash[:16], style, size)
 	previewID := uuid.NewSHA1(uuid.NameSpaceURL, []byte(previewHash))
 
-	existingPreview, err := s.deps.PublicRepository.GetByID(ctx, previewID)
-	if err == nil && existingPreview != nil {
-		return existingPreview, nil
+	cacheKey := fmt.Sprintf("style_preview:%s:%s:%s", fileHash[:16], style, size)
+	if s.deps.RedisClient != nil {
+		cachedData := s.deps.RedisClient.Get(ctx, cacheKey)
+		if cachedData.Err() == nil {
+			var previewData PreviewData
+			if err := json.Unmarshal([]byte(cachedData.Val()), &previewData); err == nil {
+				return &previewData, nil
+			}
+		}
 	}
 
 	// Re-open file for processing
@@ -895,6 +936,13 @@ func (s *PublicService) GenerateStylePreview(ctx context.Context, file *multipar
 
 	// Schedule automatic deletion after 24 hours (database TTL handles this too)
 	s.deps.S3Client.SchedulePreviewDeletion(previewKey)
+
+	if s.deps.RedisClient != nil {
+		previewJSON, err := json.Marshal(previewData)
+		if err == nil {
+			s.deps.RedisClient.Set(ctx, cacheKey, previewJSON, 2*time.Hour)
+		}
+	}
 
 	return previewData, nil
 }
@@ -1235,6 +1283,224 @@ func (s *PublicService) GenerateAllPreviews(ctx context.Context, imageID string,
 		Previews: previews,
 		Total:    len(previews),
 		ImageID:  imageID,
+	}, nil
+}
+
+// GenerateAllPreviewsFromFile generates all 8 base previews + optional 1 AI preview directly from uploaded file
+// Used for preview uploads where image_id doesn't exist in database
+func (s *PublicService) GenerateAllPreviewsFromFile(ctx context.Context, file *multipart.FileHeader, size string, useAI bool) (*GenerateAllPreviewsResponse, error) {
+	// Open uploaded file
+	src, err := file.Open()
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file: %w", err)
+	}
+	defer src.Close()
+
+	// Decode image directly from file
+	originalImg, format, err := s.deps.S3Client.Decode(src)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode image: %w", err)
+	}
+
+	// Generate a deterministic preview session ID from file name and size
+	sessionHash := fmt.Sprintf("session_%s_%s", file.Filename, size)
+	sessionID := uuid.NewSHA1(uuid.NameSpaceURL, []byte(sessionHash)).String()
+
+	var previews []PreviewInfo
+
+	// Define combinations according to TZ:
+	// 4 styles × 2 contrasts = 8 base previews
+	styles := []string{"venus", "sun", "moon", "mars"}
+	contrasts := []struct {
+		Value string
+		Label string
+	}{
+		{"soft", "мягкий контраст"},
+		{"strong", "сильный контраст"},
+	}
+
+	styleLabels := map[string]string{
+		"venus": "Венера",
+		"sun":   "Солнце",
+		"moon":  "Луна",
+		"mars":  "Марс",
+	}
+
+	// Generate 8 base previews parallelly using goroutine manager
+	type previewTask struct {
+		style    string
+		contrast struct {
+			Value string
+			Label string
+		}
+	}
+
+	var tasks []previewTask
+	for _, style := range styles {
+		for _, contrast := range contrasts {
+			tasks = append(tasks, previewTask{
+				style:    style,
+				contrast: contrast,
+			})
+		}
+	}
+
+	// Create channels for parallel processing
+	resultChan := make(chan PreviewInfo, len(tasks))
+	errorChan := make(chan error, len(tasks))
+
+	// Process tasks in parallel using goroutine manager
+	for _, task := range tasks {
+		task := task // Capture loop variable
+		s.processingPool.SubmitTask(func() {
+			// Process image
+			processedImg := s.resizeImage(originalImg, size)
+			processedImg = s.ApplyLighting(processedImg, task.style)
+			processedImg = s.ApplyContrast(processedImg, task.contrast.Value)
+
+			// Encode image
+			var buf bytes.Buffer
+			switch format {
+			case "jpeg", "jpg":
+				jpeg.Encode(&buf, processedImg, &jpeg.Options{Quality: 90})
+			case "png":
+				png.Encode(&buf, processedImg)
+			default:
+				jpeg.Encode(&buf, processedImg, &jpeg.Options{Quality: 90})
+			}
+
+			// Generate deterministic preview ID to avoid duplicates
+			previewHash := fmt.Sprintf("file_%s_%s_%s_%s", sessionID[:8], task.style, task.contrast.Value, size)
+			previewID := uuid.NewSHA1(uuid.NameSpaceURL, []byte(previewHash))
+			previewKey := fmt.Sprintf("previews/%s/%s_%s_%s.jpg", sessionID[:8], task.style, task.contrast.Value, previewID.String()[:8])
+
+			if err := s.deps.S3Client.UploadToPreviewBucket(ctx, previewKey, &buf, int64(buf.Len()), "image/jpeg"); err != nil {
+				errorChan <- err
+				return
+			}
+
+			// Schedule automatic deletion after 30 minutes
+			s.deps.S3Client.SchedulePreviewDeletion(previewKey)
+
+			// Get URL for preview
+			previewURL := s.deps.S3Client.GetPreviewURL(previewKey)
+
+			resultChan <- PreviewInfo{
+				ID:       previewID.String(),
+				URL:      previewURL,
+				Style:    task.style,
+				Contrast: task.contrast.Value,
+				Label:    fmt.Sprintf("%s (%s)", styleLabels[task.style], task.contrast.Label),
+				IsAI:     false,
+			}
+		})
+	}
+
+	// Collect results (8 base previews + optional 1 AI)
+	totalExpected := len(tasks)
+	if useAI && s.deps.AIClient != nil {
+		totalExpected++ // Add 1 for AI preview
+	}
+
+	for i := 0; i < totalExpected; i++ {
+		select {
+		case preview := <-resultChan:
+			previews = append(previews, preview)
+		case err := <-errorChan:
+			// Skip failed uploads, continue processing
+			_ = err
+		case <-ctx.Done():
+			return nil, fmt.Errorf("preview generation timeout")
+		}
+	}
+
+	// Generate AI preview if requested (only 1 variant as user requested)
+	if useAI && s.deps.AIClient != nil {
+		// Cast to concrete type outside of goroutine
+		aiClient, ok := s.deps.AIClient.(*stableDiffusion.StableDiffusionClient)
+		if !ok {
+			// Skip AI generation if client type is wrong, don't fail entire operation
+		} else {
+			// Convert original image to base64 for AI processing
+			var buf bytes.Buffer
+			switch format {
+			case "jpeg", "jpg":
+				jpeg.Encode(&buf, originalImg, &jpeg.Options{Quality: 90})
+			case "png":
+				png.Encode(&buf, originalImg)
+			default:
+				jpeg.Encode(&buf, originalImg, &jpeg.Options{Quality: 90})
+			}
+
+			// Encode image to base64
+			base64Image := aiClient.EncodeImageToBase64(buf.Bytes())
+
+			// Parse size for AI request
+			width, height := s.parseSize(size)
+
+			// Create AI processing request with enhanced artistic style
+			aiRequest := stableDiffusion.ProcessImageRequest{
+				ImageBase64: base64Image,
+				Style:       stableDiffusion.StyleMaxColors, // Use max_colors for best AI results
+				UseAI:       true,
+				Lighting:    stableDiffusion.LightingSun,  // Default lighting
+				Contrast:    stableDiffusion.ContrastHigh, // High contrast for better AI quality
+				Brightness:  0.0,
+				Saturation:  0.0,
+				Width:       width,
+				Height:      height,
+			}
+
+			// Submit AI task to goroutine manager for parallel processing
+			s.processingPool.SubmitTask(func() {
+				aiResultBase64, err := s.deps.AIClient.ProcessImage(ctx, aiRequest)
+				if err != nil {
+					errorChan <- err
+					return
+				}
+
+				// Decode AI result
+				aiResultData, err := aiClient.DecodeBase64Image(aiResultBase64)
+				if err != nil {
+					errorChan <- err
+					return
+				}
+
+				// Generate deterministic AI preview ID
+				previewHash := fmt.Sprintf("ai_file_%s_%s", sessionID[:8], size)
+				previewID := uuid.NewSHA1(uuid.NameSpaceURL, []byte(previewHash))
+				previewKey := fmt.Sprintf("previews/%s/ai_%s.jpg", sessionID[:8], previewID.String()[:8])
+
+				// Upload to S3
+				aiDataReader := bytes.NewReader(aiResultData)
+				if err := s.deps.S3Client.UploadToPreviewBucket(ctx, previewKey, aiDataReader, int64(len(aiResultData)), "image/jpeg"); err != nil {
+					errorChan <- err
+					return
+				}
+
+				// Schedule automatic deletion
+				s.deps.S3Client.SchedulePreviewDeletion(previewKey)
+
+				// Get URL
+				previewURL := s.deps.S3Client.GetPreviewURL(previewKey)
+
+				// Send AI result to result channel
+				resultChan <- PreviewInfo{
+					ID:       previewID.String(),
+					URL:      previewURL,
+					Style:    "ai",
+					Contrast: "enhanced",
+					Label:    "AI Enhanced Mosaic",
+					IsAI:     true,
+				}
+			})
+		}
+	}
+
+	return &GenerateAllPreviewsResponse{
+		Previews: previews,
+		Total:    len(previews),
+		ImageID:  sessionID, // Return session ID instead of real image ID
 	}, nil
 }
 
