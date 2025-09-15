@@ -182,12 +182,10 @@ func (s *PublicService) ActivateCoupon(code string) (map[string]any, error) {
 func (s *PublicService) UploadImage(couponID string, file *multipart.FileHeader) (map[string]any, error) {
 	// If no coupon provided, treat as preview-only upload
 	if couponID == "" {
-		// Generate a temporary image ID for preview purposes
-		tempImageID := uuid.New()
-
+		// Don't return fake image_id - let frontend use file fallback method
 		return map[string]any{
 			"message":      "Изображение успешно загружено для предпросмотра",
-			"image_id":     tempImageID,
+			"image_id":     nil,
 			"next_step":    "generate_preview",
 			"coupon_size":  "30x40",   // Default size for previews
 			"coupon_style": "classic", // Default style for previews
@@ -227,7 +225,6 @@ func (s *PublicService) UploadImage(couponID string, file *multipart.FileHeader)
 }
 
 // EditImage applies editing to image (deprecated method, use ImageService)
-// Kept for backward compatibility
 func (s *PublicService) EditImage(imageID string, req types.EditImageRequest) (map[string]any, error) {
 	imageUUID, err := uuid.Parse(imageID)
 	if err != nil {
@@ -1028,16 +1025,12 @@ func (s *PublicService) ApplyStyle(img image.Image, style string) image.Image {
 func (s *PublicService) ApplyLighting(img image.Image, lighting string) image.Image {
 	switch lighting {
 	case "sun":
-		// Солнце - яркие жёлтые тона
 		return s.applyColorFilter(img, color.RGBA{255, 255, 100, 30})
 	case "moon":
-		// Луна - холодные синие тона
 		return s.applyColorFilter(img, color.RGBA{150, 150, 255, 40})
 	case "venus":
-		// Венера - тёплые оттенки
 		return s.applyColorFilter(img, color.RGBA{255, 200, 150, 50})
 	case "mars":
-		// Марс - красные тона (дополнительно к ТЗ)
 		return s.applyColorFilter(img, color.RGBA{255, 100, 100, 50})
 	default:
 		return img

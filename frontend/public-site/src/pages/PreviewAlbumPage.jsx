@@ -167,11 +167,13 @@ const PreviewAlbumPage = () => {
         const uploadResult = await MosaicAPI.uploadImage(formData);
         imageId = uploadResult.image_id;
 
-        const updatedData = { ...data, imageId };
-        setImageData(updatedData);
-        setTimeout(() => {
-          couponStore.setImageId(imageId);
-        }, 0);
+        if (imageId) {
+          const updatedData = { ...data, imageId };
+          setImageData(updatedData);
+          setTimeout(() => {
+            couponStore.setImageId(imageId);
+          }, 0);
+        }
       }
 
       const progressInterval = setInterval(() => {
@@ -318,12 +320,14 @@ const PreviewAlbumPage = () => {
         const uploadResult = await MosaicAPI.uploadImage(formData);
         imageId = uploadResult.image_id;
 
-        const updatedData = { ...imageData, imageId };
-        localStorage.setItem(
-          'diamondMosaic_selectedImage',
-          JSON.stringify(updatedData)
-        );
-        setImageData(updatedData);
+        if (imageId) {
+          const updatedData = { ...imageData, imageId };
+          localStorage.setItem(
+            'diamondMosaic_selectedImage',
+            JSON.stringify(updatedData)
+          );
+          setImageData(updatedData);
+        }
       }
 
       let imageFile = null;

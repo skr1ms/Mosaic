@@ -1311,26 +1311,60 @@ func (h *PublicHandler) GenerateStyleVariants(c *fiber.Ctx) error {
 		{"max_colors", "Maximum Colors"},
 	}
 
-	var previews []fiber.Map
+	type previewResult struct {
+		Style string    `json:"style"`
+		Label string    `json:"label"`
+		URL   string    `json:"preview_url"`
+		ID    uuid.UUID `json:"preview_id"`
+		Error error     `json:"-"`
+	}
 
+	resultChan := make(chan previewResult, len(styles))
+
+	// Launch all 4 style generations in parallel
 	for _, style := range styles {
-		// Generate preview for each style using Python script
-		previewData, err := h.deps.PublicService.GenerateStylePreview(ctx, file, size, style.Key)
-		if err != nil {
+		style := style // Capture loop variable
+		go func() {
+			previewData, err := h.deps.PublicService.GenerateStylePreview(ctx, file, size, style.Key)
+			resultChan <- previewResult{
+				Style: style.Key,
+				Label: style.Label,
+				URL: func() string {
+					if previewData != nil {
+						return previewData.URL
+					}
+					return ""
+				}(),
+				ID: func() uuid.UUID {
+					if previewData != nil {
+						return previewData.ID
+					}
+					return uuid.Nil
+				}(),
+				Error: err,
+			}
+		}()
+	}
+
+	// Collect results from all 4 goroutines
+	var previews []fiber.Map
+	for i := 0; i < len(styles); i++ {
+		result := <-resultChan
+		if result.Error != nil {
 			h.deps.Logger.FromContext(c).
 				Error().
-				Err(err).
+				Err(result.Error).
 				Str("handler", "GenerateStyleVariants").
-				Str("style", style.Key).
+				Str("style", result.Style).
 				Msg("Failed to generate style variant")
 			continue
 		}
 
 		previews = append(previews, fiber.Map{
-			"style":       style.Key,
-			"label":       style.Label,
-			"preview_url": previewData.URL,
-			"preview_id":  previewData.ID,
+			"style":       result.Style,
+			"label":       result.Label,
+			"preview_url": result.URL,
+			"preview_id":  result.ID,
 		})
 	}
 
