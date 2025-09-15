@@ -2,7 +2,6 @@ package public
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -348,44 +347,62 @@ func (h *PublicHandler) UploadImage(c *fiber.Ctx) error {
 	couponID := c.FormValue("coupon_id")
 	couponCode := c.FormValue("coupon_code")
 
-	if couponID == "" && couponCode == "" {
-		h.deps.Logger.FromContext(c).Warn().
-			Str("handler", "UploadImage").
-			Msg("Coupon ID or Code is required")
-
-		errorResponse := fiber.Map{
-			"error":      "Coupon ID or Code is required",
-			"request_id": c.Get("X-Request-ID"),
-		}
-		return c.Status(fiber.StatusBadRequest).JSON(errorResponse)
-	}
+	h.deps.Logger.FromContext(c).Info().
+		Str("handler", "UploadImage").
+		Str("coupon_id", couponID).
+		Str("coupon_code", couponCode).
+		Str("content_type", c.Get("Content-Type")).
+		Msg("Processing upload request")
 
 	file, err := c.FormFile("image")
 	if err != nil {
 		h.deps.Logger.FromContext(c).Warn().
 			Err(err).
 			Str("handler", "UploadImage").
-			Msg("Image file is required")
+			Interface("form_keys", c.Request().MultipartForm).
+			Msg("Image file is required - FormFile failed")
 
 		errorResponse := fiber.Map{
 			"error":      "Image file is required",
 			"request_id": c.Get("X-Request-ID"),
+			"details":    err.Error(),
 		}
 		return c.Status(fiber.StatusBadRequest).JSON(errorResponse)
 	}
 
+	// Log file details
+	h.deps.Logger.FromContext(c).Info().
+		Str("handler", "UploadImage").
+		Str("filename", file.Filename).
+		Int64("size", file.Size).
+		Str("content_type", file.Header.Get("Content-Type")).
+		Msg("File received successfully")
+
+	// Handle coupon processing if provided
 	if couponID == "" && couponCode != "" {
 		cleanCode := strings.TrimSpace(strings.ReplaceAll(couponCode, "-", ""))
+
+		h.deps.Logger.FromContext(c).Info().
+			Str("handler", "UploadImage").
+			Str("original_coupon_code", couponCode).
+			Str("cleaned_coupon_code", cleanCode).
+			Int("cleaned_length", len(cleanCode)).
+			Msg("Processing coupon code")
+
 		if len(cleanCode) != 12 {
 			h.deps.Logger.FromContext(c).Warn().
 				Str("handler", "UploadImage").
-				Str("coupon_code", cleanCode).
-				Int("length", len(cleanCode)).
+				Str("original_coupon_code", couponCode).
+				Str("cleaned_coupon_code", cleanCode).
+				Int("expected_length", 12).
+				Int("actual_length", len(cleanCode)).
 				Msg("Coupon code must be 12 digits")
 
 			errorResponse := fiber.Map{
-				"error":      "Coupon code must be 12 digits",
-				"request_id": c.Get("X-Request-ID"),
+				"error":           "Coupon code must be 12 digits",
+				"request_id":      c.Get("X-Request-ID"),
+				"received_length": len(cleanCode),
+				"expected_length": 12,
 			}
 			return c.Status(fiber.StatusBadRequest).JSON(errorResponse)
 		}
@@ -1374,39 +1391,71 @@ func (h *PublicHandler) GenerateAIPreview(c *fiber.Ctx) error {
 
 // GetPreview retrieves a preview by ID
 func (h *PublicHandler) GetPreview(c *fiber.Ctx) error {
-	previewID := c.Params("id")
-	if previewID == "" {
+	previewIDStr := c.Params("id")
+	if previewIDStr == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Preview ID is required",
 		})
 	}
 
-	// Previews are stored in S3, generate URL directly
-	previewURL := h.deps.PublicService.GetS3Client().GetPreviewURL(fmt.Sprintf("style-previews/%s.jpg", previewID))
-	if previewURL == "" {
+	// Parse UUID
+	previewID, err := uuid.Parse(previewIDStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid preview ID format",
+		})
+	}
+
+	// Get preview from database
+	preview, err := h.deps.PublicService.GetPublicRepository().GetByID(c.Context(), previewID)
+	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": "Preview not found",
 		})
 	}
 
-	return c.JSON(fiber.Map{
-		"id":  previewID,
-		"url": previewURL,
-	})
+	return c.JSON(preview)
 }
 
 // DeletePreview deletes a preview by ID
 func (h *PublicHandler) DeletePreview(c *fiber.Ctx) error {
-	previewID := c.Params("id")
-	if previewID == "" {
+	previewIDStr := c.Params("id")
+	if previewIDStr == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Preview ID is required",
 		})
 	}
 
-	// Previews in S3 have automatic TTL deletion, no manual deletion needed
+	// Parse UUID
+	previewID, err := uuid.Parse(previewIDStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid preview ID format",
+		})
+	}
+
+	// Get preview first to get S3 key
+	preview, err := h.deps.PublicService.GetPublicRepository().GetByID(c.Context(), previewID)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Preview not found",
+		})
+	}
+
+	// Delete from database
+	if err := h.deps.PublicService.GetPublicRepository().Delete(c.Context(), previewID); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to delete preview from database",
+		})
+	}
+
+	// Schedule S3 deletion (async)
+	if preview.S3Key != "" {
+		h.deps.PublicService.GetS3Client().SchedulePreviewDeletion(preview.S3Key)
+	}
+
 	return c.JSON(fiber.Map{
-		"message": "Preview will be automatically deleted by TTL",
+		"message": "Preview deleted successfully",
 	})
 }
 

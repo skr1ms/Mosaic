@@ -51,10 +51,12 @@ type PartnerRepositoryInterface interface {
 
 type PublicRepositoryInterface interface {
 	Create(ctx context.Context, preview *PreviewData) error
-	GetByID(ctx context.Context, id string) (*PreviewData, error)
-	Delete(ctx context.Context, id string) error
-	GetByUserSession(ctx context.Context, sessionID string) ([]*PreviewData, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*PreviewData, error)
+	Delete(ctx context.Context, id uuid.UUID) error
+	GetByImageID(ctx context.Context, imageID uuid.UUID) ([]*PreviewData, error)
+	GetByStyle(ctx context.Context, style, size string) ([]*PreviewData, error)
 	CleanupExpired(ctx context.Context) error
+	SetTTL(ctx context.Context, id uuid.UUID, ttl time.Duration) error
 }
 
 type ImageServiceInterface interface {

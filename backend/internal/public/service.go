@@ -176,6 +176,21 @@ func (s *PublicService) ActivateCoupon(code string) (map[string]any, error) {
 
 // UploadImage uploads image for processing (uses ImageService)
 func (s *PublicService) UploadImage(couponID string, file *multipart.FileHeader) (map[string]any, error) {
+	// If no coupon provided, treat as preview-only upload
+	if couponID == "" {
+		// Generate a temporary image ID for preview purposes
+		tempImageID := uuid.New()
+
+		return map[string]any{
+			"message":      "Изображение успешно загружено для предпросмотра",
+			"image_id":     tempImageID,
+			"next_step":    "generate_preview",
+			"coupon_size":  "30x40",   // Default size for previews
+			"coupon_style": "classic", // Default style for previews
+			"is_preview":   true,
+		}, nil
+	}
+
 	couponUUID, err := uuid.Parse(couponID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid coupon id: %w", err)
@@ -203,6 +218,7 @@ func (s *PublicService) UploadImage(couponID string, file *multipart.FileHeader)
 		"next_step":    "edit_image",
 		"coupon_size":  coupon.Size,
 		"coupon_style": coupon.Style,
+		"is_preview":   false,
 	}, nil
 }
 
@@ -746,16 +762,13 @@ func (s *PublicService) GeneratePreview(ctx context.Context, file *multipart.Fil
 	}
 
 	// Generate unique ID
-	previewID := uuid.New().String()
+	previewID := uuid.New()
 
 	// Upload to S3 preview bucket with TTL
-	previewKey := fmt.Sprintf("previews/%s.jpg", previewID)
+	previewKey := fmt.Sprintf("previews/%s.jpg", previewID.String())
 	if err := s.deps.S3Client.UploadToPreviewBucket(ctx, previewKey, &buf, int64(buf.Len()), "image/jpeg"); err != nil {
 		return nil, fmt.Errorf("failed to upload preview: %w", err)
 	}
-
-	// Schedule automatic deletion after 30 minutes
-	s.deps.S3Client.SchedulePreviewDeletion(previewKey)
 
 	// Get public URL for preview
 	previewURL := s.deps.S3Client.GetPreviewURL(previewKey)
@@ -763,14 +776,25 @@ func (s *PublicService) GeneratePreview(ctx context.Context, file *multipart.Fil
 		return nil, fmt.Errorf("failed to get preview URL")
 	}
 
-	// Save preview data
+	// Save preview data for database
 	previewData := &PreviewData{
 		ID:       previewID,
 		URL:      previewURL,
 		Style:    fmt.Sprintf("%s_%s", style, lighting),
 		Contrast: contrast,
 		Size:     size,
+		S3Key:    previewKey,
 	}
+
+	// Save to database
+	if err := s.deps.PublicRepository.Create(ctx, previewData); err != nil {
+		// If database save fails, cleanup S3
+		s.deps.S3Client.SchedulePreviewDeletion(previewKey)
+		return nil, fmt.Errorf("failed to save preview to database: %w", err)
+	}
+
+	// Schedule automatic deletion after 24 hours (database TTL handles this too)
+	s.deps.S3Client.SchedulePreviewDeletion(previewKey)
 
 	return previewData, nil
 }
@@ -812,16 +836,13 @@ func (s *PublicService) GenerateStylePreview(ctx context.Context, file *multipar
 	}
 
 	// Generate unique ID
-	previewID := uuid.New().String()
+	previewID := uuid.New()
 
 	// Upload to S3 preview bucket with TTL
-	previewKey := fmt.Sprintf("style-previews/%s_%s.jpg", style, previewID)
+	previewKey := fmt.Sprintf("style-previews/%s_%s.jpg", style, previewID.String())
 	if err := s.deps.S3Client.UploadToPreviewBucket(ctx, previewKey, &buf, int64(buf.Len()), "image/jpeg"); err != nil {
 		return nil, fmt.Errorf("failed to upload preview: %w", err)
 	}
-
-	// Schedule automatic deletion after 30 minutes
-	s.deps.S3Client.SchedulePreviewDeletion(previewKey)
 
 	// Get public URL for preview
 	previewURL := s.deps.S3Client.GetPreviewURL(previewKey)
@@ -829,13 +850,25 @@ func (s *PublicService) GenerateStylePreview(ctx context.Context, file *multipar
 		return nil, fmt.Errorf("failed to get preview URL")
 	}
 
-	// Create preview data
+	// Create preview data for database
 	previewData := &PreviewData{
-		ID:    previewID,
-		URL:   previewURL,
-		Style: style,
-		Size:  size,
+		ID:       previewID,
+		URL:      previewURL,
+		Style:    style,
+		Contrast: "normal", // Default contrast for style previews
+		Size:     size,
+		S3Key:    previewKey,
 	}
+
+	// Save to database
+	if err := s.deps.PublicRepository.Create(ctx, previewData); err != nil {
+		// If database save fails, cleanup S3
+		s.deps.S3Client.SchedulePreviewDeletion(previewKey)
+		return nil, fmt.Errorf("failed to save preview to database: %w", err)
+	}
+
+	// Schedule automatic deletion after 24 hours (database TTL handles this too)
+	s.deps.S3Client.SchedulePreviewDeletion(previewKey)
 
 	return previewData, nil
 }
@@ -854,14 +887,23 @@ func (s *PublicService) GenerateAIPreview(ctx context.Context, file *multipart.F
 		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
 
-	// For now, return a placeholder
-	previewID := uuid.New().String()
-	previewURL := fmt.Sprintf("/ai-previews/%s.jpg", previewID)
+	// For now, return a placeholder (implement AI generation later)
+	previewID := uuid.New()
+	s3Key := fmt.Sprintf("ai-previews/%s.jpg", previewID.String())
+	previewURL := s.deps.S3Client.GetPreviewURL(s3Key)
 
 	previewData := &PreviewData{
-		ID:    previewID,
-		URL:   previewURL,
-		Style: "ai-generated",
+		ID:       previewID,
+		URL:      previewURL,
+		Style:    "ai_generated",
+		Contrast: "normal",
+		Size:     "unknown",
+		S3Key:    s3Key,
+	}
+
+	// Save to database
+	if err := s.deps.PublicRepository.Create(ctx, previewData); err != nil {
+		return nil, fmt.Errorf("failed to save AI preview to database: %w", err)
 	}
 
 	return previewData, nil

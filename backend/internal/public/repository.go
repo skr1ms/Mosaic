@@ -2,7 +2,6 @@ package public
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -19,28 +18,13 @@ func NewPublicRepository(db *bun.DB) *PublicRepository {
 }
 
 func (r *PublicRepository) Create(ctx context.Context, preview *PreviewData) error {
-	query := `
-		INSERT INTO previews (id, url, style, contrast, size, created_at, expires_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
-	`
-
-	if preview.ID == "" {
-		preview.ID = uuid.New().String()
+	// Set TTL to 24 hours from now for previews
+	if preview.ExpiresAt == nil {
+		expiresAt := time.Now().Add(24 * time.Hour)
+		preview.ExpiresAt = &expiresAt
 	}
 
-	createdAt := time.Now()
-	expiresAt := createdAt.Add(24 * time.Hour) // Previews expire after 24 hours
-
-	_, err := r.db.ExecContext(ctx, query,
-		preview.ID,
-		preview.URL,
-		preview.Style,
-		preview.Contrast,
-		preview.Size,
-		createdAt,
-		expiresAt,
-	)
-
+	_, err := r.db.NewInsert().Model(preview).Exec(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to create preview: %w", err)
 	}
@@ -48,36 +32,26 @@ func (r *PublicRepository) Create(ctx context.Context, preview *PreviewData) err
 	return nil
 }
 
-func (r *PublicRepository) GetByID(ctx context.Context, id string) (*PreviewData, error) {
-	query := `
-		SELECT id, url, style, contrast, size
-		FROM previews
-		WHERE id = $1 AND expires_at > NOW()
-	`
-
-	var preview PreviewData
-	err := r.db.QueryRowContext(ctx, query, id).Scan(
-		&preview.ID,
-		&preview.URL,
-		&preview.Style,
-		&preview.Contrast,
-		&preview.Size,
-	)
+func (r *PublicRepository) GetByID(ctx context.Context, id uuid.UUID) (*PreviewData, error) {
+	preview := &PreviewData{}
+	err := r.db.NewSelect().
+		Model(preview).
+		Where("id = ? AND (expires_at IS NULL OR expires_at > NOW())", id).
+		Scan(ctx)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("preview not found")
-		}
 		return nil, fmt.Errorf("failed to get preview: %w", err)
 	}
 
-	return &preview, nil
+	return preview, nil
 }
 
-func (r *PublicRepository) Delete(ctx context.Context, id string) error {
-	query := `DELETE FROM previews WHERE id = $1`
+func (r *PublicRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	result, err := r.db.NewDelete().
+		Model((*PreviewData)(nil)).
+		Where("id = ?", id).
+		Exec(ctx)
 
-	result, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete preview: %w", err)
 	}
@@ -94,45 +68,67 @@ func (r *PublicRepository) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *PublicRepository) GetByUserSession(ctx context.Context, sessionID string) ([]*PreviewData, error) {
-	query := `
-		SELECT id, url, style, contrast, size
-		FROM previews
-		WHERE session_id = $1 AND expires_at > NOW()
-		ORDER BY created_at DESC
-	`
-
-	rows, err := r.db.QueryContext(ctx, query, sessionID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get previews: %w", err)
-	}
-	defer rows.Close()
-
+func (r *PublicRepository) GetByImageID(ctx context.Context, imageID uuid.UUID) ([]*PreviewData, error) {
 	var previews []*PreviewData
-	for rows.Next() {
-		var preview PreviewData
-		err := rows.Scan(
-			&preview.ID,
-			&preview.URL,
-			&preview.Style,
-			&preview.Contrast,
-			&preview.Size,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan preview: %w", err)
-		}
-		previews = append(previews, &preview)
+	err := r.db.NewSelect().
+		Model(&previews).
+		Where("image_id = ? AND (expires_at IS NULL OR expires_at > NOW())", imageID).
+		Order("created_at DESC").
+		Scan(ctx)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get previews by image ID: %w", err)
+	}
+
+	return previews, nil
+}
+
+func (r *PublicRepository) GetByStyle(ctx context.Context, style, size string) ([]*PreviewData, error) {
+	var previews []*PreviewData
+	err := r.db.NewSelect().
+		Model(&previews).
+		Where("style = ? AND size = ? AND (expires_at IS NULL OR expires_at > NOW())", style, size).
+		Order("created_at DESC").
+		Limit(10). // Limit to avoid too many results
+		Scan(ctx)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get previews by style: %w", err)
 	}
 
 	return previews, nil
 }
 
 func (r *PublicRepository) CleanupExpired(ctx context.Context) error {
-	query := `DELETE FROM previews WHERE expires_at < NOW()`
+	result, err := r.db.NewDelete().
+		Model((*PreviewData)(nil)).
+		Where("expires_at < NOW()").
+		Exec(ctx)
 
-	_, err := r.db.ExecContext(ctx, query)
 	if err != nil {
 		return fmt.Errorf("failed to cleanup expired previews: %w", err)
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected > 0 {
+		// Log cleanup activity if needed
+		fmt.Printf("Cleaned up %d expired previews\n", rowsAffected)
+	}
+
+	return nil
+}
+
+func (r *PublicRepository) SetTTL(ctx context.Context, id uuid.UUID, ttl time.Duration) error {
+	expiresAt := time.Now().Add(ttl)
+
+	_, err := r.db.NewUpdate().
+		Model((*PreviewData)(nil)).
+		Set("expires_at = ?, updated_at = NOW()", expiresAt).
+		Where("id = ?", id).
+		Exec(ctx)
+
+	if err != nil {
+		return fmt.Errorf("failed to set TTL for preview: %w", err)
 	}
 
 	return nil

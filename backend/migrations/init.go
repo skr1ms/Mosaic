@@ -12,6 +12,7 @@ import (
 	"github.com/skr1ms/mosaic/internal/image"
 	"github.com/skr1ms/mosaic/internal/partner"
 	"github.com/skr1ms/mosaic/internal/payment"
+	"github.com/skr1ms/mosaic/internal/public"
 	"github.com/skr1ms/mosaic/pkg/bcrypt"
 	"github.com/skr1ms/mosaic/pkg/db"
 	"github.com/uptrace/bun"
@@ -39,6 +40,7 @@ func Init(cfg *config.Config) {
 		(*chat.Message)(nil),
 		(*chat.SupportChat)(nil),
 		(*chat.SupportMessage)(nil),
+		(*public.PreviewData)(nil),
 	}
 
 	for _, model := range models {

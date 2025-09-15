@@ -27,6 +27,18 @@ const PreviewStylesPage = () => {
   const [isGeneratingPreviews, setIsGeneratingPreviews] = useState(false);
   const [stylePreviews, setStylePreviews] = useState({});
 
+  const getSizeTitle = (sizeKey) => {
+    const sizeTranslations = {
+      '21x30': t('diamond_mosaic_page.size_selection.sizes.21x30'),
+      '30x40': t('diamond_mosaic_page.size_selection.sizes.30x40'),
+      '40x40': t('diamond_mosaic_page.size_selection.sizes.40x40'),
+      '40x50': t('diamond_mosaic_page.size_selection.sizes.40x50'),
+      '40x60': t('diamond_mosaic_page.size_selection.sizes.40x60'),
+      '50x70': t('diamond_mosaic_page.size_selection.sizes.50x70'),
+    };
+    return sizeTranslations[sizeKey] || sizeKey;
+  };
+
   const styles = [
     {
       key: 'grayscale',
@@ -377,7 +389,7 @@ const PreviewStylesPage = () => {
               {t('diamond_mosaic_styles.page_title')}
             </h1>
             <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
-              {t('diamond_mosaic_styles.size_label', { size: imageData?.size || 'Unknown' })} {t('common.cm')}
+              {t('diamond_mosaic_styles.size_label', { size: getSizeTitle(imageData?.size) || 'Unknown' })}
             </p>
           </div>
         </div>
