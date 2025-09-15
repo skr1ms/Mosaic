@@ -240,6 +240,17 @@ const Chat = () => {
     ]
   );
 
+  const scheduleReconnect = useCallback(() => {
+    if (!currentUser) return;
+    const attempt = Math.min(reconnectAttemptsRef.current + 1, 6);
+    reconnectAttemptsRef.current = attempt;
+    const delay = Math.pow(2, attempt) * 1000;
+    if (reconnectRef.current) clearTimeout(reconnectRef.current);
+    reconnectRef.current = setTimeout(() => {
+      if (!wsRef.current) connectWebSocket();
+    }, delay);
+  }, [currentUser]);
+
   const connectWebSocket = useCallback(() => {
     if (wsRef.current || !currentUser) return;
     const token = localStorage.getItem("token") || "";
@@ -426,17 +437,6 @@ const Chat = () => {
     refreshUnreadCount,
     refreshSupportUnreadCount,
   ]);
-
-  const scheduleReconnect = useCallback(() => {
-    if (!currentUser) return;
-    const attempt = Math.min(reconnectAttemptsRef.current + 1, 6);
-    reconnectAttemptsRef.current = attempt;
-    const delay = Math.pow(2, attempt) * 1000;
-    if (reconnectRef.current) clearTimeout(reconnectRef.current);
-    reconnectRef.current = setTimeout(() => {
-      if (!wsRef.current) connectWebSocket();
-    }, delay);
-  }, [currentUser, connectWebSocket]);
 
   useEffect(() => {
     if (isOpen) {
