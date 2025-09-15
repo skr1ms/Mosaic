@@ -21,7 +21,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 	"github.com/skr1ms/mosaic/internal/types"
-	"github.com/skr1ms/mosaic/pkg/goroutine"
 	"github.com/skr1ms/mosaic/pkg/mosaic"
 	"github.com/skr1ms/mosaic/pkg/palette"
 	"github.com/skr1ms/mosaic/pkg/stableDiffusion"
@@ -41,10 +40,7 @@ type ImageServiceDeps struct {
 }
 
 type ImageService struct {
-	deps             *ImageServiceDeps
-	goroutineManager *goroutine.Manager
-	imageWorkerPool  *goroutine.WorkerPool
-	emailWorkerPool  *goroutine.WorkerPool
+	deps *ImageServiceDeps
 }
 
 func NewImageService(deps *ImageServiceDeps) *ImageService {
@@ -52,14 +48,9 @@ func NewImageService(deps *ImageServiceDeps) *ImageService {
 		deps: deps,
 	}
 
-	s.goroutineManager = goroutine.NewManager(context.Background())
-
-	s.imageWorkerPool = s.goroutineManager.NewWorkerPool("image_processing", 5, 100)
-	s.emailWorkerPool = s.goroutineManager.NewWorkerPool("email_sending", 3, 50)
-
-	s.goroutineManager.StartGoroutine("retention_cleaner", func() error {
-		return s.startRetentionCleaner()
-	})
+	go func() {
+		s.startRetentionCleaner()
+	}()
 
 	return s
 }
@@ -944,14 +935,14 @@ func (s *ImageService) mapCouponStyleToPaletteStyle(couponStyle string) palette.
 
 // cleanupLocalFilesAsync removes local files asynchronously
 func (s *ImageService) cleanupLocalFilesAsync(couponID uuid.UUID) {
-	s.imageWorkerPool.SubmitTask(func() {
+	go func() {
 		s.cleanupLocalFiles(couponID)
-	})
+	}()
 }
 
 // sendSchemaEmailAsync sends email to user with ready schema asynchronously
 func (s *ImageService) sendSchemaEmailAsync(imageRecord *Image, schemaS3Key string) {
-	s.emailWorkerPool.SubmitTask(func() {
+	go func() {
 		coupon, err := s.deps.CouponRepository.GetByID(context.Background(), imageRecord.CouponID)
 		if err != nil {
 			log.Error().Err(err).Str("coupon_id", imageRecord.CouponID.String()).Msg("Failed to get coupon for email sending")
@@ -981,23 +972,7 @@ func (s *ImageService) sendSchemaEmailAsync(imageRecord *Image, schemaS3Key stri
 				Str("coupon_code", coupon.Code).
 				Msg("Schema email sent successfully")
 		}
-	})
-}
-
-// Close releases service resources
-func (s *ImageService) Close() error {
-	if s.goroutineManager != nil {
-		return s.goroutineManager.Close()
-	}
-	return nil
-}
-
-// GetMetrics returns service metrics
-func (s *ImageService) GetMetrics() goroutine.Metrics {
-	if s.goroutineManager != nil {
-		return s.goroutineManager.GetMetrics()
-	}
-	return goroutine.Metrics{}
+	}()
 }
 
 // openFromStorage opens file from local path (file://) or downloads from S3
@@ -1046,12 +1021,6 @@ func (s *ImageService) startRetentionCleaner() error {
 				log.Error().Err(err).Msg("Failed to cleanup old files")
 			}
 		case <-time.After(1 * time.Hour):
-			for i := 0; i < 3600; i++ {
-				time.Sleep(100 * time.Millisecond)
-				if s.goroutineManager.IsShuttingDown() {
-					return nil
-				}
-			}
 		}
 	}
 }

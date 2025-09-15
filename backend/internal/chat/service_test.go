@@ -1096,13 +1096,18 @@ func TestNewChatService(t *testing.T) {
 	repo := &Repository{}
 	mockS3 := new(MockS3Uploader)
 
-	service := NewChatService(repo, mockS3)
+	deps := &ChatServiceDeps{
+		ChatRepository: repo,
+		S3Client:       mockS3,
+		Hub:            nil,
+	}
+
+	service := NewChatService(deps)
 
 	assert.NotNil(t, service)
 	assert.NotNil(t, service.deps)
 	assert.NotNil(t, service.deps.ChatRepository)
 	assert.NotNil(t, service.deps.S3Client)
-	assert.NotNil(t, service.deps.Hub)
 	assert.Equal(t, repo, service.deps.ChatRepository)
 	assert.Equal(t, mockS3, service.deps.S3Client)
 }

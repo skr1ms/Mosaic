@@ -9,16 +9,14 @@ import (
 	"github.com/gofiber/fiber/v2"
 	websocket "github.com/gofiber/websocket/v2"
 	"github.com/google/uuid"
-	"github.com/skr1ms/mosaic/pkg/goroutine"
 	"github.com/skr1ms/mosaic/pkg/jwt"
 	"github.com/skr1ms/mosaic/pkg/middleware"
 )
 
 type ChatHandlerDeps struct {
-	ChatService      ChatServiceInterface
-	JwtService       JWTServiceInterface
-	Logger           *middleware.Logger
-	GoroutineManager *goroutine.Manager
+	ChatService ChatServiceInterface
+	JwtService  JWTServiceInterface
+	Logger      *middleware.Logger
 }
 
 type ChatHandler struct {

@@ -20,13 +20,9 @@ type ChatService struct {
 	deps *ChatServiceDeps
 }
 
-func NewChatService(repo *Repository, s3 S3UploaderInterface) *ChatService {
+func NewChatService(deps *ChatServiceDeps) *ChatService {
 	return &ChatService{
-		deps: &ChatServiceDeps{
-			ChatRepository: repo,
-			S3Client:       s3,
-			Hub:            NewHub(),
-		},
+		deps: deps,
 	}
 }
 

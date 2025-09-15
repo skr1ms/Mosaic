@@ -52,7 +52,6 @@ import (
 	"github.com/skr1ms/mosaic/pkg/email"
 
 	"github.com/skr1ms/mosaic/pkg/gitlab"
-	"github.com/skr1ms/mosaic/pkg/goroutine"
 	"github.com/skr1ms/mosaic/pkg/jwt"
 	"github.com/skr1ms/mosaic/pkg/middleware"
 	"github.com/skr1ms/mosaic/pkg/mosaic"
@@ -75,7 +74,6 @@ func InitializeApp() *fiber.App {
 		panic(fmt.Sprintf("Failed to load config: %v", err))
 	}
 
-	// Creating temporary directories for image processing
 	tempDirs := []string{"/tmp/originals", "/tmp/edited", "/tmp/processed", "/tmp/previews", "/tmp/mosaic_output"}
 	for _, dir := range tempDirs {
 		if err := os.MkdirAll(dir, 0755); err != nil {
@@ -112,7 +110,6 @@ func InitializeApp() *fiber.App {
 		panic(fmt.Sprintf("Failed to create S3 client: %v", err))
 	}
 
-	// Start preview cleanup job for automatic deletion of expired previews
 	ctx := context.Background()
 	if err := s3Client.StartPreviewCleanupJob(ctx); err != nil {
 		appLogger.GetZerologLogger().Error().
@@ -143,22 +140,17 @@ func InitializeApp() *fiber.App {
 	})
 	app.Use(cors.New(cors.Config{
 		AllowOriginsFunc: func(origin string) bool {
-			// Allow empty origin for same-origin requests
 			if origin == "" {
 				return true
 			}
 
-			// Production domains
 			if origin == "https://photo.doyoupaint.com" || origin == "https://adm.doyoupaint.com" {
 				return true
 			}
 
-			// Check if origin is a partner domain
-			// Extract domain from origin (remove protocol)
 			domain := strings.TrimPrefix(origin, "https://")
 			domain = strings.TrimPrefix(domain, "http://")
 
-			// Query database for partner domain
 			var count int
 			err := database.DB.NewRaw("SELECT COUNT(*) FROM partners WHERE domain = ? AND status = 'active'", domain).Scan(context.Background(), &count)
 
@@ -173,7 +165,6 @@ func InitializeApp() *fiber.App {
 				return true
 			}
 
-			// Development origins
 			return strings.Contains(origin, "localhost") || strings.Contains(origin, "127.0.0.1")
 		},
 		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
@@ -185,11 +176,9 @@ func InitializeApp() *fiber.App {
 	app.Use(recover.New())
 	app.Use(appLogger.RequestIDMiddleware())
 
-	// Skip logging for WebSocket paths and health checks
 	app.Use(appLogger.SkipLoggingMiddleware("/api/ws/chat", "/health", "/metrics"))
 
 	app.Use(func(c *fiber.Ctx) error {
-		// Skip WebSocket paths
 		if c.Path() == "/api/ws/chat" {
 			return c.Next()
 		}
@@ -197,7 +186,6 @@ func InitializeApp() *fiber.App {
 	})
 
 	app.Use(func(c *fiber.Ctx) error {
-		// Skip WebSocket paths
 		if c.Path() == "/api/ws/chat" {
 			return c.Next()
 		}
@@ -250,10 +238,12 @@ func InitializeApp() *fiber.App {
 
 	// service
 	mailSender := email.NewMailer(cfg, appLogger)
+	emailAdapter := queue.NewEmailServiceAdapter(mailSender)
 	recaptchService := recaptcha.NewVerifier(cfg.RecaptchaConfig.SecretKey, 0.5, appLogger)
 	jwtService := jwt.NewJWT(cfg.AuthConfig.AccessTokenSecret, cfg.AuthConfig.RefreshTokenSecret)
-
 	zipService := zip.NewZipService(appLogger)
+	paletteService := palette.NewPaletteService(cfg.MosaicGeneratorConfig.PalettePath, appLogger)
+
 	authService := auth.NewAuthService(&auth.AuthServiceDeps{
 		PartnerRepository: partnerRepo,
 		AdminRepository:   adminRepo,
@@ -263,9 +253,6 @@ func InitializeApp() *fiber.App {
 		Config:            cfg,
 	})
 
-	// Initialize goroutine manager
-	goroutineManager := goroutine.NewManager(context.Background())
-
 	adminService := admin.NewAdminService(&admin.AdminServiceDeps{
 		AdminRepository:   adminRepo,
 		PartnerRepository: partnerRepo,
@@ -274,7 +261,6 @@ func InitializeApp() *fiber.App {
 		S3Client:          s3Client,
 		RedisClient:       redisClient,
 		GitLabClient:      gitlabClient,
-		GoroutineManager:  goroutineManager,
 	})
 
 	partnerService := partner.NewPartnerService(&partner.PartnerServiceDeps{
@@ -287,16 +273,14 @@ func InitializeApp() *fiber.App {
 		MailSender:        mailSender,
 		Config:            cfg,
 	})
-
 	partnerAdapter := NewPartnerRepositoryAdapter(partnerRepo)
+
 	couponService := coupon.NewCouponService(&coupon.CouponServiceDeps{
 		CouponRepository:  couponRepo,
 		PartnerRepository: partnerAdapter,
 		RedisClient:       redisClient,
 		S3Client:          s3Client,
 	})
-
-	paletteService := palette.NewPaletteService(cfg.MosaicGeneratorConfig.PalettePath, appLogger)
 	couponAdapter := NewCouponRepositoryAdapter(couponRepo)
 
 	mosaicGenerator := mosaic.NewMosaicGenerator(
@@ -304,7 +288,6 @@ func InitializeApp() *fiber.App {
 		cfg.MosaicGeneratorConfig.OutputDir,
 		cfg.MosaicGeneratorConfig.PythonCommand,
 		appLogger,
-		goroutineManager,
 	)
 
 	imageService := image.NewImageService(&image.ImageServiceDeps{
@@ -318,6 +301,8 @@ func InitializeApp() *fiber.App {
 		PaletteService:        paletteService,
 		WorkingDir:            "/tmp",
 	})
+	imageAdapter := queue.NewImageServiceAdapter(imageService)
+
 
 	paymentService := payment.NewPaymentService(&payment.PaymentServiceDeps{
 		PaymentRepository:         paymentRepo,
@@ -349,13 +334,14 @@ func InitializeApp() *fiber.App {
 		RedisClient:       redisClient,
 	})
 
-	chatService := chat.NewChatService(chatRepo, s3Client)
+	chatService := chat.NewChatService(&chat.ChatServiceDeps{
+		ChatRepository: chatRepo,
+		S3Client:       s3Client,
+		Hub:            chat.NewHub(),
+	})
 
 	cronService := stats.NewCronService(statsService)
 	cronService.Start()
-
-	imageAdapter := queue.NewImageServiceAdapter(imageService)
-	emailAdapter := queue.NewEmailServiceAdapter(mailSender)
 
 	queueManager.StartAllWorkers(imageAdapter, emailAdapter)
 
@@ -366,10 +352,9 @@ func InitializeApp() *fiber.App {
 	})
 
 	chat.NewChatHandler(api, &chat.ChatHandlerDeps{
-		ChatService:      chatService,
-		JwtService:       jwtService,
-		Logger:           appLogger,
-		GoroutineManager: goroutineManager,
+		ChatService: chatService,
+		JwtService:  jwtService,
+		Logger:      appLogger,
 	})
 
 	admin.NewAdminHandler(api, &admin.AdminHandlerDeps{
@@ -428,8 +413,6 @@ func InitializeApp() *fiber.App {
 		// Metrics server is running on port
 		metricsApp.Listen(":" + cfg.MetricsConfig.Port)
 	}()
-
-	// Server is running on port
 
 	return app
 }

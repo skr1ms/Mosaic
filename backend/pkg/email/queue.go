@@ -1,12 +1,10 @@
 package email
 
 import (
-	"context"
 	"fmt"
 	"sync"
 	"time"
 
-	"github.com/skr1ms/mosaic/pkg/goroutine"
 	"github.com/skr1ms/mosaic/pkg/middleware"
 )
 
@@ -34,9 +32,6 @@ type EmailQueue struct {
 	running          bool
 	mu               sync.RWMutex
 	wg               sync.WaitGroup
-	goroutineManager *goroutine.Manager
-	workerPool       *goroutine.WorkerPool
-	retryPool        *goroutine.WorkerPool
 	logger           *middleware.Logger
 }
 
@@ -50,11 +45,6 @@ func NewEmailQueue(mailer *Mailer, workers int, logger *middleware.Logger) *Emai
 		quit:      make(chan struct{}),
 		logger:    logger,
 	}
-
-	queue.goroutineManager = goroutine.NewManager(context.Background())
-
-	queue.workerPool = queue.goroutineManager.NewWorkerPool("email_workers", workers, 1000)
-	queue.retryPool = queue.goroutineManager.NewWorkerPool("retry_scheduler", 1, 10)
 
 	return queue
 }
@@ -71,9 +61,9 @@ func (q *EmailQueue) Start() {
 	q.running = true
 	q.logger.GetZerologLogger().Info().Int("workers", q.workers).Msg("Starting email queue")
 
-	q.retryPool.SubmitTask(func() {
+	go func() {
 		q.retryScheduler()
-	})
+	}()
 }
 
 // Stop stops queue processing
@@ -88,27 +78,9 @@ func (q *EmailQueue) Stop() {
 	q.logger.GetZerologLogger().Info().Msg("Stopping email queue")
 	close(q.quit)
 
-	if q.goroutineManager != nil {
-		q.goroutineManager.Close()
-	}
-
 	q.wg.Wait()
 	q.running = false
 	q.logger.GetZerologLogger().Info().Msg("Email queue stopped")
-}
-
-// Close releases queue resources
-func (q *EmailQueue) Close() error {
-	q.Stop()
-	return nil
-}
-
-// GetMetrics returns queue metrics
-func (q *EmailQueue) GetMetrics() goroutine.Metrics {
-	if q.goroutineManager != nil {
-		return q.goroutineManager.GetMetrics()
-	}
-	return goroutine.Metrics{}
 }
 
 // SendEmail adds email to queue

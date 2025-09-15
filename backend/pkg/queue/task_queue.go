@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
-	"github.com/skr1ms/mosaic/pkg/goroutine"
 	"github.com/skr1ms/mosaic/pkg/middleware"
 )
 
@@ -17,9 +16,6 @@ type TaskQueue struct {
 	redisClient       *redis.Client
 	ctx               context.Context
 	cancel            context.CancelFunc
-	goroutineManager  *goroutine.Manager
-	mainWorkerPool    *goroutine.WorkerPool
-	delayedWorkerPool *goroutine.WorkerPool
 	logger            *middleware.Logger
 }
 
@@ -50,13 +46,6 @@ func NewTaskQueue(name string, redisClient *redis.Client, logger *middleware.Log
 		cancel:      cancel,
 		logger:      logger,
 	}
-
-	// Create goroutine manager
-	queue.goroutineManager = goroutine.NewManager(ctx)
-
-	// Create worker pools
-	queue.mainWorkerPool = queue.goroutineManager.NewWorkerPool("main_worker", 3, 100)
-	queue.delayedWorkerPool = queue.goroutineManager.NewWorkerPool("delayed_worker", 1, 20)
 
 	return queue
 }
@@ -290,7 +279,7 @@ func (q *TaskQueue) MarkFailed(task *Task, err error) error {
 }
 
 func (q *TaskQueue) StartWorker(handlers map[string]TaskHandler) {
-	q.delayedWorkerPool.SubmitTask(func() {
+	go func() {
 		ticker := time.NewTicker(30 * time.Second)
 		defer ticker.Stop()
 
@@ -304,9 +293,9 @@ func (q *TaskQueue) StartWorker(handlers map[string]TaskHandler) {
 				return
 			}
 		}
-	})
+	}()
 
-	q.mainWorkerPool.SubmitTask(func() {
+	go func() {
 		for {
 			select {
 			case <-q.ctx.Done():
@@ -352,25 +341,14 @@ func (q *TaskQueue) StartWorker(handlers map[string]TaskHandler) {
 				}
 			}
 		}
-	})
+	}()
 }
 
 func (q *TaskQueue) Close() error {
 	q.cancel()
 
-	if q.goroutineManager != nil {
-		return q.goroutineManager.Close()
-	}
-
 	q.logger.GetZerologLogger().Info().Str("queue", q.name).Msg("Task queue stopped")
 	return nil
-}
-
-func (q *TaskQueue) GetMetrics() goroutine.Metrics {
-	if q.goroutineManager != nil {
-		return q.goroutineManager.GetMetrics()
-	}
-	return goroutine.Metrics{}
 }
 
 func (q *TaskQueue) getQueueKey(priority int) string {

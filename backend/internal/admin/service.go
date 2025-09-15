@@ -14,7 +14,6 @@ import (
 	"github.com/skr1ms/mosaic/internal/partner"
 	"github.com/skr1ms/mosaic/pkg/bcrypt"
 	"github.com/skr1ms/mosaic/pkg/gitlab"
-	"github.com/skr1ms/mosaic/pkg/goroutine"
 	"github.com/skr1ms/mosaic/pkg/randomCouponCode"
 	"github.com/skr1ms/mosaic/pkg/updatePartnerData"
 	validateData "github.com/skr1ms/mosaic/pkg/validateData"
@@ -28,7 +27,6 @@ type AdminServiceDeps struct {
 	S3Client          S3ClientInterface
 	RedisClient       RedisClientInterface
 	GitLabClient      *gitlab.Client
-	GoroutineManager  *goroutine.Manager
 }
 
 type AdminService struct {
@@ -313,16 +311,16 @@ func (s *AdminService) CreatePartner(req partner.CreatePartnerRequest) (*partner
 	}
 
 	// Trigger CI/CD pipeline for domain update if GitLab client is available
-	if s.deps.GitLabClient != nil && s.deps.GoroutineManager != nil {
+	if s.deps.GitLabClient != nil {
 
-		s.deps.GoroutineManager.StartGoroutineWithTimeout("trigger_domain_update_pipeline", 30*time.Second, func() error {
+		go func() {
 			_, err := s.deps.GitLabClient.TriggerDomainUpdateWithDetails("main", "add", "", newPartner.Domain)
 			if err != nil {
-				return fmt.Errorf("failed to trigger domain update pipeline: %w", err)
+				return
 			}
-			return nil
-		})
+		}()
 	} else {
+		return nil, fmt.Errorf("failed to trigger domain update pipeline: %w", err)
 	}
 
 	return newPartner, nil
@@ -400,19 +398,18 @@ func (s *AdminService) UpdatePartnerWithHistory(partnerID uuid.UUID, req partner
 		// Domain was changed, trigger CI/CD pipeline
 
 		if s.deps.GitLabClient == nil {
-		}
-		if s.deps.GoroutineManager == nil {
+			return nil, fmt.Errorf("failed to trigger domain update pipeline: %w", err)
 		}
 
-		if s.deps.GitLabClient != nil && s.deps.GoroutineManager != nil {
-			s.deps.GoroutineManager.StartGoroutineWithTimeout("trigger_domain_update_pipeline", 30*time.Second, func() error {
+		if s.deps.GitLabClient != nil {
+			go func() {
 				_, err := s.deps.GitLabClient.TriggerDomainUpdateWithDetails("main", "update", oldDomain, *req.Domain)
 				if err != nil {
-					return fmt.Errorf("failed to trigger domain update pipeline: %w", err)
+					return
 				}
-				return nil
-			})
+			}()
 		} else {
+			return nil, fmt.Errorf("failed to trigger domain update pipeline: %w", err)
 		}
 	}
 
@@ -480,14 +477,15 @@ func (s *AdminService) DeletePartner(id uuid.UUID) error {
 	}
 
 	// Trigger CI/CD pipeline for domain cleanup if GitLab client is available
-	if s.deps.GitLabClient != nil && s.deps.GoroutineManager != nil && partner.Domain != "" {
-		s.deps.GoroutineManager.StartGoroutineWithTimeout("trigger_domain_cleanup_pipeline", 30*time.Second, func() error {
+	if s.deps.GitLabClient != nil && partner.Domain != "" {
+		go func() {
 			_, err := s.deps.GitLabClient.TriggerDomainUpdateWithDetails("main", "delete", partner.Domain, "")
 			if err != nil {
-				return fmt.Errorf("failed to trigger domain cleanup pipeline: %w", err)
+				return
 			}
-			return nil
-		})
+		}()
+	} else {
+		return fmt.Errorf("failed to trigger domain cleanup pipeline: %w", err)
 	}
 
 	return nil

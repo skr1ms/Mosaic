@@ -9,7 +9,6 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/skr1ms/mosaic/internal/types"
-	"github.com/skr1ms/mosaic/pkg/goroutine"
 	"github.com/skr1ms/mosaic/pkg/middleware"
 )
 
@@ -21,9 +20,7 @@ type ImageHandlerDeps struct {
 
 type ImageHandler struct {
 	fiber.Router
-	deps             *ImageHandlerDeps
-	goroutineManager *goroutine.Manager
-	processingPool   *goroutine.WorkerPool
+	deps *ImageHandlerDeps
 }
 
 func NewImageProcessingHandler(app fiber.Router, deps *ImageHandlerDeps) *ImageHandler {
@@ -31,9 +28,6 @@ func NewImageProcessingHandler(app fiber.Router, deps *ImageHandlerDeps) *ImageH
 		Router: app,
 		deps:   deps,
 	}
-
-	handler.goroutineManager = goroutine.NewManager(context.Background())
-	handler.processingPool = handler.goroutineManager.NewWorkerPool("image_processing", 3, 50)
 
 	// ================================================================
 	// PUBLIC IMAGE ROUTES: /api/public/*
@@ -853,7 +847,7 @@ func (handler *ImageHandler) GetNextTask(c *fiber.Ctx) error {
 
 // We start processing in the background with a separate context
 func (handler *ImageHandler) processImageAsync(imageID uuid.UUID, processParams *ProcessingParams) {
-	handler.processingPool.SubmitTask(func() {
+	go func() {
 		bgCtx, bgCancel := context.WithTimeout(context.Background(), 2*time.Hour)
 		defer bgCancel()
 
@@ -870,12 +864,12 @@ func (handler *ImageHandler) processImageAsync(imageID uuid.UUID, processParams 
 		} else {
 			logger.Info().Msg("Image processing completed successfully")
 		}
-	})
+	}()
 }
 
 // Starting the scheme generation in the background with a separate context
 func (handler *ImageHandler) generateSchemaAsync(imageID uuid.UUID, confirmed bool) {
-	handler.processingPool.SubmitTask(func() {
+	go func() {
 		bgCtx, bgCancel := context.WithTimeout(context.Background(), 1*time.Hour)
 		defer bgCancel()
 
@@ -891,21 +885,5 @@ func (handler *ImageHandler) generateSchemaAsync(imageID uuid.UUID, confirmed bo
 		} else {
 			logger.Info().Msg("Schema generation completed successfully")
 		}
-	})
-}
-
-// Close frees up handler resources
-func (handler *ImageHandler) Close() error {
-	if handler.goroutineManager != nil {
-		return handler.goroutineManager.Close()
-	}
-	return nil
-}
-
-// GetMetrics returns the metrics of the handler's operation
-func (handler *ImageHandler) GetMetrics() goroutine.Metrics {
-	if handler.goroutineManager != nil {
-		return handler.goroutineManager.GetMetrics()
-	}
-	return goroutine.Metrics{}
+	}()
 }

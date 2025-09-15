@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/skr1ms/mosaic/internal/image"
 	"github.com/skr1ms/mosaic/internal/types"
-	"github.com/skr1ms/mosaic/pkg/goroutine"
 	"github.com/skr1ms/mosaic/pkg/marketplace"
 	"github.com/skr1ms/mosaic/pkg/middleware"
 )
@@ -22,9 +21,7 @@ type PublicHandlerDeps struct {
 
 type PublicHandler struct {
 	fiber.Router
-	deps             *PublicHandlerDeps
-	goroutineManager *goroutine.Manager
-	schemaPool       *goroutine.WorkerPool
+	deps *PublicHandlerDeps
 }
 
 func NewPublicHandler(router fiber.Router, deps *PublicHandlerDeps) *PublicHandler {
@@ -32,9 +29,6 @@ func NewPublicHandler(router fiber.Router, deps *PublicHandlerDeps) *PublicHandl
 		Router: router,
 		deps:   deps,
 	}
-
-	handler.goroutineManager = goroutine.NewManager(context.Background())
-	handler.schemaPool = handler.goroutineManager.NewWorkerPool("schema_generation", 2, 30)
 
 	// ================================================================
 	// PUBLIC API ROUTES: /api/*
@@ -1121,7 +1115,7 @@ func (h *PublicHandler) GeneratePartnerProductURL(c *fiber.Ctx) error {
 
 // generateSchemaAsync generates a circuit asynchronously
 func (h *PublicHandler) generateSchemaAsync(imageUUID uuid.UUID, confirmed bool, task *image.Image) {
-	h.schemaPool.SubmitTask(func() {
+	go func() {
 		if err := h.deps.PublicService.GetImageService().GenerateSchema(context.Background(), imageUUID, confirmed); err != nil {
 			return
 		}
@@ -1135,23 +1129,7 @@ func (h *PublicHandler) generateSchemaAsync(imageUUID uuid.UUID, confirmed bool,
 			coupon.CompletedAt = &completedAt
 			h.deps.PublicService.GetCouponRepository().Update(context.Background(), coupon)
 		}
-	})
-}
-
-// Close frees up handler resources
-func (h *PublicHandler) Close() error {
-	if h.goroutineManager != nil {
-		return h.goroutineManager.Close()
-	}
-	return nil
-}
-
-// GetMetrics returns the metrics of the handler's operation
-func (h *PublicHandler) GetMetrics() goroutine.Metrics {
-	if h.goroutineManager != nil {
-		return h.goroutineManager.GetMetrics()
-	}
-	return goroutine.Metrics{}
+	}()
 }
 
 // GeneratePreview generates a preview with specified style

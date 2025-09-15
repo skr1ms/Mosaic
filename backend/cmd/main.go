@@ -29,7 +29,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/skr1ms/mosaic/pkg/goroutine"
 	"github.com/skr1ms/mosaic/pkg/middleware"
 )
 
@@ -38,19 +37,16 @@ var mainLogger = middleware.NewLogger()
 func main() {
 	app := InitializeApp()
 
-	goroutineManager := goroutine.NewManager(context.Background())
-	defer goroutineManager.Close()
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	goroutineManager.StartGoroutine("http_server", func() error {
+	go func() {
 		mainLogger.GetZerologLogger().Info().Msg("Starting server on port 8080")
-		return app.Listen(":8080")
-	})
+		app.Listen(":8080")
+	}()
 
 	select {
 	case <-sigChan:
@@ -69,16 +65,5 @@ func main() {
 		mainLogger.GetZerologLogger().Info().Msg("Server gracefully stopped")
 	}
 
-	if err := goroutineManager.Shutdown(10 * time.Second); err != nil {
-		mainLogger.GetZerologLogger().Error().Err(err).Msg("Failed to shutdown goroutines gracefully")
-	} else {
-		mainLogger.GetZerologLogger().Info().Msg("All goroutines stopped gracefully")
-	}
-
-	metrics := goroutineManager.GetMetrics()
-	mainLogger.GetZerologLogger().Info().
-		Interface("total_goroutines", metrics.TotalGoroutines).
-		Interface("completed_tasks", metrics.CompletedTasks).
-		Interface("failed_tasks", metrics.FailedTasks).
-		Msg("Application shutdown complete")
+	mainLogger.GetZerologLogger().Info().Msg("Application shutdown complete")
 }

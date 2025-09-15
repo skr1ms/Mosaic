@@ -13,16 +13,14 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/skr1ms/mosaic/pkg/goroutine"
 	"github.com/skr1ms/mosaic/pkg/middleware"
 )
 
 type MosaicGenerator struct {
-	ScriptPath       string
-	OutputDir        string
-	PythonCommand    string
-	logger           *middleware.Logger
-	goroutineManager *goroutine.Manager
+	ScriptPath    string
+	OutputDir     string
+	PythonCommand string
+	logger        *middleware.Logger
 }
 
 type GenerationRequest struct {
@@ -48,13 +46,12 @@ type GenerationResult struct {
 	SchemaUUID  string
 }
 
-func NewMosaicGenerator(scriptPath, outputDir, pythonCommand string, logger *middleware.Logger, goroutineManager *goroutine.Manager) *MosaicGenerator {
+func NewMosaicGenerator(scriptPath, outputDir, pythonCommand string, logger *middleware.Logger) *MosaicGenerator {
 	return &MosaicGenerator{
-		ScriptPath:       scriptPath,
-		OutputDir:        outputDir,
-		PythonCommand:    pythonCommand,
-		logger:           logger,
-		goroutineManager: goroutineManager,
+		ScriptPath:    scriptPath,
+		OutputDir:     outputDir,
+		PythonCommand: pythonCommand,
+		logger:        logger,
 	}
 }
 
@@ -104,10 +101,9 @@ func (mg *MosaicGenerator) Generate(ctx context.Context, req *GenerationRequest)
 	cmd.Stderr = &stderrBuf
 
 	done := make(chan error, 1)
-	mg.goroutineManager.StartGoroutineWithTimeout("python_script_execution", 10*time.Minute, func() error {
+	go func() {
 		done <- cmd.Run()
-		return nil
-	})
+	}()
 
 	select {
 	case err := <-done:

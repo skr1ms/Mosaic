@@ -160,10 +160,9 @@ func (handler *ChatHandler) Socket(c *websocket.Conn) {
 	userID := claims.UserID.String()
 	userRole := claims.Role
 	handler.deps.ChatService.GetHub().SetWithRole(userID, c, userRole)
-	handler.deps.GoroutineManager.StartGoroutineWithTimeout("notify_presence_online", 5*time.Second, func() error {
+	go func() {
 		handler.deps.ChatService.NotifyPresence(userID, true)
-		return nil
-	})
+	}()
 
 	// Configure ping/pong keepalive
 	c.SetReadLimit(1024 * 1024)
@@ -258,8 +257,7 @@ func (handler *ChatHandler) Socket(c *websocket.Conn) {
 		}
 	}
 	handler.deps.ChatService.GetHub().Delete(userID)
-	handler.deps.GoroutineManager.StartGoroutineWithTimeout("notify_presence_offline", 5*time.Second, func() error {
+	go func() {
 		handler.deps.ChatService.NotifyPresence(userID, false)
-		return nil
-	})
+	}()
 }

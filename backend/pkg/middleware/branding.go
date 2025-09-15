@@ -8,7 +8,6 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/skr1ms/mosaic/pkg/goroutine"
 	"github.com/uptrace/bun"
 )
 
@@ -80,8 +79,6 @@ type DefaultBranding struct {
 type BrandingMiddleware struct {
 	db               *bun.DB
 	defaultBranding  DefaultBranding
-	goroutineManager *goroutine.Manager
-	loggingPool      *goroutine.WorkerPool
 	logger           *Logger
 }
 
@@ -92,58 +89,39 @@ func NewBrandingMiddleware(db *bun.DB, defaultBranding DefaultBranding, logger *
 		logger:          logger,
 	}
 
-	middleware.goroutineManager = goroutine.NewManager(context.Background())
-	middleware.loggingPool = middleware.goroutineManager.NewWorkerPool("branding_logging", 2, 20)
-
 	return middleware
 }
 
 // logPartnerDetectionAsync logs partner detection asynchronously
 func (b *BrandingMiddleware) logPartnerDetectionAsync(domain, partnerCode string, found bool) {
-	b.loggingPool.SubmitTask(func() {
+	go func() {
 		b.logger.GetZerologLogger().Info().
 			Str("domain", domain).
 			Str("partner_code", partnerCode).
 			Bool("found", found).
 			Msg("Partner detection")
-	})
+	}()
 }
 
 // logDefaultBrandingAsync logs default branding usage asynchronously
 func (b *BrandingMiddleware) logDefaultBrandingAsync(host string) {
-	b.loggingPool.SubmitTask(func() {
+	go func() {
 		b.logger.GetZerologLogger().Debug().
 			Str("domain", host).
 			Str("event_type", "default_branding").
 			Msg("Using default branding")
-	})
+	}()
 }
 
 // logBrandingDataAsync logs branding data asynchronously
 func (b *BrandingMiddleware) logBrandingDataAsync(domain string, brandingData *BrandingData) {
-	b.loggingPool.SubmitTask(func() {
+	go func() {
 		b.logger.GetZerologLogger().Debug().
 			Str("domain", domain).
 			Str("brand_name", brandingData.BrandName).
 			Str("logo_url", brandingData.LogoURL).
 			Msg("Branding data")
-	})
-}
-
-// Close releases middleware resources
-func (b *BrandingMiddleware) Close() error {
-	if b.goroutineManager != nil {
-		return b.goroutineManager.Close()
-	}
-	return nil
-}
-
-// GetMetrics returns middleware metrics
-func (b *BrandingMiddleware) GetMetrics() goroutine.Metrics {
-	if b.goroutineManager != nil {
-		return b.goroutineManager.GetMetrics()
-	}
-	return goroutine.Metrics{}
+	}()
 }
 
 // BrandingMiddlewareHandler creates middleware for automatic branding substitution

@@ -578,7 +578,7 @@ const PreviewAlbumPage = () => {
             
             {/* Subtitle */}
             <p className="text-sm sm:text-base text-gray-600 mb-6">
-              Создаем 8 уникальных превью в 4x быстрее с помощью параллельной обработки
+              Создаем 8 уникальных превью с различными стилями освещения
             </p>
 
             {/* Progress bar */}

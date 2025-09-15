@@ -1,14 +1,12 @@
 package middleware
 
 import (
-	"context"
 	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/skr1ms/mosaic/pkg/errors"
-	"github.com/skr1ms/mosaic/pkg/goroutine"
 	validatepartnerdata "github.com/skr1ms/mosaic/pkg/validateData"
 )
 
@@ -26,10 +24,8 @@ func ValidateStruct(s any) error {
 
 // ValidationMiddleware middleware for automatic JSON payload validation with async logging
 type ValidationMiddleware struct {
-	structType       any
-	goroutineManager *goroutine.Manager
-	loggingPool      *goroutine.WorkerPool
-	logger           *Logger
+	structType any
+	logger     *Logger
 }
 
 // NewValidationMiddleware creates new validation middleware
@@ -38,9 +34,6 @@ func NewValidationMiddleware(structType any, logger *Logger) *ValidationMiddlewa
 		structType: structType,
 		logger:     logger,
 	}
-
-	middleware.goroutineManager = goroutine.NewManager(context.Background())
-	middleware.loggingPool = middleware.goroutineManager.NewWorkerPool("validation_logging", 2, 20)
 
 	return middleware
 }
@@ -164,30 +157,14 @@ func logValidationSuccess(ip, userAgent, path string, duration time.Duration, lo
 
 // logValidationErrorAsync logs validation error asynchronously
 func (vm *ValidationMiddleware) logValidationErrorAsync(ip, userAgent, path, errorType, errorMsg string, duration time.Duration) {
-	vm.loggingPool.SubmitTask(func() {
+	go func() {
 		logValidationError(ip, userAgent, path, errorType, errorMsg, duration, vm.logger)
-	})
+	}()
 }
 
 // logValidationSuccessAsync logs successful validation asynchronously
 func (vm *ValidationMiddleware) logValidationSuccessAsync(ip, userAgent, path string, duration time.Duration) {
-	vm.loggingPool.SubmitTask(func() {
+	go func() {
 		logValidationSuccess(ip, userAgent, path, duration, vm.logger)
-	})
-}
-
-// Close releases middleware resources
-func (vm *ValidationMiddleware) Close() error {
-	if vm.goroutineManager != nil {
-		return vm.goroutineManager.Close()
-	}
-	return nil
-}
-
-// GetMetrics returns middleware metrics
-func (vm *ValidationMiddleware) GetMetrics() goroutine.Metrics {
-	if vm.goroutineManager != nil {
-		return vm.goroutineManager.GetMetrics()
-	}
-	return goroutine.Metrics{}
+	}()
 }
