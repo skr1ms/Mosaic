@@ -63,10 +63,10 @@ Go to your GitLab project → Settings → CI/CD → Variables and add:
 5. Start the application:
 ```bash
 # Development
-docker compose --env-file .env -f deployments/docker-compose/docker-compose.dev.yml up --build
+docker compose --env-file .env -f deployments/docker/docker-compose.dev.yml up --build
 
 # Production
-docker compose --env-file .env -f deployments/docker-compose/docker-compose.prod.yml up --build
+docker compose --env-file .env -f deployments/docker/docker-compose.prod.yml up --build
 ```
 
 ## Environment Variables

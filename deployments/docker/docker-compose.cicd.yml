@@ -1,4 +1,4 @@
-# run with: docker compose --env-file .env -f deployments/docker-compose/docker-compose.cicd.yml up -d
+# run with: docker compose --env-file .env -f deployments/docker/docker-compose.cicd.yml up -d
 
 services:
   postgres:

@@ -178,15 +178,15 @@ deploy:production:
       docker images | grep -E "(mosaic|public-site|backend|dashboards)" || echo "No mosaic images found"
       
       echo "Stopping existing containers..."
-      docker compose -f deployments/docker-compose/docker-compose.cicd.yml down || echo "No containers to stop"
+      docker compose -f deployments/docker/docker-compose.cicd.yml down || echo "No containers to stop"
       
-      if docker compose -f deployments/docker-compose/docker-compose.cicd.yml pull 2>/dev/null; then
+      if docker compose -f deployments/docker/docker-compose.cicd.yml pull 2>/dev/null; then
         echo "Images pulled successfully, starting services..."
-        docker compose -f deployments/docker-compose/docker-compose.cicd.yml up -d
+        docker compose -f deployments/docker/docker-compose.cicd.yml up -d
       else
         echo "Failed to pull images, building locally..."
         echo "Building images locally..."
-        docker compose -f deployments/docker-compose/docker-compose.cicd.yml up -d --build
+        docker compose -f deployments/docker/docker-compose.cicd.yml up -d --build
       fi
       
       echo "Waiting for services to be ready..."

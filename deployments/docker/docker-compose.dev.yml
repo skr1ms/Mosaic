@@ -1,4 +1,4 @@
-# run with: docker compose --env-file .env -f deployments/docker-compose/docker-compose.dev.yml up --build -d
+# run with: docker compose --env-file .env -f deployments/docker/docker-compose.dev.yml up --build -d
 
 services:
   postgres:
