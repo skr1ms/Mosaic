@@ -758,6 +758,19 @@ func (s *PublicService) GeneratePreview(ctx context.Context, file *multipart.Fil
 		}
 	}
 
+	// Generate deterministic preview ID for DB check
+	previewHash := fmt.Sprintf("%s_%s_%s", size, fmt.Sprintf("%s_%s", style, lighting), contrast)
+	previewID := uuid.NewSHA1(uuid.NameSpaceURL, []byte(previewHash))
+
+	existingPreview, err := s.deps.PublicRepository.GetByID(ctx, previewID)
+	if err == nil && existingPreview != nil {
+		if s.deps.RedisClient != nil {
+			previewJSON, _ := json.Marshal(existingPreview)
+			s.deps.RedisClient.Set(ctx, cacheKey, previewJSON, 2*time.Hour)
+		}
+		return existingPreview, nil
+	}
+
 	src, err = file.Open()
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
@@ -789,10 +802,6 @@ func (s *PublicService) GeneratePreview(ctx context.Context, file *multipart.Fil
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode image: %w", err)
 	}
-
-	// Generate deterministic preview ID based on parameters to avoid duplicates
-	previewHash := fmt.Sprintf("%s_%s_%s", size, fmt.Sprintf("%s_%s", style, lighting), contrast)
-	previewID := uuid.NewSHA1(uuid.NameSpaceURL, []byte(previewHash))
 
 	// Upload to S3 preview bucket with TTL
 	previewKey := fmt.Sprintf("previews/%s.jpg", previewID.String())
@@ -827,7 +836,6 @@ func (s *PublicService) GeneratePreview(ctx context.Context, file *multipart.Fil
 	// Schedule automatic deletion after 24 hours (database TTL handles this too)
 	s.deps.S3Client.SchedulePreviewDeletion(previewKey)
 
-	// 🚀 CACHE TO REDIS - 2 hour TTL for ultra-fast future requests
 	if s.deps.RedisClient != nil {
 		previewJSON, err := json.Marshal(previewData)
 		if err == nil {
@@ -860,6 +868,7 @@ func (s *PublicService) GenerateStylePreview(ctx context.Context, file *multipar
 	previewID := uuid.NewSHA1(uuid.NameSpaceURL, []byte(previewHash))
 
 	cacheKey := fmt.Sprintf("style_preview:%s:%s:%s", fileHash[:16], style, size)
+
 	if s.deps.RedisClient != nil {
 		cachedData := s.deps.RedisClient.Get(ctx, cacheKey)
 		if cachedData.Err() == nil {
@@ -868,6 +877,15 @@ func (s *PublicService) GenerateStylePreview(ctx context.Context, file *multipar
 				return &previewData, nil
 			}
 		}
+	}
+
+	existingPreview, err := s.deps.PublicRepository.GetByID(ctx, previewID)
+	if err == nil && existingPreview != nil {
+		if s.deps.RedisClient != nil {
+			previewJSON, _ := json.Marshal(existingPreview)
+			s.deps.RedisClient.Set(ctx, cacheKey, previewJSON, 2*time.Hour)
+		}
+		return existingPreview, nil
 	}
 
 	// Re-open file for processing
@@ -1287,7 +1305,6 @@ func (s *PublicService) GenerateAllPreviews(ctx context.Context, imageID string,
 }
 
 // GenerateAllPreviewsFromFile generates all 8 base previews + optional 1 AI preview directly from uploaded file
-// Used for preview uploads where image_id doesn't exist in database
 func (s *PublicService) GenerateAllPreviewsFromFile(ctx context.Context, file *multipart.FileHeader, size string, useAI bool) (*GenerateAllPreviewsResponse, error) {
 	// Open uploaded file
 	src, err := file.Open()
