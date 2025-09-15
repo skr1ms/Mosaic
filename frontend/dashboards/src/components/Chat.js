@@ -240,6 +240,8 @@ const Chat = () => {
     ]
   );
 
+  const scheduleReconnectRef = useRef();
+
   const scheduleReconnect = useCallback(() => {
     if (!currentUser) return;
     const attempt = Math.min(reconnectAttemptsRef.current + 1, 6);
@@ -247,7 +249,9 @@ const Chat = () => {
     const delay = Math.pow(2, attempt) * 1000;
     if (reconnectRef.current) clearTimeout(reconnectRef.current);
     reconnectRef.current = setTimeout(() => {
-      if (!wsRef.current) connectWebSocket();
+      if (!wsRef.current && scheduleReconnectRef.current?.connectWebSocket) {
+        scheduleReconnectRef.current.connectWebSocket();
+      }
     }, delay);
   }, [currentUser]);
 
@@ -255,7 +259,6 @@ const Chat = () => {
     if (wsRef.current || !currentUser) return;
     const token = localStorage.getItem("token") || "";
     try {
-      // В development используем переменную из Docker Compose, в production - текущий origin
       const apiBase = process.env.REACT_APP_API_URL || window.location.origin;
       const apiUrl = new URL(apiBase);
       const wsProto = apiUrl.protocol === "https:" ? "wss:" : "ws:";
@@ -271,7 +274,6 @@ const Chat = () => {
       ws.onmessage = (event) => {
         try {
           const envelope = JSON.parse(event.data);
-          // Новые сообщения из support-чата: уведомим так же, как от партнёра
           if (envelope?.type === "support_new_message" && envelope.data) {
             const m = envelope.data;
             const curId = currentUserIdRef.current;
@@ -296,7 +298,6 @@ const Chat = () => {
             const curId = currentUserIdRef.current;
             const isForCurrentDialog =
               !!selId && (msg.senderId === selId || msg.targetId === selId);
-            // Обновляем активность собеседника, как в мессенджерах
             const otherId =
               msg.senderId === curId ? msg.targetId : msg.senderId;
             if (otherId) bumpUserActivity(otherId);
@@ -313,7 +314,6 @@ const Chat = () => {
               setPartnerUnreadCount((c) => c + 1);
             }
           }
-          // В онлайне: если открыт support-чат этого гостя — сразу добавляем
           if (envelope?.type === "support_new_message" && envelope.data) {
             const m = envelope.data;
             const selId = selectedUserIdRef.current;
@@ -352,7 +352,6 @@ const Chat = () => {
               setSupportUnreadCount((c) => c + 1);
             }
           }
-          // Handle support message updates (for attachments and edits)
           if (envelope?.type === "support_message_update" && envelope.data) {
             const m = envelope.data;
             const selId = selectedUserIdRef.current;
@@ -437,6 +436,8 @@ const Chat = () => {
     refreshUnreadCount,
     refreshSupportUnreadCount,
   ]);
+
+  scheduleReconnectRef.current = { connectWebSocket };
 
   useEffect(() => {
     if (isOpen) {
@@ -633,7 +634,6 @@ const Chat = () => {
           });
           baseId = String(createRes.data?.data?.id || "");
           setNewMessage("");
-          // Сбрасываем высоту textarea
           if (messageInputRef.current) {
             messageInputRef.current.style.height = "auto";
           }
@@ -689,7 +689,6 @@ const Chat = () => {
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify(payload));
         setNewMessage("");
-        // Сбрасываем высоту textarea
         if (messageInputRef.current) {
           messageInputRef.current.style.height = "auto";
         }
@@ -711,7 +710,6 @@ const Chat = () => {
           setMessages((prev) => [...prev, message]);
         }
         setNewMessage("");
-        // Сбрасываем высоту textarea
         if (messageInputRef.current) {
           messageInputRef.current.style.height = "auto";
         }
@@ -799,7 +797,6 @@ const Chat = () => {
       return base + sep + text;
     });
     setTemplatesOpen(false);
-    // После вставки автоматически подстроим высоту поля
     setTimeout(() => {
       const el = messageInputRef.current;
       if (el) {
@@ -825,7 +822,6 @@ const Chat = () => {
   const startEdit = (m) => {
     setEditingId(m.id);
     setNewMessage(m.content || "");
-    // Автоматически изменяем высоту textarea при редактировании
     setTimeout(() => {
       if (messageInputRef.current) {
         messageInputRef.current.style.height = "auto";
@@ -841,7 +837,6 @@ const Chat = () => {
   const cancelEdit = () => {
     setEditingId(null);
     setNewMessage("");
-    // Сбрасываем высоту textarea
     if (messageInputRef.current) {
       messageInputRef.current.style.height = "auto";
     }
