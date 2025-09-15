@@ -761,8 +761,9 @@ func (s *PublicService) GeneratePreview(ctx context.Context, file *multipart.Fil
 		return nil, fmt.Errorf("failed to encode image: %w", err)
 	}
 
-	// Generate unique ID
-	previewID := uuid.New()
+	// Generate deterministic preview ID based on parameters to avoid duplicates
+	previewHash := fmt.Sprintf("%s_%s_%s", size, fmt.Sprintf("%s_%s", style, lighting), contrast)
+	previewID := uuid.NewSHA1(uuid.NameSpaceURL, []byte(previewHash))
 
 	// Upload to S3 preview bucket with TTL
 	previewKey := fmt.Sprintf("previews/%s.jpg", previewID.String())
@@ -835,8 +836,9 @@ func (s *PublicService) GenerateStylePreview(ctx context.Context, file *multipar
 		return nil, fmt.Errorf("failed to encode image: %w", err)
 	}
 
-	// Generate unique ID
-	previewID := uuid.New()
+	// Generate deterministic preview ID based on parameters to avoid duplicates
+	previewHash := fmt.Sprintf("style_%s_%s", style, size)
+	previewID := uuid.NewSHA1(uuid.NameSpaceURL, []byte(previewHash))
 
 	// Upload to S3 preview bucket with TTL
 	previewKey := fmt.Sprintf("style-previews/%s_%s.jpg", style, previewID.String())
@@ -1046,9 +1048,10 @@ func (s *PublicService) GenerateAllPreviews(ctx context.Context, imageID string,
 				jpeg.Encode(&buf, processedImg, &jpeg.Options{Quality: 90})
 			}
 
-			// Upload to S3 preview bucket with TTL
-			previewID := uuid.New().String()
-			previewKey := fmt.Sprintf("previews/%s/%s_%s_%s.jpg", imageID, style, contrast.Value, previewID[:8])
+			// Generate deterministic preview ID to avoid duplicates
+			previewHash := fmt.Sprintf("all_%s_%s_%s_%s", imageID, style, contrast.Value, size)
+			previewID := uuid.NewSHA1(uuid.NameSpaceURL, []byte(previewHash))
+			previewKey := fmt.Sprintf("previews/%s/%s_%s_%s.jpg", imageID, style, contrast.Value, previewID.String()[:8])
 			if err := s.deps.S3Client.UploadToPreviewBucket(ctx, previewKey, &buf, int64(buf.Len()), "image/jpeg"); err != nil {
 				continue // Skip failed uploads
 			}
@@ -1060,7 +1063,7 @@ func (s *PublicService) GenerateAllPreviews(ctx context.Context, imageID string,
 			previewURL := s.deps.S3Client.GetPreviewURL(previewKey)
 
 			previews = append(previews, PreviewInfo{
-				ID:       previewID,
+				ID:       previewID.String(),
 				URL:      previewURL,
 				Style:    style,
 				Contrast: contrast.Value,

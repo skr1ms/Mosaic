@@ -441,10 +441,6 @@
         "title": "Grayscale",
         "description": "Black and white palette"
       },
-      "skin_tone": {
-        "title": "Skin Tones",
-        "description": "Warm skin tones"
-      },
       "pop_art": {
         "title": "Pop Art",
         "description": "Bright contrast colors"

@@ -30,6 +30,7 @@ const PreviewAlbumPage = () => {
   const [previews, setPreviews] = useState([]);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [isGeneratingVariants, setIsGeneratingVariants] = useState(false);
+  const [hasGeneratedVariants, setHasGeneratedVariants] = useState(false);
 
   const styleVariants = [
     { style: 'venus', contrast: 'soft', label: t('preview_album.styles.venus_soft') },
@@ -46,6 +47,10 @@ const PreviewAlbumPage = () => {
   const [isActivating, setIsActivating] = useState(false);
 
   useEffect(() => {
+    if (hasGeneratedVariants || isGeneratingVariants) {
+      return;
+    }
+
     try {
       const locationState = location.state;
       
@@ -62,7 +67,7 @@ const PreviewAlbumPage = () => {
         return;
       }
 
-      if (couponStore.couponData && couponStore.editedImageUrl) {
+      if (couponStore.couponData && couponStore.editedImageUrl && !imageData) {
         const data = {
           size: couponStore.couponData.size || '30x40',
           imageUrl: couponStore.editedImageUrl || couponStore.previewUrl,
@@ -118,14 +123,30 @@ const PreviewAlbumPage = () => {
         return;
       }
 
-      setImageData(parsedData);
-      generateContrastVariants(parsedData);
+      // Only generate if we don't have imageData yet
+      if (!imageData) {
+        setImageData(parsedData);
+        generateContrastVariants(parsedData);
+      }
     } catch (error) {
       navigate('/preview');
     }
-  }, [navigate, location, couponStore]);
+  }, [navigate, location.pathname, hasGeneratedVariants, isGeneratingVariants, imageData]);
+
+  // Reset generation flags when component unmounts or location changes
+  useEffect(() => {
+    return () => {
+      setHasGeneratedVariants(false);
+    };
+  }, [location.pathname]);
 
   const generateContrastVariants = async data => {
+    // Prevent duplicate generation
+    if (isGeneratingVariants || hasGeneratedVariants) {
+      console.log('Skipping generation - already in progress or completed');
+      return;
+    }
+
     setIsGeneratingVariants(true);
 
     try {
@@ -149,7 +170,10 @@ const PreviewAlbumPage = () => {
 
         const updatedData = { ...data, imageId };
         setImageData(updatedData);
-        couponStore.setImageId(imageId);
+        // Avoid immediate re-renders by deferring couponStore update
+        setTimeout(() => {
+          couponStore.setImageId(imageId);
+        }, 0);
       }
 
       const result = await MosaicAPI.generateAllPreviews(
@@ -174,7 +198,10 @@ const PreviewAlbumPage = () => {
       });
 
       setPreviews(generatedPreviews);
-      couponStore.setPreviews(generatedPreviews);
+      // Avoid immediate re-renders by deferring couponStore update
+      setTimeout(() => {
+        couponStore.setPreviews(generatedPreviews);
+      }, 0);
       
       addNotification({
         type: 'success',
@@ -223,7 +250,10 @@ const PreviewAlbumPage = () => {
         }
 
         setPreviews(generatedPreviews);
-        couponStore.setPreviews(generatedPreviews);
+        // Avoid immediate re-renders by deferring couponStore update
+        setTimeout(() => {
+          couponStore.setPreviews(generatedPreviews);
+        }, 0);
         
         if (generatedPreviews.length > 0) {
           addNotification({
@@ -239,6 +269,7 @@ const PreviewAlbumPage = () => {
       }
     } finally {
       setIsGeneratingVariants(false);
+      setHasGeneratedVariants(true);
     }
   };
 

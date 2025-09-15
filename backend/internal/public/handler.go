@@ -71,6 +71,7 @@ func NewPublicHandler(router fiber.Router, deps *PublicHandlerDeps) *PublicHandl
 	public.Post("/generate-all", handler.GenerateAllPreviews)              // POST /api/preview/generate-all
 	public.Get("/:id", handler.GetPreview)                                 // GET /api/preview/:id
 	public.Delete("/:id", handler.DeletePreview)                           // DELETE /api/preview/:id
+	public.Post("/cleanup-all", handler.CleanupAllPreviews)                // POST /api/preview/cleanup-all (EMERGENCY)
 
 	return handler
 }
@@ -1712,4 +1713,44 @@ func (h *PublicHandler) CheckMarketplaceStatus(c *fiber.Ctx) error {
 		Msg("Marketplace status checked")
 
 	return c.JSON(publicResponse)
+}
+
+// CleanupAllPreviews emergency endpoint to cleanup all old preview files from MinIO
+// @Summary Emergency cleanup of old preview files
+// @Description Mass deletes all preview files older than 1 hour from MinIO (EMERGENCY USE ONLY)
+// @Tags preview
+// @Produce json
+// @Success 200 {object} map[string]any "Cleanup completed successfully"
+// @Failure 500 {object} map[string]any "Internal server error during cleanup"
+// @Router /api/preview/cleanup-all [post]
+func (h *PublicHandler) CleanupAllPreviews(c *fiber.Ctx) error {
+	h.deps.Logger.FromContext(c).Warn().
+		Str("handler", "CleanupAllPreviews").
+		Str("ip", c.IP()).
+		Msg("EMERGENCY: Preview cleanup requested")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second) // 5 minutes timeout
+	defer cancel()
+
+	err := h.deps.PublicService.GetS3Client().CleanupAllPreviews(ctx)
+	if err != nil {
+		h.deps.Logger.FromContext(c).Error().
+			Err(err).
+			Str("handler", "CleanupAllPreviews").
+			Msg("Failed to cleanup previews")
+
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":      "Failed to cleanup previews",
+			"request_id": c.Get("X-Request-ID"),
+		})
+	}
+
+	h.deps.Logger.FromContext(c).Info().
+		Str("handler", "CleanupAllPreviews").
+		Msg("Preview cleanup completed successfully")
+
+	return c.JSON(fiber.Map{
+		"message": "Preview cleanup completed successfully",
+		"note":    "All preview files older than 1 hour have been deleted",
+	})
 }

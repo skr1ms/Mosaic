@@ -337,9 +337,8 @@ const ShopPage = () => {
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {styleKeys.map((styleKey, index) => {
-              const styleData = t(`diamond_mosaic_styles.styles.${styleKey}`, {
-                returnObjects: true,
-              });
+              const styleTitle = t(`diamond_mosaic_styles.styles.${styleKey}.title`);
+              const styleDescription = t(`diamond_mosaic_styles.styles.${styleKey}.description`);
               const isSelected = selectedStyle === styleKey;
 
               const styleColors = {
@@ -377,11 +376,11 @@ const ShopPage = () => {
                     />
 
                     <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 leading-tight">
-                      {styleData.title}
+                      {styleTitle}
                     </h3>
 
                     <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                      {styleData.description}
+                      {styleDescription}
                     </p>
                   </div>
                 </motion.div>

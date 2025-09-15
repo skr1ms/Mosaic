@@ -229,5 +229,6 @@ type S3ClientInterface interface {
 	GetLogoURL(ctx context.Context, objectKey string, expiry time.Duration) (string, error)
 	GetPreviewURL(objectKey string) string
 	SchedulePreviewDeletion(objectKey string)
+	CleanupAllPreviews(ctx context.Context) error
 	Decode(reader io.Reader) (image.Image, string, error)
 }

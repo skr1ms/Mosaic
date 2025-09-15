@@ -492,6 +492,17 @@ func (s *S3Client) UploadToPreviewBucket(ctx context.Context, objectKey string, 
 		return fmt.Errorf("preview bucket is not configured")
 	}
 
+	// Check if object already exists to avoid duplicates
+	_, err := s.client.StatObject(ctx, bucket, objectKey, minio.StatObjectOptions{})
+	if err == nil {
+		// Object already exists, skip upload
+		s.logger.GetZerologLogger().Info().
+			Str("bucket", bucket).
+			Str("key", objectKey).
+			Msg("Preview file already exists, skipping upload")
+		return nil
+	}
+
 	s.logger.GetZerologLogger().Info().
 		Str("bucket", bucket).
 		Str("key", objectKey).
@@ -499,7 +510,7 @@ func (s *S3Client) UploadToPreviewBucket(ctx context.Context, objectKey string, 
 		Str("content_type", contentType).
 		Msg("Uploading preview to S3")
 
-	_, err := s.client.PutObject(ctx, bucket, objectKey, reader, size, minio.PutObjectOptions{
+	_, err = s.client.PutObject(ctx, bucket, objectKey, reader, size, minio.PutObjectOptions{
 		ContentType: contentType,
 	})
 	if err != nil {
@@ -577,6 +588,56 @@ func (s *S3Client) SchedulePreviewDeletion(objectKey string) {
 				Msg("Preview file auto-deleted after 30 minutes")
 		}
 	}()
+}
+
+// CleanupAllPreviews mass deletes all old preview files (EMERGENCY CLEANUP)
+func (s *S3Client) CleanupAllPreviews(ctx context.Context) error {
+	bucket := s.previewBucket
+	if bucket == "" {
+		return fmt.Errorf("preview bucket is not configured")
+	}
+
+	s.logger.GetZerologLogger().Warn().
+		Str("bucket", bucket).
+		Msg("EMERGENCY: Starting mass preview cleanup")
+
+	// List all objects in preview bucket
+	objectsCh := s.client.ListObjects(ctx, bucket, minio.ListObjectsOptions{
+		Recursive: true,
+	})
+
+	deletedCount := 0
+	errorCount := 0
+
+	for object := range objectsCh {
+		if object.Err != nil {
+			s.logger.GetZerologLogger().Error().
+				Err(object.Err).
+				Msg("Error listing preview objects")
+			continue
+		}
+
+		// Delete old previews (older than 1 hour)
+		if time.Since(object.LastModified) > 1*time.Hour {
+			err := s.client.RemoveObject(ctx, bucket, object.Key, minio.RemoveObjectOptions{})
+			if err != nil {
+				s.logger.GetZerologLogger().Error().
+					Err(err).
+					Str("key", object.Key).
+					Msg("Failed to delete old preview")
+				errorCount++
+			} else {
+				deletedCount++
+			}
+		}
+	}
+
+	s.logger.GetZerologLogger().Info().
+		Int("deleted_count", deletedCount).
+		Int("error_count", errorCount).
+		Msg("Preview cleanup completed")
+
+	return nil
 }
 
 // StartPreviewCleanupJob starts background job to clean up expired preview files
