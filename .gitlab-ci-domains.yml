@@ -1,0 +1,469 @@
+variables:
+  DEPLOY_SERVER: $PRODUCTION_SERVER_IP
+  DEPLOY_USER: $PRODUCTION_USER
+  BACKEND_URL: "https://photo.doyoupaint.com"
+  DEFAULT_ADMIN_EMAIL: $DEFAULT_ADMIN_EMAIL
+  DEFAULT_ADMIN_PASSWORD: $DEFAULT_ADMIN_PASSWORD
+  UBUNTU_IMAGE: "ubuntu:22.04"
+
+stages:
+  - validate
+  - prepare
+  - deploy
+  - verify
+  - cleanup
+
+# ========================================
+# VALIDATION STAGE
+# ========================================
+validate:domain-operation:
+  stage: validate
+  image: $UBUNTU_IMAGE
+  script:
+    - |
+      echo "=========================================="
+      echo "      Domain Operation Validation"
+      echo "=========================================="
+      
+      # Validate required variables
+      if [ -z "$DOMAIN_OPERATION" ]; then
+        echo "ERROR: DOMAIN_OPERATION variable is required"
+        exit 1
+      fi
+      
+      # Validate operation type
+      case "$DOMAIN_OPERATION" in
+        "add"|"update"|"delete"|"refresh")
+          echo "Valid operation: $DOMAIN_OPERATION"
+          ;;
+        *)
+          echo "ERROR: Invalid operation '$DOMAIN_OPERATION'. Must be one of: add, update, delete, refresh"
+          exit 1
+          ;;
+      esac
+      
+      # Validate domains based on operation
+      case "$DOMAIN_OPERATION" in
+        "add")
+          if [ -z "$NEW_DOMAIN" ]; then
+            echo "ERROR: NEW_DOMAIN is required for 'add' operation"
+            exit 1
+          fi
+          echo "Adding domain: $NEW_DOMAIN"
+          ;;
+        "update")
+          if [ -z "$OLD_DOMAIN" ] || [ -z "$NEW_DOMAIN" ]; then
+            echo "ERROR: Both OLD_DOMAIN and NEW_DOMAIN are required for 'update' operation"
+            exit 1
+          fi
+          echo "Updating domain: $OLD_DOMAIN → $NEW_DOMAIN"
+          ;;
+        "delete")
+          if [ -z "$OLD_DOMAIN" ]; then
+            echo "ERROR: OLD_DOMAIN is required for 'delete' operation"
+            exit 1
+          fi
+          echo "Deleting domain: $OLD_DOMAIN"
+          ;;
+        "refresh")
+          echo "Refreshing all domains"
+          ;;
+      esac
+      
+      # Validate domain format if provided
+      for domain_var in OLD_DOMAIN NEW_DOMAIN; do
+        domain_value=$(eval echo \$$domain_var)
+        if [ -n "$domain_value" ]; then
+          if [[ ! "$domain_value" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+            echo "ERROR: Invalid domain format for $domain_var: $domain_value"
+            exit 1
+          fi
+          echo "Valid domain format: $domain_value"
+        fi
+      done
+      
+      echo "Domain operation validation completed successfully"
+  rules:
+    - if: '$DOMAIN_UPDATE == "true"'
+      when: always
+    - when: never
+  tags:
+    - docker
+
+# ========================================
+# PREPARATION STAGE  
+# ========================================
+prepare:ssh-connection:
+  stage: prepare
+  image: $UBUNTU_IMAGE
+  before_script:
+    - apt-get update -y -qq
+    - apt-get install -y -qq openssh-client ca-certificates
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa_ci
+    - chmod 600 ~/.ssh/id_rsa_ci
+    - ssh-keyscan -p "$PRODUCTION_SSH_PORT" -H "$DEPLOY_SERVER" >> ~/.ssh/known_hosts 2>/dev/null || true
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - |
+      echo "=========================================="
+      echo "       Testing SSH Connection"
+      echo "=========================================="
+      
+      if ssh -o BatchMode=yes -o ConnectTimeout=10 -i ~/.ssh/id_rsa_ci -p "$PRODUCTION_SSH_PORT" "$DEPLOY_USER@$DEPLOY_SERVER" "echo 'SSH Connection OK:' \$(whoami) '@' \$(hostname)"; then
+        echo "SSH connection established successfully"
+      else
+        echo "SSH connection failed"
+        exit 1
+      fi
+  rules:
+    - if: '$DOMAIN_UPDATE == "true"'
+      when: always
+    - when: never
+  tags:
+    - docker
+
+# ========================================
+# DEPLOYMENT STAGE
+# ========================================
+deploy:domains-update:
+  stage: deploy
+  image: $UBUNTU_IMAGE
+  needs: ["validate:domain-operation", "prepare:ssh-connection"]
+  before_script:
+    - apt-get update -y -qq
+    - apt-get install -y -qq git curl openssh-client jq ca-certificates dnsutils
+    - update-ca-certificates || true
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa_ci
+    - chmod 600 ~/.ssh/id_rsa_ci
+    - ssh-keyscan -p "$PRODUCTION_SSH_PORT" -H "$DEPLOY_SERVER" >> ~/.ssh/known_hosts 2>/dev/null || true
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - |
+      cat > deploy_domains.sh << 'EOF'
+      #!/bin/bash
+      set -e
+      
+      echo "=========================================="
+      echo "      Partner Domain Update Pipeline"
+      echo "=========================================="
+      
+      log() {
+          echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+      }
+      
+      error() {
+          echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: $1" >&2
+          exit 1
+      }
+      
+      success() {
+          echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+      }
+      
+      # Change to project directory
+      cd /home/lumirin/Mosaic || error "Failed to change to Mosaic directory"
+      
+      # Load environment variables
+      if [ -f .env ]; then
+          export $(cat .env | grep -v '^#' | xargs)
+          log "Environment variables loaded"
+      else
+          error ".env file not found"
+      fi
+      
+      # Make scripts executable
+      log "Making scripts executable..."
+      chmod +x ./scripts/*.sh || error "Failed to make scripts executable"
+      
+      # Extract operation parameters
+      OPERATION="${DOMAIN_OPERATION:-refresh}"
+      OLD_DOMAIN="${OLD_DOMAIN:-}"
+      NEW_DOMAIN="${NEW_DOMAIN:-}"
+      
+      log "Operation: $OPERATION"
+      [ -n "$OLD_DOMAIN" ] && log "Old Domain: $OLD_DOMAIN"
+      [ -n "$NEW_DOMAIN" ] && log "New Domain: $NEW_DOMAIN"
+      
+      # Pre-deployment validation
+      log "Running pre-deployment validation..."
+      
+      # Check Docker containers
+      if ! docker ps >/dev/null 2>&1; then
+          error "Docker is not available or not running"
+      fi
+      success "Docker is available"
+      
+      # Check required containers
+      required_containers=("postgres" "redis" "backend" "nginx")
+      for container in "${required_containers[@]}"; do
+          if docker ps --format "table {{.Names}}" | grep -q "^${container}$"; then
+              success "Container $container is running"
+          else
+              error "Required container $container is not running"
+          fi
+      done
+      
+      # Domain-specific DNS validation (for add/update operations)
+      if [ "$OPERATION" = "add" ] || [ "$OPERATION" = "update" ]; then
+          domain_to_check="$NEW_DOMAIN"
+          if [ -n "$domain_to_check" ]; then
+              log "Validating DNS for domain: $domain_to_check"
+              if timeout 10s dig +short "$domain_to_check" A >/dev/null 2>&1; then
+                  success "DNS validation passed for $domain_to_check"
+              else
+                  log "WARNING: DNS validation failed for $domain_to_check - proceeding anyway"
+              fi
+          fi
+      fi
+      
+      # Execute domain management
+      log "Executing domain management operation..."
+      if sudo ./scripts/manage-partner-domains.sh "$OPERATION" "$OLD_DOMAIN" "$NEW_DOMAIN"; then
+          success "Domain management completed successfully"
+      else
+          error "Domain management failed"
+      fi
+      
+      # Update nginx configuration via backend API
+      log "Updating nginx configuration via backend API..."
+      if [ -n "$BACKEND_URL" ]; then
+          # Add delay to ensure backend is ready
+          sleep 5
+          
+          log "Authenticating with backend API..."
+          login_response=$(timeout 30s curl -s -X POST \
+              -H "Content-Type: application/json" \
+              -d "{\"email\":\"${DEFAULT_ADMIN_EMAIL:-admin@example.com}\",\"password\":\"${DEFAULT_ADMIN_PASSWORD}\"}" \
+              "${BACKEND_URL}/api/auth/login" 2>/dev/null || echo "")
+          
+          if [ -n "$login_response" ]; then
+              admin_token=$(echo "$login_response" | jq -r '.access_token' 2>/dev/null || echo "")
+              
+              if [ -n "$admin_token" ] && [ "$admin_token" != "null" ]; then
+                  success "Authentication successful"
+                  
+                  log "Calling nginx deployment API..."
+                  nginx_response=$(timeout 60s curl -s -X POST \
+                      -H "Content-Type: application/json" \
+                      -H "Authorization: Bearer $admin_token" \
+                      "${BACKEND_URL}/api/admin/nginx/deploy" 2>/dev/null || echo "")
+                  
+                  if [ -n "$nginx_response" ]; then
+                      success "Nginx configuration updated via API"
+                      log "Response: $nginx_response"
+                  else
+                      log "WARNING: Failed to update nginx config via API"
+                  fi
+              else
+                  log "WARNING: Failed to extract admin token"
+              fi
+          else
+              log "WARNING: Failed to authenticate with backend API"
+          fi
+      else
+          log "WARNING: BACKEND_URL not set, skipping nginx config update via API"
+      fi
+      
+      # Restart and validate nginx
+      log "Restarting nginx container..."
+      if docker ps --filter "name=nginx" --filter "status=running" | grep -q nginx; then
+          if docker restart nginx; then
+              success "Nginx container restarted"
+              
+              # Wait for nginx to be ready
+              sleep 10
+              
+              log "Validating nginx configuration..."
+              if docker exec nginx nginx -t; then
+                  success "Nginx configuration is valid"
+              else
+                  error "Nginx configuration validation failed"
+              fi
+              
+              # Test nginx responsiveness
+              if docker exec nginx nginx -s reload; then
+                  success "Nginx reloaded successfully"
+              else
+                  log "WARNING: Nginx reload failed, but container is running"
+              fi
+          else
+              error "Failed to restart nginx container"
+          fi
+      else
+          error "Nginx container not found or not running"
+      fi
+      
+      # Update SSL certificates
+      log "Updating SSL certificates..."
+      if ./scripts/update-ssl-certificates.sh; then
+          success "SSL certificates updated successfully"
+      else
+          log "WARNING: SSL certificate update failed"
+      fi
+      
+      log "=========================================="
+      log "Domain update pipeline completed successfully!"
+      log "=========================================="
+      EOF
+
+    # Upload updated files to the server
+    - scp -i ~/.ssh/id_rsa_ci -P "$PRODUCTION_SSH_PORT" -r scripts/ "$DEPLOY_USER@$DEPLOY_SERVER:/home/lumirin/Mosaic/"
+    - scp -i ~/.ssh/id_rsa_ci -P "$PRODUCTION_SSH_PORT" -r deployments/ "$DEPLOY_USER@$DEPLOY_SERVER:/home/lumirin/Mosaic/"
+    
+    # Upload and execute the deployment script
+    - scp -i ~/.ssh/id_rsa_ci -P "$PRODUCTION_SSH_PORT" deploy_domains.sh "$DEPLOY_USER@$DEPLOY_SERVER:/tmp/"
+    - ssh -i ~/.ssh/id_rsa_ci -p "$PRODUCTION_SSH_PORT" "$DEPLOY_USER@$DEPLOY_SERVER" "chmod +x /tmp/deploy_domains.sh"
+    - ssh -i ~/.ssh/id_rsa_ci -p "$PRODUCTION_SSH_PORT" "$DEPLOY_USER@$DEPLOY_SERVER" "/tmp/deploy_domains.sh"
+  after_script:
+    - ssh -i ~/.ssh/id_rsa_ci -p "$PRODUCTION_SSH_PORT" "$DEPLOY_USER@$DEPLOY_SERVER" "rm -f /tmp/deploy_domains.sh" || true
+  rules:
+    - if: '$DOMAIN_UPDATE == "true"'
+      when: always
+    - when: never
+  tags:
+    - docker
+  timeout: 45 minutes
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+
+# ========================================
+# VERIFICATION STAGE
+# ========================================
+verify:domains-health:
+  stage: verify
+  image: $UBUNTU_IMAGE
+  needs: ["deploy:domains-update"]
+  before_script:
+    - apt-get update -y -qq
+    - apt-get install -y -qq curl openssh-client jq ca-certificates dnsutils
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa_ci
+    - chmod 600 ~/.ssh/id_rsa_ci
+    - ssh-keyscan -p "$PRODUCTION_SSH_PORT" -H "$DEPLOY_SERVER" >> ~/.ssh/known_hosts 2>/dev/null || true
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - |
+      echo "=========================================="
+      echo "   Post-Deployment Health Verification"
+      echo "=========================================="
+      
+      log() {
+          echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+      }
+      
+      # Test main domains
+      main_domains=("https://photo.doyoupaint.com/health" "https://adm.doyoupaint.com/health")
+      
+      for url in "${main_domains[@]}"; do
+          log "Testing $url..."
+          if timeout 15s curl -s -f --max-time 10 "$url" >/dev/null; then
+              log "$url is healthy"
+          else
+              log "$url health check failed"
+              exit 1
+          fi
+      done
+      
+      # Run comprehensive health check on server
+      log "Running comprehensive health check on server..."
+      ssh -i ~/.ssh/id_rsa_ci -p "$PRODUCTION_SSH_PORT" "$DEPLOY_USER@$DEPLOY_SERVER" << 'HEALTH_CHECK'
+      cd /home/lumirin/Mosaic || exit 1
+      if [ -x "./scripts/health-check.sh" ]; then
+          ./scripts/health-check.sh quick
+      else
+          echo "Health check script not found or not executable"
+          exit 1
+      fi
+      HEALTH_CHECK
+      
+      # Test new domain if it was added or updated
+      if [ "$DOMAIN_OPERATION" = "add" ] || [ "$DOMAIN_OPERATION" = "update" ]; then
+          if [ -n "$NEW_DOMAIN" ]; then
+              log "Testing new domain: https://$NEW_DOMAIN/health"
+              # Give some time for DNS propagation and certificate generation
+              sleep 30
+              
+              # Multiple attempts for new domains
+              for attempt in 1 2 3; do
+                  log "Attempt $attempt/3 to test https://$NEW_DOMAIN/health"
+                  if timeout 20s curl -s -f --max-time 15 "https://$NEW_DOMAIN/health" >/dev/null; then
+                      log "New domain $NEW_DOMAIN is healthy"
+                      break
+                  elif [ $attempt -eq 3 ]; then
+                      log "WARNING: New domain $NEW_DOMAIN is not responding after 3 attempts"
+                      log "This might be due to DNS propagation delay or certificate generation"
+                  else
+                      log "Waiting before retry..."
+                      sleep 20
+                  fi
+              done
+          fi
+      fi
+      
+      log "Health verification completed"
+  rules:
+    - if: '$DOMAIN_UPDATE == "true"'
+      when: always
+    - when: never
+  tags:
+    - docker
+  allow_failure: true
+
+# ========================================
+# CLEANUP STAGE
+# ========================================
+cleanup:temp-files:
+  stage: cleanup
+  image: $UBUNTU_IMAGE
+  needs: ["verify:domains-health"]
+  before_script:
+    - apt-get update -y -qq
+    - apt-get install -y -qq openssh-client
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa_ci
+    - chmod 600 ~/.ssh/id_rsa_ci
+    - ssh-keyscan -p "$PRODUCTION_SSH_PORT" -H "$DEPLOY_SERVER" >> ~/.ssh/known_hosts 2>/dev/null || true
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - |
+      echo "=========================================="
+      echo "       Cleanup Temporary Files"
+      echo "=========================================="
+      
+      # Remove temporary files on server
+      ssh -i ~/.ssh/id_rsa_ci -p "$PRODUCTION_SSH_PORT" "$DEPLOY_USER@$DEPLOY_SERVER" << 'CLEANUP'
+      echo "Cleaning up temporary files..."
+      
+      # Remove old nginx config backups (keep last 5)
+      if [ -d "/etc/nginx" ]; then
+          find /etc/nginx -name "nginx.conf.backup.*" -type f | sort -r | tail -n +6 | xargs rm -f 2>/dev/null || true
+      fi
+      
+      # Remove old certificate backups (keep last 10)  
+      if [ -d "/etc/letsencrypt/backups" ]; then
+          ls -t /etc/letsencrypt/backups/ 2>/dev/null | tail -n +11 | xargs -I {} rm -rf "/etc/letsencrypt/backups/{}" 2>/dev/null || true
+      fi
+      
+      # Clean Docker system (remove unused containers, networks, images)
+      docker system prune -f --volumes || true
+      
+      echo "Cleanup completed"
+      CLEANUP
+      
+      echo "Pipeline cleanup completed successfully"
+  rules:
+    - if: '$DOMAIN_UPDATE == "true"'
+      when: always
+    - when: never
+  tags:
+    - docker
+  allow_failure: true

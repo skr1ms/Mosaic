@@ -1,0 +1,125 @@
+// Header Base
+
+.app-header {
+  height: $app-header-height;
+  display: flex;
+  align-items: center;
+  align-content: center;
+  position: relative;
+  z-index: 10;
+  transition: all .2s;
+
+  &.header-shadow {
+    box-shadow: $box-shadow-default;
+  }
+
+  .app-header__content {
+    display: flex;
+    align-items: center;
+    align-content: center;
+    flex: 1;
+    padding: 0 $layout-spacer-x;
+    height: $app-header-height;
+
+    .app-header-left {
+      display: flex;
+      align-items: center;
+    }
+
+    .app-header-right {
+      align-items: center;
+      display: flex;
+      margin-left: auto;
+    }
+  }
+
+  .header-user-info {
+    & > .widget-heading,
+    & > .widget-subheading {
+      white-space: nowrap;
+    }
+
+    & > .widget-subheading {
+      font-size: $font-size-xs;
+    }
+  }
+}
+
+.app-header__logo {
+  padding: 0 $layout-spacer-x;
+  height: $app-header-height;
+  width: auto;
+  min-width: 280px;
+  display: flex;
+  align-items: center;
+  transition: width .2s;
+
+  .logo-src {
+    height: $logo-height;
+    width: auto;
+    min-width: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 20px;
+    color: #007bff; // голубой цвет для панели
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+    &:after {
+      content: "";
+    }
+  }
+
+  .Burger {
+    padding: 0 8px;
+    margin-left: auto;
+  }
+}
+
+// Медиа-запросы для мобильных устройств
+@media (max-width: 768px) {
+  .app-header__logo {
+    min-width: 200px;
+    
+    .logo-src {
+      min-width: 150px;
+      font-size: 16px;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .app-header__logo {
+    min-width: 150px;
+    
+    .logo-src {
+      min-width: 120px;
+      font-size: 14px;
+    }
+  }
+}
+
+.app-header__menu,
+.app-header__mobile-menu {
+  display: none;
+  padding: 0 $layout-spacer-x;
+  height: $app-header-height;
+  align-items: center;
+}
+
+// Header Modifiers
+
+@import "modifiers/fixed-header";
+@import "modifiers/header-dots";
+@import "modifiers/header-megamenu";
+@import "modifiers/header-buttons";
+//@import "modifiers/header-horizontal";
+
+// Header Themes
+
+@import "themes/header-light";
+@import "themes/header-dark";
+//@import "themes/header-inverted";

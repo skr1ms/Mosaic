@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ошибка при обработке изображения</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #f44336;
+            margin: 0;
+            font-size: 28px;
+        }
+        .emoji {
+            font-size: 2em;
+            margin: 10px 0;
+        }
+        .error-message {
+            background-color: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .coupon-code {
+            background-color: #f0f8ff;
+            border: 2px dashed #2196F3;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .coupon-code strong {
+            font-size: 1.2em;
+            color: #1976d2;
+        }
+        .next-steps {
+            background-color: #e8f5e8;
+            border-left: 4px solid #4CAF50;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .next-steps h3 {
+            margin-top: 0;
+            color: #2e7d32;
+        }
+        .next-steps ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .next-steps li {
+            margin: 8px 0;
+        }
+        .contact-info {
+            background: linear-gradient(135deg, #2196F3, #1976d2);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .contact-info h3 {
+            margin-top: 0;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+        }
+        .error-code {
+            font-family: 'Courier New', monospace;
+            background-color: #f5f5f5;
+            padding: 5px 10px;
+            border-radius: 4px;
+            color: #d32f2f;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="emoji">⚠️🔧</div>
+            <h1>Ошибка при обработке изображения</h1>
+        </div>
+
+        <p>Здравствуйте!</p>
+        
+        <p>К сожалению, при обработке вашего изображения произошла ошибка.</p>
+
+        <div class="coupon-code">
+            <p>Номер купона: <strong>{{.CouponCode}}</strong></p>
+        </div>
+
+        <div class="error-message">
+            <h3>🚫 Описание ошибки:</h3>
+            <p><strong>{{.ErrorMessage}}</strong></p>
+            {{if .ErrorCode}}
+            <p>Код ошибки: <span class="error-code">{{.ErrorCode}}</span></p>
+            {{end}}
+        </div>
+
+        <div class="next-steps">
+            <h3>🔄 Что делать дальше:</h3>
+            <ul>
+                <li><strong>Попробуйте повторно</strong> - загрузите изображение еще раз</li>
+                <li><strong>Проверьте файл</strong> - убедитесь, что изображение в формате JPG или PNG</li>
+                <li><strong>Размер файла</strong> - максимальный размер 10 МБ</li>
+                <li><strong>Качество изображения</strong> - используйте четкие фотографии без размытия</li>
+            </ul>
+        </div>
+
+        <div class="contact-info">
+            <h3>📞 Нужна помощь?</h3>
+            <p>Наша служба поддержки готова помочь вам!</p>
+            <p><strong>Email:</strong> support@doyoupaint.com</p>
+            <p><strong>Время работы:</strong> 9:00 - 18:00 (пн-пт)</p>
+        </div>
+
+        <p><strong>Не волнуйтесь!</strong> Ваш купон остается действительным. Вы можете попробовать создать схему еще раз с тем же номером купона.</p>
+
+        <div class="footer">
+            <p><strong>Технические детали:</strong></p>
+            <p>• Дата ошибки: {{.Timestamp}}</p>
+            {{if .ImageID}}
+            <p>• ID изображения: <span class="error-code">{{.ImageID}}</span></p>
+            {{end}}
+            <p style="margin-top: 20px;">
+                <small>Email отправлен автоматически. Не отвечайте на это сообщение.</small>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

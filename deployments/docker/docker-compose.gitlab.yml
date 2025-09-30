@@ -1,0 +1,65 @@
+services:
+  gitlab:
+    image: gitlab/gitlab-ee:latest
+    container_name: gitlab
+    hostname: "gitlab"
+    restart: unless-stopped
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://${SERVER_IP_ADDRESS}:9080'
+        gitlab_rails['gitlab_shell_ssh_port'] = 9022
+        gitlab_rails['initial_root_password'] = 'CHANGEME123'
+        gitlab_rails['gitlab_signup_enabled'] = false
+
+        # GitLab Registry
+        registry['enable'] = true
+        registry_external_url 'http://${SERVER_IP_ADDRESS}:5000'
+        registry['registry_http_addr'] = "0.0.0.0:5000"
+        gitlab_rails['registry_enabled'] = true
+        gitlab_rails['registry_host'] = "${SERVER_IP_ADDRESS}"
+        gitlab_rails['registry_port'] = "5000"
+        gitlab_rails['registry_api_url'] = "http://${SERVER_IP_ADDRESS}:5000"
+        gitlab_rails['registry_path'] = "/var/opt/gitlab/gitlab-rails/shared/registry"
+
+        # Disable HTTPS for Nginx
+        nginx['listen_port'] = 80
+        nginx['listen_https'] = false
+        registry_nginx['enable'] = false
+    ports:
+      - "9080:80"    # GitLab web
+      - "9022:22"    # SSH
+      - "5000:5000"  # Docker Registry
+    volumes:
+      - "/srv/gitlab/config:/etc/gitlab"
+      - "/srv/gitlab/logs:/var/log/gitlab"
+      - "/srv/gitlab/data:/var/opt/gitlab"
+      - "/srv/gitlab/registry:/var/opt/gitlab/gitlab-rails/shared/registry"
+    shm_size: "256m"
+    networks:
+      - gitlab_net
+
+  gitlab-runner:
+    image: gitlab/gitlab-runner:latest
+    container_name: gitlab-runner
+    restart: unless-stopped
+    depends_on:
+      - gitlab
+    volumes:
+      - "/srv/gitlab-runner/config:/etc/gitlab-runner"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - DOCKER_TLS_CERTDIR=""
+    networks:
+      - gitlab_net
+
+# /etc/docker/daemon.json
+# {
+#  "insecure-registries": ["${SERVER_IP_ADDRESS}:5000"]
+# }
+# sudo nano /srv/gitlab-runner/config/config.toml
+# concurrent = 1 - default, you can increase it to 2 or more
+
+networks:
+  gitlab_net:
+    name: gitlab_net

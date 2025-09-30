@@ -1,0 +1,491 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+html,
+body {
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.fade-enter {
+  opacity: 0;
+}
+
+.fade-enter-active {
+  opacity: 1;
+  transition: opacity 300ms ease-in;
+}
+
+.fade-exit {
+  opacity: 1;
+}
+
+.fade-exit-active {
+  opacity: 0;
+  transition: opacity 300ms ease-in;
+}
+
+.hero-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.glass-effect {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.hover-lift {
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.scale-102 {
+  transform: scale(1.02);
+}
+
+.animate-pulse-slow {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.canvas-container {
+  background-image:
+    linear-gradient(45deg, #f3f4f6 25%, transparent 25%),
+    linear-gradient(-45deg, #f3f4f6 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #f3f4f6 75%),
+    linear-gradient(-45deg, transparent 75%, #f3f4f6 75%);
+  background-size: 20px 20px;
+  background-position:
+    0 0,
+    0 10px,
+    10px -10px,
+    -10px 0px;
+}
+
+.hover-lift {
+  transition: transform 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+
+  button,
+  a,
+  input[type='submit'],
+  input[type='button'] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  input[type='text'],
+  input[type='email'],
+  input[type='password'],
+  input[type='tel'],
+  select,
+  textarea {
+    font-size: 16px;
+    -webkit-appearance: none;
+    appearance: none;
+    border-radius: 8px;
+  }
+
+  h1 {
+    font-size: 2rem !important;
+    line-height: 1.2;
+  }
+
+  h2 {
+    font-size: 1.75rem !important;
+  }
+
+  h3 {
+    font-size: 1.5rem !important;
+  }
+
+  .card {
+    margin-bottom: 1rem;
+    border-radius: 1rem;
+  }
+
+  .mobile-padding {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+.safe-area-padding {
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
+.dropdown-mobile-fix {
+  position: fixed !important;
+  top: auto !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: calc(100vw - 2rem) !important;
+  max-width: 300px !important;
+}
+
+@media (max-width: 480px) {
+  .dropdown-mobile-fix {
+    width: calc(100vw - 1rem) !important;
+    max-width: none !important;
+  }
+}
+
+.text-overflow-mobile {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.btn-responsive {
+  font-size: 0.9rem;
+  padding: 0.75rem 1rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-adaptive-text {
+  font-size: clamp(0.875rem, 2.5vw, 1rem);
+  padding: 0.75rem clamp(1rem, 4vw, 1.5rem);
+}
+
+.hero-btn {
+  font-size: 0.95rem;
+  padding: 0.875rem 1.25rem;
+  min-height: 3.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.3;
+}
+
+@media (min-width: 640px) {
+  .hero-btn {
+    font-size: 1.1rem;
+    padding: 1rem 1.5rem;
+    min-height: 3.5rem;
+  }
+}
+
+.section-btn {
+  font-size: 0.9rem;
+  padding: 0.75rem 1rem;
+  line-height: 1.2;
+  text-align: center;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+@media (min-width: 640px) {
+  .section-btn {
+    font-size: 1rem;
+    padding: 0.875rem 1.25rem;
+  }
+}
+
+.btn-text-safe {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[lang='ru'] .hero-btn,
+html[lang='ru'] .section-btn {
+  font-size: 0.85rem;
+  padding: 0.75rem 1rem;
+  line-height: 1.2;
+}
+
+@media (min-width: 640px) {
+  html[lang='ru'] .hero-btn {
+    font-size: 1rem;
+    padding: 0.875rem 1.25rem;
+  }
+
+  html[lang='ru'] .section-btn {
+    font-size: 0.95rem;
+    padding: 0.8rem 1.15rem;
+  }
+}
+
+html[lang='ru'] .btn-text-safe {
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  text-align: center;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  -moz-hyphens: auto;
+}
+
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  position: relative;
+  cursor: pointer;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.touch-target::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+  z-index: -1;
+}
+
+.mobile-flex-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .mobile-flex-col {
+    flex-direction: row;
+    gap: 1rem;
+  }
+}
+
+.mobile-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  line-height: 1.25;
+  transition: all 0.2s ease;
+  touch-action: manipulation;
+  text-align: center;
+}
+
+@media (min-width: 640px) {
+  .mobile-btn {
+    min-height: 44px;
+    font-size: 1rem;
+    padding: 0.75rem 1.5rem;
+  }
+}
+
+.mobile-btn:active {
+  transform: scale(0.98);
+}
+
+.mobile-text-responsive {
+  font-size: clamp(0.875rem, 4vw, 1.125rem);
+  line-height: 1.5;
+}
+
+.mobile-heading-responsive {
+  font-size: clamp(1.5rem, 6vw, 3rem);
+  line-height: 1.2;
+}
+
+.mobile-spacing {
+  padding: 1rem;
+}
+
+@media (min-width: 640px) {
+  .mobile-spacing {
+    padding: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mobile-spacing {
+    padding: 2rem;
+  }
+}
+
+@media (max-height: 640px) and (orientation: landscape) {
+  .mobile-btn {
+    min-height: 40px;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .mobile-spacing {
+    padding: 0.75rem;
+  }
+}
+
+@media screen and (max-width: 640px) {
+  input[type='text'],
+  input[type='email'],
+  input[type='password'],
+  input[type='tel'],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+.mobile-card {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  margin-bottom: 1rem;
+  padding: 1rem;
+}
+
+.mobile-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+@media (min-width: 640px) {
+  .mobile-card {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+}
+
+.mobile-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .mobile-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .mobile-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+.force-center {
+  text-align: center !important;
+  display: block !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  width: 100% !important;
+}
+
+.force-center-container {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  width: 100% !important;
+}

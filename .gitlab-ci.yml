@@ -1,0 +1,224 @@
+include:
+  - local: '.gitlab-ci-domains.yml'
+
+# Global images
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_HOST: unix:///var/run/docker.sock
+  GO_IMAGE: golang:1.25-alpine
+  DOCKER_IMAGE: docker:latest
+  UBUNTU_IMAGE: ubuntu:22.04
+  CI_REGISTRY: "${PRODUCTION_SERVER_IP}:5000"
+  CI_REGISTRY_IMAGE: "${PRODUCTION_SERVER_IP}:5000/root/mosaic"
+  PRODUCTION_SSH_PORT: "22" 
+
+stages:
+  - validate
+  - build
+  - test
+  - prepare
+  - deploy
+  - verify
+  - cleanup
+
+# ========================================
+# BUILD
+# ========================================
+build:backend:
+  stage: build
+  image: $DOCKER_IMAGE
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_HOST: unix:///var/run/docker.sock
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
+    - export DOCKER_BUILDKIT=1
+    - export BUILDKIT_PROGRESS=plain
+  script:
+    - cd backend
+    - echo "Registry info - CI_REGISTRY=$CI_REGISTRY, CI_REGISTRY_IMAGE=$CI_REGISTRY_IMAGE"
+    - docker build -t "$CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA" .
+    - docker push "$CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA"
+    - echo "Backend build and push completed successfully!"
+  after_script:
+    - docker image prune -f || true
+    - docker builder prune -f || true
+  rules:
+    - if: '$DOMAIN_UPDATE == "true"'
+      when: never
+    - if: '$CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME == "develop"'
+      when: always
+
+build:frontend-dashboards:
+  stage: build
+  image: $DOCKER_IMAGE
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_HOST: unix:///var/run/docker.sock
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
+    - export DOCKER_BUILDKIT=1
+    - export BUILDKIT_PROGRESS=plain
+  script:
+    - cd frontend/dashboards
+    - docker build -t "$CI_REGISTRY_IMAGE/dashboards:$CI_COMMIT_SHA" .
+    - docker push "$CI_REGISTRY_IMAGE/dashboards:$CI_COMMIT_SHA"
+    - echo "Dashboards build and push completed successfully!"
+  after_script:
+    - docker image prune -f || true
+    - docker builder prune -f || true
+  rules:
+    - if: '$DOMAIN_UPDATE == "true"'
+      when: never
+    - if: '$CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME == "develop"'
+      when: always
+
+build:frontend-public:
+  stage: build
+  image: $DOCKER_IMAGE
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_HOST: unix:///var/run/docker.sock
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
+    - export DOCKER_BUILDKIT=1
+    - export BUILDKIT_PROGRESS=plain
+  script:
+    - cd frontend/public-site
+    - docker build -t "$CI_REGISTRY_IMAGE/public-site:$CI_COMMIT_SHA" .
+    - docker push "$CI_REGISTRY_IMAGE/public-site:$CI_COMMIT_SHA"
+    - echo "Public site build and push completed successfully!"
+  after_script:
+    - docker image prune -f || true
+    - docker builder prune -f || true
+  rules:
+    - if: '$DOMAIN_UPDATE == "true"'
+      when: never
+    - if: '$CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME == "develop"'
+      when: always
+
+# ========================================
+# TESTS
+# ========================================
+test:
+  stage: test
+  image: $GO_IMAGE
+  services:
+    - postgres:17-alpine
+    - redis:8-alpine
+  variables:
+    POSTGRES_DB: mosaic_test
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: testpass
+    DATABASE_URL: "postgres://postgres:testpass@postgres:5432/mosaic_test?sslmode=disable"
+    REDIS_URL: "redis://redis:6379"
+  before_script:
+    - cd backend
+  script:
+    - go mod download
+    - go mod vendor
+    - go fmt ./...
+    - go vet ./...
+    - go test ./internal/... -v
+  cache:
+    key: "go-tests-${CI_COMMIT_REF_SLUG}"
+    paths:
+      - backend/internal/
+    policy: pull-push
+  rules:
+    - if: '$DOMAIN_UPDATE == "true"'
+      when: never
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      when: always
+    - if: '$CI_MERGE_REQUEST_ID'
+      when: always
+
+# ========================================
+# DEPLOY
+# ========================================
+
+deploy:production:
+  stage: deploy
+  image: ubuntu:22.04
+  variables:
+    DEPLOY_SERVER: $PRODUCTION_SERVER_IP
+    DEPLOY_USER: $PRODUCTION_USER
+    CI_REGISTRY_PASSWORD: $CI_JOB_TOKEN
+  before_script:
+    - apt-get update -y -qq
+    - apt-get install -y -qq git openssh-client ca-certificates
+    - update-ca-certificates || true
+    - eval "$(ssh-agent -s)"
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -p "${PRODUCTION_SSH_PORT:-22}" -H "$DEPLOY_SERVER" >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - ssh -p "${PRODUCTION_SSH_PORT:-22}" "$DEPLOY_USER@$DEPLOY_SERVER" "mkdir -p /home/lumirin/Mosaic"
+    - >
+      tar cz
+      --exclude='.git'
+      --exclude='.env'
+      . |
+      ssh -p "${PRODUCTION_SSH_PORT:-22}" "$DEPLOY_USER@$DEPLOY_SERVER" "tar xz -C /home/lumirin/Mosaic"
+
+    - |
+      cat > deploy.sh << 'EOF'
+      #!/bin/bash
+      set -euo pipefail
+
+      cd /home/lumirin/Mosaic
+
+      : "${CI_REGISTRY_IMAGE:=mosaic}"
+      : "${CI_COMMIT_SHA:=latest}"
+
+      if [ -n "${CI_REGISTRY:-}" ] && [ -n "${CI_REGISTRY_PASSWORD:-}" ]; then
+        echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" -u gitlab-ci-token --password-stdin || true
+      fi
+
+      COMPOSE="docker compose --env-file .env -f deployments/docker/docker-compose.prod.yml"
+
+      $COMPOSE pull backend dashboards public-site nginx || true
+      $COMPOSE up -d --remove-orphans backend dashboards public-site nginx
+
+      if docker ps --filter "name=nginx" --filter "status=running" | grep -q nginx; then
+        docker exec nginx nginx -t && docker exec nginx nginx -s reload || true
+      fi
+
+      sleep 10
+
+      docker image prune -af --filter "until=168h" || true
+
+      echo "Deploy completed successfully."
+      EOF
+
+    - scp -P "${PRODUCTION_SSH_PORT:-22}" deploy.sh "$DEPLOY_USER@$DEPLOY_SERVER:/tmp/deploy.sh"
+    - ssh -p "${PRODUCTION_SSH_PORT:-22}" "$DEPLOY_USER@$DEPLOY_SERVER" "chmod +x /tmp/deploy.sh"
+    - >
+      ssh -p "${PRODUCTION_SSH_PORT:-22}" "$DEPLOY_USER@$DEPLOY_SERVER"
+      "CI_REGISTRY='$CI_REGISTRY' CI_REGISTRY_IMAGE='$CI_REGISTRY_IMAGE' CI_COMMIT_SHA='$CI_COMMIT_SHA' CI_REGISTRY_PASSWORD='$CI_REGISTRY_PASSWORD' bash -lc /tmp/deploy.sh"
+  environment:
+    name: production
+    url: https://photo.doyoupaint.com
+  rules:
+    - if: '$DOMAIN_UPDATE == "true"'
+      when: never
+    - if: '$CI_COMMIT_REF_NAME == "main" || $CI_COMMIT_REF_NAME == "develop"'
+      when: always
+  allow_failure: false
+
+# ========================================
+# RUNNER DOCKER GC 
+# ========================================
+runner:docker-gc:
+  stage: cleanup
+  image: $DOCKER_IMAGE
+  variables:
+    DOCKER_HOST: unix:///var/run/docker.sock
+  script:
+    - docker image prune -af --filter "until=24h" || true
+    - docker builder prune -af --filter "until=24h" || true
+  rules:
+    - when: always
+  allow_failure: true

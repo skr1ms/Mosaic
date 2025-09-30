@@ -1,0 +1,182 @@
+{
+  "id": null,
+  "title": "Mosaic Application Metrics",
+  "tags": ["mosaic", "application"],
+  "timezone": "browser",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Service Status",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-uid"
+      },
+      "targets": [
+        {
+          "expr": "up{job=\"backend\"}",
+          "legendFormat": "Backend Status",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-uid"
+          }
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "fieldConfig": {
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Backend Status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "0": {
+                        "text": "DOWN",
+                        "color": "red"
+                      },
+                      "1": {
+                        "text": "UP",
+                        "color": "green"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "title": "Memory Usage",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-uid"
+      },
+      "targets": [
+        {
+          "expr": "go_memstats_alloc_bytes{job=\"backend\"}",
+          "legendFormat": "Memory Allocated",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-uid"
+          }
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        }
+      }
+    },
+
+    {
+      "id": 3,
+      "title": "GC Duration",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-uid"
+      },
+      "targets": [
+        {
+          "expr": "go_gc_duration_seconds{job=\"backend\",quantile=\"0.5\"}",
+          "legendFormat": "GC Duration (median)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-uid"
+          }
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Memory Usage Over Time",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-uid"
+      },
+      "targets": [
+        {
+          "expr": "go_memstats_alloc_bytes{job=\"backend\"}",
+          "legendFormat": "Allocated Memory",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-uid"
+          }
+        },
+        {
+          "expr": "go_memstats_sys_bytes{job=\"backend\"}",
+          "legendFormat": "System Memory",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus-uid"
+          }
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        }
+      }
+    }
+  ],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "refresh": "5s",
+  "version": 1,
+  "uid": "3aadeb5b-3552-48b0-88aa-3174367b8e42",
+  "schemaVersion": 16
+}

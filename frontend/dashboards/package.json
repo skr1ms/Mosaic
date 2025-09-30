@@ -1,0 +1,198 @@
+{
+  "name": "mosaic-dashboards",
+  "version": "1.0.0",
+  "homepage": "./",
+  "private": true,
+  "description": "Mosaic Project - Admin Dashboard",
+  "author": "Mosaic Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DashboardPack/architectui-react-theme-free"
+  },
+  "scripts": {
+    "start": "cross-env PORT=3001 react-app-rewired start",
+    "build": "react-app-rewired build",
+    "test": "react-app-rewired test",
+    "eject": "react-scripts eject",
+    "postinstall": "patch-package"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.27.6",
+    "@fortawesome/fontawesome-free": "^6.7.2",
+    "@fortawesome/fontawesome-svg-core": "^6.7.2",
+    "@fortawesome/free-brands-svg-icons": "^6.7.2",
+    "@fortawesome/free-solid-svg-icons": "^6.7.2",
+    "@fortawesome/react-fontawesome": "^0.2.2",
+    "@reduxjs/toolkit": "^2.8.2",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/markerclustererplus": "^2.1.33",
+    "animate-sass": "^0.8.2",
+    "apexcharts": "^4.7.0",
+    "aphrodite": "^2.4.0",
+    "axios": "^1.11.0",
+    "bootstrap": "^5.3.7",
+    "buffer": "^6.0.3",
+    "chart.js": "^4.4.7",
+    "chroma-js": "^3.1.2",
+    "classnames": "^2.5.1",
+    "constants-browserify": "^1.0.0",
+    "crypto-browserify": "^3.12.1",
+    "d3-color": "^3.1.0",
+    "date-arithmetic": "^4.1.0",
+    "date-fns": "^4.1.0",
+    "events": "^3.3.0",
+    "framer-motion": "^12.19.1",
+    "globalize": "^1.7.0",
+    "hamburger-react": "^2.5.2",
+    "hamburgers": "^1.2.1",
+    "https-browserify": "^1.0.0",
+    "i18next": "^25.3.6",
+    "install": "^0.13.0",
+    "jquery": "^3.7.1",
+    "loaders.css": "^0.1.2",
+    "moment": "^2.30.1",
+    "namor": "^2.0.4",
+    "os-browserify": "^0.3.0",
+    "path-browserify": "^1.0.1",
+    "pe7-icon": "^1.0.4",
+    "rc-slider": "^11.1.8",
+    "rc-tooltip": "^6.2.1",
+    "react": "^19.1.0",
+    "react-animations": "^1.0.0",
+    "react-apexcharts": "^1.7.0",
+    "react-app-rewired": "^2.1.11",
+    "react-bootstrap": "^2.9.0",
+    "react-bootstrap-sweetalert": "^5.2.0",
+    "react-chartjs-2": "^5.2.0",
+    "react-compound-slider": "^3.4.0",
+    "react-copy-to-clipboard": "^5.1.0",
+    "react-countup": "^6.4.2",
+    "react-data-table-component": "^7.5.4",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
+    "react-dom": "^19.1.0",
+    "react-flagkit": "^2.0.4",
+    "react-i18next": "^15.6.1",
+    "react-icons": "^5.4.0",
+    "lucide-react": "^0.400.0",
+    "react-loaders": "^3.0.1",
+    "react-loading-overlay-ts": "^2.0.2",
+    "react-numeric-input": "^2.2.3",
+    "react-on-screen": "^2.1.1",
+    "react-outside-click-handler": "^1.3.0",
+    "react-paginate": "^8.2.0",
+    "react-perfect-scrollbar": "^1.5.8",
+    "react-popper": "^2.3.0",
+    "react-redux": "^9.2.0",
+    "react-resize-detector": "^12.0.0",
+    "react-responsive-tabs": "^4.4.3",
+    "react-router-dom": "^7.6.2",
+    "react-scripts": "5.0.1",
+    "react-scroll": "^1.9.0",
+    "react-select": "^5.8.3",
+    "react-sizeme": "^3.0.2",
+    "react-slick": "^0.30.2",
+    "react-switch": "^7.0.0",
+    "react-syntax-highlighter": "^15.6.1",
+    "react-table": "^7.8.0",
+    "react-textarea-autosize": "^8.5.4",
+    "react-toastify": "^11.0.5",
+    "reactstrap": "^9.2.3",
+    "recharts": "^2.13.3",
+    "redux": "^5.0.1",
+    "redux-form": "^8.3.10",
+    "redux-logger": "^3.0.6",
+    "redux-thunk": "^3.1.0",
+    "slick-carousel": "^1.8.1",
+    "stream-browserify": "^3.0.0",
+    "stream-http": "^3.2.0",
+    "string_decoder": "^1.3.0",
+    "styled-components": "^6.1.16",
+    "sweetalert": "^2.1.2",
+    "typescript": "^5.7.2",
+    "util": "^0.12.5",
+    "validator": "^13.12.0",
+    "vm-browserify": "^1.1.2",
+    "web-vitals": "^5.0.3"
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "ajv": "^8.12.0",
+    "ajv-keywords": "^5.1.0",
+    "cross-env": "^7.0.3",
+    "glob": "^11.0.3",
+    "http-proxy-middleware": "^3.0.2",
+    "patch-package": "^8.0.0",
+    "postcss": "^8.4.48",
+    "process": "^0.11.10",
+    "resolve-url-loader": "^5.0.0",
+    "sass": "^1.89.2",
+    "sass-loader": "^16.0.3",
+    "string-replace-loader": "^3.2.0",
+    "webpack-dev-server": "^4.15.1"
+  },
+  "overrides": {
+    "d3-color": "^3.1.0",
+    "nth-check": "^2.1.1",
+    "postcss": "^8.4.48",
+    "prismjs": "^1.30.0",
+    "webpack-dev-server": "^4.15.1",
+    "typescript": "^5.7.2",
+    "react-popper": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    },
+    "react-simple-maps": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    },
+    "react-table": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    },
+    "redux-form": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    },
+    "airbnb-prop-types": {
+      "react": "$react"
+    },
+    "react-intersection-observer": {
+      "react": "$react"
+    },
+    "react-responsive-tabs": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    },
+    "react-bootstrap-sweetalert": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    },
+    "react-copy-to-clipboard": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    },
+    "react-input-mask": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    },
+    "react-onclickoutside": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    }
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ]
+}

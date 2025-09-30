@@ -1,0 +1,17 @@
+<svg width="200" height="60" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+  <!-- Фон -->
+  <rect width="200" height="60" fill="white"/>
+  
+  <!-- Алмаз -->
+  <polygon points="30,15 40,25 30,35 20,25" fill="#0ea5e9" stroke="#1e3a8a" stroke-width="2"/>
+  <polygon points="30,18 35,25 30,32 25,25" fill="#60a5fa"/>
+  
+  <!-- Текст -->
+  <text x="50" y="25" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#1e3a8a">Алмазная</text>
+  <text x="50" y="42" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#3b82f6">мозаика</text>
+  
+  <!-- Декоративные элементы -->
+  <circle cx="160" cy="20" r="3" fill="#0ea5e9"/>
+  <circle cx="170" cy="25" r="2" fill="#60a5fa"/>
+  <circle cx="165" cy="35" r="2.5" fill="#3b82f6"/>
+</svg>

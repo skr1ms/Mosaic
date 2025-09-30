@@ -1,0 +1,1327 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "close": "Close",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "yes": "Yes",
+    "no": "No",
+    "continue": "Continue",
+    "cm": "cm",
+    "reset": "Reset",
+    "locale": "en-US",
+    "processing": "Processing..."
+  },
+  "navigation": {
+    "home": "Home",
+    "diamond_art": "Diamond Art",
+    "paint_by_numbers": "Paint by Numbers",
+    "what_is_this": "What is this",
+    "company_name": "Diamond Mosaic",
+    "page_title": "Diamond Mosaic - Create Beautiful Rhinestone Pictures",
+    "page_description": "Create beautiful rhinestone pictures. An engaging hobby for the whole family. Upload photos, choose styles and get ready mosaic schemes.",
+    "html_title": "Diamond Mosaic - Create Your Picture",
+    "html_description": "Diamond Mosaic - an engaging hobby for the whole family. Create beautiful rhinestone pictures."
+  },
+  "rotation": "Rotation",
+  "preview_album": {
+    "styles": {
+      "venus_soft": "Venus (soft contrast)",
+      "venus_strong": "Venus (strong contrast)",
+      "sun_soft": "Sun (soft contrast)",
+      "sun_strong": "Sun (strong contrast)",
+      "moon_soft": "Moon (soft contrast)",
+      "moon_strong": "Moon (strong contrast)",
+      "mars_soft": "Mars (soft contrast)",
+      "mars_strong": "Mars (strong contrast)"
+    },
+    "create_schema": "Create Mosaic Schema"
+  },
+  "coupon_activation": {
+    "title": "Coupon Activation",
+    "enter_coupon_code": "Enter Coupon Code",
+    "coupon_code_label": "Coupon Code",
+    "coupon_placeholder": "For example: ABC123",
+    "validating": "Validating...",
+    "validate_coupon": "Validate Coupon",
+    "coupon_hint": "You can find the coupon on the kit packaging",
+    "upload_photo": "Upload Photo",
+    "coupon": "Coupon",
+    "mosaic_size": "Mosaic Size",
+    "standard": "Standard",
+    "style": "Style",
+    "classic": "Classic",
+    "select_image": "Select an image for mosaic",
+    "file_formats": "JPG, PNG up to 10 MB",
+    "choose_file": "Choose File",
+    "step_2_edit_image": "Step 2: Edit Image",
+    "coupon_activated": "Coupon Activated",
+    "code": "Code",
+    "activation_date_unknown": "Activation date unknown",
+    "preview_of_mosaic": "Preview of your mosaic",
+    "mosaic_preview": "Mosaic preview",
+    "size": "Size",
+    "not_specified": "Not specified",
+    "pages_in_schema": "Pages in schema",
+    "stones": "Stones",
+    "download_archive": "Download archive with schema",
+    "download_archive_button": "Download Archive",
+    "send_to_email": "Send to email",
+    "sending": "Sending...",
+    "send": "Send",
+    "search_page_in_archive": "Search page in archive",
+    "page_number": "Page number",
+    "find_page": "Find Page",
+    "total_pages": "Total pages",
+    "coupon_already_activated": "Your coupon is already activated. You can download the materials.",
+    "enter_code_and_upload": "Enter coupon code and upload photo to create unique mosaic",
+    "please_enter_code": "Please enter coupon code",
+    "coupon_not_found": "Coupon not found or invalid",
+    "validation_error": "Error validating coupon",
+    "please_select_image": "Please select an image",
+    "file_size_error": "File size must not exceed 10 MB",
+    "please_enter_page_number": "Please enter page number",
+    "invalid_page_number": "Enter a valid page number",
+    "page_opened": "Opened page {{page}} of {{total}}",
+    "page_not_found": "Page {{page}} not found in archive",
+    "page_search_error": "Error searching for page",
+    "please_enter_email": "Please enter email",
+    "archive_sent": "Archive sent to {{email}}",
+    "email_send_error": "Error sending email",
+    "archive_not_available": "Archive not available",
+    "download_started": "Archive download started"
+  },
+  "languages": {
+    "russian": "Russian",
+    "english": "English"
+  },
+  "hero": {
+    "title": "Create Your Unique Painting",
+    "subtitle": "Exciting Hobby for the Whole Family",
+    "coupon_banner": {
+      "title": "I already bought a kit",
+      "description": "Enter the code from your kit and create a unique schema",
+      "placeholder": "XXXX-XXXX-XXXX",
+      "activate": "Activate"
+    },
+    "shop_banner": {
+      "title": "Buy Coupon",
+      "description": "Purchase a coupon to create diamond art from your image",
+      "button": "Buy"
+    },
+    "paint_by_numbers": {
+      "title": "Paint by Numbers",
+      "description": "Coming soon: ability to create paint by numbers",
+      "button": "Coming Soon"
+    },
+    "what_is_this": {
+      "title": "What is this",
+      "description": "Learn more about diamond mosaic and how it works",
+      "button": "Learn More"
+    }
+  },
+  "sections": {
+    "diamond_art": {
+      "title": "Diamond Art",
+      "description": "Create beautiful paintings with gems",
+      "button": "Buy Coupon",
+      "button_details": "Learn More",
+      "video_section": {
+        "title": "Video instruction on creating diamond mosaic",
+        "description": "Detailed instruction on creating diamond mosaic with your own hands",
+        "what_you_learn": "What you will learn from the video:",
+        "learn_items": [
+          "How to properly prepare your workspace",
+          "Technique for gluing rhinestones",
+          "Secrets of creating beautiful mosaic"
+        ]
+      },
+      "coupon_section": {
+        "title": "I already bought a kit",
+        "description": "Enter the code from your kit and create a unique schema",
+        "code_hint": "The code is on the packaging of your kit"
+      },
+      "sizes_section": {
+        "title": "How the mosaic will look",
+        "description": "Choose the size of your future painting. Each size has its own characteristics and is suitable for different rooms.",
+        "sizes": {
+          "21x30": "Compact size, perfect for beginners",
+          "30x40": "Standard size, suitable for any room",
+          "40x40": "Square format, looks great on the wall",
+          "40x50": "Rectangular format, suitable for living room",
+          "40x60": "Large size, creates an accent in the interior",
+          "50x70": "Maximum size, the main decoration of the room"
+        }
+      },
+      "purchase_section": {
+        "title": "Buy Kit",
+        "description": "Choose a trusted platform to buy a diamond mosaic kit. After purchase, you will receive a code to create a unique schema.",
+        "marketplaces": {
+          "ozon": {
+            "description": "Huge selection of diamond mosaic kits with fast delivery",
+            "button": "Go to OZON"
+          },
+          "wildberries": {
+            "description": "Wide range of creative kits with quality guarantee",
+            "button": "Go to Wildberries"
+          }
+        },
+        "advice": {
+          "title": "Useful tip",
+          "content": "When buying, pay attention to the number of colors and the size of the painting. For beginners, we recommend kits with a small number of colors (up to 20) and a size of 30×40 cm."
+        }
+      },
+      "marketplace": {
+        "ready_to_buy": "Ready-made mosaics for purchase",
+        "selected_params": "Selected parameters: {size}, {style}",
+        "checking_availability": "Checking product availability...",
+        "in_stock": "In stock",
+        "not_available": "Not available in this size/style",
+        "buy_now": "Buy now",
+        "view_alternatives": "View alternatives",
+        "error_loading": "Error loading data",
+        "url_copied": "URL copied to clipboard! SKU: {sku}",
+        "redirected_to_general": "Redirected to general marketplace page",
+        "no_link_available": "Link not available",
+        "info_text": "Prices and product availability are current at the time of transition. Please check exact information on the marketplace website.",
+        "sku": "SKU: {sku}"
+      },
+      "sizes_and_styles_section": {
+        "title": "Mosaic Sizes and Styles",
+        "description": "Choose size and style to see how your mosaic will look",
+        "available_sizes": "Available Sizes",
+        "available_styles": "Available Styles",
+        "sizes": {
+          "21x30": {
+            "title": "21×30 cm",
+            "desc": "Compact size for beginners"
+          },
+          "30x40": {
+            "title": "30×40 cm",
+            "desc": "Popular size"
+          },
+          "40x40": {
+            "title": "40×40 cm",
+            "desc": "Square format"
+          },
+          "40x50": {
+            "title": "40×50 cm",
+            "desc": "Rectangular format"
+          },
+          "40x60": {
+            "title": "40×60 cm",
+            "desc": "Wide format"
+          },
+          "50x70": {
+            "title": "50×70 cm",
+            "desc": "Maximum size"
+          }
+        },
+        "styles": {
+          "grayscale": {
+            "title": "Black and White",
+            "desc": "Classic, elegant"
+          },
+          "skin_tones": {
+            "title": "Skin Tones",
+            "desc": "Realistic skin shades"
+          },
+          "pop_art": {
+            "title": "Pop Art",
+            "desc": "Bright, contrasting colors"
+          },
+          "max_colors": {
+            "title": "Maximum Colors",
+            "desc": "Rich color palette"
+          }
+        },
+        "preview_button": "View Mosaic Preview",
+        "preview_description": "Choose size and style to see how your mosaic will look"
+      }
+    },
+    "paint_by_numbers": {
+      "title": "Paint by Numbers",
+      "description": "Coming Soon",
+      "coming_soon": "Soon"
+    }
+  },
+  "editor": {
+    "title": "Image Editor",
+    "coupon_info": "Coupon Information",
+    "steps": {
+      "upload": "Image Upload",
+      "edit": "Editing",
+      "styles": "Style Selection",
+      "confirm": "Confirmation"
+    },
+    "upload": {
+      "title": "Upload Your Image",
+      "description": "Drag file here or click to select",
+      "file_types": "Supported formats: JPG, PNG",
+      "button": "Select File",
+      "upload_button": "Upload",
+      "drag_active": "Drop file to upload"
+    },
+    "tools": {
+      "rotate_left": "Rotate Left 90°",
+      "rotate_right": "Rotate Right 90°",
+      "zoom_in": "Zoom In",
+      "zoom_out": "Zoom Out",
+      "crop": "Crop to Size",
+      "reset": "Reset Changes",
+      "replace": "Replace Image"
+    },
+    "styles": {
+      "title": "Style Selection",
+      "subtitle": "Choose processing style for your image",
+      "main_style": "Main Style",
+      "preview": "Preview",
+      "processing": "Processing...",
+      "original": {
+        "title": "Original",
+        "description": "Process without AI enhancement, faster generation"
+      },
+      "enhanced": {
+        "title": "Enhanced",
+        "description": "AI-powered image enhancement for better quality"
+      }
+    },
+    "lighting": {
+      "title": "Lighting Settings",
+      "natural": {
+        "title": "Natural",
+        "description": "Natural lighting"
+      },
+      "moonlight": {
+        "title": "Moonlight",
+        "description": "Soft moonlight"
+      },
+      "venus": {
+        "title": "Venus",
+        "description": "Warm evening lighting"
+      }
+    },
+    "contrast": {
+      "title": "Contrast Settings",
+      "soft": {
+        "title": "Soft",
+        "description": "Low contrast"
+      },
+      "strong": {
+        "title": "Strong",
+        "description": "High contrast"
+      }
+    },
+    "confirmation": {
+      "title": "Confirm Your Selection",
+      "warning_title": "Important Notice",
+      "warning_text": "Are you ready to create your diamond mosaic pattern with these settings?",
+      "warning_note": "Once you confirm, the coupon will be used and you won't be able to recreate the pattern.",
+      "no_button": "Go Back & Change Settings",
+      "yes_button": "Confirm & Create Pattern",
+      "selected_options": "Selected Options",
+      "style": "Style",
+      "lighting": "Lighting",
+      "contrast": "Contrast"
+    },
+    "processing_time": "2-5 min",
+    "processing_time_fast": "1-2 min",
+    "generation": {
+      "title": "Creating Schema",
+      "processing": "Processing Image",
+      "ai_processing": "AI Image Enhancement...",
+      "ai_processing_desc": "Using Stable Diffusion to improve quality",
+      "processing_steps": {
+        "uploading": "Uploading image...",
+        "processing": "Processing through AI...",
+        "enhancing": "Enhancing quality...",
+        "finalizing": "Finalizing processing..."
+      },
+      "processing_time": "Estimated time: 2-5 minutes",
+      "processing_time_fast": "Estimated time: 1-2 minutes",
+      "processing_note": "AI processing may take some time depending on system load",
+      "processing_error": "Processing Error",
+      "description": "Please wait. We are processing your image and creating a mosaic scheme.",
+      "complete": "complete"
+    },
+    "completion": {
+      "title": "Schema Ready!",
+      "description": "Your diamond mosaic pattern has been successfully created! You can now download the complete package or have it sent to your email.",
+      "view_schema": "View Schema",
+      "view_schema_desc": "Open pattern in new window",
+      "download_schema": "Download Pattern",
+      "download_schema_desc": "Download ZIP archive with complete mosaic pattern",
+      "send_email": "Send by Email",
+      "send_email_desc": "Send pattern to your email address",
+      "email_label": "Email Address",
+      "email_placeholder": "Enter your email",
+      "send_button": "Send",
+      "back_to_home": "Back to Home"
+    }
+  },
+  "editor_steps": {
+    "step": "Step",
+    "step_progress": "of",
+    "image_editing": "Image Editing",
+    "image_editing_desc": "Editing completed. Moving to style selection.",
+    "style_selection": "Style Selection",
+    "style_selection_desc": "Choose processing style for your image",
+    "confirmation": "Confirmation",
+    "confirmation_desc": "Confirm your selection and create schema"
+  },
+  "shop": {
+    "title": "Buy Coupon",
+    "subtitle": "Choose size and style for your coupon",
+    "select_size": "Choose Mosaic Size",
+    "select_style": "Choose Processing Style",
+    "final_price": "100 ₽",
+    "proceed_to_payment": "Proceed to Payment",
+    "how_it_works": "How It Works",
+    "email_label": "Email for receiving coupon",
+    "payment": {
+      "checking_status": "Checking payment status...",
+      "auto_check_info": "Status updates automatically every 3 seconds"
+    },
+    "alerts": {
+      "select_size": "Please select mosaic size",
+      "payment_success": "Payment completed successfully!",
+      "payment_error": "Payment error",
+      "size_label": "Size:",
+      "style_label": "Style:",
+      "create_schema_now": "🎨 Create Schema Now",
+      "coupon_generating": "Coupon generating... We'll refresh the page in a few seconds.",
+      "payment_failed": "Please try again or contact support.",
+      "status_check_complete": "Status check completed",
+      "status_check_message": "Click \"Check Payment\" to update order status.",
+      "order_created": "Order created!",
+      "order_created_message": "Open payment page in a new tab.",
+      "email_required": "Please enter email",
+      "coupon_copied": "Coupon code copied to clipboard!",
+      "coupon_ready_title": "Your coupon is ready!",
+      "coupon_code_label": "Coupon code:",
+      "copy_code_button": "📋 Copy code",
+      "go_home_button": "🏠 Go home",
+      "email_sent_info": "💌 Coupon also sent to your email:",
+      "save_code_info": "📱 Save the coupon code in a safe place"
+    },
+    "sizes": {
+      "21x30": {
+        "title": "21×30 cm",
+        "description": "Small size, perfect for beginners"
+      },
+      "30x40": {
+        "title": "30×40 cm",
+        "description": "Medium size, popular choice"
+      },
+      "40x40": {
+        "title": "40×40 cm",
+        "description": "Square format, balanced proportions"
+      },
+      "40x50": {
+        "title": "40×50 cm",
+        "description": "Rectangular format, good detail"
+      },
+      "40x60": {
+        "title": "40×60 cm",
+        "description": "Wide format, excellent detail"
+      },
+      "50x70": {
+        "title": "50×70 cm",
+        "description": "Large size, maximum detail"
+      }
+    },
+    "styles": {
+      "grayscale": {
+        "title": "Grayscale",
+        "description": "Black and white palette"
+      },
+      "pop_art": {
+        "title": "Pop Art",
+        "description": "Bright contrast colors"
+      },
+      "max_colors": {
+        "title": "Maximum Colors",
+        "description": "Maximum color palette"
+      }
+    },
+    "steps": {
+      "step1": {
+        "title": "Choose Size",
+        "description": "Select suitable mosaic size"
+      },
+      "step2": {
+        "title": "Choose Style",
+        "description": "Select image processing style"
+      },
+      "step3": {
+        "title": "Pay Coupon",
+        "description": "Pay for coupon online with card"
+      }
+    }
+  },
+  "notifications": {
+    "coupon_required": "Please enter coupon number",
+    "invalid_coupon_format": "Invalid coupon number format. 12 digits required.",
+    "invalid_coupon": "Invalid coupon number",
+    "coupon_activated": "Coupon activated",
+    "coupon_not_activated": "Coupon not activated. Please activate the coupon first.",
+    "activation_error": "Coupon activation error",
+    "coupon_already_used": "Coupon already used",
+    "coupon_already_activated": "Coupon already activated",
+    "coupon_ready_for_use": "Coupon ready for use!",
+    "previews_generated_success": "Previews successfully generated!",
+    "ai_previews_generated": "AI previews successfully created!",
+    "image_saved_success": "Image successfully saved",
+    "schema_generated": "Mosaic schema generated!",
+    "schema_generated_desc": "Your schema is ready for download",
+    "schema_error": "Schema generation error",
+    "schema_error_desc": "Failed to generate schema. Please try again",
+    "image_uploaded": "Image uploaded successfully",
+    "image_uploaded_desc": "Your image has been uploaded and is ready for processing",
+    "upload_error": "Upload error",
+    "upload_error_desc": "Failed to upload image",
+    "invalid_file_type": "Unsupported file type. Use JPG or PNG.",
+    "file_too_large": "File too large. Maximum size: 10MB.",
+    "style_processed": "Style processed",
+    "style_processed_desc": "Image processed in selected style",
+    "style_error": "Style processing error",
+    "style_error_desc": "Failed to apply changes",
+    "edits_applied": "Changes applied",
+    "email_sent": "Email sent",
+    "email_sent_desc": "Schema sent to specified email",
+    "email_error": "Email sending error",
+    "email_error_desc": "Failed to send schema by email",
+    "coupon_validated": "Coupon validated",
+    "coupon_wrong_partner": "This coupon belongs to another partner. Please go to the correct website for activation."
+  },
+  "payment": {
+    "title": "Coupon Payment",
+    "subtitle": "Enter card details to complete payment",
+    "loading": "Loading...",
+    "loading_recaptcha": "Loading reCAPTCHA...",
+    "error_title": "An error occurred",
+    "order_not_found": "Order not found",
+    "back_to_shop": "Back to shop",
+    "success_title": "Payment successful!",
+    "success_message": "Your order is paid and coupon is created",
+    "redirecting_to_bank": "Redirecting to bank payment page...",
+    "purchase_failed": "Failed to create order",
+    "order_details": "Order details",
+    "order_number": "Order number",
+    "size": "Size",
+    "style": "Style",
+    "status": "Status",
+    "status_paid": "Paid",
+    "coupon_code": "Coupon code",
+    "coupon_description": "Use this code to create your mosaic",
+    "start_creating": "Start creating",
+    "copy_code": "Copy code",
+    "coupon_processing": "Coupon is being processed...",
+    "what_next": "What's next?",
+    "step_1_title": "Upload photo",
+    "step_1_description": "Choose your favorite photo for mosaic creation",
+    "step_2_title": "Customize style",
+    "step_2_description": "Select size, style and processing settings",
+    "step_3_title": "Get scheme",
+    "step_3_description": "Download ready scheme or receive by email",
+    "failure_title": "Payment failed",
+    "error_canceled": "Payment was canceled",
+    "error_declined": "Bank declined the operation",
+    "error_insufficient_funds": "Insufficient funds on card",
+    "error_expired_card": "Card expiration date has passed",
+    "error_unknown": "Unknown error",
+    "error_generic": "Payment processing error occurred",
+    "what_happened": "What happened?",
+    "failure_step_1": "Payment system received your request",
+    "failure_step_2": "Bank couldn't process the payment",
+    "failure_step_3": "Money was not charged from your card",
+    "try_again": "Try again",
+    "check_card": "Check your card:",
+    "check_card_1": "Sufficient funds on account",
+    "check_card_2": "Card expiration date",
+    "check_card_3": "Correct card data",
+    "check_card_4": "Card not blocked by bank",
+    "contact_support": "Contact support",
+    "contact_support_text": "If problem persists, contact us for resolution",
+    "retry_payment": "Retry payment",
+    "back_to_home": "Back to home",
+    "card_number": "Card Number",
+    "expiry_date": "Expiry Date",
+    "cvv": "CVV",
+    "cardholder_name": "Cardholder Name",
+    "cardholder_placeholder": "JOHN DOE",
+    "email": "Email",
+    "email_placeholder": "john@example.com",
+    "security_note": "All payments are protected by SSL encryption",
+    "pay_button": "Pay Now",
+    "processing": "Processing...",
+    "errors": {
+      "invalid_card": "Invalid card number",
+      "invalid_expiry": "Invalid expiry date",
+      "invalid_cvv": "Invalid CVV code",
+      "invalid_name": "Enter cardholder name",
+      "invalid_email": "Enter valid email address",
+      "recaptcha_required": "Please confirm you are not a robot"
+    }
+  },
+  "coupon_info": {
+    "coupon_number": "Coupon Number",
+    "size": "Size",
+    "style": "Style",
+    "not_specified": "Not specified",
+    "standard": "Standard",
+    "activated": "Activated",
+    "dev_mode": "Development Mode"
+  },
+  "ai_process": {
+    "parameters_title": "AI Processing Parameters",
+    "style_label": "Processing Style",
+    "style": {
+      "grayscale": "Grayscale",
+      "skin_tones": "Skin Tones",
+      "pop_art": "Pop Art",
+      "max_colors": "Maximum Colors"
+    },
+    "lighting_label": "Lighting",
+    "lighting": {
+      "none": "No Changes",
+      "sun": "Sunny",
+      "moon": "Moonlight",
+      "venus": "Venusian"
+    },
+    "contrast_label": "Contrast",
+    "contrast": {
+      "none": "No Changes",
+      "low": "Low",
+      "high": "High"
+    },
+    "brightness": "Brightness",
+    "saturation": "Saturation",
+    "priority_label": "Priority",
+    "priority": {
+      "normal": "Normal",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "start": "Start AI Processing",
+    "cancel": "Cancel",
+    "processing": "Processing...",
+    "start_ai": "AI Enhancement",
+    "error": "AI processing start error: "
+  },
+  "ai_queue": {
+    "status_title": "AI Processing Status",
+    "error_loading": "Error loading queue status",
+    "queue_health": "Queue Health",
+    "health": {
+      "healthy": "Healthy",
+      "moderate": "Moderate",
+      "congested": "Congested"
+    },
+    "tasks_in_queue": "Tasks in queue",
+    "available_workers": "Available workers",
+    "estimated_wait": "Estimated wait time",
+    "currently_processing": "Currently processing",
+    "your_task": "Your task",
+    "refreshing": "Refreshing...",
+    "refresh": "Refresh",
+    "close": "Close",
+    "auto_refresh_note": "Status updates automatically every 30 seconds"
+  },
+  "loading": {
+    "title": "Loading...",
+    "subtitle": "Please wait"
+  },
+  "not_found": {
+    "title": "Page Not Found",
+    "description": "Sorry, the requested page does not exist or has been moved.",
+    "home_button": "Go Home",
+    "back_button": "Go Back"
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "items": [
+      {
+        "question": "What is diamond mosaic?",
+        "answer": "Diamond mosaic is a modern form of needlework where you create pictures by placing rhinestones on an adhesive base according to a pattern."
+      },
+      {
+        "question": "How long does it take to create a mosaic?",
+        "answer": "Creation time depends on size and complexity. Small mosaics (21×30 cm) can be made in 1-2 days, large ones (50×70 cm) - in a week."
+      },
+      {
+        "question": "Do I need special tools?",
+        "answer": "No, everything you need is included in the kit: rhinestones, pattern, adhesive base and tweezers for laying out."
+      },
+      {
+        "question": "Can I fix mistakes?",
+        "answer": "Yes, rhinestones are easily removed and re-glued if you notice an error."
+      },
+      {
+        "question": "How to care for the finished mosaic?",
+        "answer": "The finished mosaic can be covered with varnish for protection and hung on the wall like a regular painting."
+      }
+    ]
+  },
+  "marketplace": {
+    "title": "Where to Buy Kits"
+  },
+  "marketplace_links": {
+    "description": "Purchase quality diamond mosaic kits from trusted stores",
+    "ozon_description": "Wide selection of kits with fast delivery throughout Russia",
+    "wb_description": "Popular kits at competitive prices with quality guarantee",
+    "go_to_shop": "Go to Shop",
+    "tip_title": "Tip",
+    "tip_text": "Choose kits with square rhinestones for better quality of the finished painting"
+  },
+  "footer": {
+    "company_description": "Create beautiful paintings from rhinestones. An exciting hobby for the whole family.",
+    "contacts": "Contacts",
+    "social_networks": "Social Networks",
+    "copyright": "© 2025 Diamond Mosaic. All rights reserved.",
+    "whatsapp": "WhatsApp"
+  },
+  "support_chat": {
+    "title": "Support Chat",
+    "close": "Close",
+    "button_title": "Support",
+    "message_placeholder": "Enter message",
+    "edit_placeholder": "Editing message…",
+    "send_button": "Send",
+    "save_button": "Save",
+    "attach_file": "Attach file",
+    "view_attachment": "View",
+    "edit_message": "Edit",
+    "delete_message": "Delete",
+    "remove_file": "Remove",
+    "edited": "edited",
+    "attachments_label": "Attachments",
+    "message_read": "Read",
+    "message_sent": "Sent"
+  },
+  "what_is_this": {
+    "title": "What is Diamond Mosaic?",
+    "subtitle": "Learn more about the amazing technology of creating works of art",
+    "try_diamond_art": "Try Diamond Mosaic",
+    "back_to_home": "Back to Home",
+    "diamond_art": {
+      "title": "What is Diamond Mosaic?",
+      "description": "Diamond mosaic is a modern technique for creating paintings where special rhinestones are used instead of paints, which are glued to an adhesive base according to a pattern.",
+      "step1": "Choose a photo or image",
+      "step2": "Our system automatically creates a pattern",
+      "step3": "Glue rhinestones according to the pattern and get a masterpiece",
+      "highlight_title": "Simple and Beautiful",
+      "highlight_description": "Create complex paintings without artistic skills"
+    },
+    "benefits": {
+      "title": "Benefits of Diamond Mosaic",
+      "subtitle": "Why you should try this technique",
+      "relaxation": {
+        "title": "Relaxation",
+        "description": "The meditative creation process helps you relax and relieve stress"
+      },
+      "creativity": {
+        "title": "Creativity",
+        "description": "Unlock your creative potential and create a unique work of art"
+      },
+      "result": {
+        "title": "Result",
+        "description": "The finished painting will become a beautiful decoration for your interior or a gift"
+      }
+    },
+    "cta": {
+      "title": "Ready to Try?",
+      "description": "Create your first diamond mosaic right now",
+      "button": "Create Mosaic"
+    }
+  },
+  "mosaic_preview": {
+    "title": "Mosaic Preview",
+    "upload_section": {
+      "title": "Upload Image",
+      "description": "Select an image",
+      "formats": "PNG, JPG up to 15MB",
+      "drop_text": "Drop file here or click to select"
+    },
+    "preview_section": {
+      "title": "Mosaic Preview",
+      "description": "Upload an image and click \"Generate Preview\"",
+      "preview_will_be_here": "Preview will be here"
+    },
+    "size_section": {
+      "title": "Mosaic Size"
+    },
+    "style_section": {
+      "title": "Mosaic Style"
+    },
+    "sizes": {
+      "21x30": {
+        "title": "21×30 cm",
+        "desc": "Small size, perfect for beginners"
+      },
+      "30x40": {
+        "title": "30×40 cm",
+        "desc": "Medium size, popular choice"
+      },
+      "40x40": {
+        "title": "40×40 cm",
+        "desc": "Square format"
+      },
+      "40x50": {
+        "title": "40×50 cm",
+        "desc": "Rectangular medium"
+      },
+      "40x60": {
+        "title": "40×60 cm",
+        "desc": "Extended format"
+      },
+      "50x70": {
+        "title": "50×70 cm",
+        "desc": "Large size for detail"
+      }
+    },
+    "styles": {
+      "grayscale": {
+        "title": "Black and White",
+        "desc": "Classic monochrome"
+      },
+      "skin_tones": {
+        "title": "Skin Tones",
+        "desc": "Warm shades"
+      },
+      "pop_art": {
+        "title": "Pop Art",
+        "desc": "Bright contrasting colors"
+      },
+      "max_colors": {
+        "title": "Maximum Colors",
+        "desc": "Full color palette"
+      }
+    },
+    "ai_section": {
+      "title": "AI Processing",
+      "description": "Enhance image with artificial intelligence (as in coupon activation)"
+    },
+    "generate_button": "Generate Preview",
+    "generating": "Generating...",
+    "view_full": "Open in Full Size",
+    "download": "Download",
+    "back": "Back to Diamond Art",
+    "notifications": {
+      "select_image": "Please select an image",
+      "success": "Mosaic preview generated successfully!",
+      "error": "Error generating preview",
+      "invalid_file_type": "Please select an image file",
+      "file_too_large": "File size should not exceed 15MB",
+      "click_to_change": "Click to select another image"
+    }
+  },
+  "diamond_mosaic_page": {
+    "title": "Diamond Mosaic",
+    "size_selection": {
+      "title": "Choose Size",
+      "hint": "The larger the size, the more detailed the picture. Choose a size based on your preferences and placement location.",
+      "sizes": {
+        "21x30": "21×30 cm",
+        "30x40": "30×40 cm",
+        "40x40": "40×40 cm",
+        "40x50": "40×50 cm",
+        "40x60": "40×60 cm",
+        "50x70": "50×70 cm"
+      },
+      "details": {
+        "21x30": {
+          "desc": "Basic detail level",
+          "detail": "Perfect for small spaces"
+        },
+        "30x40": {
+          "desc": "Good detail",
+          "detail": "Optimal balance of size and detail"
+        },
+        "40x40": {
+          "desc": "High detail",
+          "detail": "Square format for symmetrical compositions"
+        },
+        "40x50": {
+          "desc": "Very high detail",
+          "detail": "High detail for portraits"
+        },
+        "40x60": {
+          "desc": "Maximum detail",
+          "detail": "Professional size with excellent detail"
+        },
+        "50x70": {
+          "desc": "Professional level",
+          "detail": "Maximum detail for large works"
+        }
+      }
+    },
+    "upload_section": {
+      "title": "Upload Image for Mosaic",
+      "subtitle": "Upload your image and prepare it for mosaic creation",
+      "instruction": "Select an image and edit it to fit the chosen size",
+      "select_image": "Select Image",
+      "image_preview": "Image Preview",
+      "formats": "Supported formats: JPG, PNG, GIF (max 10MB)",
+      "button": "Choose File",
+      "file_size_error": "File size should not exceed 10MB",
+      "file_type_error": "Please select an image",
+      "size_and_image_required": "Please select a size and upload an image"
+    },
+    "image_editor": {
+      "title": "Image Editing",
+      "setup_title": "Set up your image",
+      "delete_image": "Delete image",
+      "edit_image": "Edit image",
+      "drag_instruction": "Drag the image to change position",
+      "rotation_section": "Rotation",
+      "scale_section": "Scale",
+      "settings_section": "Settings",
+      "position_controls": "Position Controls",
+      "controls": {
+        "position_x": "Position X",
+        "position_y": "Position Y"
+      },
+      "position_x": "Position X",
+      "position_y": "Position Y",
+      "scale_control": "Scale",
+      "rotation_control": "Rotation",
+      "rotation_value": "{value}°",
+      "scale_value": "{value}%",
+      "crop_area_label": "MOSAIC AREA",
+      "file_info": "Select the area that will be used to create the mosaic",
+      "crop_hint": "The purple frame shows the final area",
+      "select_area_title": "Select the area you like",
+      "select_area_hint": "Click and drag on the image to select the area that will be used for your mosaic. You can change the selection at any time.",
+      "select_area_instruction": "Select the area on the photo that you want to use to create the preview",
+      "tools": {
+        "rotate_left": "Rotate left",
+        "rotate_right": "Rotate right",
+        "rotate_90": "Rotate 90°",
+        "fit_image": "Fit image",
+        "reset": "Reset",
+        "zoom_in": "Zoom in",
+        "zoom_out": "Zoom out",
+        "crop": "Crop",
+        "rotate": "Rotate",
+        "replace": "Replace"
+      },
+      "editor_title": "Image Setup",
+      "instructions": {
+        "cropping_active": "Hover over the image and select an area for cropping",
+        "general": "Enable cropping to select area or use other tools",
+        "controls": "💡 Mouse wheel - zoom • Right click - move • \"Crop\" button - select area"
+      },
+      "tooltips": {
+        "toggle_crop": "Enable/disable cropping",
+        "rotate_90": "Rotate 90°",
+        "zoom_out": "Zoom out",
+        "zoom_in": "Zoom in",
+        "reset_all": "Reset all changes"
+      },
+      "actions": {
+        "apply_changes": "Apply Changes",
+        "cancel": "Cancel"
+      }
+    },
+    "page_navigation": {
+      "continue": "To style selection",
+      "select_size_first": "Please select a size first",
+      "other_photo": "Other Photo",
+      "recommendations": {
+        "title": "Recommendations:",
+        "good_contrast": "Use images with good contrast",
+        "avoid_small_details": "Avoid too small details",
+        "best_for": "Portraits and landscapes work best"
+      }
+    }
+  },
+  "diamond_mosaic_styles": {
+    "page_title": "Mosaic Style Selection",
+    "size_label": "Size: {size}",
+    "back_to_editor": "Back to editor",
+    "back": "Back",
+    "create_preview": "Create Preview",
+    "loading": "Loading...",
+    "generating_previews": "Generating style previews...",
+    "select_style_error": "Please select a style",
+    "selection_error": "Error selecting style",
+    "storage_full_error": "Browser storage is full. Data has been cleaned up to continue working.",
+    "error_saving_style": "Error saving style",
+    "error_generating_previews": "Error generating style previews",
+    "previews_generated_success": "Style previews generated successfully!",
+    "styles": {
+      "grayscale": {
+        "title": "Grayscale",
+        "description": "Classic black and white style"
+      },
+      "skin_tones": {
+        "title": "Skin Tones",
+        "description": "Realistic skin tone shades"
+      },
+      "pop_art": {
+        "title": "Pop Art",
+        "description": "Bright pop art style"
+      },
+      "max_colors": {
+        "title": "Maximum Colors",
+        "description": "Maximum color saturation"
+      }
+    }
+  },
+  "diamond_mosaic_preview": {
+    "title": "Diamond Mosaic Preview",
+    "subtitle": "Original Image",
+    "style_selection": {
+      "title": "Choose Mosaic Style",
+      "styles": {
+        "realistic": {
+          "title": "Realistic",
+          "desc": "Image closest to the original"
+        },
+        "bright": {
+          "title": "Bright Colors",
+          "desc": "Saturated and contrasting shades"
+        },
+        "pastel": {
+          "title": "Pastel Tones",
+          "desc": "Soft muted colors"
+        },
+        "monochrome": {
+          "title": "Monochrome",
+          "desc": "Black and white palette"
+        },
+        "warm": {
+          "title": "Warm Tones",
+          "desc": "Golden and reddish hues"
+        },
+        "cool": {
+          "title": "Cool Tones",
+          "desc": "Blue and greenish hues"
+        }
+      }
+    },
+    "preview_section": {
+      "title": "Result Preview",
+      "selected_params": "Selected parameters:",
+      "size": "Size: {size}",
+      "style": "Style: {style}",
+      "generate_all": "Generate All Styles",
+      "generating": "Generating...",
+      "view_full": "View Full Size",
+      "download": "Download Preview"
+    },
+    "navigation": {
+      "back": "Back to Size Selection",
+      "continue": "Continue to Purchase"
+    },
+    "notifications": {
+      "select_style": "Please select a style",
+      "generation_started": "Preview generation started",
+      "generation_complete": "Preview generated successfully!",
+      "generation_error": "Error generating preview. Please try again.",
+      "save_error": "Error saving selection",
+      "style_selection_required": "Please select a processing style"
+    }
+  },
+  "diamond_mosaic_editor": {
+    "title": "Diamond Mosaic Editor",
+    "main_title": "Select the desired area",
+    "subtitle": "on your image",
+    "image_required": "Please select an image",
+    "processing_error": "Error processing image",
+    "continue": "Continue",
+    "size_label": "Size:",
+    "style_label": "Style:",
+    "loading": "Loading editor...",
+    "navigation": {
+      "back": "Back to Preview"
+    },
+    "tools": {
+      "rotate": "Rotate",
+      "scale": "Scale",
+      "position": "Position"
+    },
+    "controls": {
+      "rotation_control": "Rotation: {value}°",
+      "scale_control": "Scale: {value}%",
+      "position_x": "X: {value}",
+      "position_y": "Y: {value}"
+    },
+    "sections": {
+      "new_image": "New Image",
+      "select_other_image": "Select Another Image",
+      "reset_changes": "Reset All Changes",
+      "preview": "Preview",
+      "drag_instruction": "Drag the image to change position"
+    },
+    "buttons": {
+      "back": "Back",
+      "continue": "Continue"
+    }
+  },
+  "diamond_mosaic_purchase": {
+    "title": "Purchase Mosaic Schema",
+    "subtitle": "Choose the right package for your diamond mosaic",
+    "back_to_preview": "Back to Preview",
+    "selected_preview": "Selected Preview",
+    "size_label": "Size:",
+    "style_label": "Style:",
+    "select_package": "Select a package for purchase",
+    "purchase_error": "Purchase Error",
+    "order_section": {
+      "title": "Your Order",
+      "processing_type": "Processing Type:"
+    },
+    "what_you_get": {
+      "title": "What You Get",
+      "detailed_schema": "Detailed diamond mosaic schema",
+      "materials_list": "List of required materials",
+      "step_instructions": "Step-by-step instructions",
+      "download_files": "Download files"
+    },
+    "pricing": {
+      "discount": "Discount",
+      "package": "package",
+      "total_to_pay": "Total to pay:",
+      "savings": "Savings"
+    },
+    "terms": "By clicking the button, you agree to the terms of use",
+    "packages": {
+      "basic": {
+        "name": "Basic",
+        "features": [
+          "Diamond mosaic schema",
+          "Assembly instructions",
+          "24/7 support"
+        ]
+      },
+      "premium": {
+        "name": "Premium",
+        "features": [
+          "Diamond mosaic schema",
+          "Assembly instructions",
+          "24/7 support",
+          "HD quality schema",
+          "Additional processing options"
+        ]
+      },
+      "professional": {
+        "name": "Professional",
+        "features": [
+          "Diamond mosaic schema",
+          "Assembly instructions",
+          "24/7 support",
+          "HD quality schema",
+          "Additional processing options",
+          "Priority processing",
+          "Personal manager"
+        ]
+      }
+    },
+    "labels": {
+      "popular": "Popular",
+      "original_price": "Regular price:",
+      "selected_params": "Selected parameters:",
+      "size": "Size: {size}",
+      "style": "Style: {style}",
+      "select_package": "Select a package"
+    },
+    "buttons": {
+      "purchase": "Purchase for {price} ₽",
+      "back": "Back to Preview"
+    },
+    "notifications": {
+      "select_package": "Please select a package",
+      "processing": "Processing order...",
+      "purchase_success_title": "Purchase Completed!",
+      "purchase_success_message": "Coupon activated. Proceeding to schema generation...",
+      "purchase_failed_message": "Failed to complete purchase. Please try again.",
+      "loading": "Loading..."
+    }
+  },
+  "diamond_mosaic_success": {
+    "title": "Order Successfully Created!",
+    "subtitle": "Your diamond mosaic schema is ready for download",
+    "generating": {
+      "title": "Generating files...",
+      "description": "Please wait, we are creating the schema and instructions for your mosaic"
+    },
+    "download_section": {
+      "title": "Download Files",
+      "files": {
+        "schema": "Mosaic Schema (PDF)",
+        "instructions": "Assembly Instructions (PDF)",
+        "preview": "Result Preview (JPG)"
+      }
+    },
+    "order_info": {
+      "title": "Order Information",
+      "order_number": "Order number: {number}",
+      "package": "Package: {package}",
+      "size": "Size: {size}",
+      "style": "Style: {style}"
+    },
+    "buttons": {
+      "download_all": "Download All Files",
+      "home": "Go Home",
+      "new_mosaic": "Create New Mosaic"
+    },
+    "your_mosaic": "Your Mosaic",
+    "selected_preview": "Selected Preview",
+    "size_label": "Size:",
+    "style_label": "Style:",
+    "download": "Download",
+    "create_new": "Create New Mosaic",
+    "preview_result": "Result Preview",
+    "schema_generation_error": "Error generating schema files",
+    "generating_files": "Generating your files...",
+    "generating_description": "Creating diamond mosaic schema and related materials",
+    "order_details": "Order Details",
+    "characteristics": "Characteristics",
+    "package": "Package:",
+    "cost": "Cost:",
+    "purchase_date": "Purchase date:",
+    "your_files": "Your Files",
+    "files": {
+      "schema": {
+        "name": "Diamond Mosaic Schema",
+        "description": "Detailed schema with rhinestone numbers and colors"
+      },
+      "instructions": {
+        "name": "Assembly Instructions",
+        "description": "Step-by-step guide for creating the mosaic"
+      },
+      "hd_schema": {
+        "name": "HD Schema",
+        "description": "High-resolution schema"
+      },
+      "print_files": {
+        "name": "Print Files",
+        "description": "Ready files for printing the schema"
+      }
+    },
+    "notifications": {
+      "download_started": "Download of {fileName} started"
+    },
+    "go_home": "Go Home",
+    "email_notification": "Files have also been sent to your email (if provided)",
+    "support_contact": "If you have any questions, please contact support"
+  },
+  "diamond_mosaic_album": {
+    "title": "Preview Album",
+    "subtitle": "All generated variants of your mosaic",
+    "empty_state": {
+      "title": "Album is Empty",
+      "description": "All generated previews will be displayed here",
+      "button": "Create First Preview"
+    },
+    "buttons": {
+      "view_full": "View Full Size",
+      "download": "Download",
+      "delete": "Delete",
+      "back": "Back to Creation"
+    }
+  },
+  "diamond_art": {
+    "title": "Diamond Art",
+    "subtitle": "Create stunning paintings from diamond gems",
+    "description": "Transform your photos into diamond painting schemas",
+    "coming_soon": "Coming Soon",
+    "preview_section": {
+      "title": "How will your mosaic look?",
+      "description": "Upload your image and create a preview of your unique diamond mosaic",
+      "create_preview": "Create Mosaic Preview",
+      "instruction": "Choose size, upload image and get previews in different styles"
+    },
+    "coupon_section": {
+      "title": "Coupon Purchase",
+      "domain_warning": "This coupon is intended for partner website: {partnerName}",
+      "wrong_domain": "This coupon is intended for partner website: {partnerBrandName}",
+      "go_to_partner_site": "Go to Partner Site"
+    },
+    "marketplace_links": {
+      "ozon": "https://www.ozon.ru/search/?text=алмазная+мозаика+набор",
+      "wildberries": "https://www.wildberries.ru/catalog/0/search.aspx?search=алмазная+мозаика+набор"
+    }
+  },
+  "image_editor": {
+    "title": "Image Editor",
+    "edit_image": "Edit Image",
+    "processing_error": "Error processing image",
+    "continue": "Continue",
+    "size_label": "Size:",
+    "style_label": "Style:",
+    "loading": "Loading editor...",
+    "page_title": "Set up your image",
+    "page_description": "Edit your image to create the perfect mosaic",
+    "image_not_found": "Image not found",
+    "error_loading_data": "Error loading data",
+    "save_success": "Image saved successfully",
+    "save_error": "Error saving image",
+    "navigation": {
+      "back": "Back to Preview"
+    },
+    "tools": {
+      "rotate": "Rotate",
+      "scale": "Scale",
+      "position": "Position"
+    },
+    "controls": {
+      "rotation_control": "Rotation: {value}°",
+      "scale_control": "Scale: {value}%"
+    },
+    "recommendations": {
+      "title": "Editing Recommendations",
+      "crop": {
+        "title": "Cropping",
+        "description": "Select the most suitable area of the image"
+      },
+      "rotate": {
+        "title": "Rotation",
+        "description": "Rotate the image for better perception"
+      },
+      "scale": {
+        "title": "Scaling",
+        "description": "Increase or decrease the image for optimal size"
+      }
+    }
+  },
+  "diamond_mosaic_preview_album": {
+    "title": "Preview Album",
+    "subtitle": "Preview Options",
+    "style_variants_title": "Photo Style Variants:",
+    "generating_ai": "Generating AI preview...",
+    "generating_previews": "Generating Previews",
+    "back_to_style_selection": "Back to Style Selection",
+    "select_preview_for_purchase": "Select preview for purchase",
+    "contrast_generation_error": "Error generating contrast variants",
+    "ai_preview_generation_error": "Error generating AI preview",
+    "size_label": "Size:",
+    "style_label": "Style:",
+    "continue_to_purchase": "Continue to Purchase",
+    "ai_processing": "AI Processing",
+    "ai_description": "Add variants with neural network processing",
+    "ai_ready": "AI previews ready",
+    "generating_variants": "Generating variants...",
+    "main_preview": "Main",
+    "edit_image": "Edit Image",
+    "buy_coupon_and_generate": "Buy coupon and generate schema",
+    "liked_preview_text": "Liked the preview? You can buy a coupon and generate diamond mosaic schema",
+    "ready_sets_in_stores": "Ready sets in stores:",
+    "contrast_variants": {
+      "venus": "Venus",
+      "sun": "Sun",
+      "moon": "Moon",
+      "mars": "Mars",
+      "soft": "Soft",
+      "strong": "Strong"
+    }
+  }
+}

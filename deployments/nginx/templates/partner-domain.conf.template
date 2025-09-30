@@ -1,0 +1,164 @@
+# Partner domain configuration template
+# This template will be used to generate nginx server blocks for partner domains
+# Variables to be replaced:
+# {{DOMAIN}} - Partner domain name
+# {{SSL_CERT_PATH}} - Path to SSL certificate
+# {{SSL_KEY_PATH}} - Path to SSL private key
+
+# HTTP server - redirect to HTTPS
+server {
+    listen 80;
+    server_name {{DOMAIN}};
+    
+    # Let's Encrypt challenge
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        try_files $uri =404;
+    }
+    
+    # Redirect all other HTTP traffic to HTTPS
+    location / {
+        return 301 https://$server_name$request_uri;
+    }
+}
+
+# HTTPS server - main partner domain configuration  
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name {{DOMAIN}};
+
+    ssl_certificate {{SSL_CERT_PATH}};
+    ssl_certificate_key {{SSL_KEY_PATH}};
+
+    location /assets/ {
+        proxy_pass http://public-site;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        
+        proxy_cache_valid 200 1d;
+        add_header Cache-Control "public, max-age=86400";
+    }
+
+    location / {
+        proxy_pass http://public-site;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # WebSocket endpoints
+    location /api/ws/ {
+        proxy_pass http://backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        proxy_read_timeout 86400;
+    }
+
+    # API endpoints
+    location /api/ {
+        limit_req zone=api burst=50 nodelay;
+        
+        # Handle CORS preflight requests
+        if ($request_method = 'OPTIONS') {
+            add_header Access-Control-Allow-Origin $http_origin always;
+            add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
+            add_header Access-Control-Allow-Headers "Authorization, Content-Type, X-Requested-With" always;
+            add_header Access-Control-Allow-Credentials true always;
+            add_header Access-Control-Max-Age 1728000;
+            add_header Content-Type text/plain;
+            add_header Content-Length 0;
+            return 204;
+        }
+        
+        proxy_pass http://backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        
+        # CORS headers for API
+        add_header Access-Control-Allow-Origin $http_origin always;
+        add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Authorization, Content-Type, X-Requested-With" always;
+        add_header Access-Control-Allow-Credentials true always;
+    }
+
+    # MinIO proxy for logos
+    location /mosaic-logos/ {
+        proxy_pass http://minio_s3/mosaic-logos/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        proxy_connect_timeout 300;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        chunked_transfer_encoding off;
+        
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+        add_header Pragma "no-cache";
+        add_header Expires "0";
+    }
+
+    location /mosaic-images/ {
+        proxy_pass http://minio_s3/mosaic-images/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        proxy_connect_timeout 300;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        chunked_transfer_encoding off;
+    }
+
+    location /chat-data/ {
+        proxy_pass http://minio_s3/chat-data/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        proxy_connect_timeout 300;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        chunked_transfer_encoding off;
+    }
+
+    location /preview-images/ {
+        proxy_pass http://minio_s3/preview-images/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        proxy_connect_timeout 300;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        chunked_transfer_encoding off;
+        
+        # Force correct content type for images
+        add_header Content-Type "image/png" always;
+        add_header Cache-Control "public, max-age=31536000" always;
+        
+        # Add download headers if download parameter is present
+        if ($arg_download = "1") {
+            add_header Content-Disposition "attachment; filename=mosaic-preview.png" always;
+        }
+    }
+}

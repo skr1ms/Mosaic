@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Обновление статуса обработки</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #2196F3;
+            margin: 0;
+            font-size: 24px;
+        }
+        .emoji {
+            font-size: 2em;
+            margin: 10px 0;
+        }
+        .status-processing {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .status-processed {
+            background: linear-gradient(135deg, #2196F3, #1976d2);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .coupon-code {
+            background-color: #f0f8ff;
+            border: 2px dashed #2196F3;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .coupon-code strong {
+            font-size: 1.2em;
+            color: #1976d2;
+        }
+        .progress-bar {
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+            height: 20px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .timeline {
+            background-color: #fafafa;
+            border-left: 4px solid #2196F3;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .timeline h3 {
+            margin-top: 0;
+            color: #1976d2;
+        }
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 5px 0;
+        }
+        .timeline-icon {
+            width: 20px;
+            margin-right: 15px;
+            text-align: center;
+        }
+        .timeline-text {
+            flex: 1;
+        }
+        .completed {
+            color: #4CAF50;
+        }
+        .current {
+            color: #ff9800;
+            font-weight: bold;
+        }
+        .pending {
+            color: #999;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+        }
+        .estimated-time {
+            background-color: #e3f2fd;
+            border: 1px solid #2196F3;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="emoji">🔄⏳</div>
+            <h1>Обновление статуса обработки</h1>
+        </div>
+
+        <p>Здравствуйте!</p>
+        
+        <p>Сообщаем вам об изменении статуса обработки вашего изображения.</p>
+
+        <div class="coupon-code">
+            <p>Номер купона: <strong>{{.CouponCode}}</strong></p>
+        </div>
+
+        {{if eq .Status "processing"}}
+        <div class="status-processing">
+            <h3>🎨 Ваше изображение обрабатывается</h3>
+            <p>Мы применяем выбранные вами стили и создаем схему алмазной мозаики</p>
+        </div>
+        {{else if eq .Status "processed"}}
+        <div class="status-processed">
+            <h3>✨ Обработка завершена!</h3>
+            <p>Ваше изображение готово. Осталось только создать финальную схему</p>
+        </div>
+        {{end}}
+
+        <div class="progress-bar">
+            <!-- CSS linter: ignore Go template syntax -->
+            <div class="progress-fill" style="width: {{.Progress}}%;">
+                {{.Progress}}%
+            </div>
+        </div>
+
+        <div class="timeline">
+            <h3>📋 Этапы обработки:</h3>
+            
+            <div class="timeline-item">
+                <span class="timeline-icon completed">✅</span>
+                <span class="timeline-text completed">Изображение загружено</span>
+            </div>
+            
+            <div class="timeline-item">
+                <span class="timeline-icon completed">✅</span>
+                <span class="timeline-text completed">Изображение отредактировано</span>
+            </div>
+            
+            <div class="timeline-item">
+                <span class="timeline-icon {{if eq .Status "processing"}}current{{else if eq .Status "processed"}}completed{{else}}pending{{end}}">
+                    {{if eq .Status "processing"}}⏳{{else if eq .Status "processed"}}✅{{else}}⏸️{{end}}
+                </span>
+                <span class="timeline-text {{if eq .Status "processing"}}current{{else if eq .Status "processed"}}completed{{else}}pending{{end}}">
+                    Применение стилей обработки
+                </span>
+            </div>
+            
+            <div class="timeline-item">
+                <span class="timeline-icon {{if eq .Status "processed"}}current{{else}}pending{{end}}">
+                    {{if eq .Status "processed"}}⏳{{else}}⏸️{{end}}
+                </span>
+                <span class="timeline-text {{if eq .Status "processed"}}current{{else}}pending{{end}}">
+                    Создание схемы мозаики
+                </span>
+            </div>
+            
+            <div class="timeline-item">
+                <span class="timeline-icon pending">⏸️</span>
+                <span class="timeline-text pending">Отправка готовой схемы</span>
+            </div>
+        </div>
+
+        {{if eq .Status "processing"}}
+        <div class="estimated-time">
+            <p><strong>⏱️ Примерное время обработки: 2-5 минут</strong></p>
+            <p><small>Время может варьироваться в зависимости от размера изображения и выбранных стилей</small></p>
+        </div>
+        {{else if eq .Status "processed"}}
+        <div class="estimated-time">
+            <p><strong>🎯 Обработка завершена!</strong></p>
+            <p>Теперь вы можете создать финальную схему мозаики в личном кабинете</p>
+        </div>
+        {{end}}
+
+        <p><strong>Что дальше?</strong></p>
+        <p>{{if eq .Status "processing"}}
+        Дождитесь завершения обработки. Мы пришлем вам уведомление, как только все будет готово.
+        {{else if eq .Status "processed"}}
+        Вернитесь в личный кабинет и подтвердите создание финальной схемы мозаики.
+        {{end}}</p>
+
+        <div class="footer">
+            <p><strong>Детали:</strong></p>
+            <p>• Время обновления: {{.Timestamp}}</p>
+            {{if .ImageID}}
+            <p>• ID изображения: {{.ImageID}}</p>
+            {{end}}
+            <p style="margin-top: 20px;">
+                <small>Email отправлен автоматически. Не отвечайте на это сообщение.</small>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

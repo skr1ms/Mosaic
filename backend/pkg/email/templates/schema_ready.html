@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ваша схема алмазной мозаики готова!</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #4CAF50;
+            margin: 0;
+            font-size: 28px;
+        }
+        .emoji {
+            font-size: 2em;
+            margin: 10px 0;
+        }
+        .coupon-code {
+            background-color: #f0f8ff;
+            border: 2px dashed #4CAF50;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .coupon-code strong {
+            font-size: 1.2em;
+            color: #2e7d32;
+        }
+        .download-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            margin: 20px 0;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+        }
+        .file-list {
+            background-color: #fafafa;
+            border-left: 4px solid #4CAF50;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .file-list h3 {
+            margin-top: 0;
+            color: #2e7d32;
+        }
+        .file-list ul {
+            list-style: none;
+            padding: 0;
+        }
+        .file-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .file-list li:last-child {
+            border-bottom: none;
+        }
+        .file-icon {
+            display: inline-block;
+            width: 20px;
+            margin-right: 10px;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+        }
+        .creative-message {
+            background: linear-gradient(135deg, #ff6b6b, #ffa726);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="emoji">🎨✨</div>
+            <h1>Ваша схема алмазной мозаики готова!</h1>
+        </div>
+
+        <p>Здравствуйте!</p>
+        
+        <p>Ваша персональная схема алмазной мозаики успешно создана и готова к скачиванию.</p>
+
+        <div class="coupon-code">
+            <p>Номер купона: <strong>{{.CouponCode}}</strong></p>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="{{.SchemaURL}}" class="download-btn">
+                📥 Скачать ZIP-архив со схемой
+            </a>
+        </div>
+
+        <div class="file-list">
+            <h3>🗂️ Что входит в ZIP-архив:</h3>
+            <ul>
+                <li><span class="file-icon">🧩</span><strong>mosaic_scheme.png</strong> — Схема мозаики (цветные клетки + символы)</li>
+                <li><span class="file-icon">🖼️</span><strong>original.jpg</strong> — Ваше оригинальное изображение</li>
+                <li><span class="file-icon">👁️</span><strong>preview.png</strong> — Превью готовой мозаики</li>
+            </ul>
+        </div>
+
+        <div class="creative-message">
+            <strong>Приятного творчества! 🎨✨</strong>
+            <br>
+            <small>Создавайте красоту своими руками!</small>
+        </div>
+
+        <div class="footer">
+            <p><strong>Важная информация:</strong></p>
+            <p>• Ссылка для скачивания действительна в течение <strong>7 дней</strong></p>
+            <p>• Сохраните архив на свое устройство для постоянного доступа</p>
+            <p>• При возникновении вопросов свяжитесь с нашей службой поддержки</p>
+            <p style="margin-top: 20px;">
+                <small>Email отправлен автоматически. Не отвечайте на это сообщение.</small>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

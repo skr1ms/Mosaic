@@ -1,0 +1,296 @@
+// Closed Sidebar
+
+// Sidebar Menu Hover
+
+.closed-sidebar {
+  .app-sidebar {
+    transition: all .3s ease;
+    width: $app-sidebar-width-collapsed;
+    min-width: $app-sidebar-width-collapsed;
+    flex: 0 0 $app-sidebar-width-collapsed;
+    z-index: 13;
+
+    .app-sidebar__inner {
+      padding: 2px $layout-spacer-x;
+
+      .app-sidebar__heading {
+        text-indent: -999em;
+        display: flex;
+        justify-content: center;
+        padding: 0;
+        margin: 8px 0; // увеличиваем отступы между заголовками
+        height: 20px; // фиксируем высоту
+        position: relative;
+        overflow: hidden; // скрываем переполнение
+
+        &::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 8px;
+          width: calc(100% - 16px);
+          height: 1px;
+          background: $dropdown-link-hover-bg;
+          text-indent: 1px;
+          z-index: 1;
+        }
+      }
+
+      .metismenu-link {
+        text-indent: -99rem;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 6px auto; // увеличиваем отступы между элементами
+        width: calc(100% - 10px);
+        height: 40px; // фиксированная высота
+        position: relative;
+        border-radius: 8px;
+        
+        // Исправляем активное состояние в закрытом сайдбаре
+        &.active {
+          background: $dropdown-link-hover-bg;
+          width: calc(100% - 10px) !important;
+          margin: 6px 5px;
+        }
+      }
+
+      .metismenu-icon {
+        text-indent: 0;
+        position: static;
+        transform: none;
+        margin: 0;
+      }
+
+      .metismenu-state-icon {
+        visibility: hidden;
+      }
+
+      .metismenu-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0;
+        
+        &.visible {
+          padding: 0;
+          display: none !important; // Полностью скрываем подменю в закрытом состоянии
+          visibility: hidden;
+          height: 0;
+          overflow: hidden;
+
+          & > .metismenu-item > .metismenu-link {
+            height: 0 !important;
+            opacity: 0;
+            display: none;
+          }
+        }
+
+        .metismenu-item {
+          width: 100%;
+          display: flex;
+          justify-content: center;
+          margin: 2px 0; // добавляем небольшой отступ между элементами
+          
+          .metismenu-link {
+            margin: 4px 0;
+            width: calc(100% - 10px);
+            min-height: 40px; // фиксированная минимальная высота
+            max-height: 40px; // фиксированная максимальная высота
+            
+            // Активное состояние для элементов с подменю
+            &.active, &.has-active-child {
+              background: $dropdown-link-hover-bg;
+              margin: 4px 5px;
+            }
+          }
+        }
+      }
+    }
+
+    &:hover {
+      flex: 0 0 $app-sidebar-width !important;
+      width: $app-sidebar-width !important;
+
+      .app-sidebar__inner {
+        padding: 2px $layout-spacer-x $layout-spacer-x;
+
+        .app-sidebar__heading {
+          text-indent: initial;
+          justify-content: flex-start;
+          padding: 0;
+          &::before {
+            display: none;
+          }
+        }
+
+        .metismenu-link {
+          text-indent: initial;
+          padding: 0 $layout-spacer-x 0 45px;
+          justify-content: flex-start;
+          margin: 0;
+          width: 100%;
+          
+          &.active {
+            width: 100% !important;
+            margin: 0;
+          }
+        }
+
+        .metismenu-icon {
+          position: absolute;
+          left: 5px;
+          top: 50%;
+          transform: translateY(-50%);
+          margin-left: 0;
+        }
+
+        .metismenu-state-icon {
+          visibility: visible;
+        }
+
+        .metismenu-container {
+          display: block;
+          padding: 0;
+          
+          &.visible {
+            display: block;
+            padding: .5em 0 0 2rem;
+
+            & > .metismenu-item > .metismenu-link {
+              height: 2.3em;
+              padding-left: 35px;
+              opacity: 1;
+            }
+          }
+
+          .metismenu-container {
+            .metismenu-link {
+              padding-left: 35px;
+            }
+          }
+
+          .metismenu-item {
+            width: 100%;
+            display: block;
+            
+            .metismenu-link {
+              margin: 0;
+              width: 100%;
+              
+              &.active, &.has-active-child {
+                margin: 0;
+                width: 100%;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  &:not(.sidebar-mobile-open) {
+
+    .app-sidebar {
+      .scrollbar-container {
+        position: static;
+        height: auto;
+        overflow: initial !important;
+      }
+
+      &:hover {
+        .scrollbar-container {
+          position: absolute;
+          height: 100%;
+          overflow: hidden !important;
+        }
+      }
+    }
+  }
+
+  &:not(.closed-sidebar-mobile) {
+    .app-header {
+      .app-header__logo {
+        width: $app-sidebar-width-collapsed;
+
+        .logo-src {
+          display: none;
+        }
+
+        .header__pane {
+          margin-right: auto;
+        }
+      }
+    }
+
+  }
+
+  &.fixed-sidebar {
+    .app-main__outer {
+      padding-left: $app-sidebar-width-collapsed;
+    }
+  }
+
+  &.fixed-header:not(.fixed-sidebar) {
+    .app-sidebar {
+      .app-header__logo {
+        visibility: hidden;
+      }
+    }
+  }
+
+  &.closed-sidebar-mobile {
+    .app-sidebar,
+    .app-header {
+      .app-header__logo {
+        width: auto;
+        display: flex;
+
+        .header__pane {
+          display: none;
+        }
+      }
+    }
+
+    .app-sidebar {
+      .app-header__logo {
+        display: flex;
+        width: $app-sidebar-width-collapsed;
+        padding: 0 $layout-spacer-x !important;
+
+        .logo-src {
+          display: block !important;
+          margin: 0 auto;
+          width: $logo-width - 76;
+        }
+
+        .header__pane {
+          display: none;
+        }
+      }
+
+      &:hover {
+        .app-header__logo {
+          width: $app-sidebar-width;
+
+          .logo-src {
+            width: $logo-width;
+            margin: 0;
+
+          }
+        }
+      }
+    }
+
+    .app-header {
+      margin-left: 0 !important;
+    }
+  }
+
+  &.fixed-footer {
+    .app-footer__inner {
+      margin-left: 0 !important;
+    }
+  }
+}
